@@ -73,6 +73,9 @@ package=packages[0]; activity=package+'/app.qthrone.mobile.ui.MainActivity'
 # Only this disposable CI emulator's application data is reset.
 shell('pm','clear',package)
 shell('pm','grant',package,'android.permission.POST_NOTIFICATIONS')
+# The power button continuously pulses while connected. UIAutomator's idle
+# detector otherwise waits forever for its bounds to stop changing.
+shell('settings','put','global','animator_duration_scale','0')
 shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d','socks5://127.0.0.1:8868#VPN-smoke')
 time.sleep(5); tap('Yes')
 # A clean installation also asks about background battery restrictions.
