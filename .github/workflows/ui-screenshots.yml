@@ -1,0 +1,52 @@
+name: Android UI screenshots
+on:
+  workflow_dispatch:
+    inputs:
+      build_run:
+        description: Successful CI run containing the debug APK
+        required: true
+        default: '38137800988'
+permissions:
+  contents: read
+  actions: read
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: qThroneMobile-debug
+          path: preview-apk
+          run-id: ${{ inputs.build_run }}
+          github-token: ${{ github.token }}
+      - name: Prepare isolated Android emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK="$ANDROID_HOME/cmdline-tools/latest/bin"
+          yes | "$SDK/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools' > /dev/null || test -d "$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
+          echo no | "$SDK/avdmanager" create avd -n qthrone-preview -k 'system-images;android-35;google_apis;x86_64' --force
+          if test -e /dev/kvm; then sudo chmod a+rw /dev/kvm; fi
+          "$ANDROID_HOME/emulator/emulator" -avd qthrone-preview -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          "$ANDROID_HOME/platform-tools/adb" wait-for-device
+          for attempt in $(seq 1 180); do
+            if test "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed | tr -d '\r')" = 1; then break; fi
+            sleep 3
+          done
+          test "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed | tr -d '\r')" = 1
+          "$ANDROID_HOME/platform-tools/adb" shell input keyevent 82
+          "$ANDROID_HOME/platform-tools/adb" shell wm size 1080x1920
+          "$ANDROID_HOME/platform-tools/adb" shell wm density 420
+          "$ANDROID_HOME/platform-tools/adb" install "$(find preview-apk -name '*.apk' -print -quit)"
+      - name: Capture real application screens
+        env:
+          ADB: ${{ env.ANDROID_HOME }}/platform-tools/adb
+        run: python3 scripts/capture_ui.py
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: qThroneMobile-ui-screenshots
+          path: ui-screenshots/
+          if-no-files-found: error
