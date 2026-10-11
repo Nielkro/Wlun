@@ -40,6 +40,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private val collapsed = mutableSetOf<Long>()
     private var observer: InvalidationTracker.Observer? = null
     private var testDialog: androidx.appcompat.app.AlertDialog? = null
+    private var openSwipe: MobileSwipeTile? = null
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun tile(selected: Boolean = false) = GradientDrawable().apply {
         setColor(if (selected) Color.rgb(48, 67, 77) else surface)
@@ -53,6 +54,10 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun action(label: String, callback: () -> Unit) = text(label, 16f, blue).apply {
         gravity = Gravity.CENTER; minHeight = dp(48)
         isFocusable = true; setOnClickListener { callback() }
+    }
+    private fun iconAction(icon: Int, description: String, color: Int = Color.TRANSPARENT, callback: () -> Unit) = ImageButton(requireContext()).apply {
+        setImageResource(icon); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
+        contentDescription=description; setOnClickListener { callback() }
     }
     private fun host() = requireActivity() as MainActivity
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
@@ -86,6 +91,7 @@ class MobileHomeFragment : ToolbarFragment() {
     override fun onDestroyView() {
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
         observer = null; load?.cancel(); content = null; power = null
+        openSwipe=null
         testDialog?.dismiss(); testDialog=null
         super.onDestroyView()
     }
@@ -98,6 +104,7 @@ class MobileHomeFragment : ToolbarFragment() {
             }
             val column = content ?: return@launch
             column.removeAllViews()
+            openSwipe=null
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
             fun headerIcon(icon: Int, description: String, callback: (View) -> Unit) = ImageButton(requireContext()).apply {
                 setImageResource(icon); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
@@ -133,29 +140,49 @@ class MobileHomeFragment : ToolbarFragment() {
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val box = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; background = tile() }
+                val rows = LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
                 val title = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
-                title.addView(text((if (group.id in collapsed) "▸ " else "▾ ") + group.displayName(), 17f).apply {
-                    maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
-                    setOnClickListener { if (!collapsed.add(group.id)) collapsed.remove(group.id); refresh() }
-                }, LinearLayout.LayoutParams(0, dp(54), 1f))
-                if (group.isSubscription) title.addView(action(if (SubscriptionClient.states.value.containsKey(group.id)) "…" else "↻") { SubscriptionClient.refreshGroup(group.id, true) }, LinearLayout.LayoutParams(dp(48), dp(48)))
-                title.addView(action("◴") { testMenu(profiles.map { it.id }.toLongArray(), group.displayName(), group.id) }, LinearLayout.LayoutParams(dp(48), dp(48)))
-                title.addView(action("⋯") { viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) } }, LinearLayout.LayoutParams(dp(48), dp(48)))
+                val arrow = ImageView(requireContext()).apply {
+                    setImageResource(R.drawable.ic_mobile_chevron); rotation=if(group.id in collapsed) 0f else 90f
+                }
+                val heading = LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),0,0,0); isFocusable=true }
+                heading.addView(arrow,LinearLayout.LayoutParams(dp(20),dp(20)))
+                val names=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL; setPadding(dp(10),dp(8),dp(4),dp(8)) }
+                names.addView(text(group.displayName(),17f).apply { setPadding(0,0,0,0); maxLines=1; ellipsize=android.text.TextUtils.TruncateAt.END })
+                if(group.isSubscription && group.subLastUpdate>0) names.addView(text(java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,java.text.DateFormat.SHORT).format(java.util.Date(group.subLastUpdate*1000)),10f,muted).apply { setPadding(0,dp(3),0,0) })
+                heading.addView(names,LinearLayout.LayoutParams(0,-2,1f))
+                heading.setOnClickListener {
+                    if (!collapsed.add(group.id)) collapsed.remove(group.id)
+                    rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
+                    arrow.animate().rotation(if(group.id in collapsed) 0f else 90f).setDuration(180).start()
+                }
+                title.addView(heading,LinearLayout.LayoutParams(0,-2,1f))
+                if (group.isSubscription) title.addView(iconAction(R.drawable.ic_mobile_refresh,getString(R.string.qmobile_refresh)) { SubscriptionClient.refreshGroup(group.id,true) }.apply { isEnabled=!SubscriptionClient.states.value.containsKey(group.id); alpha=if(isEnabled) 1f else .4f },LinearLayout.LayoutParams(dp(44),dp(48)))
+                title.addView(iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests)) { testMenu(profiles.map { it.id }.toLongArray(),group.displayName(),group.id) },LinearLayout.LayoutParams(dp(44),dp(48)))
+                lateinit var more: ImageButton
+                more=iconAction(R.drawable.ic_mobile_more,getString(R.string.qmobile_more)) { groupMenu(group,more) }
+                title.addView(more,LinearLayout.LayoutParams(dp(44),dp(48)))
                 box.addView(title)
                 if (group.isSubscription) {
-                    if (group.subLastUpdate > 0) {
-                        val updated=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,java.text.DateFormat.SHORT)
-                            .format(java.util.Date(group.subLastUpdate * 1000))
-                        box.addView(text(updated,12f,muted))
-                    }
                     val quota=group.subInfo
+                    val traffic=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),0,dp(12),dp(8)) }
+                    traffic.addView(iconAction(R.drawable.ic_mobile_info,getString(R.string.qmobile_subscription_info)) {
+                        val expires=if(quota.expire>0) java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000)) else "—"
+                        MaterialAlertDialogBuilder(requireContext()).setTitle(group.displayName()).setMessage(getString(R.string.qmobile_expiry,expires)).setPositiveButton(android.R.string.ok,null).show()
+                    },LinearLayout.LayoutParams(dp(32),dp(32)))
+                    val bar=FrameLayout(requireContext()).apply { background=GradientDrawable().apply { setColor(Color.rgb(35,37,40)); cornerRadius=dp(3).toFloat(); setStroke(dp(1),Color.rgb(20,22,25)) } }
+                    var usage=getString(R.string.qmobile_quota_unknown)
                     if (quota.valid && quota.hasQuota) {
-                        val used=android.text.format.Formatter.formatShortFileSize(requireContext(),quota.upload+quota.download)
+                        val upload=quota.upload.coerceAtLeast(0); val download=quota.download.coerceAtLeast(0)
+                        val bytes=if(download>Long.MAX_VALUE-upload) Long.MAX_VALUE else upload+download
+                        val used=android.text.format.Formatter.formatShortFileSize(requireContext(),bytes)
                         val total=if(quota.total>0) android.text.format.Formatter.formatShortFileSize(requireContext(),quota.total) else "∞"
-                        box.addView(text("$used / $total",12f,muted))
+                        usage="$used / $total"
                     }
+                    bar.addView(text(usage,11f).apply { gravity=Gravity.CENTER; setPadding(dp(4),0,dp(4),0) },FrameLayout.LayoutParams(-1,-1))
+                    traffic.addView(bar,LinearLayout.LayoutParams(0,dp(20),1f).apply { marginStart=dp(8) }); box.addView(traffic)
                 }
-                if (group.id !in collapsed) for (profile in profiles) {
+                for (profile in profiles) {
                     val row = LinearLayout(requireContext()).apply {
                         gravity = Gravity.CENTER_VERTICAL; background = tile(profile.id == DataStore.selectedProxy)
                         isFocusable = true
@@ -172,18 +199,22 @@ class MobileHomeFragment : ToolbarFragment() {
                     labels.addView(text(profile.displayName(), 16f).apply { setPadding(0,0,0,dp(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     labels.addView(text(profile.displayType(), 12f, muted).apply { setPadding(0,0,0,0); maxLines=1 })
                     row.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
-                    row.addView(text(if (profile.latency > 0) "${profile.latency} ms" else "›", 13f, if (profile.latency > 0) Color.rgb(128,192,139) else muted))
+                    if(profile.latency>0) row.addView(text("${profile.latency} ms",13f,Color.rgb(128,192,139)))
+                    else row.addView(ImageView(requireContext()).apply { setImageResource(R.drawable.ic_mobile_chevron); setPadding(dp(6),dp(6),dp(6),dp(6)); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO },LinearLayout.LayoutParams(dp(32),dp(32)))
                     val swipe = MobileSwipeTile(requireContext(), row,
-                        action("◴") { testMenu(longArrayOf(profile.id),profile.displayName(),group.id) },
-                        action("↗") { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(Intent.EXTRA_TEXT,profile.exportLink().ifBlank { profile.exportJsonLink() }) }, getString(R.string.qmobile_share))) },
-                        action("×") {
+                        iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests),Color.rgb(36,171,85)) { testMenu(longArrayOf(profile.id),profile.displayName(),group.id) },
+                        iconAction(R.drawable.ic_mobile_share,getString(R.string.qmobile_share),Color.rgb(60,132,190)) { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(Intent.EXTRA_TEXT,profile.exportLink().ifBlank { profile.exportJsonLink() }) }, getString(R.string.qmobile_share))) },
+                        iconAction(R.drawable.ic_mobile_delete,getString(R.string.qmobile_delete),Color.rgb(220,66,61)) {
                             MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_delete).setMessage(profile.displayName())
                                 .setNegativeButton(android.R.string.cancel,null).setPositiveButton(android.R.string.ok) { _,_ ->
                                     viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { ProfileManager.deleteProfile(group.id,profile.id) } }
                                 }.show()
-                        })
-                    box.addView(swipe, LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(5),0,dp(5),dp(5)) })
+                        }).apply { onOpened={ opened -> openSwipe?.takeIf { it!==opened }?.closeActions(); openSwipe=opened } }
+                    rows.addView(swipe, LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(5),0,dp(5),dp(5)) })
                 }
+                rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
+                box.addView(rows)
+                box.layoutTransition=android.animation.LayoutTransition().apply { setDuration(180) }
                 column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(16) })
             }
             if(groups.all { it.second.isEmpty() && !it.first.isSubscription }) {
@@ -228,6 +259,17 @@ class MobileHomeFragment : ToolbarFragment() {
         val value = clip.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(requireContext())?.toString()
         if (!value.isNullOrBlank()) SubscribeFlows.importText(requireActivity(), value)
         else Toast.makeText(requireContext(), R.string.qmobile_clipboard_empty, Toast.LENGTH_SHORT).show()
+    }
+    private fun groupMenu(group: ProxyGroup, anchor: View) {
+        val menu=android.widget.PopupMenu(requireContext(),anchor)
+        menu.menu.add(getString(R.string.qmobile_settings)).setOnMenuItemClickListener {
+            startActivity(Intent(requireContext(),GroupSettingsActivity::class.java).putExtra(GroupSettingsActivity.EXTRA_GROUP_ID,group.id)); true
+        }
+        menu.menu.add(getString(R.string.qmobile_profiles)).setOnMenuItemClickListener {
+            viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) }; true
+        }
+        if(group.isSubscription) menu.menu.add(getString(R.string.action_copy)).setOnMenuItemClickListener { SagerNet.trySetPrimaryClip(group.url); true }
+        menu.show()
     }
     private fun addMenu(anchor: View) {
         val popup = android.widget.PopupMenu(requireContext(), anchor)

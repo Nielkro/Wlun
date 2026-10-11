@@ -6,6 +6,11 @@
 <string name="qmobile_empty">Чтобы использовать приложение, вам необходимо добавить прокси-сервер и/или подписку в список серверов.</string>
 <string name="qmobile_settings">Настройки</string>
 <string name="qmobile_add">Добавить профиль или подписку</string>
+<string name="qmobile_refresh">Обновить подписку</string>
+<string name="qmobile_more">Другие действия</string>
+<string name="qmobile_subscription_info">Информация о подписке</string>
+<string name="qmobile_expiry">Срок действия: %1$s</string>
+<string name="qmobile_quota_unknown">Трафик не указан</string>
 <string name="qmobile_connected">Подключено</string>
 <string name="qmobile_connecting">Подключение…</string>
 <string name="qmobile_disconnected">Не подключено</string>

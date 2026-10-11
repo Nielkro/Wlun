@@ -10,6 +10,12 @@ import kotlin.math.abs
 
 /** Horizontal swipe reveals actions; vertical drags continue scrolling the subscription list. */
 class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View):FrameLayout(context) {
+    var onOpened: ((MobileSwipeTile) -> Unit)? = null
+    fun closeActions() {
+        left.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+        row.animate().translationX(0f).setDuration(180).start()
+    }
     private val widthPx=112*resources.displayMetrics.density
     private val slop=ViewConfiguration.get(context).scaledTouchSlop
     private var downX=0f; private var downY=0f; private var initial=0f
@@ -41,6 +47,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
             MotionEvent.ACTION_UP,MotionEvent.ACTION_CANCEL -> {
                 val x=row.translationX*direction
                 val end=if(e.actionMasked==MotionEvent.ACTION_CANCEL || !dragging) 0f else if(x>widthPx*.35f) widthPx else if(x< -widthPx*.2f) -widthPx/2 else 0f
+                if(end!=0f) onOpened?.invoke(this)
                 left.importantForAccessibility=if(end>0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                 right.importantForAccessibility=if(end<0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                 row.animate().translationX(end*direction).setDuration(180).start()

@@ -7,6 +7,11 @@
 <string name="qmobile_empty">To use the app, add a proxy server and/or subscription to the server list.</string>
 <string name="qmobile_settings">Settings</string>
 <string name="qmobile_add">Add profile or subscription</string>
+<string name="qmobile_refresh">Update subscription</string>
+<string name="qmobile_more">More actions</string>
+<string name="qmobile_subscription_info">Subscription information</string>
+<string name="qmobile_expiry">Expiry: %1$s</string>
+<string name="qmobile_quota_unknown">Traffic not provided</string>
 <string name="qmobile_connected">Connected</string>
 <string name="qmobile_connecting">Connecting…</string>
 <string name="qmobile_disconnected">Not connected</string>
