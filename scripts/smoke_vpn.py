@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 adb = os.path.join(os.environ['ANDROID_HOME'], 'platform-tools', 'adb')
 out = Path('ui-screenshots'); out.mkdir(exist_ok=True)
 hits = []
+probe_gate = threading.Event()
+probe_gate.set()
 def shell(*args):
     return subprocess.check_output([adb, 'shell', *args], text=True)
 def xml():
@@ -52,6 +54,7 @@ class Socks(socketserver.BaseRequestHandler):
                 request+=chunk
             if b'generate_204' not in request: return
             hits.append(request.split(b'\r\n',1)[0].decode('ascii','replace'))
+            probe_gate.wait(20)
             s.sendall(b'HTTP/1.1 204 No Content\r\nConnection: close\r\nContent-Length: 0\r\n\r\n')
         except (OSError,EOFError): pass
 class Server(socketserver.ThreadingTCPServer):
@@ -104,5 +107,27 @@ for cycle in range(2):
     assert re.search(r'\d+ ms',xml()), 'Successful latency was not saved in the profile row'
     tap('Connect or disconnect VPN, Connected')
     wait_for('Connect or disconnect VPN, Not connected')
-(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; both HTTP generate_204 probes traversed the local SOCKS fixture; default local SOCKS port rejects unauthenticated access.\n')
+# A stalled probe must yield to a connection start without a separate cancellation UI.
+probe_gate.clear()
+previous = len(hits)
+for node in ET.fromstring(xml()).iter('node'):
+    if node.get('text') == 'VPN-smoke':
+        a,b,c,d = map(int,re.findall(r'\d+',node.attrib['bounds']))
+        y=(b+d)//2
+        shell('input','swipe',str((a+c)//2),str(y),'1000',str(y),'350')
+        break
+time.sleep(1)
+tap('Testing')
+for _ in range(10):
+    if len(hits)>previous: break
+    time.sleep(.2)
+else: raise AssertionError('Stalled probe did not start')
+started = time.monotonic()
+tap('Connect or disconnect VPN, Not connected')
+wait_for('Connect or disconnect VPN, Connected')
+assert time.monotonic()-started < 15, 'Connection waited for the stalled probe timeout'
+probe_gate.set()
+tap('Connect or disconnect VPN, Connected')
+wait_for('Connect or disconnect VPN, Not connected')
+(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; both HTTP generate_204 probes traversed the local SOCKS fixture; default local SOCKS port rejects unauthenticated access; a connection start preempts a stalled probe.\n')
 server.shutdown()

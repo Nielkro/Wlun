@@ -21,6 +21,7 @@ import app.qthrone.mobile.bg.proto.ProxyInstance
 import app.qthrone.mobile.bg.proto.RuleSetDownloadFailedException
 import app.qthrone.mobile.bg.proto.exitsThroughVpn
 import app.qthrone.mobile.bg.proto.urlTestCurrent
+import app.qthrone.mobile.bg.test.TestEngine
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.ProfileOrder
 import app.qthrone.mobile.database.ProxyEntity
@@ -609,7 +610,7 @@ class BaseService {
             }
             data.connectingJob = CoroutineScope(Dispatchers.Main).launch {
                 try {
-                    withContext(Dispatchers.IO) { app.qthrone.mobile.bg.test.TestEngine.stopAndJoin() }
+                    withContext(Dispatchers.IO) { TestEngine.stopAndJoin() }
                     preInit()
                     proxy.init()
                     DataStore.currentProfile = profile.id

@@ -58,6 +58,8 @@ class InboundSettingsFragment : SettingsScreenFragment(R.xml.settings_inbound) {
         // dialog_basic_settings.cpp:255-256.
         checkText(dnsInPort.key, R.string.invalid_port, valid = SettingValidators::isPort)
         dnsInPort.setOnBindEditTextListener(EditTextPreferenceModifiers.Port)
+        checkText(pass.key,R.string.qmobile_socks_password_invalid,valid={ it.length>=32 })
+        pass.setOnBindEditTextListener { it.inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD }
         pass.summaryProvider = GroupSettingsActivity.PasswordSummaryProvider
         httpProxyBypass.setOnBindEditTextListener(EditTextPreferenceModifiers.Hosts)
         httpProxyBypass.summaryProvider = LinesSummaryProvider(maxLines = 1)

@@ -149,6 +149,9 @@ object DataStore : OnPreferenceDataStoreChangeListener {
         get() = !SettingsRegistry.isLoopbackAddress(inboundAddress)
 
     fun initGlobal() {
+        if(inboundUser.isEmpty()) inboundUser="qthrone_"+java.util.UUID.randomUUID().toString().take(8)
+        if(inboundPass.isEmpty()) inboundPass=java.util.UUID.randomUUID().toString().replace("-", "")
+        if(!configurationStore.contains(SettingsRegistry.INBOUND_AUTH.key)) inboundAuth=true
         if (!configurationStore.contains(SettingsRegistry.INBOUND_SOCKS_PORT.key)) {
             inboundSocksPort = inboundSocksPort
         }

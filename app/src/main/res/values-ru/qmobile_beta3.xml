@@ -12,4 +12,5 @@
 <string name="qmobile_copy_json">Копировать JSON</string>
 <string name="qmobile_dev_updates">Dev-ветка</string>
 <string name="qmobile_dev_updates_summary">Искать также подписанные сборки из ветки разработки.</string>
+<string name="qmobile_socks_password_invalid">Пароль должен содержать не менее 32 символов. Можно сгенерировать новый кнопкой сброса.</string>
 </resources>
