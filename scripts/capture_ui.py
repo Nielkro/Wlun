@@ -98,7 +98,7 @@ for name in ('core.log', 'core.log.prev'):
         pass
 assert 'Finland-demo' in profile_xml, 'Imported demo profile is missing from the home screen'
 assert 'Server list' in profile_xml and 'text="Default"' not in profile_xml,'Standalone profiles did not go to Server list'
-# UIAutomator drops regional-indicator characters; inspect the badge in 05-profiles.png.
+assert 'content-desc="Country flag: FI"' in profile_xml,'The profile country flag is missing'
 
 # Controlled local subscription, including metadata. No external account or server is contacted.
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer

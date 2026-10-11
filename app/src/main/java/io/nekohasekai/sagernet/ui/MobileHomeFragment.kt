@@ -131,7 +131,9 @@ class MobileHomeFragment : ToolbarFragment() {
             }
             imports.addView(importButton(getString(R.string.qmobile_clipboard), R.drawable.ic_mobile_clipboard) { importClipboard() }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
             imports.addView(importButton(getString(R.string.qmobile_qr), R.drawable.ic_mobile_qr) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
-            column.addView(MobileSeasonalView(requireContext()), LinearLayout.LayoutParams(-1,dp(64)))
+            val hasServers = groups.any { it.second.isNotEmpty() || it.first.isSubscription }
+            if (hasServers) column.addView(MobileSeasonalView(requireContext()), LinearLayout.LayoutParams(-1,dp(64)))
+            var firstGroup = true
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val box = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; background = tile() }
@@ -197,7 +199,18 @@ class MobileHomeFragment : ToolbarFragment() {
                     val hasFlag=first in 0x1f1e6..0x1f1ff && second in 0x1f1e6..0x1f1ff
                     val flagLength=if(hasFlag) firstLength+Character.charCount(second) else 0
                     val badgeBackground=GradientDrawable().apply { setColor(MobilePalette.toolbar);cornerRadius=dp(7).toFloat() }
-                    val badge=if(hasFlag) text(displayName.substring(0,flagLength),25f).apply { gravity=Gravity.CENTER;setPadding(0,0,0,0) } else ImageView(requireContext()).apply { setImageResource(R.drawable.ic_mobile_globe);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.muted);setPadding(dp(5),dp(5),dp(5),dp(5)) }
+                    val countryCode=if(hasFlag) "${('a'.code+first-0x1f1e6).toChar()}${('a'.code+second-0x1f1e6).toChar()}" else ""
+                    val flag=if(hasFlag) MobileCountryFlags.bitmap(requireContext(),countryCode) else null
+                    val badge=ImageView(requireContext()).apply {
+                        if(flag!=null) {
+                            setImageBitmap(flag);scaleType=ImageView.ScaleType.FIT_XY
+                            contentDescription="Country flag: ${countryCode.uppercase(java.util.Locale.ROOT)}"
+                        } else {
+                            setImageResource(R.drawable.ic_mobile_globe)
+                            imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.muted)
+                            setPadding(dp(5),dp(5),dp(5),dp(5))
+                        }
+                    }
                     badge.background=badgeBackground;badge.clipToOutline=true
                     row.addView(badge,LinearLayout.LayoutParams(dp(38),dp(38)).apply { marginStart=dp(10) })
                     val labels = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(9), dp(8), dp(9)) }
@@ -223,7 +236,8 @@ class MobileHomeFragment : ToolbarFragment() {
                 rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
                 box.addView(rows)
                 box.layoutTransition=android.animation.LayoutTransition().apply { setDuration(180) }
-                column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(16) })
+                column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=if(firstGroup) 0 else dp(16) })
+                firstGroup = false
             }
             if(groups.all { it.second.isEmpty() && !it.first.isSubscription }) {
                 column.addView(View(requireContext()), LinearLayout.LayoutParams(-1,0,1f))
