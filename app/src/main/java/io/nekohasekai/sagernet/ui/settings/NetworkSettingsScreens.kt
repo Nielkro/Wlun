@@ -43,6 +43,12 @@ class InboundSettingsFragment : SettingsScreenFragment(R.xml.settings_inbound) {
         val auth = pref<SwitchPreference>(SettingsRegistry.INBOUND_AUTH.key)
         val user = pref<EditTextPreference>(SettingsRegistry.INBOUND_USER.key)
         val pass = pref<EditTextPreference>(SettingsRegistry.INBOUND_PASS.key)
+        findPreference<Preference>("qmobileResetSocks")?.setOnPreferenceClickListener {
+            DataStore.inboundUser = "qthrone_"+java.util.UUID.randomUUID().toString().take(8)
+            DataStore.inboundPass = java.util.UUID.randomUUID().toString().replace("-", "")
+            user.text=DataStore.inboundUser;pass.text=DataStore.inboundPass
+            needReload();true
+        }
         val appendHttpProxy = pref<SwitchPreference>(Key.APPEND_HTTP_PROXY)
         val httpProxyBypass = pref<EditTextPreference>(Key.HTTP_PROXY_BYPASS)
         val dnsInPort = pref<EditTextPreference>(SettingsRegistry.CORE_DNS_IN_PORT.key)

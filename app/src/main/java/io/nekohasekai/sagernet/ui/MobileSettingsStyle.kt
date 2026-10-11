@@ -15,7 +15,19 @@ object MobileSettingsStyle {
         fun compact(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val preference = group.getPreference(i)
-                if (fragment is app.qthrone.mobile.ui.settings.SettingsScreenFragment) preference.icon = null
+                if (fragment !is SettingsPreferenceFragment) preference.icon = null
+                else if(preference !is PreferenceCategory) {
+                    val icon=when {
+                        preference.fragment?.contains("Appearance")==true -> app.qthrone.mobile.R.drawable.ic_mobile_color
+                        preference.fragment?.contains("Testing")==true -> app.qthrone.mobile.R.drawable.ic_mobile_test
+                        preference.key=="qmobileRouting" -> app.qthrone.mobile.R.drawable.ic_mobile_route
+                        preference.fragment?.contains("Dns")==true -> app.qthrone.mobile.R.drawable.ic_mobile_globe
+                        preference.fragment?.contains("Subscription")==true -> app.qthrone.mobile.R.drawable.ic_mobile_refresh
+                        preference.key=="qmobileUpdate" -> app.qthrone.mobile.R.drawable.ic_mobile_refresh
+                        else -> app.qthrone.mobile.R.drawable.ic_mobile_settings
+                    }
+                    preference.setIcon(icon)
+                }
                 preference.isIconSpaceReserved = preference.icon != null
                 if (preference is androidx.preference.PreferenceGroup) compact(preference)
             }
@@ -35,7 +47,25 @@ object MobileSettingsStyle {
         fun style(view: View) {
             val position=list.getChildAdapterPosition(view)
             if(position==RecyclerView.NO_POSITION) return
-            val category=(list.adapter as? PreferenceGroupAdapter)?.getItem(position) is PreferenceCategory
+            val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
+            val category=preference is PreferenceCategory
+            if(preference?.key in listOf("inbound_user","inbound_pass")) {
+                val container=view as? android.view.ViewGroup
+                if(container!=null && container.findViewWithTag<View>("socks-copy")==null) {
+                    val widget=container.findViewById<android.view.ViewGroup>(android.R.id.widget_frame)
+                    widget?.visibility=View.VISIBLE
+                    widget?.addView(android.widget.ImageButton(list.context).apply {
+                        tag="socks-copy";contentDescription=list.context.getString(app.qthrone.mobile.R.string.action_copy)
+                        setImageResource(app.qthrone.mobile.R.drawable.ic_mobile_clipboard)
+                        imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+                        setBackgroundColor(Color.TRANSPARENT)
+                        setOnClickListener {
+                            val value=if(preference?.key=="inbound_user") app.qthrone.mobile.database.DataStore.inboundUser else app.qthrone.mobile.database.DataStore.inboundPass
+                            app.qthrone.mobile.SagerNet.trySetPrimaryClip(value)
+                        }
+                    },android.view.ViewGroup.LayoutParams((40*density).toInt(),(40*density).toInt()))
+                }
+            }
             view.background=android.graphics.drawable.GradientDrawable().apply {
                 setColor(if(category) MobilePalette.background else MobilePalette.surface)
                 cornerRadius=16*density

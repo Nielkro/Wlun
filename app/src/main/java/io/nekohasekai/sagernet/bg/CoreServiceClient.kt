@@ -46,7 +46,7 @@ object CoreServiceClient {
     }
 
     /** Binds for the duration of [block]; for one-shot calls such as `groupAction` or `warpRegister`. */
-    suspend fun <T> call(block: (ICoreService) -> T): T = withService { service -> block(service) }
+    suspend fun <T> call(block: suspend (ICoreService) -> T): T = withService { service -> block(service) }
 
     /**
      * Keeps a binding until the returned function is called; [onConnected] runs on every (re)connection,

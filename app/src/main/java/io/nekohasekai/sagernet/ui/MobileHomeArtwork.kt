@@ -51,8 +51,9 @@ class MobilePowerArtwork(private val accent: Int) : Drawable() {
         paint.strokeWidth=r*.04f
         paint.color=if(connected) accent else MobilePalette.muted
         val glyph=r*.17f
-        canvas.drawArc(RectF(cx-glyph,cy-glyph,cx+glyph,cy+glyph),-45f,270f,false,paint)
-        canvas.drawLine(cx,cy-glyph*1.25f,cx,cy-glyph*.1f,paint)
+        val glyphY=if(connected) cy-r*.2f else cy
+        canvas.drawArc(RectF(cx-glyph,glyphY-glyph,cx+glyph,glyphY+glyph),-45f,270f,false,paint)
+        canvas.drawLine(cx,glyphY-glyph*1.25f,cx,glyphY-glyph*.1f,paint)
     }
     override fun setAlpha(alpha: Int) { }
     override fun setColorFilter(colorFilter: ColorFilter?) { }

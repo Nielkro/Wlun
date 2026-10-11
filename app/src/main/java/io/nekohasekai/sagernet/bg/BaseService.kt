@@ -97,6 +97,8 @@ class BaseService {
 
         fun changeState(s: State, msg: String? = null) {
             if (state == s && msg == null) return
+            if(s == State.Connected) DataStore.mobileConnectedAt = SystemClock.elapsedRealtime()
+            else if(s == State.Stopped) DataStore.mobileConnectedAt = 0L
             state = s
             DataStore.serviceState = s
             binder.stateChanged(s, msg)

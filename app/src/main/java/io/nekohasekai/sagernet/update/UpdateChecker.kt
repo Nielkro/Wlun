@@ -81,9 +81,10 @@ object UpdateChecker {
     private fun find(context: Context): Result {
         val client = httpClient()
         val allowBeta = DataStore.allowBetaUpdate
+        val allowDev = DataStore.configurationStore.getBoolean("qmobileDevUpdates",false)
         val installed = Semver.parse(BuildConfig.VERSION_NAME)
         val candidates = fetchReleases(context, client)
-            .filter { allowBeta || !it.prerelease }
+            .filter { release -> val dev=release.tag.contains("dev",ignoreCase=true);if(dev) allowDev else allowBeta || !release.prerelease }
             .mapNotNull { release -> Semver.parse(release.tag)?.let { release to it } }
             .filter { (release, version) -> release.assets.any { it.name == MANIFEST || it.name == LEGACY_MANIFEST } || installed == null || Semver.compare(version, installed) > 0 }
             .sortedWith { a, b -> Semver.compare(b.second, a.second) }

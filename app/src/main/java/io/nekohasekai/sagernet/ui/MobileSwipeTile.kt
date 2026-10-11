@@ -1,5 +1,9 @@
 package app.qthrone.mobile.ui
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
+import android.graphics.Canvas
 import android.content.Context
 import android.view.MotionEvent
 import android.view.View
@@ -10,6 +14,7 @@ import kotlin.math.abs
 
 /** Horizontal swipe reveals actions; vertical drags continue scrolling the subscription list. */
 class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View):FrameLayout(context) {
+    private var settling: ValueAnimator? = null
     var onOpened: ((MobileSwipeTile) -> Unit)? = null
     private val primaryActions=listOf(test,share)
     private val actionWidth=64*resources.displayMetrics.density
@@ -18,7 +23,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         addActions(choices.toList())
         widthPx=actionWidth*choices.size
         left.layoutParams=left.layoutParams.apply { width=widthPx.toInt() }
-        row.animate().translationX(widthPx*direction).setDuration(180).start()
+        settle(widthPx*direction)
     }
     private fun addActions(actions: List<View>) {
         actions.forEachIndexed { index, action ->
@@ -35,7 +40,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
     fun closeActions() {
         left.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-        row.animate().translationX(0f).setDuration(180).withEndAction { left.visibility=View.INVISIBLE; right.visibility=View.INVISIBLE;restoreActions() }.start()
+        settle(0f)
     }
     private var widthPx=actionWidth*2
     private val slop=ViewConfiguration.get(context).scaledTouchSlop
@@ -56,8 +61,49 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         left.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }
+    private fun settle(target: Float) {
+        settling?.cancel()
+        val animation=ValueAnimator.ofFloat(row.translationX,target)
+        settling=animation
+        animation.duration=280
+        animation.interpolator=android.view.animation.PathInterpolator(.2f,0f,.15f,1f)
+        animation.addUpdateListener {
+            row.translationX=it.animatedValue as Float
+            val offset=row.translationX*direction
+            left.visibility=if(offset>0f) View.VISIBLE else View.INVISIBLE
+            right.visibility=if(offset<0f) View.VISIBLE else View.INVISIBLE
+            invalidate()
+        }
+        animation.addListener(object: AnimatorListenerAdapter() {
+            private var cancelled=false
+            override fun onAnimationCancel(animation: Animator) { cancelled=true }
+            override fun onAnimationEnd(animation: Animator) {
+                if(cancelled) return
+                if(target==0f) restoreActions()
+                if(settling===animation) settling=null
+                invalidate()
+            }
+        })
+        animation.start()
+    }
+    override fun drawChild(canvas: Canvas, child: View, drawingTime: Long): Boolean {
+        if(child===row) return super.drawChild(canvas,child,drawingTime)
+        val offset=row.translationX
+        if((child===left && offset*direction<=0f) || (child===right && offset*direction>=0f)) return false
+        val save=canvas.save()
+        val revealLeft=(child===left && direction>0f) || (child===right && direction<0f)
+        if(revealLeft) canvas.clipRect(0f,0f,(row.left+offset-.5f).coerceAtLeast(0f),height.toFloat())
+        else canvas.clipRect((row.right+offset+.5f).coerceAtMost(width.toFloat()),0f,width.toFloat(),height.toFloat())
+        val drawn=super.drawChild(canvas,child,drawingTime)
+        canvas.restoreToCount(save)
+        return drawn
+    }
+    override fun onDetachedFromWindow() {
+        settling?.cancel();settling=null
+        super.onDetachedFromWindow()
+    }
     override fun onInterceptTouchEvent(e:MotionEvent):Boolean {
-        if(e.actionMasked==MotionEvent.ACTION_DOWN) { row.animate().cancel(); downX=e.x;downY=e.y;initial=row.translationX*direction;dragging=false; touchedRow=e.x>=row.translationX && e.x<row.translationX+row.width; if(initial!=0f && touchedRow) return true }
+        if(e.actionMasked==MotionEvent.ACTION_DOWN) { settling?.cancel(); settling=null; downX=e.x;downY=e.y;initial=row.translationX*direction;dragging=false; touchedRow=e.x>=row.translationX && e.x<row.translationX+row.width; if(initial!=0f && touchedRow) return true }
         if(e.actionMasked==MotionEvent.ACTION_MOVE && abs(e.x-downX)>slop && abs(e.x-downX)>abs(e.y-downY)) {
             dragging=true;parent.requestDisallowInterceptTouchEvent(true);return true
         }
@@ -72,6 +118,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
                 left.visibility=if(offset>0) View.VISIBLE else View.INVISIBLE
                 right.visibility=if(offset<0) View.VISIBLE else View.INVISIBLE
                 row.translationX=offset*direction
+                invalidate()
             }
             MotionEvent.ACTION_UP,MotionEvent.ACTION_CANCEL -> {
                 val x=row.translationX*direction
@@ -79,11 +126,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
                 if(end!=0f) onOpened?.invoke(this)
                 left.importantForAccessibility=if(end>0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                 right.importantForAccessibility=if(end<0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-                row.animate().translationX(end*direction).setDuration(180).withEndAction {
-                    left.visibility=if(end>0) View.VISIBLE else View.INVISIBLE
-                    right.visibility=if(end<0) View.VISIBLE else View.INVISIBLE
-                    if(end==0f) restoreActions()
-                }.start()
+                settle(end*direction)
                 parent.requestDisallowInterceptTouchEvent(false)
             }
         }

@@ -5,7 +5,7 @@ import app.qthrone.mobile.outbound.types.Qwdtt
 
 /** Keeps the actual native profile type while using the existing complete JSON editor. */
 class NativeTransportSettingsActivity:BindingSettingsActivity<Outbound>() {
-    override fun createEntity():Outbound=Qwdtt()
+    override fun createEntity():Outbound=app.qthrone.mobile.outbound.OutboundFactory.newByType(intent.getStringExtra("qmobileProfileType") ?: proxyEntity?.type ?: "qwdtt")
     override val preferencesResource=R.xml.native_transport_preferences
     init { pbm.text("name") }
 }

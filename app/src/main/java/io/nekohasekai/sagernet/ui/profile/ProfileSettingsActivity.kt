@@ -134,7 +134,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
             DataStore.editingId = editingId
             runOnDefaultDispatcher {
                 if (editingId == 0L) {
-                    DataStore.editingGroup = DataStore.currentGroupId()
+                    DataStore.editingGroup = app.qthrone.mobile.database.GroupRepo.serverListId()
                     editingOutbound = createEntity()
                 } else {
                     val entity = proxyEntity
@@ -323,6 +323,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
+            app.qthrone.mobile.ui.MobileSettingsStyle.apply(this,view)
 
             ViewCompat.setOnApplyWindowInsetsListener(listView, ListListener)
 

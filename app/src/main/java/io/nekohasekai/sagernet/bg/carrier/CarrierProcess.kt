@@ -32,9 +32,11 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 /** Native client owner. Config contents and provider output must never enter application logs. */
 class CarrierProcess private constructor(private val process: Process, private val config: File) : AutoCloseable {
     private val closed = AtomicBoolean(false)
+    private val captcha=CarrierCaptchaBridge(process)
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        captcha.close()
         runCatching { process.outputStream.write("STOP\n".toByteArray()); process.outputStream.flush() }
         runCatching { process.outputStream.close() }
         // Let the Go wrapper shut down its Rust child before sending SIGTERM.
@@ -86,13 +88,14 @@ class CarrierProcess private constructor(private val process: Process, private v
                 val running = CarrierProcess(child, config)
                 owner = running
                 // Drain both streams without retaining provider messages, tokens or URLs.
-                Thread({ runCatching { child.inputStream.use { input ->
-                    val buffer = ByteArray(4096)
-                    while (input.read(buffer) >= 0) { }
+                Thread({ runCatching { child.inputStream.bufferedReader().use { input ->
+                    input.forEachLine { running.captcha.accept(it) }
                 } } }, "qThrone-carrier-output").apply { isDaemon = true; start() }
-                val deadline = System.nanoTime() + timeoutMs * 1_000_000
+                var deadline = System.nanoTime() + timeoutMs * 1_000_000
+                var captchaWaitAdded=false
                 while (System.nanoTime() < deadline) {
                     coroutineContext.ensureActive()
+                    if(!captchaWaitAdded && running.captcha.waiting) { deadline+=120_000_000_000L;captchaWaitAdded=true }
                     val exited = try { child.exitValue(); true } catch (_: IllegalThreadStateException) { false }
                     check(!exited) { "Transport client stopped before becoming ready" }
                     if (socksReady(socksPort, bridgeCredentials)) return@withContext running

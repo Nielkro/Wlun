@@ -55,7 +55,7 @@ class ServiceNotification(
         const val ACTION_NEXT = "next"
         const val ACTION_SWITCH = "switch"
         const val ACTION_RESET = "reset"
-        val DEFAULT_ACTIONS = listOf(ACTION_STOP, ACTION_NEXT, ACTION_SWITCH)
+        val DEFAULT_ACTIONS = listOf(ACTION_STOP)
         private val ACTION_ORDER = listOf(ACTION_STOP, ACTION_PREVIOUS, ACTION_NEXT, ACTION_SWITCH, ACTION_RESET)
 
         fun notificationActions(): List<String> {

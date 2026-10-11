@@ -37,6 +37,9 @@ class MobileHomeFragment : ToolbarFragment() {
     private val muted get() = MobilePalette.muted
     private var content: LinearLayout? = null
     private var power: TextView? = null
+    private var currentCheck: TextView? = null
+    private var powerPulse: android.animation.ObjectAnimator?=null
+    private var pulseTarget: View?=null
     private var load: Job? = null
     private val latencyViews=mutableMapOf<Long,FrameLayout>()
     private val collapsed = mutableSetOf<Long>()
@@ -59,6 +62,18 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun iconAction(icon: Int, description: String, color: Int = Color.TRANSPARENT, callback: () -> Unit) = ImageButton(requireContext()).apply {
         setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.text); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
         contentDescription=description; setOnClickListener { callback() }
+    }
+    private fun View.showUpdating(updating: Boolean) {
+        if(!updating) return
+        val spin=android.animation.ObjectAnimator.ofFloat(this,View.ROTATION,0f,360f).apply {
+            duration=900;repeatCount=android.animation.ValueAnimator.INFINITE
+            interpolator=android.view.animation.LinearInterpolator()
+        }
+        addOnAttachStateChangeListener(object: View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(view: View) { spin.start() }
+            override fun onViewDetachedFromWindow(view: View) { spin.cancel();view.rotation=0f }
+        })
+        if(isAttachedToWindow) spin.start()
     }
     private fun host() = requireActivity() as MainActivity
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
@@ -83,7 +98,16 @@ class MobileHomeFragment : ToolbarFragment() {
             override fun onInvalidated(tables: Set<String>) { activity?.runOnUiThread { refresh() } }
         }.also { SagerDatabase.instance.invalidationTracker.addObserver(it) }
         viewLifecycleOwner.lifecycleScope.launch { SubscriptionClient.states.collect { refresh() } }
-        viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.state.collect { updateLatencies() } }
+        viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.state.collect {
+            updateLatencies()
+            if(it.testCurrent && !it.running && it.ok>0) {
+                val ping=it.rows.values.firstOrNull { row -> row.ok && row.latency>0 }?.latency
+                if(ping!=null) currentCheck?.text="$ping ms"
+            }
+        } }
+        viewLifecycleOwner.lifecycleScope.launch {
+            while(true) { updateState(); kotlinx.coroutines.delay(1000) }
+        }
     }
     override fun onSaveInstanceState(outState: Bundle) {
         outState.putLongArray("collapsedGroups", collapsed.toLongArray())
@@ -92,7 +116,7 @@ class MobileHomeFragment : ToolbarFragment() {
     override fun onResume() { super.onResume(); refresh() }
     override fun onDestroyView() {
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
-        observer = null; load?.cancel(); content = null; power = null
+        observer = null; load?.cancel(); content = null; powerPulse?.cancel();powerPulse=null;pulseTarget=null; power = null
         openSwipe=null
         super.onDestroyView()
     }
@@ -134,7 +158,17 @@ class MobileHomeFragment : ToolbarFragment() {
             imports.addView(importButton(getString(R.string.qmobile_clipboard), R.drawable.ic_mobile_clipboard) { importClipboard() }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
             imports.addView(importButton(getString(R.string.qmobile_qr), R.drawable.ic_mobile_qr) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
             val hasServers = groups.any { it.second.isNotEmpty() || it.first.isSubscription }
-            if (hasServers) column.addView(MobileSeasonalView(requireContext()), LinearLayout.LayoutParams(-1,dp(64)))
+            if (hasServers) {
+                val above=FrameLayout(requireContext())
+                above.addView(MobileSeasonalView(requireContext()),FrameLayout.LayoutParams(-1,dp(64)))
+                currentCheck=text(getString(R.string.qmobile_check_connection),12f,muted).apply {
+                    maxLines=2;setPadding(dp(2),0,dp(4),dp(8));gravity=Gravity.BOTTOM
+                    setOnClickListener { if(!TestSessionClient.state.value.running) TestSessionClient.startCurrent(TestSpec.KIND_URL) }
+                }
+                above.addView(currentCheck,FrameLayout.LayoutParams(dp(160),dp(48),Gravity.START or Gravity.BOTTOM))
+                column.addView(above,LinearLayout.LayoutParams(-1,dp(64)))
+                updateState()
+            } else currentCheck=null
             var firstGroup = true
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
@@ -156,7 +190,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     arrow.animate().rotation(if(group.id in collapsed) 0f else 90f).setDuration(180).start()
                 }
                 title.addView(heading,LinearLayout.LayoutParams(0,-2,1f))
-                if (group.isSubscription) title.addView(iconAction(R.drawable.ic_mobile_refresh,getString(R.string.qmobile_refresh)) { SubscriptionClient.refreshGroup(group.id,false) }.apply { isEnabled=!SubscriptionClient.states.value.containsKey(group.id); alpha=if(isEnabled) 1f else .4f },LinearLayout.LayoutParams(dp(44),dp(48)))
+                if (group.isSubscription) title.addView(iconAction(R.drawable.ic_mobile_refresh,getString(R.string.qmobile_refresh)) { SubscriptionClient.refreshGroup(group.id,false) }.apply { isEnabled=!SubscriptionClient.states.value.containsKey(group.id); alpha=1f;showUpdating(!isEnabled) },LinearLayout.LayoutParams(dp(44),dp(48)))
                 title.addView(iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests)) { testMenu(profiles.map { it.id }.toLongArray(),group.displayName(),group.id) },LinearLayout.LayoutParams(dp(44),dp(48)))
                 lateinit var more: ImageButton
                 more=iconAction(R.drawable.ic_mobile_more,getString(R.string.qmobile_more)) { groupMenu(group,more) }
@@ -224,7 +258,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     row.addView(latency,LinearLayout.LayoutParams(dp(62),dp(32)))
                     row.addView(ImageView(requireContext()).apply { setImageResource(R.drawable.ic_mobile_chevron); setPadding(dp(6),dp(6),dp(6),dp(6)); contentDescription=getString(R.string.qmobile_edit); setOnClickListener { startActivity(profile.profileSettingsIntent(requireContext(),group.isSubscription)) } },LinearLayout.LayoutParams(dp(32),dp(32)))
                     val swipe = MobileSwipeTile(requireContext(), row,
-                        iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests),Color.rgb(36,171,85)) { testMenu(longArrayOf(profile.id),profile.displayName(),group.id) },
+                        iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests),Color.rgb(36,171,85)) { openSwipe?.closeActions(); testMenu(longArrayOf(profile.id),profile.displayName(),group.id) },
                         iconAction(R.drawable.ic_mobile_share,getString(R.string.qmobile_share),Color.rgb(60,132,190)) { shareProfile(profile) },
                         iconAction(R.drawable.ic_mobile_delete,getString(R.string.qmobile_delete),Color.rgb(220,66,61)) {
                             viewLifecycleOwner.lifecycleScope.launch {
@@ -254,6 +288,28 @@ class MobileHomeFragment : ToolbarFragment() {
         power?.contentDescription = getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
         power?.setTextColor(if (state.connected) Color.rgb(128,192,139) else blue)
         (power?.background as? MobilePowerArtwork)?.connected=state.connected
+        currentCheck?.visibility=if(state.connected) View.VISIBLE else View.GONE
+        val button=power
+        if(!state.connected || pulseTarget!==button) {
+            powerPulse?.cancel();powerPulse=null;pulseTarget=null
+            button?.scaleX=1f;button?.scaleY=1f
+        }
+        if(state.connected && button!=null && powerPulse==null) {
+            pulseTarget=button
+            powerPulse=android.animation.ObjectAnimator.ofPropertyValuesHolder(button,
+                android.animation.PropertyValuesHolder.ofFloat(View.SCALE_X,.995f,1.015f),
+                android.animation.PropertyValuesHolder.ofFloat(View.SCALE_Y,.995f,1.015f)).apply {
+                duration=1800;repeatCount=android.animation.ValueAnimator.INFINITE;repeatMode=android.animation.ValueAnimator.REVERSE
+                interpolator=android.view.animation.AccelerateDecelerateInterpolator();start()
+            }
+        }
+        power?.apply {
+            textSize=13f;gravity=Gravity.CENTER;setPadding(0,dp(75),0,0)
+            text=if(state.connected) {
+                val seconds=((android.os.SystemClock.elapsedRealtime()-DataStore.mobileConnectedAt)/1000).coerceAtLeast(0)
+                getString(R.string.qmobile_connected)+"\n"+String.format(java.util.Locale.ROOT,"%02d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60)
+            } else ""
+        }
     }
     private fun updateLatencies() {
         val state=TestSessionClient.state.value
@@ -261,7 +317,8 @@ class MobileHomeFragment : ToolbarFragment() {
             val result=state.rows[id]
             val busy=state.running && result != null && result.phase != app.qthrone.mobile.ui.test.RowPhase.DONE
             val latency=result?.takeIf { it.ok }?.latency ?: (holder.tag as? Int ?: 0)
-            val label=if(result?.failed==true) "н/д" else if(latency>0) "$latency ms" else ""
+            val unavailable=result?.failed==true || (result?.error?.isNotEmpty()==true && !ProxyEntity.isTestAborted(result.error))
+            val label=if(unavailable) "н/д" else if(latency>0) "$latency ms" else ""
             val marker=if(busy) "busy" else label
             if(holder.contentDescription?.toString()==marker) return@forEach
             holder.contentDescription=marker
@@ -269,7 +326,7 @@ class MobileHomeFragment : ToolbarFragment() {
             if(busy) holder.addView(ProgressBar(requireContext()).apply {
                 indeterminateTintList=android.content.res.ColorStateList.valueOf(blue)
             },FrameLayout.LayoutParams(dp(20),dp(20),Gravity.CENTER))
-            else holder.addView(text(label,12f,if(result?.failed==true) muted else Color.rgb(128,192,139)).apply {
+            else holder.addView(text(label,12f,if(unavailable) muted else Color.rgb(128,192,139)).apply {
                 gravity=Gravity.CENTER;setPadding(0,0,0,0)
                 alpha=0f;animate().alpha(1f).setDuration(180).start()
             },FrameLayout.LayoutParams(-1,-1))
@@ -349,8 +406,48 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     private fun addMenu(anchor: View) {
         val popup = android.widget.PopupMenu(requireContext(), anchor)
+        popup.menu.add(getString(R.string.grp_add_subscription)).setOnMenuItemClickListener { addSubscription();true }
         popup.menu.add(getString(R.string.qmobile_clipboard)).setOnMenuItemClickListener { importClipboard(); true }
         popup.menu.add(getString(R.string.qmobile_qr)).setOnMenuItemClickListener { startActivity(Intent(requireContext(), ScannerActivity::class.java)); true }
+        popup.menu.add(getString(R.string.qmobile_manual)).setOnMenuItemClickListener { manualProfile();true }
+        popup.menu.add(getString(R.string.qmobile_paste_json)).setOnMenuItemClickListener { importClipboard();true }
+        popup.menu.add(getString(R.string.qmobile_copy_json)).setOnMenuItemClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val json=withContext(Dispatchers.IO) {
+                    org.json.JSONArray().apply { SagerDatabase.proxyDao.getAll().forEach { put(org.json.JSONObject(it.outbound.exportToJson().toCompact())) } }.toString(2)
+                }
+                SagerNet.trySetPrimaryClip(json)
+            };true
+        }
         popup.show()
+    }
+    private fun addSubscription() {
+        val sheet=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(20),dp(20),dp(28));setBackgroundColor(surface) }
+        body.addView(text(getString(R.string.grp_add_subscription),20f).apply { setTypeface(null,Typeface.BOLD) })
+        val name=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_name);setTextColor(MobilePalette.text);setHintTextColor(muted);isSingleLine=true }
+        val url=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_url);setTextColor(MobilePalette.text);setHintTextColor(muted);isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI }
+        body.addView(name);body.addView(url)
+        body.addView(action(getString(R.string.qmobile_save)) {
+            val address=url.text.toString().trim()
+            if(!address.startsWith("https://") && !address.startsWith("http://")) { url.error=getString(R.string.qmobile_subscription_url);return@action }
+            viewLifecycleOwner.lifecycleScope.launch {
+                SubscriptionClient.subscribeUrl(address,name.text.toString().trim().ifBlank { android.net.Uri.parse(address).host.orEmpty() },true)
+                sheet.dismiss()
+            }
+        })
+        sheet.setContentView(body);sheet.show()
+    }
+    private fun manualProfile() {
+        val sheet=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(24));setBackgroundColor(surface) }
+        body.addView(text(getString(R.string.qmobile_manual),20f).apply { setTypeface(null,Typeface.BOLD) })
+        for(type in listOf("qwdtt","csqtt","openflux","olcrtc","vless","vmess","trojan","shadowsocks","socks","http","wireguard","hysteria","tuic","custom")) {
+            body.addView(action(type.uppercase(java.util.Locale.ROOT)) {
+                sheet.dismiss()
+                startActivity(Intent(requireContext(),app.qthrone.mobile.ui.profile.settingsActivityFor(type)).putExtra("qmobileProfileType",type))
+            })
+        }
+        sheet.setContentView(ScrollView(requireContext()).apply { addView(body) });sheet.show()
     }
 }

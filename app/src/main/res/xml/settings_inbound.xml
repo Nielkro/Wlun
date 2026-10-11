@@ -38,16 +38,17 @@
             app:icon="@drawable/ic_baseline_lock_24"
             app:key="inbound_auth"
             app:summary="@string/inbound_auth_sum"
-            app:title="@string/inbound_auth" />
+            app:title="@string/qmobile_socks_auth" />
         <EditTextPreference
             app:key="inbound_user"
-            app:title="@string/username"
+            app:title="@string/qmobile_socks_user"
             app:useSimpleSummaryProvider="true" />
         <EditTextPreference
             app:key="inbound_pass"
-            app:title="@string/password" />
+            app:title="@string/qmobile_socks_pass" />
     </PreferenceCategory>
 
+    <Preference app:key="qmobileResetSocks" app:title="@string/qmobile_socks_reset" />
     <PreferenceCategory app:title="@string/cag_advanced">
         <EditTextPreference
             app:dialogMessage="@string/dns_in_port_dialog_message"

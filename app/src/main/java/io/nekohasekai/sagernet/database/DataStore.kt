@@ -73,6 +73,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var nightTheme by configurationStore.stringToInt(Key.NIGHT_THEME) { 1 }
     var amoledTheme by configurationStore.boolean(Key.AMOLED_THEME)
     var appLanguage by configurationStore.string(Key.APP_LANGUAGE) { "" }
+    var mobileConnectedAt by configurationStore.long("mobile_connected_at")
     var seasonalDecoration by configurationStore.string("seasonal_decoration") { "halloween" }
     var mobilePinnedGroups by configurationStore.string("mobile_pinned_groups") { "" }
 

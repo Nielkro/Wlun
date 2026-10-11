@@ -79,6 +79,7 @@ class MainActivity : ThemedActivity(),
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        captchaController=MobileCaptchaController(this)
         MessageStore.setCurrentActivity(this)
         val animateInitialControls = savedInstanceState == null
 
@@ -514,7 +515,21 @@ class MainActivity : ThemedActivity(),
     private val wifiFlow = WifiPermissionFlow(this)
 
     fun toggleService() {
-        if (DataStore.serviceState.canStop) SagerNet.stopService() else startFromUi()
+        if (DataStore.serviceState.canStop) SagerNet.stopService() else {
+            lifecycleScope.launch {
+                app.qthrone.mobile.ui.test.TestSessionClient.stop()
+                val ready=kotlinx.coroutines.withTimeoutOrNull(5000) {
+                    withContext(Dispatchers.IO) {
+                        app.qthrone.mobile.bg.CoreServiceClient.call { service ->
+                            service.stopTests()
+                            while(service.runningTestSession()!=0) kotlinx.coroutines.delay(50)
+                        }
+                    }
+                    true
+                } == true
+                if(ready && !DataStore.serviceState.canStop) startFromUi()
+            }
+        }
     }
 
     /** Wi-Fi rules of the current route profile ask for location access once before a start from here. */
@@ -595,7 +610,10 @@ class MainActivity : ThemedActivity(),
         super.onStop()
     }
 
+    private var captchaController: MobileCaptchaController?=null
+
     override fun onDestroy() {
+        captchaController?.close();captchaController=null
         super.onDestroy()
         DataStore.configurationStore.unregisterChangeListener(this)
         connection.disconnect(this)
