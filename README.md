@@ -1,8 +1,8 @@
 # qThroneMobile
 
-Кроссплатформенный клиент для управления прокси на Qt с ядрами [sing-box](https://github.com/SagerNet/sing-box) и [Xray](https://github.com/XTLS/Xray-core).
+Android-клиент для управления прокси с ядрами [sing-box](https://github.com/SagerNet/sing-box) и [Xray](https://github.com/XTLS/Xray-core).
 
-Форк [qThroneMobile](https://github.com/throneproj/ThroneForAndroid) с поддержкой протоколов qWDTT,CSQTT,olcRTC,OpenFlux, а также DNSTT (в планах на ближайшее время).
+Форк [ThroneForAndroid](https://github.com/throneproj/ThroneForAndroid) с поддержкой протоколов qWDTT,CSQTT,olcRTC,OpenFlux, а также DNSTT (в планах на ближайшее время).
 
 ## Поддерживаемые протоколы
 
