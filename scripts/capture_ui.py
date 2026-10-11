@@ -19,7 +19,18 @@ def capture(name):
 
 def screen_xml():
     shell('uiautomator', 'dump', '/sdcard/qthrone-preview.xml')
-    return shell('cat', '/sdcard/qthrone-preview.xml')
+    xml = shell('cat', '/sdcard/qthrone-preview.xml')
+    # Google emulator launcher can ANR during boot; never suppress an app ANR.
+    if "Pixel Launcher isn't responding" in xml:
+        (out / 'launcher-anr.xml').write_text(xml)
+        for node in ET.fromstring(xml).iter('node'):
+            if node.get('resource-id') == 'android:id/aerr_close':
+                x1,y1,x2,y2=map(int,re.findall(r'\d+',node.attrib['bounds']))
+                shell('input','tap',str((x1+x2)//2),str((y1+y2)//2))
+                time.sleep(3)
+                shell('uiautomator','dump','/sdcard/qthrone-preview.xml')
+                return shell('cat','/sdcard/qthrone-preview.xml')
+    return xml
 
 def tap_text(text):
     xml = screen_xml()
@@ -43,6 +54,7 @@ shell('logcat', '-c')
 time.sleep(3)
 shell('am', 'start', '-n', activity)
 time.sleep(8)
+screen_xml()
 capture('01-home-empty')
 tap_text('Settings')
 capture('03-settings')
