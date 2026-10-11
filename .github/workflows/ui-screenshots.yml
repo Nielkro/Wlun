@@ -11,6 +11,10 @@ on:
         description: APK artifact to test (debug or signed release)
         required: true
         default: qThroneMobile-debug
+      full_ui:
+        description: Capture every settings screen before the VPN checks
+        type: boolean
+        default: true
 permissions:
   contents: read
   actions: read
@@ -60,6 +64,7 @@ jobs:
           test -n "$PACKAGE"
           "$ANDROID_HOME/platform-tools/adb" shell dumpsys package "$PACKAGE" | grep -F 'primaryCpuAbi=x86_64'
       - name: Capture real application screens
+        if: ${{ inputs.full_ui }}
         env:
           ADB: ${{ env.ANDROID_HOME }}/platform-tools/adb
         run: python3 scripts/capture_ui.py
