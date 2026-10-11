@@ -87,6 +87,12 @@ object ProfileValidator {
             return Verdict.VALID
         }
 
+        if(outbound is app.qthrone.mobile.bg.carrier.NativeCarrier) {
+            return try {
+                app.qthrone.mobile.bg.carrier.CarrierPlan.qwdtt(profile.id,outbound)
+                Verdict.VALID
+            } catch(_:IllegalArgumentException) { invalid("Invalid native transport configuration") }
+        }
         var fullConfig = false
         var conf = jsonObjectOf()
         if (outbound is Custom) {

@@ -269,6 +269,7 @@
             android:name="app.qthrone.mobile.ui.AutoSelectorStatusActivity"
             android:configChanges="uiMode"
             android:parentActivityName="app.qthrone.mobile.ui.MainActivity" />
+        <activity android:name="app.qthrone.mobile.ui.profile.NativeTransportSettingsActivity" android:exported="false" />
         <activity
             android:name="app.qthrone.mobile.ui.profile.CustomSettingsActivity"
             android:configChanges="uiMode" />

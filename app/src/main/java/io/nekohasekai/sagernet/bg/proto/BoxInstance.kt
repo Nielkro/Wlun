@@ -28,7 +28,7 @@ abstract class BoxInstance(
     lateinit var core: CoreConfig
     lateinit var box: Instance
 
-    private val carrierProcesses = mutableListOf<app.qthrone.mobile.bg.carrier.CarrierProcess>()
+    private val carrierProcesses = mutableListOf<app.qthrone.mobile.bg.carrier.CarrierPool.Lease>()
 
     val boxOrNull: Instance? get() = if (::box.isInitialized) box else null
 
@@ -73,11 +73,7 @@ abstract class BoxInstance(
         }
         try {
             for(plan in config.carrierPlans) {
-                val context=app.qthrone.mobile.ktx.app
-                carrierProcesses.add(app.qthrone.mobile.bg.carrier.CarrierProcess.start(
-                    plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),
-                    java.io.File(context.cacheDir,"carriers"),android.os.Build.VERSION.SDK_INT,
-                    plan.privateJson,plan.port,plan.credentials))
+                carrierProcesses.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
             }
             loadConfig()
         } catch(error:Throwable) {

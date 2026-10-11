@@ -8,6 +8,7 @@ import app.qthrone.mobile.outbound.OutboundFactory
 /** The editor activity of a desktop profile type string ("custom" and unknown types open the raw JSON editor). */
 fun settingsActivityFor(type: String): Class<out ProfileSettingsActivity<*>> =
     when (OutboundFactory.canonicalType(type)) {
+        "qwdtt", "csqtt", "openflux", "olcrtc" -> NativeTransportSettingsActivity::class.java
         "socks" -> SocksSettingsActivity::class.java
         "http" -> HttpSettingsActivity::class.java
         "shadowsocks" -> ShadowsocksSettingsActivity::class.java

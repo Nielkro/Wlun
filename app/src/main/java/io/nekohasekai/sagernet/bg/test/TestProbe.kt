@@ -286,16 +286,15 @@ internal abstract class LatencySweep(protected val session: TestSession) {
             probe.profileIds.forEach { emit(ProbeResult(it, error = ERROR_ABORTED, measured = false)) }
             return null
         }
-        val transports=mutableListOf<app.qthrone.mobile.bg.carrier.CarrierProcess>()
+        val transports=mutableListOf<app.qthrone.mobile.bg.carrier.CarrierPool.Lease>()
         try {
             if(probe.carrierPlans.isNotEmpty()) {
-                check(!app.qthrone.mobile.database.DataStore.serviceState.started) {
-                    "Use the current connection test while VPN is active; separate native probes are not enabled yet"
+                check(!app.qthrone.mobile.database.DataStore.serviceState.started ||
+                    probe.carrierPlans.all { app.qthrone.mobile.bg.carrier.CarrierPool.isActive(it) } ||
+                    app.qthrone.mobile.database.DataStore.baseService?.data?.proxy?.config?.carrierPlans?.isNotEmpty()==true) {
+                    "Stop the current VPN before testing a new native transport; this VPN does not bypass native sockets"
                 }
-                val context=app.qthrone.mobile.ktx.app
-                for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierProcess.start(
-                    plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),java.io.File(context.cacheDir,"carriers"),
-                    android.os.Build.VERSION.SDK_INT,plan.privateJson,plan.port,plan.credentials))
+                for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
             }
             session.awaitCore { done -> start(probe, batch, emit, done) }
         } catch (e: CancellationException) {

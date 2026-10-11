@@ -37,11 +37,18 @@ class CarrierProcess private constructor(private val process: Process, private v
         if (!closed.compareAndSet(false, true)) return
         runCatching { process.outputStream.write("STOP\n".toByteArray()); process.outputStream.flush() }
         runCatching { process.outputStream.close() }
-        // destroy() is available on Android 24; do not use the API 26 Process methods.
-        runCatching { process.destroy() }
+        // Let the Go wrapper shut down its Rust child before sending SIGTERM.
+        val deadline=System.nanoTime()+1_000_000_000L
+        var exited=false
+        while(System.nanoTime()<deadline) {
+            exited=try { process.exitValue();true } catch(_:IllegalThreadStateException) { false }
+            if(exited) break
+            try { Thread.sleep(20) } catch(_:InterruptedException) { Thread.currentThread().interrupt();break }
+        }
+        if(!exited) runCatching { process.destroy() }
         runCatching { process.inputStream.close() }
         runCatching { process.errorStream.close() }
-        config.delete()
+        config.parentFile?.deleteRecursively()
     }
 
     companion object {
@@ -61,7 +68,10 @@ class CarrierProcess private constructor(private val process: Process, private v
                 check(File(nativeDirectory, "libcsqtt_transport.so").canExecute()) { "CSQTT transport client is not installed" }
             }
             check(privateDirectory.isDirectory || privateDirectory.mkdirs()) { "Private transport directory unavailable" }
-            val config = File.createTempFile("carrier-", ".json", privateDirectory)
+            val sessionDirectory=File(privateDirectory,"session-"+UUID.randomUUID().toString())
+            check(sessionDirectory.mkdir()) { "Cannot create private transport session" }
+            val config=File(sessionDirectory,"config.json")
+            check(config.createNewFile()) { "Cannot create private transport configuration" }
             var owner: CarrierProcess? = null
             try {
                 check(config.setReadable(false, false) && config.setWritable(false, false)
@@ -91,7 +101,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                 throw IllegalStateException("Transport client startup timed out")
             } catch (error: Throwable) {
                 owner?.close()
-                config.delete()
+                config.parentFile?.deleteRecursively()
                 throw error
             }
         }

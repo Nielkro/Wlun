@@ -8,7 +8,7 @@ import java.net.InetAddress
 
 /** One generation owns its bridge; no runtime secret is written back to a stored profile. */
 class CarrierPlan private constructor(
-    val profileId:Long, val kind:CarrierKind, val port:Int,
+    val profileId:Long, val kind:CarrierKind, val port:Int, val key:String,
     val credentials:CarrierBridgeCredentials, val privateJson:String,
 ) {
     fun outbound()=Socks().also {
@@ -17,10 +17,13 @@ class CarrierPlan private constructor(
     }
     companion object {
         fun qwdtt(profileId:Long, profile:NativeCarrier):CarrierPlan {
+            val identity=(profile as app.qthrone.mobile.outbound.Outbound).exportToJson().also { it.remove("name");it.remove("tag") }.toCompact()
+            val key=java.security.MessageDigest.getInstance("SHA-256").digest(identity.toByteArray()).joinToString("") { "%02x".format(it.toInt() and 255) }
+            CarrierPool.activePlan(key)?.let { return it }
             val loopback=InetAddress.getByName("127.0.0.1")
             val credentials=CarrierBridgeCredentials.fresh()
             return ServerSocket(0,1,loopback).use { tcp -> DatagramSocket(0,loopback).use { udp ->
-                CarrierPlan(profileId,profile.carrierKind,tcp.localPort,credentials,
+                CarrierPlan(profileId,profile.carrierKind,tcp.localPort,key,credentials,
                     profile.privateConfig(tcp.localPort,udp.localPort,credentials).toCompact())
             } }
         }
