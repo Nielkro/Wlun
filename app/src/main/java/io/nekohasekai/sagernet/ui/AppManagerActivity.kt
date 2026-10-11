@@ -83,6 +83,16 @@ class AppManagerActivity : ThemedActivity() {
 
         init {
             binding.root.setOnClickListener(this)
+            binding.root.setCardBackgroundColor(MobilePalette.surface)
+            binding.root.radius = 16 * resources.displayMetrics.density
+            binding.title.setTextColor(MobilePalette.text)
+            binding.title.setTypeface(null, android.graphics.Typeface.BOLD)
+            binding.title.textSize = 16f
+            binding.desc.setTextColor(MobilePalette.muted)
+            binding.itemcheck.thumbTintList = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(MobilePalette.accent(this@AppManagerActivity), MobilePalette.muted),
+            )
         }
 
         fun bind(app: ProxiedApp) {
@@ -235,6 +245,9 @@ class AppManagerActivity : ThemedActivity() {
 
         binding = LayoutAppsBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        binding.root.setBackgroundColor(MobilePalette.background)
+        binding.toolbar.setBackgroundColor(MobilePalette.toolbar)
+        binding.toolbar.setTitleTextColor(MobilePalette.text)
 
         binding.appPlaceholder.openSettings.setOnClickListener {
             val intent =

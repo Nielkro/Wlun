@@ -212,7 +212,7 @@ class RoutingSettingsFragment : SettingsScreenFragment(R.xml.settings_routing) {
 
     override fun bind() {
         pref<Preference>(KEY_ROUTE_PROFILES).setOnPreferenceClickListener {
-            (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_route)
+            (activity as? MainActivity)?.displayFragment(app.qthrone.mobile.ui.MobileRoutingFragment())
             true
         }
         pref<Preference>(KEY_CURRENT_ROUTE).setOnPreferenceClickListener {

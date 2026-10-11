@@ -65,7 +65,7 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
             if (restore != null) arguments = bundleOf(ARG_RESTORE to restore.toString())
         }
 
-        fun fileName(): String = "Throne-backup-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())}.thrbackup"
+        fun fileName(): String = "qThrone-backup-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())}.thrbackup"
     }
 
     private var binding: LayoutBackupBinding? = null
@@ -89,6 +89,13 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
         val binding = LayoutBackupBinding.bind(view)
         this.binding = binding
         view.applyListInsets()
+        view.setBackgroundColor(MobilePalette.background)
+        fun style(node: View) {
+            if(node is com.google.android.material.card.MaterialCardView) node.setCardBackgroundColor(MobilePalette.surface)
+            if(node is android.widget.TextView && node !is android.widget.Button) node.setTextColor(MobilePalette.text)
+            if(node is android.view.ViewGroup) for(i in 0 until node.childCount) style(node.getChildAt(i))
+        }
+        style(view)
 
         binding.backupCreate.setOnClickListener {
             if (selection() != null) startFilesForResult(saveBackup, fileName())
