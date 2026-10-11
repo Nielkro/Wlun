@@ -283,6 +283,7 @@ class MobileHomeFragment : ToolbarFragment() {
         }
     }
     fun updateState() {
+        if(!isAdded || power==null) return
         val state = DataStore.serviceState
         power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
         val description=getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
