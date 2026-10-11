@@ -100,9 +100,9 @@ class MobileHomeFragment : ToolbarFragment() {
         viewLifecycleOwner.lifecycleScope.launch { SubscriptionClient.states.collect { refresh() } }
         viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.state.collect {
             updateLatencies()
-            if(it.testCurrent && !it.running && it.ok>0) {
+            if(it.testCurrent && !it.running && !it.cancelled) {
                 val ping=it.rows.values.firstOrNull { row -> row.ok && row.latency>0 }?.latency
-                if(ping!=null) currentCheck?.text="$ping ms"
+                currentCheck?.text=if(ping!=null) "$ping ms" else getString(R.string.qmobile_unavailable)
             }
         } }
         viewLifecycleOwner.lifecycleScope.launch {
@@ -318,7 +318,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val busy=state.running && result != null && result.phase != app.qthrone.mobile.ui.test.RowPhase.DONE
             val latency=result?.takeIf { it.ok }?.latency ?: (holder.tag as? Int ?: 0)
             val unavailable=result?.failed==true || (result?.error?.isNotEmpty()==true && !ProxyEntity.isTestAborted(result.error))
-            val label=if(unavailable) "н/д" else if(latency>0) "$latency ms" else ""
+            val label=if(unavailable) getString(R.string.qmobile_unavailable) else if(latency>0) "$latency ms" else ""
             val marker=if(busy) "busy" else label
             if(holder.contentDescription?.toString()==marker) return@forEach
             holder.contentDescription=marker
@@ -429,10 +429,17 @@ class MobileHomeFragment : ToolbarFragment() {
         body.addView(name);body.addView(url)
         body.addView(action(getString(R.string.qmobile_save)) {
             val address=url.text.toString().trim()
-            if(!address.startsWith("https://") && !address.startsWith("http://")) { url.error=getString(R.string.qmobile_subscription_url);return@action }
+            val parsed=android.net.Uri.parse(address)
+            if(parsed.scheme !in listOf("https","http") || parsed.host.isNullOrBlank()) { url.error=getString(R.string.qmobile_subscription_url);return@action }
             viewLifecycleOwner.lifecycleScope.launch {
-                SubscriptionClient.subscribeUrl(address,name.text.toString().trim().ifBlank { android.net.Uri.parse(address).host.orEmpty() },true)
-                sheet.dismiss()
+                try {
+                    SubscriptionClient.subscribeUrl(address,name.text.toString().trim().ifBlank { parsed.host.orEmpty() },true)
+                    sheet.dismiss()
+                } catch(error: kotlinx.coroutines.CancellationException) {
+                    throw error
+                } catch(error: Exception) {
+                    url.error=error.localizedMessage ?: getString(R.string.qmobile_subscription_url)
+                }
             }
         })
         sheet.setContentView(body);sheet.show()

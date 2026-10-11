@@ -49,6 +49,8 @@ object MobileSettingsStyle {
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
             val category=preference is PreferenceCategory
+            val oldCopy=view.findViewWithTag<View>("socks-copy")
+            (oldCopy?.parent as? android.view.ViewGroup)?.removeView(oldCopy)
             if(preference?.key in listOf("inbound_user","inbound_pass")) {
                 val container=view as? android.view.ViewGroup
                 if(container!=null && container.findViewWithTag<View>("socks-copy")==null) {

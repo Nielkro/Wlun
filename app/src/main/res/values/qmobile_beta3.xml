@@ -14,4 +14,5 @@
 <string name="qmobile_dev_updates">Dev builds</string>
 <string name="qmobile_dev_updates_summary">Include signed development builds when checking for updates.</string>
 <string name="qmobile_socks_password_invalid">Use a password of at least 32 characters or reset the credentials.</string>
+    <string name="qmobile_unavailable">n/a</string>
 </resources>

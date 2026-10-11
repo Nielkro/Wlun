@@ -59,14 +59,11 @@ class ServiceNotification(
         private val ACTION_ORDER = listOf(ACTION_STOP, ACTION_PREVIOUS, ACTION_NEXT, ACTION_SWITCH, ACTION_RESET)
 
         fun notificationActions(): List<String> {
-            val stored = DataStore.configurationStore.getStringList(Key.NOTIFICATION_ACTIONS) ?: return DEFAULT_ACTIONS
-            return ACTION_ORDER.filter { it in stored }.take(3)
+            return DEFAULT_ACTIONS
         }
 
         fun genTitle(ent: ProxyEntity): String {
-            val gn = if (DataStore.showGroupInNotification)
-                SagerDatabase.groupDao.getById(ent.groupId)?.displayName() else null
-            return if (gn == null) ent.displayName() else "[$gn] ${ent.displayName()}"
+            return ent.displayName()
         }
     }
 
