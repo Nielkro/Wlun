@@ -261,7 +261,7 @@ class MainActivity : ThemedActivity(),
         if (scheme == "content" || scheme == "file") return openFile(uri)
         val link = uri.toString()
         if (SubscribeFlows.subscribeLink(link) != null) displayFragmentWithId(R.id.nav_mobile_home)
-        if (scheme == "clash" || scheme == "throne" && !uri.host.equals("add", ignoreCase = true)) {
+        if (scheme == "http" || scheme == "https" || scheme == "clash" || scheme == "throne" && !uri.host.equals("add", ignoreCase = true)) {
             SubscribeFlows.importText(this, link)
         } else {
             runOnDefaultDispatcher { importProfile(uri) }
@@ -309,7 +309,7 @@ class MainActivity : ThemedActivity(),
             MaterialAlertDialogBuilder(this@MainActivity).setTitle(R.string.profile_import)
                 .setMessage(getString(R.string.profile_import_message, profile.displayName()))
                 .setPositiveButton(R.string.yes) { _, _ ->
-                    displayFragmentWithId(R.id.nav_configuration)
+                    displayFragmentWithId(R.id.nav_mobile_home)
                     SubscribeFlows.importText(this@MainActivity, link)
                 }
                 .setNegativeButton(android.R.string.cancel, null)

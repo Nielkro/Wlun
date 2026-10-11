@@ -70,8 +70,6 @@ shell('pm','clear',package)
 shell('pm','grant',package,'android.permission.POST_NOTIFICATIONS')
 shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d','socks5://127.0.0.1:8868#VPN-smoke')
 time.sleep(5); tap('Yes'); wait_for('VPN-smoke')
-try: shell('input','keyevent','4'); time.sleep(2)
-except subprocess.CalledProcessError: pass
 tap('VPN-smoke')
 for cycle in range(2):
     tap('Connect or disconnect VPN, Not connected')

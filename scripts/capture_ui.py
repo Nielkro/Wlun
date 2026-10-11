@@ -76,7 +76,6 @@ for label in ('Finland-demo', 'Sweden-demo', 'Germany-demo'):
             if label in screen_xml() and 'Confirm you want' not in screen_xml():
                 break
             time.sleep(1)
-        shell('input', 'keyevent', '4')
         time.sleep(2)
     except RuntimeError:
         capture('04-import-dialog')
@@ -92,6 +91,8 @@ for name in ('core.log', 'core.log.prev'):
     except subprocess.CalledProcessError:
         pass
 assert 'Finland-demo' in profile_xml, 'Imported demo profile is missing from the home screen'
+assert 'Server list' in profile_xml and 'text="Default"' not in profile_xml,'Standalone profiles did not go to Server list'
+assert '🇫🇮' in profile_xml,'The profile country flag is missing'
 
 # Controlled local subscription, including metadata. No external account or server is contacted.
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -108,9 +109,9 @@ class Fixture(BaseHTTPRequestHandler):
 server=ThreadingHTTPServer(('127.0.0.1',8866),Fixture)
 threading.Thread(target=server.serve_forever,daemon=True).start()
 subprocess.check_call([adb,'reverse','tcp:8866','tcp:8866'])
-payload=base64.b64encode(b'http://127.0.0.1:8866/demo#Demo subscription').decode()
-shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d','throne://addsub/'+payload)
-time.sleep(2);tap_text('OK')
+shell('am','start','-n',activity,'-a','android.intent.action.SEND','-t','text/plain','--es','android.intent.extra.TEXT','http://127.0.0.1:8866/demo#Demo%20subscription')
+time.sleep(2)
+assert 'URL detected' not in screen_xml(),'Subscription import opened the old group selection'
 for attempt in range(15):
     xml=screen_xml()
     if 'Subscription-Finland' in xml: break
@@ -139,6 +140,11 @@ def subscription_more(label):
 bounds=profile_bounds('Finland-demo');x1,y1,x2,y2=bounds;y=(y1+y2)//2
 shell('input','swipe',str((x1+x2)//2),str(y),str(x2+140),str(y),'350')
 capture('08-profile-swipe-actions')
+tap_text('Share profile')
+share=screen_xml()
+assert 'text="URL"' in share and 'text="JSON"' in share and 'QR code' in share,'The three share options are missing'
+capture('11-profile-share');shell('input','keyevent','4');time.sleep(1)
+shell('input','swipe',str((x1+x2)//2),str(y),str(x2+140),str(y),'350')
 shell('input','tap',str(x2),str(y))
 shell('input','swipe',str(x2-40),str(y),str(x1+20),str(y),'350')
 capture('09-profile-swipe-delete')
@@ -177,5 +183,5 @@ shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);captur
 tap_text('Settings');tap_text('Appearance');tap_text('OLED black theme');time.sleep(3)
 tap_text('Seasonal decoration');tap_text('Halloween');time.sleep(3)
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
-(out/'ui-actions-result.txt').write_text('PASS: profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
+(out/'ui-actions-result.txt').write_text('PASS: named subscription import without group selection; standalone profiles in Server list; URL, QR and JSON sharing; country flags; profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
 server.shutdown()

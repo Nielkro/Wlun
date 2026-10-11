@@ -161,7 +161,7 @@ abstract class SagerDatabase : RoomDatabase() {
             )
         }
 
-        fun defaultGroupName(): String = SagerNet.application.getString(R.string.group_default_name)
+        fun defaultGroupName(): String = SagerNet.application.getString(R.string.qmobile_server_list)
 
         @OptIn(DelicateCoroutinesApi::class)
         private fun buildProfileDatabase(): SagerDatabase =

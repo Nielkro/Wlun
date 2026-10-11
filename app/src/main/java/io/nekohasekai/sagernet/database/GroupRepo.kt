@@ -44,7 +44,12 @@ object GroupRepo {
     /** Every group in tab order; an empty table first gets the Default group. */
     fun all(): List<ProxyGroup> {
         val groups = dao.allGroups()
-        if (groups.isNotEmpty()) return groups
+        if (groups.isNotEmpty()) {
+            groups.filter { !it.isSubscription && it.name in legacyDefaultNames() }.forEach {
+                it.name=SagerDatabase.defaultGroupName();dao.update(it)
+            }
+            return groups
+        }
         ensureDefault()
         return dao.allGroups()
     }
@@ -85,6 +90,18 @@ object GroupRepo {
     fun ensureDefault() {
         dao.insertDefaultIfEmpty(SagerDatabase.defaultGroupName())
     }
+
+    private fun legacyDefaultNames() = setOf("", "Default", "По умолчанию", "默认", "پیش فرض", SagerNet.application.getString(app.qthrone.mobile.R.string.group_default_name))
+
+    /** Plain pasted or scanned profiles never become members of the selected subscription. */
+    fun serverListId(): Long = SagerDatabase.instance.runInTransaction(Callable {
+        val names=legacyDefaultNames()+setOf(SagerDatabase.defaultGroupName(),"Server list","Список серверов")
+        val group=dao.allGroups().firstOrNull { !it.isSubscription && it.name in names }
+        if(group!=null) {
+            if(group.name!=SagerDatabase.defaultGroupName()) { group.name=SagerDatabase.defaultGroupName();dao.update(group) }
+            group.id
+        } else dao.insert(ProxyGroup(name=SagerDatabase.defaultGroupName(),displayOrder=dao.nextDisplayOrder()))
+    })
 
     // ------------------------------------------------------------------------------------------------ writes
 

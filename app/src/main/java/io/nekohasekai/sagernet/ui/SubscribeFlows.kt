@@ -8,8 +8,8 @@ import androidx.fragment.app.FragmentActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import app.qthrone.mobile.R
 import app.qthrone.mobile.databinding.LayoutRouteRemotePromptBinding
-import app.qthrone.mobile.databinding.LayoutSubscribeChoiceBinding
 import app.qthrone.mobile.group.SubscriptionClient
+import app.qthrone.mobile.database.GroupRepo
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.onMainDispatcher
@@ -32,7 +32,7 @@ object SubscribeFlows {
 
     private const val MAX_IMPORT_FILE_SIZE = 50L * 1024 * 1024
 
-    /** Text from the clipboard, a scan or a share: http(s) URL → the desktop's 3-way choice, links/documents → import into [gid] (current group when negative). */
+    /** Text from the clipboard, a scan or a share: http(s) URL creates a subscription; links/documents go into the server list unless an explicit target is supplied. */
     fun importText(activity: FragmentActivity, text: String, gid: Long = -1L) {
         val content = text.trim()
         if (content.isEmpty()) return
@@ -45,7 +45,9 @@ object SubscribeFlows {
             return
         }
         if (content.startsWith("http://") || content.startsWith("https://")) {
-            chooseUrlImport(activity, content, gid)
+            val uri=Uri.parse(content)
+            if(uri.userInfo!=null) importInto(activity,content,gid)
+            else subscribe(activity,uri.buildUpon().fragment(null).build().toString(),uri.fragment.orEmpty().ifBlank { hostOf(content) },true)
             return
         }
         importInto(activity, content, gid)
@@ -162,30 +164,8 @@ object SubscribeFlows {
         }
     }
 
-    /** import_text: "url detected" → ImportUrl into the group / SubscribeUrl / the URL as an HTTP proxy link. */
-    private fun chooseUrlImport(activity: FragmentActivity, url: String, gid: Long) {
-        val binding = LayoutSubscribeChoiceBinding.inflate(activity.layoutInflater)
-        binding.message.text = activity.getString(R.string.grp_how_to_update, url)
-        val dialog = MaterialAlertDialogBuilder(activity)
-            .setTitle(R.string.grp_url_detected)
-            .setView(binding.root)
-            .setNegativeButton(android.R.string.cancel, null)
-            .show()
-        binding.addProfiles.setOnClickListener {
-            dialog.dismiss()
-            runOnDefaultDispatcher { SubscriptionClient.importUrl(url, gid) }
-        }
-        binding.newGroup.setOnClickListener {
-            dialog.dismiss()
-            subscribe(activity, url, hostOf(url), true)
-        }
-        binding.httpProxy.setOnClickListener {
-            dialog.dismiss()
-            importInto(activity, url, gid)
-        }
-    }
-
     private fun subscribe(activity: FragmentActivity, url: String, name: String, autoUpdate: Boolean) {
+        (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_mobile_home)
         runOnDefaultDispatcher {
             try {
                 SubscriptionClient.subscribeUrl(url, name, autoUpdate)
@@ -200,7 +180,8 @@ object SubscribeFlows {
     private fun importInto(activity: FragmentActivity, content: String, gid: Long) {
         runOnDefaultDispatcher {
             val message = try {
-                activity.getString(R.string.grp_imported_count, SubscriptionClient.importText(content, gid))
+                val target=if(gid>0) gid else GroupRepo.serverListId()
+                activity.getString(R.string.grp_imported_count, SubscriptionClient.importText(content, target))
             } catch (e: Exception) {
                 Logs.w(e)
                 e.readableMessage

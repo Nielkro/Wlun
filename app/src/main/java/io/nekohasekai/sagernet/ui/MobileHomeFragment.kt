@@ -208,7 +208,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     else row.addView(ImageView(requireContext()).apply { setImageResource(R.drawable.ic_mobile_chevron); setPadding(dp(6),dp(6),dp(6),dp(6)); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO },LinearLayout.LayoutParams(dp(32),dp(32)))
                     val swipe = MobileSwipeTile(requireContext(), row,
                         iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests),Color.rgb(36,171,85)) { testMenu(longArrayOf(profile.id),profile.displayName(),group.id) },
-                        iconAction(R.drawable.ic_mobile_share,getString(R.string.qmobile_share),Color.rgb(60,132,190)) { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(Intent.EXTRA_TEXT,profile.exportLink().ifBlank { profile.exportJsonLink() }) }, getString(R.string.qmobile_share))) },
+                        iconAction(R.drawable.ic_mobile_share,getString(R.string.qmobile_share),Color.rgb(60,132,190)) { shareProfile(profile) },
                         iconAction(R.drawable.ic_mobile_delete,getString(R.string.qmobile_delete),Color.rgb(220,66,61)) {
                             MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_delete).setMessage(profile.displayName())
                                 .setNegativeButton(android.R.string.cancel,null).setPositiveButton(android.R.string.ok) { _,_ ->
@@ -249,6 +249,23 @@ class MobileHomeFragment : ToolbarFragment() {
         else Toast.makeText(requireContext(), R.string.qmobile_clipboard_empty, Toast.LENGTH_SHORT).show()
     }
     private fun pinnedGroups() = DataStore.mobilePinnedGroups.split(',').mapNotNull { it.toLongOrNull() }.toSet()
+    private fun shareProfile(profile:ProxyEntity) {
+        openSwipe?.closeActions()
+        val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(24),dp(20),dp(24),dp(24));setBackgroundColor(MobilePalette.background) }
+        body.addView(text(getString(R.string.qmobile_share),20f))
+        fun option(label:String,icon:Int,callback:()->Unit) {
+            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL;isFocusable=true;contentDescription=label;setOnClickListener { dialog.dismiss();callback() } }
+            row.addView(ImageView(requireContext()).apply { setImageResource(icon);imageTintList=android.content.res.ColorStateList.valueOf(muted) },LinearLayout.LayoutParams(dp(28),dp(28)))
+            row.addView(text(label,18f),LinearLayout.LayoutParams(-1,dp(56)));body.addView(row)
+        }
+        fun copy(value:String) { Toast.makeText(requireContext(),if(SagerNet.trySetPrimaryClip(value)) R.string.action_export_msg else R.string.action_export_err,Toast.LENGTH_SHORT).show() }
+        val link=profile.exportLink().ifBlank { profile.exportJsonLink() }
+        option("URL",R.drawable.ic_mobile_link) { copy(link) }
+        option(getString(R.string.qmobile_qr),R.drawable.ic_mobile_qr) { app.qthrone.mobile.widget.QRCodeDialog(link,profile.displayName()).show(parentFragmentManager,"profile-qr") }
+        option("JSON",R.drawable.ic_mobile_json) { copy(org.json.JSONObject(profile.outbound.exportToJson().toCompact()).toString(2)) }
+        dialog.setContentView(body);dialog.show()
+    }
     private fun groupMenu(group: ProxyGroup, anchor: View) {
         val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply {
@@ -288,7 +305,7 @@ class MobileHomeFragment : ToolbarFragment() {
         body.addView(action(getString(R.string.qmobile_save)) {
             val nextUrl=if(group.isSubscription) url.text.toString().trim() else ""
             if(group.isSubscription && (!nextUrl.startsWith("https://") && !nextUrl.startsWith("http://"))) { url.error=getString(R.string.qmobile_subscription_url);return@action }
-            group.name=name.text.toString().trim();group.url=nextUrl;if(settings) group.skipAutoUpdate=!auto.isChecked
+            group.name=name.text.toString().trim().ifBlank { if(group.isSubscription) android.net.Uri.parse(nextUrl).host.orEmpty() else getString(R.string.qmobile_server_list) };group.url=nextUrl;if(settings) group.skipAutoUpdate=!auto.isChecked
             viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.save(group) };dialog.dismiss();refresh() }
         })
         dialog.setContentView(body);dialog.show()
