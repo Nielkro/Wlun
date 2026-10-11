@@ -67,6 +67,11 @@ jobs:
         env:
           TESTED_BUILD_RUN: ${{ inputs.build_run }}
         run: python3 scripts/smoke_vpn.py
+      - name: Save emulator diagnostics
+        if: always()
+        run: |
+          mkdir -p ui-screenshots
+          "$ANDROID_HOME/platform-tools/adb" logcat -d > ui-screenshots/emulator-final-logcat.txt
       - uses: actions/upload-artifact@v7
         if: always()
         with:
