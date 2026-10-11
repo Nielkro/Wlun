@@ -63,7 +63,7 @@ class MobileHomeFragment : ToolbarFragment() {
         content = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(20))
         }
-        scroll.addView(content, ScrollView.LayoutParams(-1,-1))
+        scroll.addView(content, FrameLayout.LayoutParams(-1,-1))
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
@@ -114,8 +114,12 @@ class MobileHomeFragment : ToolbarFragment() {
             column.addView(status)
             updateState()
             val imports = LinearLayout(requireContext())
-            imports.addView(action(getString(R.string.qmobile_clipboard)) { importClipboard() }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginEnd = dp(6) })
-            imports.addView(action(getString(R.string.qmobile_qr)) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginStart = dp(6) })
+            fun importButton(label: String, callback: () -> Unit) = action(label, callback).apply {
+                textSize=14f
+                background=GradientDrawable().apply { setColor(Color.argb(115,219,223,227)); cornerRadius=dp(16).toFloat() }
+            }
+            imports.addView(importButton(getString(R.string.qmobile_clipboard)) { importClipboard() }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginEnd = dp(8) })
+            imports.addView(importButton(getString(R.string.qmobile_qr)) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginStart = dp(8) })
             if (groups.all { it.second.isEmpty() }) column.addView(text(getString(R.string.qmobile_empty), 15f, muted))
             if(groups.any { it.second.isNotEmpty() || it.first.isSubscription }) column.addView(action(getString(R.string.qmobile_collapse_all)) {
                 val ids=groups.map { it.first.id }
@@ -178,8 +182,10 @@ class MobileHomeFragment : ToolbarFragment() {
                 }
                 column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(16) })
             }
-            column.addView(View(requireContext()), LinearLayout.LayoutParams(-1,0,1f))
-            column.addView(imports,LinearLayout.LayoutParams(-1,dp(50)).apply { topMargin=dp(24) })
+            if(groups.all { it.second.isEmpty() && !it.first.isSubscription }) {
+                column.addView(View(requireContext()), LinearLayout.LayoutParams(-1,0,1f))
+                column.addView(imports,LinearLayout.LayoutParams(-1,dp(46)).apply { topMargin=dp(24) })
+            }
         }
     }
     fun updateState() {
