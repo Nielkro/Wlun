@@ -6,6 +6,10 @@ on:
         description: Successful CI run containing the debug APK
         required: true
         default: '38137800988'
+      artifact_name:
+        description: APK artifact to test (debug or signed release)
+        required: true
+        default: qThroneMobile-debug
 permissions:
   contents: read
   actions: read
@@ -17,7 +21,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/download-artifact@v8
         with:
-          name: qThroneMobile-debug
+          name: ${{ inputs.artifact_name }}
           path: preview-apk
           run-id: ${{ inputs.build_run }}
           github-token: ${{ github.token }}
@@ -51,11 +55,15 @@ jobs:
           test -n "$APK"
           test "$("$ANDROID_HOME/platform-tools/adb" shell getprop ro.product.cpu.abi | tr -d '\r')" = x86_64
           "$ANDROID_HOME/platform-tools/adb" install "$APK"
-          "$ANDROID_HOME/platform-tools/adb" shell dumpsys package app.qthrone.mobile.debug | grep -F 'primaryCpuAbi=x86_64'
+          PACKAGE=$("$ANDROID_HOME/platform-tools/adb" shell pm list packages | sed -n 's/^package:\(app.qthrone.mobile[^[:space:]]*\).*/\1/p' | tr -d '\r')
+          test -n "$PACKAGE"
+          "$ANDROID_HOME/platform-tools/adb" shell dumpsys package "$PACKAGE" | grep -F 'primaryCpuAbi=x86_64'
       - name: Capture real application screens
         env:
           ADB: ${{ env.ANDROID_HOME }}/platform-tools/adb
         run: python3 scripts/capture_ui.py
+      - name: Verify VPN lifecycle and HTTP latency
+        run: python3 scripts/smoke_vpn.py
       - uses: actions/upload-artifact@v7
         if: always()
         with:
