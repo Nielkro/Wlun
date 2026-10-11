@@ -609,6 +609,7 @@ class BaseService {
             }
             data.connectingJob = CoroutineScope(Dispatchers.Main).launch {
                 try {
+                    withContext(Dispatchers.IO) { app.qthrone.mobile.bg.test.TestEngine.stopAndJoin() }
                     preInit()
                     proxy.init()
                     DataStore.currentProfile = profile.id

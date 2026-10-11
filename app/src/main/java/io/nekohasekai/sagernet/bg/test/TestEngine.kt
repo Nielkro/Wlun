@@ -54,6 +54,14 @@ object TestEngine {
         test.job?.cancel()
     }
 
+    /** A VPN start takes priority, but never reuses a transport before its probe has released it. */
+    suspend fun stopAndJoin() {
+        val test=current ?: return
+        stop(test)
+        while(current===test && test.job==null) kotlinx.coroutines.yield()
+        test.job?.join()
+    }
+
     /** The running session id, 0 when idle. */
     fun runningSession(): Int = current?.id ?: 0
 

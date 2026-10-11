@@ -516,19 +516,8 @@ class MainActivity : ThemedActivity(),
 
     fun toggleService() {
         if (DataStore.serviceState.canStop) SagerNet.stopService() else {
-            lifecycleScope.launch {
-                app.qthrone.mobile.ui.test.TestSessionClient.stop()
-                val ready=kotlinx.coroutines.withTimeoutOrNull(5000) {
-                    withContext(Dispatchers.IO) {
-                        app.qthrone.mobile.bg.CoreServiceClient.call { service ->
-                            service.stopTests()
-                            while(service.runningTestSession()!=0) kotlinx.coroutines.delay(50)
-                        }
-                    }
-                    true
-                } == true
-                if(ready && !DataStore.serviceState.canStop) startFromUi()
-            }
+            app.qthrone.mobile.ui.test.TestSessionClient.stop()
+            startFromUi()
         }
     }
 

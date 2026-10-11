@@ -333,8 +333,7 @@ class MobileHomeFragment : ToolbarFragment() {
         }
     }
     private fun testMenu(ids: LongArray, label: String, gid: Long) {
-        if(TestSessionClient.state.value.running) TestSessionClient.stop()
-        else TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label),gid)
+        if(!TestSessionClient.state.value.running) TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label),gid)
     }
     private fun importClipboard() {
         val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
