@@ -58,12 +58,13 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun host() = requireActivity() as MainActivity
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         val scroll = ScrollView(requireContext()).apply {
+            layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             background = MobileHomeBackdrop(); isFillViewport = true
         }
         content = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(20))
         }
-        scroll.addView(content, FrameLayout.LayoutParams(-1,-1))
+        scroll.addView(content, FrameLayout.LayoutParams(-1,-2))
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets

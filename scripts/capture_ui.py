@@ -61,3 +61,7 @@ for label in ('Finland-demo', 'Sweden-demo', 'Germany-demo'):
         capture('04-import-dialog')
         break
 capture('05-profiles')
+shell('uiautomator', 'dump', '/sdcard/qthrone-preview.xml')
+profile_xml = shell('cat', '/sdcard/qthrone-preview.xml')
+(out / 'profiles-screen.xml').write_text(profile_xml)
+assert 'Finland-demo' in profile_xml, 'Imported demo profile is missing from the home screen'
