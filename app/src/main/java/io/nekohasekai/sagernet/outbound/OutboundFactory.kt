@@ -27,7 +27,7 @@ object OutboundFactory {
     @JvmField
     val DEFAULT_XRAY_VLESS_PREFERENCE: XrayVlessPreference = XrayVlessPreference.XhttpAndReality
 
-    /** Every factory string of OutboundFactory.cpp:35-61 (R2 Р вЂ™Р’В§A). */
+    /** Every factory string of OutboundFactory.cpp:35-61 (R2 Р В РІР‚в„ўР вЂ™Р’В§A). */
     @JvmField
     val ALL_TYPES: List<String> = listOf(
         "qwdtt", "csqtt", "openflux", "olcrtc", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
@@ -36,7 +36,7 @@ object OutboundFactory {
     )
 
     /** OutboundFactory.cpp:44 and the JSON alias of openvpn.cpp:157-158. */
-    private val TYPE_ALIASES = mapOf("hysteria2" to "hysteria", "openvpn-client" to "openvpn")
+    private val TYPE_ALIASES = mapOf("wdtt" to "qwdtt", "hysteria2" to "hysteria", "openvpn-client" to "openvpn")
 
     /** Not ported (tailscale) or desktop-only (extracore); always an [InvalidOutbound]. */
     @JvmField
@@ -102,7 +102,7 @@ object OutboundFactory {
         Protocol("openflux", listOf("openflux://"), listOf("openflux"), emptyList()),
         Protocol("olcrtc", listOf("olcrtc://"), listOf("olcrtc"), emptyList()),
         Protocol("csqtt", listOf("csqtt://"), listOf("csqtt"), emptyList()),
-        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config"), listOf("qwdtt"), emptyList()),
+        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config", "wdtt://"), listOf("qwdtt"), emptyList()),
         Protocol("socks", listOf("socks5://", "socks4://", "socks4a://", "socks://"), listOf("socks"), listOf("socks5")),
         Protocol("http", listOf("http://", "https://"), listOf("http"), listOf("http")),
         Protocol("shadowsocks", listOf("ss://"), listOf("shadowsocks"), listOf("ss")),

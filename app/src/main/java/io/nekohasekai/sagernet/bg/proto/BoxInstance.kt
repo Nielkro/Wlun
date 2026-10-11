@@ -52,6 +52,9 @@ abstract class BoxInstance(
         // A custom full config keeps its own rule-sets as written.
         if (isCustomFullConfig()) deferRuleSets = false
         config = CoreConfigs.buildMain(profile, deferRuleSets)
+        if(DataStore.serviceMode==app.qthrone.mobile.Key.MODE_VPN) {
+            app.qthrone.mobile.bg.carrier.VpnListenerPolicy.check(config.coreConfig)
+        }
     }
 
     protected open suspend fun loadConfig() {

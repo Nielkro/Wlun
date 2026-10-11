@@ -260,7 +260,7 @@ class MainActivity : ThemedActivity(),
         val scheme = uri.scheme?.lowercase()
         if (scheme == "content" || scheme == "file") return openFile(uri)
         val link = uri.toString()
-        if (SubscribeFlows.subscribeLink(link) != null) displayFragmentWithId(R.id.nav_group)
+        if (SubscribeFlows.subscribeLink(link) != null) displayFragmentWithId(R.id.nav_mobile_home)
         if (scheme == "clash" || scheme == "throne" && !uri.host.equals("add", ignoreCase = true)) {
             SubscribeFlows.importText(this, link)
         } else {
@@ -280,7 +280,7 @@ class MainActivity : ThemedActivity(),
         RouteImports.importLink(this, text) { displayFragmentWithId(R.id.nav_route) }
     }
 
-    /** Opens one settings sub-screen, e.g. Settings › Routing, with the settings root below it. */
+    /** Opens one settings sub-screen, e.g. Settings вЂє Routing, with the settings root below it. */
     fun openSettingsScreen(fragmentClass: String, title: CharSequence) {
         displayFragment(SettingsFragment.forScreen(fragmentClass, title))
         navigation.menu.findItem(R.id.nav_settings).isChecked = true

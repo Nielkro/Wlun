@@ -51,6 +51,14 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         return server.isNotEmpty() && serverPort in 1..65535 && rawPort in 1..65535 && mode in listOf("raw","wg")
     }
     override fun parseFromLink(link:String):Boolean {
+        if(link.startsWith("wdtt://",true)) {
+            val value=link.substring(7);val parts=value.substringBefore('#').split(':')
+            if(parts.size !in 5..6) return false
+            val port=parts[1].toIntOrNull() ?: return false
+            return parseFromJson(jsonObjectOf("type" to "qwdtt","peer" to Hosts.displayAddress(parts[0],port),
+                "password" to LinkCodec.decodeFully(parts[4]),"hashes" to if(parts.size==6) LinkCodec.decodeFully(parts[5]) else "",
+                "tag" to if(value.contains('#')) LinkCodec.decodeFully(value.substringAfter('#')) else ""))
+        }
         val url=LinkParser.parse(link.replaceFirst("qwdtt:config","qwdtt://config"))
         if(!url.isValid || url.host!="config" || url.scheme!="qwdtt") return false
         val q=url.query

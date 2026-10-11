@@ -24,6 +24,7 @@ class CarrierProcessTest {
             val privateJson = "{\"password\":\"test-fixture-secret\"}"
             var launched = false
             var destroyed = false
+            val control=ByteArrayOutputStream()
             val error = runCatching {
                 CarrierProcess.start(CarrierKind.QWDTT, root, configs, 24, privateJson, 12345, CarrierBridgeCredentials.fresh()) { builder ->
                     launched = true
@@ -32,7 +33,7 @@ class CarrierProcessTest {
                     assertFalse(builder.command().any { it.contains("test-fixture-secret") })
                     assertTrue(File(builder.command()[2]).readText() == privateJson)
                     object : Process() {
-                        override fun getOutputStream() = ByteArrayOutputStream()
+                        override fun getOutputStream() = control
                         override fun getInputStream() = ByteArrayInputStream(byteArrayOf())
                         override fun getErrorStream() = ByteArrayInputStream(byteArrayOf())
                         override fun waitFor() = 1
@@ -42,7 +43,9 @@ class CarrierProcessTest {
                 }
             }.exceptionOrNull()
             assertTrue(launched)
-            assertTrue(destroyed)
+            // An already exited child needs cleanup, not another termination signal.
+            assertFalse(destroyed)
+            assertEquals("STOP\n",control.toString("UTF-8"))
             assertTrue(error is IllegalStateException)
             assertFalse(error?.message.orEmpty().contains("test-fixture-secret"))
             assertTrue(configs.listFiles().orEmpty().isEmpty())
