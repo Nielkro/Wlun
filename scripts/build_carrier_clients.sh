@@ -40,12 +40,12 @@ OLC=f3ad8fb7c0d0fa981423f83269526fa94077c23d
 fetch_source "$SOURCE/olcrtc" https://github.com/openlibrecommunity/olcrtc.git "$OLC"
 mkdir -p "$SOURCE/olcrtc/cmd/qthrone-olcrtc"
 cp "$SOURCE/qThrone/script/olcrtc/"*.go "$SOURCE/olcrtc/cmd/qthrone-olcrtc/"
-(cd "$SOURCE/olcrtc"; go build -trimpath -buildmode=pie -ldflags='-s -w' -o "$OUT/libolcrtc.so" ./cmd/qthrone-olcrtc)
+(cd "$SOURCE/olcrtc"; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libolcrtc.so" ./cmd/qthrone-olcrtc)
 cp "$SOURCE/olcrtc/LICENSE" "$OUT/OLCRTC-LICENSE"
 FLUX=74cac6d47bf4c27947348ee957538a2c0728a485
 fetch_source "$SOURCE/openflux" https://github.com/p1neappleXpress/OpenFlux.git "$FLUX"
 cp "$SOURCE/qThrone/script/openflux/"*.go "$SOURCE/openflux/"
-(cd "$SOURCE/openflux"; go build -trimpath -buildmode=pie -ldflags='-s -w' -o "$OUT/libopenflux.so" .)
+(cd "$SOURCE/openflux"; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libopenflux.so" .)
 cp "$SOURCE/openflux/LICENSE" "$OUT/OpenFlux-LICENSE"
 CSQTT=71712b07dbabe16fa43f5a248dc69e1ab9f3a270
 fetch_source "$SOURCE/csqtt" https://github.com/amurcanov/csqtt.git "$CSQTT"
