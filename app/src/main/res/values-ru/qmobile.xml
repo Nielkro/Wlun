@@ -18,6 +18,7 @@
 <string name="qmobile_collapse_all">Скрыть / раскрыть все</string>
 <string name="qmobile_share">Поделиться профилем</string>
 <string name="qmobile_delete">Удалить профиль?</string>
+<string name="qmobile_delete_failed">Не удалось удалить профиль.</string>
 <string name="qmobile_ping">Тест задержки</string>
 <string name="qmobile_speed">Тест скорости</string>
 <string name="qmobile_tests">Тестирование</string>

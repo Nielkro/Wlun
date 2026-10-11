@@ -47,7 +47,11 @@ jobs:
           "$ANDROID_HOME/platform-tools/adb" shell settings put global transition_animation_scale 0
           "$ANDROID_HOME/platform-tools/adb" shell settings put global animator_duration_scale 0
           sleep 30
-          "$ANDROID_HOME/platform-tools/adb" install "$(find preview-apk -name '*.apk' -print -quit)"
+          APK=$(find preview-apk -name '*x86_64*.apk' -print -quit)
+          test -n "$APK"
+          test "$("$ANDROID_HOME/platform-tools/adb" shell getprop ro.product.cpu.abi | tr -d '\r')" = x86_64
+          "$ANDROID_HOME/platform-tools/adb" install "$APK"
+          "$ANDROID_HOME/platform-tools/adb" shell dumpsys package app.qthrone.mobile.debug | grep -F 'primaryCpuAbi=x86_64'
       - name: Capture real application screens
         env:
           ADB: ${{ env.ANDROID_HOME }}/platform-tools/adb
