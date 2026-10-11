@@ -39,6 +39,7 @@ activity = packages[0] + '/app.qthrone.mobile.ui.MainActivity'
 shell('pm', 'grant', packages[0], 'android.permission.POST_NOTIFICATIONS')
 shell('dumpsys', 'deviceidle', 'whitelist', '+' + packages[0])
 shell('am', 'force-stop', packages[0])
+shell('logcat', '-c')
 time.sleep(3)
 shell('am', 'start', '-n', activity)
 time.sleep(8)
@@ -70,5 +71,10 @@ capture('05-profiles')
 profile_xml = screen_xml()
 (out / 'profiles-screen.xml').write_text(profile_xml)
 # This is a fresh CI emulator with documentation-only fixtures, never the user's device.
-(out / 'emulator-logcat.txt').write_text(shell('logcat', '-d', '-t', '1500'))
+(out / 'emulator-logcat.txt').write_text(shell('logcat', '-d'))
+for name in ('core.log', 'core.log.prev'):
+    try:
+        (out / name).write_text(shell('run-as', packages[0], 'cat', 'files/' + name))
+    except subprocess.CalledProcessError:
+        pass
 assert 'Finland-demo' in profile_xml, 'Imported demo profile is missing from the home screen'

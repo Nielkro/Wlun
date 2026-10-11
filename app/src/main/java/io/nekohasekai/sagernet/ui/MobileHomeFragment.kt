@@ -31,9 +31,9 @@ import kotlinx.coroutines.withContext
 
 /** Mobile dashboard backed by the existing Room repositories and subscription queue. */
 class MobileHomeFragment : ToolbarFragment() {
-    private val blue = Color.rgb(29, 105, 139)
-    private val surface = Color.rgb(190, 194, 198)
-    private val muted = Color.rgb(83, 91, 101)
+    private val blue = Color.rgb(87, 190, 229)
+    private val surface = Color.rgb(49, 51, 54)
+    private val muted = Color.rgb(173, 182, 191)
     private var content: LinearLayout? = null
     private var power: TextView? = null
     private var status: TextView? = null
@@ -43,11 +43,11 @@ class MobileHomeFragment : ToolbarFragment() {
     private var testDialog: androidx.appcompat.app.AlertDialog? = null
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun tile(selected: Boolean = false) = GradientDrawable().apply {
-        setColor(if (selected) Color.rgb(165, 190, 203) else surface)
+        setColor(if (selected) Color.rgb(48, 67, 77) else surface)
         cornerRadius = dp(5).toFloat()
         setStroke(dp(1), if (selected) blue else Color.argb(45, 103, 116, 128))
     }
-    private fun text(value: String, size: Float = 16f, color: Int = Color.rgb(40,46,53)) = TextView(requireContext()).apply {
+    private fun text(value: String, size: Float = 16f, color: Int = Color.rgb(231,234,237)) = TextView(requireContext()).apply {
         text = value; textSize = size; setTextColor(color)
         setPadding(dp(14), dp(12), dp(14), dp(12))
     }
@@ -117,7 +117,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val imports = LinearLayout(requireContext())
             fun importButton(label: String, callback: () -> Unit) = action(label, callback).apply {
                 textSize=14f
-                background=GradientDrawable().apply { setColor(Color.argb(115,219,223,227)); cornerRadius=dp(16).toFloat() }
+                background=GradientDrawable().apply { setColor(Color.argb(145,57,61,65)); cornerRadius=dp(16).toFloat() }
             }
             imports.addView(importButton(getString(R.string.qmobile_clipboard)) { importClipboard() }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginEnd = dp(8) })
             imports.addView(importButton(getString(R.string.qmobile_qr)) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginStart = dp(8) })

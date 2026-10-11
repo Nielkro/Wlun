@@ -9,16 +9,16 @@ class MobileHomeBackdrop : Drawable() {
     override fun draw(canvas: Canvas) {
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
         paint.shader = LinearGradient(0f, 0f, w, h,
-            intArrayOf(Color.rgb(177,181,185), Color.rgb(158,164,170), Color.rgb(175,180,185)),
+            intArrayOf(Color.rgb(30,30,30), Color.rgb(34,35,37), Color.rgb(30,30,30)),
             floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
         canvas.drawRect(bounds, paint)
-        paint.shader = LinearGradient(0f, 0f, w, h, Color.argb(28,255,255,255), Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        paint.shader = LinearGradient(0f, 0f, w, h, Color.argb(9,180,186,192), Color.TRANSPARENT, Shader.TileMode.CLAMP)
         val sweep = Path().apply {
             moveTo(-w*.3f, h*.08f); cubicTo(w*.72f,h*.22f,w*.08f,h*.68f,w*1.2f,h*.8f)
             lineTo(w*1.2f,h); cubicTo(w*.03f,h*.8f,w*.65f,h*.38f,-w*.3f,h*.25f); close()
         }
         canvas.drawPath(sweep, paint)
-        paint.shader = RadialGradient(w*.15f,h*.16f,w*.95f,Color.argb(34,255,255,255),Color.TRANSPARENT,Shader.TileMode.CLAMP)
+        paint.shader = RadialGradient(w*.15f,h*.16f,w*.95f,Color.argb(8,175,183,192),Color.TRANSPARENT,Shader.TileMode.CLAMP)
         canvas.drawRect(bounds,paint)
         paint.shader = null
     }
@@ -39,16 +39,16 @@ class MobilePowerArtwork : Drawable() {
         paint.shader=LinearGradient(cx-r,cy-r,cx+r,cy+r,Color.argb(100,74,135,159),Color.argb(60,161,144,155),Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy,r,paint)
         paint.style=Paint.Style.FILL
-        paint.shader=LinearGradient(cx,cy-r,cx,cy+r,Color.rgb(194,198,202),Color.rgb(139,147,155),Shader.TileMode.CLAMP)
+        paint.shader=LinearGradient(cx,cy-r,cx,cy+r,Color.rgb(63,66,70),Color.rgb(39,41,44),Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy,r*.83f,paint)
         paint.shader=RadialGradient(cx-r*.2f,cy-r*.3f,r*1.1f,
-            intArrayOf(Color.rgb(209,213,217),Color.rgb(181,187,193),Color.rgb(155,164,173)),
+            intArrayOf(Color.rgb(73,77,81),Color.rgb(56,60,64),Color.rgb(45,49,53)),
             floatArrayOf(0f,.6f,1f),Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy-r*.025f,r*.66f,paint)
         paint.shader=null
         paint.style=Paint.Style.STROKE; paint.strokeCap=Paint.Cap.ROUND
         paint.strokeWidth=r*.04f
-        paint.color=if(connected) Color.rgb(32,119,153) else Color.rgb(101,116,127)
+        paint.color=if(connected) Color.rgb(87,190,229) else Color.rgb(158,170,181)
         val glyph=r*.17f
         canvas.drawArc(RectF(cx-glyph,cy-glyph,cx+glyph,cy+glyph),-45f,270f,false,paint)
         canvas.drawLine(cx,cy-glyph*1.25f,cx,cy-glyph*.1f,paint)
