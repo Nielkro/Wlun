@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import app.qthrone.mobile.R
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ui.MobilePalette
 
 object Theme {
 
@@ -40,7 +41,7 @@ object Theme {
     fun apply(context: Context) {
         context.setTheme(getTheme())
         applyAmoledOverlay(context)
-        context.theme.applyStyle(if (app.qthrone.mobile.ui.MobilePalette.light) R.style.MobileSurfaceWhite else if (app.qthrone.mobile.ui.MobilePalette.oled) R.style.MobileSurfaceOled else R.style.MobileSurfaceGray,true)
+        context.theme.applyStyle(if (MobilePalette.light) R.style.MobileSurfaceWhite else if (MobilePalette.oled) R.style.MobileSurfaceOled else R.style.MobileSurfaceGray,true)
     }
 
     fun applyDialog(context: Context) {

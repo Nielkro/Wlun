@@ -63,7 +63,7 @@ class MobileRoutingFragment : ToolbarFragment() {
             }
             val root = column ?: return@launch
             root.removeAllViews()
-            root.addView(line("вЂ№  " + getString(R.string.qmobile_routing)) { requireActivity().onBackPressedDispatcher.onBackPressed() })
+            root.addView(line("\u2039  " + getString(R.string.qmobile_routing)) { requireActivity().onBackPressedDispatcher.onBackPressed() })
             root.addView(line(getString(R.string.qmobile_route_default) + "\n" + target(route.default_outbound_id)) {
                 chooseTarget(route.default_outbound_id) { id -> save(route) { it.default_outbound_id=id } }
             })

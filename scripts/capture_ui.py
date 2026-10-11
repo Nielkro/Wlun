@@ -64,8 +64,10 @@ shell('input', 'keyevent', '4')
 time.sleep(2)
 for label in ('Finland-demo', 'Sweden-demo', 'Germany-demo'):
     # Documentation-only TEST-NET address, never a real account or server.
+    from urllib.parse import quote
+    name=('🇫🇮 '+label) if label=='Finland-demo' else label
     shell('am', 'start', '-n', activity, '-a', 'android.intent.action.VIEW', '-d',
-          f'socks5://192.0.2.1:1080#{label}')
+          'socks5://192.0.2.1:1080#'+quote(name))
     time.sleep(2)
     # Existing import flow asks for confirmation; retain a diagnostic screenshot if it differs.
     try:
@@ -130,4 +132,40 @@ capture('08-profile-swipe-actions')
 shell('input','tap',str(x2),str(y))
 shell('input','swipe',str(x2-40),str(y),str(x1+20),str(y),'350')
 capture('09-profile-swipe-delete')
+shell('input','tap',str((x1+x2)//2),str(y))
+time.sleep(1)
+assert profile_bounds('Finland-demo')==bounds,'Tap did not restore the profile after a left swipe'
+shell('input','swipe',str((x1+x2)//2),str(y),str(x2+140),str(y),'350')
+time.sleep(1)
+shell('input','tap',str((x1+x2)//2+200),str(y))
+time.sleep(1)
+assert profile_bounds('Finland-demo')==bounds,'Tap did not restore the profile after a right swipe'
+capture('12-profile-restored')
+shell('input','swipe',str((x1+x2)//2),str(y),str((x1+x2)//2),str(y),'900')
+time.sleep(2)
+assert 'SocksSettingsActivity' in shell('dumpsys','activity','activities'),'Long press did not open the profile editor'
+capture('13-profile-editor');shell('input','keyevent','4');time.sleep(2)
+tap_text('Demo subscription')
+tap_text('More actions')
+assert 'Pin' in screen_xml() and 'Edit' in screen_xml(),'Subscription actions were not shown in the bottom sheet'
+capture('14-subscription-menu');tap_text('Pin')
+assert 'Demo subscription' in screen_xml(),'Pinned subscription disappeared'
+tap_text('More actions');tap_text('Edit')
+assert 'http://127.0.0.1:8866/demo' in screen_xml(),'Editor did not open the selected subscription'
+capture('15-subscription-editor');shell('input','keyevent','4');time.sleep(2)
+tap_text('Settings');tap_text('Appearance');capture('16-appearance-gray')
+tap_text('Seasonal decoration');tap_text('New Year')
+time.sleep(3)
+shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+capture('17-home-newyear')
+tap_text('Settings');tap_text('Appearance');tap_text('Night mode');tap_text('Disable')
+time.sleep(4);capture('18-settings-white')
+shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('19-home-white')
+tap_text('Settings');tap_text('Appearance');tap_text('Night mode');tap_text('Enable')
+time.sleep(4);tap_text('OLED black theme');time.sleep(4);capture('20-settings-oled')
+shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
+tap_text('Settings');tap_text('Appearance');tap_text('OLED black theme');time.sleep(3)
+tap_text('Seasonal decoration');tap_text('Halloween');time.sleep(3)
+shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+(out/'ui-actions-result.txt').write_text('PASS: profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
 server.shutdown()
