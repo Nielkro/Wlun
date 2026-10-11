@@ -40,6 +40,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private var load: Job? = null
     private val collapsed = mutableSetOf<Long>()
     private var observer: InvalidationTracker.Observer? = null
+    private var testDialog: androidx.appcompat.app.AlertDialog? = null
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun tile(selected: Boolean = false) = GradientDrawable().apply {
         setColor(if (selected) Color.rgb(48, 62, 69) else surface)
@@ -85,6 +86,7 @@ class MobileHomeFragment : ToolbarFragment() {
     override fun onDestroyView() {
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
         observer = null; load?.cancel(); content = null; power = null; status = null
+        testDialog?.dismiss(); testDialog=null
         super.onDestroyView()
     }
     fun refresh() {
@@ -136,6 +138,19 @@ class MobileHomeFragment : ToolbarFragment() {
                 title.addView(action("◴") { testMenu(profiles.map { it.id }.toLongArray(), group.displayName(), group.id) }, LinearLayout.LayoutParams(dp(48), dp(48)))
                 title.addView(action("⋯") { viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) } }, LinearLayout.LayoutParams(dp(48), dp(48)))
                 box.addView(title)
+                if (group.isSubscription) {
+                    if (group.subLastUpdate > 0) {
+                        val updated=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,java.text.DateFormat.SHORT)
+                            .format(java.util.Date(group.subLastUpdate * 1000))
+                        box.addView(text(updated,12f,muted))
+                    }
+                    val quota=group.subInfo
+                    if (quota.valid && quota.hasQuota) {
+                        val used=android.text.format.Formatter.formatShortFileSize(requireContext(),quota.upload+quota.download)
+                        val total=if(quota.total>0) android.text.format.Formatter.formatShortFileSize(requireContext(),quota.total) else "∞"
+                        box.addView(text("$used / $total",12f,muted))
+                    }
+                }
                 if (group.id !in collapsed) for (profile in profiles) {
                     val row = LinearLayout(requireContext()).apply {
                         gravity = Gravity.CENTER_VERTICAL; background = tile(profile.id == DataStore.selectedProxy)
@@ -185,17 +200,19 @@ class MobileHomeFragment : ToolbarFragment() {
         }.show()
     }
     private fun showTestProgress() {
+        if(testDialog?.isShowing == true) return
         val info=text("",15f,muted)
         val dialog=MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_tests).setView(info)
             .setNegativeButton(R.string.qmobile_stop) { _,_ -> TestSessionClient.stop() }.setPositiveButton(android.R.string.ok,null).create()
         dialog.show()
+        testDialog=dialog
         val job=viewLifecycleOwner.lifecycleScope.launch {
             TestSessionClient.state.collect { state ->
                 info.text="${state.done} / ${state.total}"
                 dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.isEnabled=state.running
             }
         }
-        dialog.setOnDismissListener { job.cancel() }
+        dialog.setOnDismissListener { job.cancel(); if(testDialog===dialog) testDialog=null }
     }
     private fun importClipboard() {
         val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

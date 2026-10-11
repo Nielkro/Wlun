@@ -10,8 +10,8 @@ import org.junit.Test
 class TestSettingsContractTest {
 
     @Test
-    fun freshInstallDefaultsMatchThroneBaseline() {
-        assertEquals("http://cp.cloudflare.com/", SettingsRegistry.TEST_URL.default)
+    fun freshInstallDefaultsMatchQThrone() {
+        assertEquals("http://www.google.com/generate_204", SettingsRegistry.TEST_URL.default)
         assertEquals(10, SettingsRegistry.TEST_CONCURRENT.default)
         assertEquals(3000, SettingsRegistry.URL_TEST_TIMEOUT_MS.default)
         assertEquals(SpeedTestSettings.FULL, SettingsRegistry.SPEED_TEST_MODE.default)

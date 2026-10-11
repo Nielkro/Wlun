@@ -26,7 +26,7 @@ runs:
         } >> "$GITHUB_ENV"
     - name: ThroneCore cache
       id: cache
-      uses: actions/cache@v6
+      uses: actions/cache/restore@v6
       with:
         path: |
           app/libs/qThroneCore.aar
@@ -103,3 +103,11 @@ runs:
             || { echo "::error::qThroneCore.aar has no jni/$abi/libqthrone.so"; exit 1; }
         done
         python3 -c 'import json, sys; json.load(open(sys.argv[1]))' app/src/main/assets/schema/sing-box.json
+    - name: Save verified qThrone core
+      if: steps.cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: |
+          app/libs/qThroneCore.aar
+          app/src/main/assets/schema/sing-box.json
+        key: throne-core-${{ env.THRONE_CORE_REF }}-${{ env.THRONE_CORE_SHA }}-${{ env.THRONE_CORE_SCRIPT_SHA }}-${{ hashFiles('.github/actions/throne-core/action.yml') }}
