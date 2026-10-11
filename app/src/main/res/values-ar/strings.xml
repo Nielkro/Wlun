@@ -1370,7 +1370,7 @@
     <string name="update_reason_no_manifest">لا يحتوي الإصدار على مانيفست تحديث</string>
     <string name="update_restart_note">يتوقف الاتصال أثناء استبدال التطبيق ويُستأنف بعد التحديث.</string>
     <string name="update_size">الحجم: %s</string>
-    <string name="update_up_to_date">Throne محدّث</string>
+    <string name="update_up_to_date">qThrone محدّث</string>
     <string name="update_verifying">جارٍ التحقق من التحديث…</string>
     <string name="use_dns_object">استخدام كائن DNS مخصص</string>
     <string name="use_dns_object_sum">استبدال قسم DNS بالكامل بالكائن أدناه</string>

@@ -1473,7 +1473,7 @@
     <string name="update_channel_stable">Kanal: stabile utgivelser</string>
     <string name="update_channel_beta">Kanal: stabile og forhåndsutgivelser</string>
     <string name="update_checking">Søker etter oppdateringer …</string>
-    <string name="update_up_to_date">Throne er oppdatert</string>
+    <string name="update_up_to_date">qThrone er oppdatert</string>
     <string name="update_check_failed">Kunne ikke søke etter oppdateringer</string>
     <string name="update_current_version">Gjeldende versjon: %s</string>
     <string name="update_new_version">Ny versjon: %s</string>

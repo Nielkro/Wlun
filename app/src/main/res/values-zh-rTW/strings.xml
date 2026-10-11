@@ -1400,7 +1400,7 @@
     <string name="update_reason_no_manifest">該釋出沒有更新清單</string>
     <string name="update_restart_note">替換應用期間連線會中斷，更新完成後自動恢復。</string>
     <string name="update_size">大小：%s</string>
-    <string name="update_up_to_date">Throne 已是最新版本</string>
+    <string name="update_up_to_date">qThrone 已是最新版本</string>
     <string name="update_verifying">正在校驗更新…</string>
     <string name="use_dns_object">使用自定義 DNS 物件</string>
     <string name="use_dns_object_sum">用下方物件替換整個 DNS 部分</string>

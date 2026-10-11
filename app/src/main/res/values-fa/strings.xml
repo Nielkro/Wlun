@@ -1409,7 +1409,7 @@
     <string name="update_reason_no_manifest">انتشار مانیفست به‌روزرسانی ندارد</string>
     <string name="update_restart_note">اتصال هنگام جایگزینی برنامه قطع می‌شود و پس از به‌روزرسانی دوباره برقرار می‌شود.</string>
     <string name="update_size">اندازه: %s</string>
-    <string name="update_up_to_date">Throne به‌روز است</string>
+    <string name="update_up_to_date">qThrone به‌روز است</string>
     <string name="update_verifying">در حال تأیید به‌روزرسانی…</string>
     <string name="use_dns_object">استفاده از شیء DNS سفارشی</string>
     <string name="use_dns_object_sum">جایگزینی کل بخش DNS با شیء زیر</string>

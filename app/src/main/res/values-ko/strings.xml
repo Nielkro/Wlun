@@ -1380,7 +1380,7 @@
     <string name="update_reason_no_manifest">릴리스에 업데이트 매니페스트가 없음</string>
     <string name="update_restart_note">앱 교체 중에는 연결이 중단되고 업데이트 후 재개됩니다.</string>
     <string name="update_size">크기: %s</string>
-    <string name="update_up_to_date">Throne은 최신 버전입니다</string>
+    <string name="update_up_to_date">qThrone은 최신 버전입니다</string>
     <string name="update_verifying">업데이트 검증 중…</string>
     <string name="use_dns_object">사용자 지정 DNS 객체 사용</string>
     <string name="use_dns_object_sum">DNS 섹션 전체를 아래 객체로 대체</string>

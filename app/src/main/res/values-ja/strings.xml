@@ -1381,7 +1381,7 @@
     <string name="update_reason_no_manifest">リリースに更新マニフェストがありません</string>
     <string name="update_restart_note">アプリの置換中は接続が停止し、更新後に再開します。</string>
     <string name="update_size">サイズ：%s</string>
-    <string name="update_up_to_date">Throne は最新です</string>
+    <string name="update_up_to_date">qThrone は最新です</string>
     <string name="update_verifying">更新を検証中…</string>
     <string name="use_dns_object">カスタム DNS オブジェクトを使用</string>
     <string name="use_dns_object_sum">DNS セクション全体を下のオブジェクトで置き換え</string>
