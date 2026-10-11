@@ -11,6 +11,7 @@ concurrency:
   cancel-in-progress: false
 permissions:
   contents: write
+  actions: read
 jobs:
   release:
     name: Build and publish a release
@@ -38,6 +39,24 @@ jobs:
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Download verified native transports
+        uses: actions/download-artifact@v8
+        with:
+          pattern: qThrone-carriers-*
+          path: carrier-artifacts
+          run-id: '38151455147'
+          github-token: ${{ github.token }}
+      - name: Verify and stage native transports
+        shell: bash
+        run: |
+          set -euo pipefail
+          for abi in arm64-v8a armeabi-v7a x86_64; do
+            source="carrier-artifacts/qThrone-carriers-$abi"
+            (cd "$source"; sha256sum -c SHA256SUMS)
+            mkdir -p "deployment/carriers/$abi" "app/src/main/assets/carrier-licenses/$abi"
+            cp "$source/"*.so "deployment/carriers/$abi/"
+            cp "$source/"*-LICENSE "$source/SOURCES.txt" "app/src/main/assets/carrier-licenses/$abi/"
+          done
       - name: Build
         uses: ./.github/actions/android-build
         with:
@@ -51,7 +70,7 @@ jobs:
         if: ${{ !inputs.publish }}
         uses: actions/upload-artifact@v7
         with:
-          name: Throne-${{ steps.version.outputs.tag }}
+          name: qThroneMobile-${{ steps.version.outputs.tag }}
           path: dist/
           if-no-files-found: error
           retention-days: 14
@@ -63,4 +82,4 @@ jobs:
           TAG: ${{ steps.version.outputs.tag }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$TAG" --generate-notes
+          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "${TAG#v}" --prerelease --notes-file RELEASE_NOTES.md

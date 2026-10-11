@@ -132,6 +132,7 @@ fun Project.setupAppCommon() {
     android.apply {
         val release = signingConfigs.create("release").apply {
             storeFile = keystore
+            storeType = "PKCS12"
             storePassword = storePass
             keyAlias = alias
             keyPassword = keyPass
