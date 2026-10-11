@@ -163,22 +163,18 @@ class VpnService : BaseVpnService(),
             }
         }
 
-        val includePackage = options.getIncludePackage()
-        if (includePackage.hasNext()) {
-            includePackage.toList().forEach {
-                try {
-                    builder.addAllowedApplication(it)
-                } catch (_: PackageManager.NameNotFoundException) {
-                }
-            }
-        }
-        val excludePackage = options.getExcludePackage()
-        if (excludePackage.hasNext()) {
-            excludePackage.toList().forEach {
-                try {
-                    builder.addDisallowedApplication(it)
-                } catch (_: PackageManager.NameNotFoundException) {
-                }
+        // Native transport sockets cannot call the in-process protect(fd). Keep this
+        // application's UID outside the TUN when a native transport is in the plan.
+        val nativeTransport=data.proxy?.config?.carrierPlans?.isNotEmpty() == true
+        val included=options.getIncludePackage().toList()
+        val excluded=options.getExcludePackage().toList()
+        if(included.isNotEmpty()) {
+            val effective=if(nativeTransport) included.filter { it!=packageName } else included
+            check(effective.isNotEmpty()) { "Native transports require at least one other included application" }
+            effective.forEach { try { builder.addAllowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {} }
+        } else {
+            (excluded + if(nativeTransport) listOf(packageName) else emptyList()).distinct().forEach {
+                try { builder.addDisallowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {}
             }
         }
 

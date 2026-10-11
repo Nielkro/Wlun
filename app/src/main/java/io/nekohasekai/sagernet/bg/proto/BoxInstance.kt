@@ -28,6 +28,8 @@ abstract class BoxInstance(
     lateinit var core: CoreConfig
     lateinit var box: Instance
 
+    private val carrierProcesses = mutableListOf<app.qthrone.mobile.bg.carrier.CarrierProcess>()
+
     val boxOrNull: Instance? get() = if (::box.isInitialized) box else null
 
     /** This start does not wait for remote rule-sets the core has no copy of ([DeferredRuleSets]). */
@@ -69,7 +71,19 @@ abstract class BoxInstance(
                 runCatching { DeferredRuleSets.writeEmptySet() }.onFailure { Logs.w("rule-sets: ${it.readableMessage}") }
             }
         }
-        loadConfig()
+        try {
+            for(plan in config.carrierPlans) {
+                val context=app.qthrone.mobile.ktx.app
+                carrierProcesses.add(app.qthrone.mobile.bg.carrier.CarrierProcess.start(
+                    plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),
+                    java.io.File(context.cacheDir,"carriers"),android.os.Build.VERSION.SDK_INT,
+                    plan.privateJson,plan.port,plan.credentials))
+            }
+            loadConfig()
+        } catch(error:Throwable) {
+            carrierProcesses.asReversed().forEach { it.close() };carrierProcesses.clear()
+            throw error
+        }
     }
 
     /** The geo asset downloads the start waits for; null once they are over. */
@@ -117,7 +131,9 @@ abstract class BoxInstance(
 
     override fun close() {
         boxOrNull?.let(CoreRuntime::detachRunning)
-        boxOrNull?.close()
+        try { boxOrNull?.close() } finally {
+            carrierProcesses.asReversed().forEach { it.close() };carrierProcesses.clear()
+        }
     }
 
 }

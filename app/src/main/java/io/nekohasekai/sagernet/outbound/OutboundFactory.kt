@@ -27,10 +27,10 @@ object OutboundFactory {
     @JvmField
     val DEFAULT_XRAY_VLESS_PREFERENCE: XrayVlessPreference = XrayVlessPreference.XhttpAndReality
 
-    /** Every factory string of OutboundFactory.cpp:35-61 (R2 §A). */
+    /** Every factory string of OutboundFactory.cpp:35-61 (R2 В§A). */
     @JvmField
     val ALL_TYPES: List<String> = listOf(
-        "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
+        "qwdtt", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
         "tuic", "juicity", "trusttunnel", "anytls", "mieru", "snell", "shadowtls", "wireguard", "masque", "openvpn",
         "openconnect", "tailscale", "ssh", "custom", "extracore", "naive", "direct",
     )
@@ -50,7 +50,7 @@ object OutboundFactory {
         "anytls" to "AnyTls", "mieru" to "Mieru", "snell" to "Snell", "shadowtls" to "ShadowTls",
         "wireguard" to "WireGuard", "masque" to "Masque", "openvpn" to "OpenVpn", "openconnect" to "OpenConnect",
         "ssh" to "Ssh", "custom" to "Custom", "naive" to "Naive", "direct" to "Direct", "chain" to "Chain",
-        "autoselector" to "AutoSelector",
+        "autoselector" to "AutoSelector", "qwdtt" to "Qwdtt",
     )
 
     private const val TYPES_PACKAGE = "app.qthrone.mobile.outbound.types."
@@ -99,6 +99,7 @@ object OutboundFactory {
 
     @JvmField
     val PROTOCOLS: List<Protocol> = listOf(
+        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config"), listOf("qwdtt"), emptyList()),
         Protocol("socks", listOf("socks5://", "socks4://", "socks4a://", "socks://"), listOf("socks"), listOf("socks5")),
         Protocol("http", listOf("http://", "https://"), listOf("http"), listOf("http")),
         Protocol("shadowsocks", listOf("ss://"), listOf("shadowsocks"), listOf("ss")),

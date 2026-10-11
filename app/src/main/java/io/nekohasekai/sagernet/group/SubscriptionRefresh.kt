@@ -131,7 +131,12 @@ internal object SubscriptionRefresh {
                 val newEnt = ProfileManager.getProfile(newId)
                 if (newEnt != null && ProfileManager.getProfile(oldId) != null) {
                     // The old row keeps its id, test results and traffic.
-                    SagerDatabase.proxyDao.updateOutbound(oldId, newEnt.type, newEnt.name, newEnt.outboundJson)
+                    val incoming=newEnt.outbound
+                    val previous=ProfileManager.getProfile(oldId)?.outbound
+                    if(incoming is app.qthrone.mobile.outbound.types.Qwdtt && previous is app.qthrone.mobile.outbound.types.Qwdtt) {
+                        incoming.deviceId=previous.deviceId
+                        SagerDatabase.proxyDao.updateOutbound(oldId,newEnt.type,newEnt.name,incoming.exportToJson().toCompact())
+                    } else SagerDatabase.proxyDao.updateOutbound(oldId, newEnt.type, newEnt.name, newEnt.outboundJson)
                 }
                 disturbed.add(oldId)
             }

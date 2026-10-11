@@ -170,7 +170,12 @@ internal class ChainBuilder(
                 hops.add(Hop(id, warpHop))
                 continue
             }
-            val outbound = profiles.get(id) ?: return "Null proxy in chain, you may want to check your configs"
+            val stored = profiles.get(id) ?: return "Null proxy in chain, you may want to check your configs"
+            val outbound = if(stored is app.qthrone.mobile.outbound.types.Qwdtt) {
+                try {
+                    state.carrierPlans.getOrPut(id) { app.qthrone.mobile.bg.carrier.CarrierPlan.qwdtt(id,stored) }.outbound()
+                } catch(_:IllegalArgumentException) { return "qWDTT: invalid transport configuration" }
+            } else stored
             if (outbound.invalid) return "Profile $id has a type this build cannot use: ${outbound.type}"
             if (!inXray && outbound.isXray()) {
                 state.singToXrayTransitioned = true

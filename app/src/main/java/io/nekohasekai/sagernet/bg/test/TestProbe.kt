@@ -61,6 +61,7 @@ internal class TestProbe private constructor(
     private val core: CoreConfig,
     private val tagToProfileId: Map<String, Long>,
     private val fullConfigProfileId: Long,
+    val carrierPlans:List<app.qthrone.mobile.bg.carrier.CarrierPlan> = emptyList(),
 ) {
     val profileIds: List<Long> =
         if (fullConfigProfileId > 0) listOf(fullConfigProfileId) else tagToProfileId.values.toList()
@@ -85,7 +86,7 @@ internal class TestProbe private constructor(
         /** The probes of a build (TestRunner.cpp:357-373); the shared box goes first, it carries most of the batch. */
         fun plan(generated: GeneratedConfig): List<TestProbe> = buildList {
             if (generated.outboundTags.isNotEmpty()) {
-                add(TestProbe(CoreConfig.from(generated), generated.tagToProfileId, -1L))
+                add(TestProbe(CoreConfig.from(generated), generated.tagToProfileId, -1L, generated.carrierPlans))
             }
             for ((id, config) in generated.fullConfigs) add(TestProbe(CoreConfig(coreConfig = config), emptyMap(), id))
         }
@@ -285,14 +286,24 @@ internal abstract class LatencySweep(protected val session: TestSession) {
             probe.profileIds.forEach { emit(ProbeResult(it, error = ERROR_ABORTED, measured = false)) }
             return null
         }
+        val transports=mutableListOf<app.qthrone.mobile.bg.carrier.CarrierProcess>()
         try {
+            if(probe.carrierPlans.isNotEmpty()) {
+                check(!app.qthrone.mobile.database.DataStore.serviceState.started) {
+                    "Use the current connection test while VPN is active; separate native probes are not enabled yet"
+                }
+                val context=app.qthrone.mobile.ktx.app
+                for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierProcess.start(
+                    plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),java.io.File(context.cacheDir,"carriers"),
+                    android.os.Build.VERSION.SDK_INT,plan.privateJson,plan.port,plan.credentials))
+            }
             session.awaitCore { done -> start(probe, batch, emit, done) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Logs.w("Test probe failed to start: ${e.readableMessage}")
             return e.readableMessage
-        }
+        } finally { transports.asReversed().forEach { it.close() } }
         probe.profileIds.forEach { emit(ProbeResult(it, error = ERROR_NO_RESULT, measured = false)) }
         return null
     }

@@ -44,6 +44,7 @@ android {
     }
     sourceSets.named("main") {
         assets.srcDir(generatedLicenseAssets)
+        jniLibs.srcDir(rootProject.layout.projectDirectory.dir("deployment/carriers"))
     }
 }
 

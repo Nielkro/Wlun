@@ -104,6 +104,7 @@ class ConfigGenerator @JvmOverloads constructor(
             error = null,
             involvedProfileIds = reads.ids,
             autoSelector = state.autoSelector,
+            carrierPlans = state.carrierPlans.values.toList(),
         )
     }
 
@@ -408,6 +409,7 @@ class ConfigGenerator @JvmOverloads constructor(
             skipped = skipped,
             tunIPv4Cidr = null,
             error = null,
+            carrierPlans = state.carrierPlans.values.toList(),
         )
     }
 
@@ -478,7 +480,7 @@ class ConfigGenerator @JvmOverloads constructor(
     }
 
     /**
-     * The tun inbound of :1141-1180 with the Android field set of design §2.4: no interface_name / auto_redirect
+     * The tun inbound of :1141-1180 with the Android field set of design В§2.4: no interface_name / auto_redirect
      * (the platform opens the device), per-app package lists instead of uid rules, the opt-in system HTTP proxy handed
      * to the VpnService builder through `platform.http_proxy`, and an explicit 1.14 `dns_mode`. No `stack`: sing-tun's
      * default, as on the desktop.
@@ -820,7 +822,7 @@ class ConfigGenerator @JvmOverloads constructor(
             independentCache = true
         }
 
-        // Below the fakeip rule, which keeps answering A / AAAA for these sites as on the desktop (R6 §3.5).
+        // Below the fakeip rule, which keeps answering A / AAAA for these sites as on the desktop (R6 В§3.5).
         val pre = state.prerequisites
         // Ahead of the site lists, so on its network a rule's DNS server wins the way its route does.
         for ((server, conditions, selectors) in pre.conditionalDns) {

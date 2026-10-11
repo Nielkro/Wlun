@@ -36,6 +36,7 @@ class GeneratedConfig(
     @JvmField val error: String?,
     @JvmField val involvedProfileIds: Set<Long> = emptySet(),
     @JvmField val autoSelector: AutoSelectorBuild? = null,
+    @JvmField val carrierPlans: List<app.qthrone.mobile.bg.carrier.CarrierPlan> = emptyList(),
 ) {
     val ok: Boolean get() = error == null
 

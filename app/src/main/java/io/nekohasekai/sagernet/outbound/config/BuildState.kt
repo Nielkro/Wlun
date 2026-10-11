@@ -95,6 +95,7 @@ internal class Prerequisites {
 
 /** The per-build state of generate.cpp:180-207 that the sections share. */
 internal class BuildState(val forTest: Boolean) {
+    val carrierPlans = LinkedHashMap<Long, app.qthrone.mobile.bg.carrier.CarrierPlan>()
     var singToXrayTransitioned = false
     var xrayToSingTransitioned = false
     var proxyUsesXray = false
