@@ -1,17 +1,40 @@
 # qThroneMobile
 
-Клиент для Android на основе [ThroneForAndroid](https://github.com/throneproj/ThroneForAndroid), с серым интерфейсом, голубыми акцентами и плитками в стиле [qThrone](https://github.com/ttrroyy/qThrone).
+Кроссплатформенный клиент для управления прокси на Qt с ядрами [sing-box](https://github.com/SagerNet/sing-box) и [Xray](https://github.com/XTLS/Xray-core).
 
-Подписки, хранение профилей и обновления используют архитектуру мобильного Throne. Новый интерфейс включает импорт из буфера и QR-кода, группы подписок, тесты задержки и скорости, действия по свайпу и раздельную маршрутизацию.
+Форк [qThroneMobile](https://github.com/throneproj/ThroneForAndroid) с поддержкой протоколов qWDTT,CSQTT,olcRTC,OpenFlux, а также DNSTT (в планах на ближайшее время).
 
-## Сборки
+## Поддерживаемые протоколы
 
-Проект в разработке. Проверочные APK появятся в [GitHub Actions](https://github.com/ttrroyy/qThroneMobile/actions); готовые выпуски — в [Releases](https://github.com/ttrroyy/qThroneMobile/releases).
+- qWDTT
+- CSQTT
+- SOCKS
+- HTTP(S)
+- Shadowsocks
+- Trojan
+- VMess
+- VLESS
+- TUIC
+- Hysteria
+- Hysteria2
+- AnyTLS
+- Mieru
+- Snell
+- NaïveProxy
+- Juicity
+- TrustTunnel
+- ShadowTLS
+- WireGuard
+- AmneziaWG
+- MASQUE
+- SSH
+- Xray VLESS
+- OpenVPN/OpenConnect
+- Пользовательские исходящие подключения (sing-box и Xray)
+- Пользовательские конфигурации (sing-box и Xray)
+- Цепочки подключений
+- Дополнительные ядра
 
-Поддержка qWDTT, CSQTT, OpenFlux и olcRTC ещё разрабатывается и пока не доступна в мобильной сборке.
+## Поддержать проект
 
-## Основа
-
-- [ThroneForAndroid](https://github.com/throneproj/ThroneForAndroid), [SagerNet](https://github.com/SagerNet/SagerNet) и [shadowsocks-android](https://github.com/shadowsocks/shadowsocks-android).
-- Ядро [qThrone](https://github.com/ttrroyy/qThrone), с sing-box и Xray. Точная версия закреплена в `nb4a.properties`.
-- Лицензия [GPL-3.0](LICENSE). Авторские права и уведомления сторонних компонентов сохранены в исходниках.
+Понравилось — ставь ⭐ репозиторию: это помогает другим найти проект и поддерживает разработку. 
