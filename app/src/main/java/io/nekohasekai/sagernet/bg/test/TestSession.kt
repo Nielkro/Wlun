@@ -46,6 +46,8 @@ internal class TestSession(
         val creditTraffic: Boolean = !DataStore.disableTrafficStats
     }
 
+    val interactive = client != null
+
     val kind: Int get() = spec.kind
 
     val options by lazy { Options(spec) }

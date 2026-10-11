@@ -122,19 +122,18 @@ object GroupRepo {
     }
 
     /**
-     * GroupsRepo::DeleteGroup with the callers' rules: the last group is never deleted (returns false), a running
-     * profile of the group is stopped first. The members go by the foreign key cascade.
+     * Stops a running member before deleting the group and its profiles, including the last group.
      */
     suspend fun delete(id: Long): Boolean {
         val remaining = SagerDatabase.instance.runInTransaction(Callable {
             val ids = dao.allIds()
-            if (id !in ids || ids.size <= 1) return@Callable null
+            if (id !in ids) return@Callable null
             ids - id
         }) ?: return false
         val running = ProfileManager.runningProfileId()
         if (running > 0 && ProfileManager.getProfile(running)?.groupId == id) SagerNet.stopService()
         dao.deleteById(id)
-        if (SettingsRegistry.CURRENT_GROUP.read(DataStore.configurationStore) == id) setCurrent(remaining.first())
+        if (SettingsRegistry.CURRENT_GROUP.read(DataStore.configurationStore) == id) setCurrent(remaining.firstOrNull() ?: 0L)
         if (DataStore.selectedProxy > 0 && ProfileManager.getProfile(DataStore.selectedProxy) == null) {
             DataStore.selectedProxy = 0L
         }

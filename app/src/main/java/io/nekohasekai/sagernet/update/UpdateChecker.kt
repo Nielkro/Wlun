@@ -20,7 +20,7 @@ import java.io.InputStream
 
 /**
  * GitHub releases of ThroneForAndroid (the desktop's CheckUpdate: `allow_beta_update` admits pre-releases). A release
- * built by CI carries `throne-update.json` (buildScript/release_assets.py) and can be installed in-app; older releases
+ * built by CI carries `qthrone-update.json` (buildScript/release_assets.py) and can be installed in-app; older releases
  * are offered in the browser only.
  */
 object UpdateChecker {
@@ -28,7 +28,8 @@ object UpdateChecker {
     const val REPOSITORY = "ttrroyy/qThroneMobile"
     const val RELEASES_PAGE = "https://github.com/$REPOSITORY/releases"
     private const val RELEASES_API = "https://api.github.com/repos/$REPOSITORY/releases?per_page=20"
-    private const val MANIFEST = "throne-update.json"
+    private const val MANIFEST = "qthrone-update.json"
+    private const val LEGACY_MANIFEST = "throne-update.json"
     private const val MAX_MANIFESTS = 5
     private const val MAX_MANIFEST_BYTES = 256 * 1024
 
@@ -84,15 +85,15 @@ object UpdateChecker {
         val candidates = fetchReleases(context, client)
             .filter { allowBeta || !it.prerelease }
             .mapNotNull { release -> Semver.parse(release.tag)?.let { release to it } }
-            .filter { (_, version) -> installed == null || Semver.compare(version, installed) > 0 }
+            .filter { (release, version) -> release.assets.any { it.name == MANIFEST || it.name == LEGACY_MANIFEST } || installed == null || Semver.compare(version, installed) > 0 }
             .sortedWith { a, b -> Semver.compare(b.second, a.second) }
             .map { it.first }
         if (candidates.isEmpty()) return Result.UpToDate
 
         var best: Pair<Release, JSONObject>? = null
-        for (release in candidates.filter { r -> r.assets.any { it.name == MANIFEST } }.take(MAX_MANIFESTS)) {
+        for (release in candidates.filter { r -> r.assets.any { it.name == MANIFEST || it.name == LEGACY_MANIFEST } }.take(MAX_MANIFESTS)) {
             val manifest = try {
-                fetchManifest(client, release.assets.first { it.name == MANIFEST })
+                fetchManifest(client, release.assets.firstOrNull { it.name == MANIFEST } ?: release.assets.first { it.name == LEGACY_MANIFEST })
             } catch (e: Exception) {
                 Logs.w("Update manifest of ${release.tag}: ${e.readableMessage}")
                 continue
@@ -105,7 +106,7 @@ object UpdateChecker {
         best?.let { (release, manifest) -> return Result.Available(offerOf(context, release, manifest)) }
 
         // Releases without a manifest predate the in-app updater: open them in the browser.
-        val legacy = candidates.firstOrNull { r -> r.assets.none { it.name == MANIFEST } } ?: return Result.UpToDate
+        val legacy = candidates.firstOrNull { r -> r.assets.none { it.name == MANIFEST || it.name == LEGACY_MANIFEST } } ?: return Result.UpToDate
         return Result.Available(
             Offer(
                 legacy, legacy.tag.removePrefix("v"), 0, null, null, null,

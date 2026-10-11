@@ -36,7 +36,7 @@ object TestSessionClient {
 
     private const val PUBLISH_INTERVAL_MS = 100L
     private const val CONNECT_TIMEOUT_MS = 15_000L
-    private const val STOP_TIMEOUT_MS = 15_000L
+    private const val STOP_TIMEOUT_MS = 2_000L
     private const val PRUNE_DELAY_MS = 2_000L
 
     private val scope = CoroutineScope(

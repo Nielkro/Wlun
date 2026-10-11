@@ -36,8 +36,10 @@ internal class TestNotification(private val session: TestSession) {
     private var assetLine = ""
 
     private var receiver: BroadcastReceiver? = null
+    private val silent = session.interactive && session.kind == TestSpec.KIND_URL
 
     fun start() {
+        if (silent) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) = TestEngine.stop()
         }
@@ -70,6 +72,7 @@ internal class TestNotification(private val session: TestSession) {
 
     /** Posts the latest state at most once per [REFRESH_MS] until cancelled. */
     suspend fun refreshLoop() {
+        if (silent) return
         while (true) {
             delay(REFRESH_MS)
             if (!dirty) continue
@@ -82,7 +85,7 @@ internal class TestNotification(private val session: TestSession) {
     fun finish(assetProblems: Collection<String>) {
         receiver?.let { runCatching { app.unregisterReceiver(it) } }
         receiver = null
-        CoreForeground.release(REASON)
+        if (!silent) CoreForeground.release(REASON)
         if (assetProblems.isNotEmpty()) warnAssets(assetProblems)
     }
 

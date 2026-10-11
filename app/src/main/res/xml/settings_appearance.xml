@@ -1,72 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory app:title="@string/theme">
-        <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="seasonal_decoration" app:title="@string/qmobile_seasonal" app:defaultValue="halloween" app:entries="@array/qmobile_seasons" app:entryValues="@array/qmobile_season_values" app:useSimpleSummaryProvider="true" />
-        <SwitchPreference
-            app:defaultValue="false"
-            app:icon="@drawable/ic_baseline_color_lens_24"
-            app:key="useSystemTheme"
-            app:summary="@string/use_system_theme_summary"
-            app:title="@string/use_system_theme" />
-        <moe.matsuri.nb4a.ui.ColorPickerPreference
-            app:defaultValue="9"
-            android:title="@string/theme"
-            app:icon="@drawable/ic_baseline_color_lens_24"
-            app:key="appTheme" />
-        <moe.matsuri.nb4a.ui.SimpleMenuPreference
-            app:defaultValue="1"
-            app:entries="@array/night_mode"
-            app:entryValues="@array/int_array_4"
-            app:icon="@drawable/ic_baseline_wb_sunny_24"
-            app:key="nightTheme"
-            app:title="@string/night_mode"
-            app:useSimpleSummaryProvider="true" />
-        <SwitchPreference
-            app:defaultValue="false"
-            app:icon="@drawable/ic_baseline_contrast_24"
-            app:key="amoledTheme"
-            app:summary="@string/amoled_theme_summary"
-            app:title="@string/amoled_theme" />
-        <moe.matsuri.nb4a.ui.SimpleMenuPreference
-            app:defaultValue=""
-            app:entries="@array/language_entries"
-            app:entryValues="@array/language_values"
-            app:icon="@drawable/baseline_translate_24"
-            app:key="appLanguage"
-            app:title="@string/language"
-            app:useSimpleSummaryProvider="true" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/cag_profile_list">
-        <SwitchPreference
-            app:icon="@drawable/ic_baseline_center_focus_weak_24"
-            app:key="alwaysShowAddress"
-            app:summary="@string/always_show_address_sum"
-            app:title="@string/always_show_address" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/cag_notification">
-        <SwitchPreference
-            app:defaultValue="true"
-            app:icon="@drawable/ic_baseline_speed_24"
-            app:key="showDirectSpeed"
-            app:summary="@string/show_direct_speed_sum"
-            app:title="@string/show_direct_speed" />
-        <SwitchPreference
-            app:key="showGroupInNotification"
-            app:title="@string/show_group_in_notification" />
-        <MultiSelectListPreference
-            app:defaultValue="@array/notification_action_defaults"
-            app:entries="@array/notification_action_entries"
-            app:entryValues="@array/notification_action_values"
-            app:icon="@drawable/ic_baseline_compare_arrows_24"
-            app:key="notificationActions"
-            app:title="@string/notification_actions" />
-        <Preference
-            app:icon="@drawable/ic_baseline_info_24"
-            app:key="notificationPermission"
-            app:persistent="false"
-            app:title="@string/notification_permission" />
-    </PreferenceCategory>
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+ <PreferenceCategory app:title="@string/settings_appearance">
+  <moe.matsuri.nb4a.ui.ColorPickerPreference app:defaultValue="9" app:title="@string/qmobile_color" app:key="appTheme" />
+  <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="qmobileSurfaceTheme" app:title="@string/theme" app:persistent="false" app:entries="@array/qmobile_surface_themes" app:entryValues="@array/qmobile_surface_values" app:useSimpleSummaryProvider="true" />
+  <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="seasonal_decoration" app:title="@string/qmobile_seasonal" app:defaultValue="halloween" app:entries="@array/qmobile_seasons" app:entryValues="@array/qmobile_season_values" app:useSimpleSummaryProvider="true" />
+  <moe.matsuri.nb4a.ui.SimpleMenuPreference app:defaultValue="" app:entries="@array/language_entries" app:entryValues="@array/language_values" app:key="appLanguage" app:title="@string/language" app:useSimpleSummaryProvider="true" />
+ </PreferenceCategory>
+ <PreferenceCategory app:title="@string/cag_notification">
+  <SwitchPreference app:defaultValue="false" app:key="qmobileNotificationSpeed" app:title="@string/qmobile_notification_speed" />
+ </PreferenceCategory>
 </PreferenceScreen>

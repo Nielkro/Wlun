@@ -4,6 +4,10 @@
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.AppearanceSettingsFragment" app:title="@string/settings_appearance" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/qmobile_section_connection">
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.TunSettingsFragment" app:title="@string/settings_tun" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.InboundSettingsFragment" app:title="@string/settings_inbound" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.CoreSettingsFragment" app:title="@string/settings_core" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.PresetSettingsFragment" app:title="@string/settings_presets" />
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="qmobileRouting" app:title="@string/qmobile_routing" />
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.DnsSettingsFragment" app:title="@string/settings_dns" />
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.GeneralSettingsFragment" app:title="@string/settings_general" />
@@ -12,7 +16,6 @@
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/qmobile_section_other">
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="settingsBackup" app:title="@string/settings_backup" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.AdvancedSettingsPreferenceFragment" app:title="@string/qmobile_advanced_settings" />
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="resetSettings" app:title="@string/reset_settings" />
     </PreferenceCategory>
     <Preference app:key="qmobileUpdate" app:title="@string/update_check" app:widgetLayout="@layout/qmobile_preference_arrow" />

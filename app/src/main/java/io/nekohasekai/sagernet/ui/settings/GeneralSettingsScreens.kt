@@ -121,94 +121,32 @@ class GeneralSettingsFragment : SettingsScreenFragment(R.xml.settings_general) {
 class AppearanceSettingsFragment : SettingsScreenFragment(R.xml.settings_appearance) {
 
     override fun bind() {
-        findPreference<androidx.preference.Preference>("seasonal_decoration")?.setOnPreferenceChangeListener { _, _ -> applyThemeInstantly(); true }
-        val appTheme = pref<ColorPickerPreference>(Key.APP_THEME)
-        val useSystemTheme = pref<SwitchPreference>(Key.USE_SYSTEM_THEME)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            useSystemTheme.isVisible = false
-        } else {
-            useSystemTheme.setOnPreferenceChangeListener { _, newValue ->
-                appTheme.isEnabled = !(newValue as Boolean)
+        pref<Preference>("seasonal_decoration").setOnPreferenceChangeListener { _, _ -> applyThemeInstantly(); true }
+        pref<ColorPickerPreference>(Key.APP_THEME).setOnPreferenceChangeListener { _, _ ->
+            DataStore.useSystemTheme = false
+            applyThemeInstantly()
+            true
+        }
+        pref<SimpleMenuPreference>("qmobileSurfaceTheme").apply {
+            value = if (DataStore.amoledTheme && DataStore.nightTheme == 1) "oled" else when (DataStore.nightTheme) {
+                0 -> "system"
+                2 -> "light"
+                else -> "dark"
+            }
+            setOnPreferenceChangeListener { _, selected ->
+                DataStore.amoledTheme = selected == "oled"
+                DataStore.nightTheme = when (selected) { "system" -> 0; "light" -> 2; else -> 1 }
+                Theme.currentNightMode = DataStore.nightTheme
+                Theme.applyNightTheme()
                 applyThemeInstantly()
                 true
             }
-            appTheme.isEnabled = !DataStore.useSystemTheme
-        }
-        appTheme.setOnPreferenceChangeListener { _, _ ->
-            applyThemeInstantly()
-            true
-        }
-        pref<SimpleMenuPreference>(Key.NIGHT_THEME).setOnPreferenceChangeListener { _, newTheme ->
-            Theme.currentNightMode = (newTheme as String).toInt()
-            Theme.applyNightTheme()
-            true
-        }
-        // AMOLED black: recreate the host so the overlay is applied or removed
-        pref<SwitchPreference>(Key.AMOLED_THEME).setOnPreferenceChangeListener { _, _ ->
-            applyThemeInstantly()
-            true
         }
         pref<SimpleMenuPreference>(Key.APP_LANGUAGE).setOnPreferenceChangeListener { _, newValue ->
             AppLocale.apply(newValue as String)
             true
         }
-        reloadOn(Key.SHOW_DIRECT_SPEED)
-
-        pref<MultiSelectListPreference>(Key.NOTIFICATION_ACTIONS).apply {
-            summaryProvider = Preference.SummaryProvider<MultiSelectListPreference> { p ->
-                val chosen = p.values
-                p.entryValues.indices.filter { p.entryValues[it].toString() in chosen }
-                    .joinToString(", ") { p.entries[it] }
-                    .ifEmpty { getString(androidx.preference.R.string.not_set) }
-            }
-            setOnPreferenceChangeListener { _, newValue ->
-                if ((newValue as Set<*>).size > 3) {
-                    toast(R.string.notification_actions_too_many)
-                    false
-                } else {
-                    needReload()
-                    true
-                }
-            }
-        }
-        notificationPermission = pref(KEY_NOTIFICATION_PERMISSION)
-        notificationPermission.setOnPreferenceClickListener {
-            openNotificationSettings()
-            true
-        }
-    }
-
-    private lateinit var notificationPermission: Preference
-
-    override fun onResume() {
-        super.onResume()
-        if (::notificationPermission.isInitialized) {
-            notificationPermission.setSummary(
-                if (NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()) {
-                    R.string.notification_permission_allowed
-                } else {
-                    R.string.notification_permission_blocked
-                }
-            )
-        }
-    }
-
-    private fun openNotificationSettings() {
-        val context = requireContext()
-        val app = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", context.packageName, null))
-        val intent = if (Build.VERSION.SDK_INT >= 26) {
-            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        } else {
-            app
-        }
-        for (candidate in listOf(intent, app)) {
-            try {
-                startActivity(candidate)
-                return
-            } catch (_: ActivityNotFoundException) {
-            } catch (_: SecurityException) {
-            }
-        }
+        reloadOn("qmobileNotificationSpeed")
     }
 
     // Appearance changes apply at once: the recreated host applies the theme and the AMOLED overlay

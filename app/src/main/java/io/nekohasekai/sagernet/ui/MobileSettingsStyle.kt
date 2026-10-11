@@ -15,7 +15,8 @@ object MobileSettingsStyle {
         fun compact(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val preference = group.getPreference(i)
-                if (preference.icon == null) preference.isIconSpaceReserved = false
+                if (fragment is app.qthrone.mobile.ui.settings.SettingsScreenFragment) preference.icon = null
+                preference.isIconSpaceReserved = preference.icon != null
                 if (preference is androidx.preference.PreferenceGroup) compact(preference)
             }
         }
@@ -23,16 +24,23 @@ object MobileSettingsStyle {
         root.setBackgroundColor(MobilePalette.background)
         val list=fragment.listView
         list.setBackgroundColor(MobilePalette.background)
-        val divider=androidx.recyclerview.widget.DividerItemDecoration(list.context,RecyclerView.VERTICAL)
-        divider.setDrawable(android.graphics.drawable.GradientDrawable().apply {
-            setColor(Color.rgb(67,69,72)); setSize(1,(list.resources.displayMetrics.density).toInt().coerceAtLeast(1))
+        val density=list.resources.displayMetrics.density
+        list.setPadding((16*density).toInt(), (12*density).toInt(), (16*density).toInt(), (24*density).toInt())
+        list.clipToPadding=false
+        list.addItemDecoration(object: RecyclerView.ItemDecoration() {
+            override fun getItemOffsets(outRect: android.graphics.Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
+                outRect.bottom=(10*density).toInt()
+            }
         })
-        list.addItemDecoration(divider)
         fun style(view: View) {
             val position=list.getChildAdapterPosition(view)
             if(position==RecyclerView.NO_POSITION) return
             val category=(list.adapter as? PreferenceGroupAdapter)?.getItem(position) is PreferenceCategory
-            view.setBackgroundColor(if(category) MobilePalette.toolbar else MobilePalette.background)
+            view.background=android.graphics.drawable.GradientDrawable().apply {
+                setColor(if(category) MobilePalette.background else MobilePalette.surface)
+                cornerRadius=16*density
+            }
+            view.findViewById<android.widget.ImageView>(android.R.id.icon)?.imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
             view.findViewById<TextView>(android.R.id.title)?.apply {
                 setTextColor(if(category) MobilePalette.accent(list.context) else MobilePalette.text)
                 textSize=if(category) 16f else 16f

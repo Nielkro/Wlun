@@ -1682,7 +1682,7 @@
     <string name="update_channel_stable">Channel: stable releases</string>
     <string name="update_channel_beta">Channel: stable and pre-releases</string>
     <string name="update_checking">Checking for updates…</string>
-    <string name="update_up_to_date">Throne is up to date</string>
+    <string name="update_up_to_date">qThrone is up to date</string>
     <string name="update_check_failed">Could not check for updates</string>
     <string name="update_current_version">Current version: %s</string>
     <string name="update_new_version">New version: %s</string>

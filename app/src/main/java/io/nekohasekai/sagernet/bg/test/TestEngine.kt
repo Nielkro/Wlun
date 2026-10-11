@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.atomic.AtomicInteger
@@ -16,9 +15,6 @@ import java.util.concurrent.atomic.AtomicInteger
  * for the whole sweep; interactive sessions are refused while it is held, [queueUrlTests] waits for it.
  */
 object TestEngine {
-
-    /** How long a stopped session may take to wind down before its coroutines are cancelled. */
-    private const val STOP_GRACE_MS = 15_000L
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val session = Mutex()
@@ -55,10 +51,7 @@ object TestEngine {
 
     private fun stop(test: TestSession) {
         test.stop()
-        scope.launch {
-            delay(STOP_GRACE_MS)
-            test.job?.cancel()
-        }
+        test.job?.cancel()
     }
 
     /** The running session id, 0 when idle. */

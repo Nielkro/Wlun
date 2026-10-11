@@ -12,17 +12,23 @@ import kotlin.math.abs
 class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View):FrameLayout(context) {
     var onOpened: ((MobileSwipeTile) -> Unit)? = null
     private val primaryActions=listOf(test,share)
-    private val actionWidth=56*resources.displayMetrics.density
+    private val actionWidth=64*resources.displayMetrics.density
     fun showShareChoices(vararg choices:View) {
         left.removeAllViews()
-        choices.forEach { left.addView(it,LinearLayout.LayoutParams(0,-1,1f)) }
+        addActions(choices.toList())
         widthPx=actionWidth*choices.size
         left.layoutParams=left.layoutParams.apply { width=widthPx.toInt() }
         row.animate().translationX(widthPx*direction).setDuration(180).start()
     }
+    private fun addActions(actions: List<View>) {
+        actions.forEachIndexed { index, action ->
+            if (index > 0) left.addView(View(context).apply { setBackgroundColor(android.graphics.Color.WHITE) }, LinearLayout.LayoutParams(resources.displayMetrics.density.toInt().coerceAtLeast(1), -1))
+            left.addView(action, LinearLayout.LayoutParams(0, -1, 1f))
+        }
+    }
     private fun restoreActions() {
         left.removeAllViews()
-        primaryActions.forEach { left.addView(it,LinearLayout.LayoutParams(0,-1,1f)) }
+        addActions(primaryActions)
         widthPx=actionWidth*2
         left.layoutParams=left.layoutParams.apply { width=widthPx.toInt() }
     }
@@ -31,7 +37,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         row.animate().translationX(0f).setDuration(180).withEndAction { left.visibility=View.INVISIBLE; right.visibility=View.INVISIBLE;restoreActions() }.start()
     }
-    private var widthPx=112*resources.displayMetrics.density
+    private var widthPx=actionWidth*2
     private val slop=ViewConfiguration.get(context).scaledTouchSlop
     private var downX=0f; private var downY=0f; private var initial=0f
     private var dragging=false
@@ -40,7 +46,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
     private val left=LinearLayout(context)
     private val right=delete
     init {
-        left.addView(test,LinearLayout.LayoutParams(0,-1,1f));left.addView(share,LinearLayout.LayoutParams(0,-1,1f))
+        addActions(primaryActions)
         addView(left,LayoutParams(widthPx.toInt(),-1,android.view.Gravity.START))
         addView(delete,LayoutParams((widthPx/2).toInt(),-1,android.view.Gravity.END))
         addView(row,LayoutParams(-1,-2))

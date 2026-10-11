@@ -11,9 +11,10 @@ import app.qthrone.mobile.database.DataStore
 
 /** Desktop artwork frames; animation only runs while this view is on screen. */
 class MobileSeasonalView(context:Context):View(context) {
+    private companion object { val animationEpoch=SystemClock.uptimeMillis() }
     private val kind=DataStore.seasonalDecoration
     private val fps=if(kind=="newyear") 20 else 10
-    private val start=SystemClock.uptimeMillis()
+    private val start=animationEpoch
     private val paint=Paint().apply { isFilterBitmap=false;isAntiAlias=false }
     private val atlas=if(kind in listOf("halloween","newyear")) runCatching {
         context.assets.open("seasonal/$kind-${if(MobilePalette.light) "light" else "dark"}.png").use { BitmapFactory.decodeStream(it) }

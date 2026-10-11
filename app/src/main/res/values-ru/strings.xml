@@ -1383,7 +1383,7 @@
     <string name="update_reason_no_manifest">в релизе нет манифеста обновления</string>
     <string name="update_restart_note">Во время замены приложения соединение прерывается и возобновляется после обновления.</string>
     <string name="update_size">Размер: %s</string>
-    <string name="update_up_to_date">Throne обновлён до последней версии</string>
+    <string name="update_up_to_date">qThrone обновлён до последней версии</string>
     <string name="update_verifying">Проверка обновления…</string>
     <string name="use_dns_object">Использовать пользовательский объект DNS</string>
     <string name="use_dns_object_sum">Заменить весь раздел DNS объектом ниже</string>

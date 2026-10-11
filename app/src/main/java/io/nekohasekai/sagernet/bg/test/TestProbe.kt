@@ -14,6 +14,8 @@ import app.qthrone.mobile.outbound.types.Custom
 import app.qthrone.core.mobile.Mobile
 import app.qthrone.core.mobile.TestRequest
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -294,9 +296,13 @@ internal abstract class LatencySweep(protected val session: TestSession) {
                     app.qthrone.mobile.database.DataStore.baseService?.data?.proxy?.config?.carrierPlans?.isNotEmpty()==true) {
                     "Stop the current VPN before testing a new native transport; this VPN does not bypass native sockets"
                 }
-                for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
+                withTimeout(session.options.timeoutMs.toLong()) {
+                    for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
+                }
             }
             session.awaitCore { done -> start(probe, batch, emit, done) }
+        } catch (e: TimeoutCancellationException) {
+            return "Connection timed out"
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

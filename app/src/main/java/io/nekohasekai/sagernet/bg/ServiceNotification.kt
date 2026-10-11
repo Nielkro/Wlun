@@ -76,6 +76,7 @@ class ServiceNotification(
     val screenOn = MutableStateFlow(SagerNet.power.isInteractive)
 
     suspend fun postNotificationSpeedUpdate(stats: SpeedDisplayData) {
+        if (!DataStore.configurationStore.getBoolean("qmobileNotificationSpeed", false)) return
         useBuilder {
             if (showDirectSpeed) {
                 val speedDetail = (service as Context).getString(
