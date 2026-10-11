@@ -126,6 +126,16 @@ def profile_bounds(label):
         if node.get('text')==label:
             return list(map(int,re.findall(r'\d+',node.attrib['bounds'])))
     raise RuntimeError('Swipe fixture profile missing')
+
+def subscription_more(label):
+    nodes=list(ET.fromstring(screen_xml()).iter('node'))
+    title=next(n for n in nodes if n.get('text')==label)
+    _,top,_,bottom=map(int,re.findall(r'\d+',title.attrib['bounds']))
+    center=(top+bottom)//2
+    choices=[n for n in nodes if n.get('content-desc')=='More actions']
+    more=min(choices,key=lambda n:abs(sum(list(map(int,re.findall(r'\d+',n.attrib['bounds'])))[1::2])//2-center))
+    a,b,c,d=map(int,re.findall(r'\d+',more.attrib['bounds']))
+    shell('input','tap',str((a+c)//2),str((b+d)//2));time.sleep(2)
 bounds=profile_bounds('Finland-demo');x1,y1,x2,y2=bounds;y=(y1+y2)//2
 shell('input','swipe',str((x1+x2)//2),str(y),str(x2+140),str(y),'350')
 capture('08-profile-swipe-actions')
@@ -146,11 +156,11 @@ time.sleep(2)
 assert 'SocksSettingsActivity' in shell('dumpsys','activity','activities'),'Long press did not open the profile editor'
 capture('13-profile-editor');shell('input','keyevent','4');time.sleep(2)
 tap_text('Demo subscription')
-tap_text('More actions')
+subscription_more('Demo subscription')
 assert 'Pin' in screen_xml() and 'Edit' in screen_xml(),'Subscription actions were not shown in the bottom sheet'
 capture('14-subscription-menu');tap_text('Pin')
 assert 'Demo subscription' in screen_xml(),'Pinned subscription disappeared'
-tap_text('More actions');tap_text('Edit')
+subscription_more('Demo subscription');tap_text('Edit')
 assert 'http://127.0.0.1:8866/demo' in screen_xml(),'Editor did not open the selected subscription'
 capture('15-subscription-editor');shell('input','keyevent','4');time.sleep(2)
 tap_text('Settings');tap_text('Appearance');capture('16-appearance-gray')

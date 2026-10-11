@@ -64,6 +64,8 @@ jobs:
           ADB: ${{ env.ANDROID_HOME }}/platform-tools/adb
         run: python3 scripts/capture_ui.py
       - name: Verify VPN lifecycle and HTTP latency
+        env:
+          TESTED_BUILD_RUN: ${{ inputs.build_run }}
         run: python3 scripts/smoke_vpn.py
       - uses: actions/upload-artifact@v7
         if: always()

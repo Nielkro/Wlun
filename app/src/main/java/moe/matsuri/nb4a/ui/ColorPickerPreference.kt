@@ -46,7 +46,7 @@ class ColorPickerPreference
         if (!inited) {
             inited = true
 
-            val previewColor = context.getColorAttr(R.attr.colorPrimary)
+            val previewColor = app.qthrone.mobile.ui.MobilePalette.accent(context)
             val preview = getNekoImageViewAtColor(previewColor, 48, 0)
             applyWhiteSwatchBorder(preview, previewColor)
             widgetFrame.addView(preview)
@@ -103,6 +103,7 @@ class ColorPickerPreference
             columnCount = 4
 
             val colors = context.resources.getIntArray(R.array.material_colors)
+            val names = context.resources.getStringArray(R.array.mobile_theme_names)
             var i = 0
 
             for (color in colors) {
@@ -110,6 +111,7 @@ class ColorPickerPreference
 
                 val themeId = i
                 val view = getNekoImageViewAtColor(color, 64, 0).apply {
+                    contentDescription=names.getOrElse(themeId-1) { title.toString() }
                     applyWhiteSwatchBorder(this, color)
                     setOnClickListener {
                         persistInt(themeId)

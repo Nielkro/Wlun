@@ -7,6 +7,7 @@ import android.graphics.drawable.Drawable
 class MobileHomeBackdrop : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     override fun draw(canvas: Canvas) {
+        if(MobilePalette.oled) { canvas.drawColor(Color.BLACK);return }
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
         paint.shader = LinearGradient(0f, 0f, w, h,
             intArrayOf(MobilePalette.background, MobilePalette.toolbar, MobilePalette.background),
