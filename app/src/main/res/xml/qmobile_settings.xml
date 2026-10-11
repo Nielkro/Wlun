@@ -1,12 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
-    <Preference app:fragment="app.qthrone.mobile.ui.settings.AppearanceSettingsFragment" app:title="@string/settings_appearance" />
-    <Preference app:key="qmobileRouting" app:title="@string/qmobile_routing" />
-    <Preference app:fragment="app.qthrone.mobile.ui.settings.DnsSettingsFragment" app:title="@string/settings_dns" />
-    <Preference app:fragment="app.qthrone.mobile.ui.settings.GeneralSettingsFragment" app:title="@string/settings_general" />
-    <Preference app:fragment="app.qthrone.mobile.ui.settings.TestingSettingsFragment" app:title="@string/settings_testing" />
-    <Preference app:fragment="app.qthrone.mobile.ui.settings.SubscriptionSettingsFragment" app:title="@string/subscriptions" />
-    <Preference app:key="settingsBackup" app:title="@string/settings_backup" />
-    <Preference app:fragment="app.qthrone.mobile.ui.AdvancedSettingsPreferenceFragment" app:title="@string/qmobile_advanced_settings" />
-    <Preference app:key="resetSettings" app:title="@string/reset_settings" />
+    <PreferenceCategory app:title="@string/qmobile_section_interface">
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.AppearanceSettingsFragment" app:title="@string/settings_appearance" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/qmobile_section_connection">
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="qmobileRouting" app:title="@string/qmobile_routing" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.DnsSettingsFragment" app:title="@string/settings_dns" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.GeneralSettingsFragment" app:title="@string/settings_general" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.TestingSettingsFragment" app:title="@string/settings_testing" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.SubscriptionSettingsFragment" app:title="@string/subscriptions" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/qmobile_section_other">
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="settingsBackup" app:title="@string/settings_backup" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.AdvancedSettingsPreferenceFragment" app:title="@string/qmobile_advanced_settings" />
+    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="resetSettings" app:title="@string/reset_settings" />
+    </PreferenceCategory>
 </PreferenceScreen>

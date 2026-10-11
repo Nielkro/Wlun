@@ -20,6 +20,7 @@ open class SettingsPreferenceFragment(private val advanced: Boolean = false) : P
         super.onViewCreated(view, savedInstanceState)
 
         listView.layoutManager = FixedLinearLayoutManager(listView)
+        app.qthrone.mobile.ui.MobileSettingsStyle.apply(this, view)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {

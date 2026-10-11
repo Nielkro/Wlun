@@ -24,6 +24,7 @@ abstract class SettingsScreenFragment(@XmlRes private val preferences: Int) : Pr
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         listView.layoutManager = FixedLinearLayoutManager(listView)
+        app.qthrone.mobile.ui.MobileSettingsStyle.apply(this, view)
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {

@@ -94,6 +94,8 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
 
     private fun syncToolbar() {
         val toolbar = toolbar ?: return
+        toolbar.setBackgroundColor(android.graphics.Color.rgb(36,37,39))
+        toolbar.setTitleTextColor(android.graphics.Color.rgb(231,234,237))
         val nested = childFragmentManager.backStackEntryCount > 0
         backCallback.isEnabled = nested
         val current = childFragmentManager.findFragmentById(R.id.settings)
@@ -104,10 +106,10 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
             toolbar.setNavigationContentDescription(R.string.navigation_back)
             toolbar.setNavigationOnClickListener { childFragmentManager.popBackStack() }
         } else {
-            toolbar.setNavigationIcon(R.drawable.ic_navigation_menu)
-            toolbar.setNavigationContentDescription(R.string.navigation_open_drawer)
+            toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_24)
+            toolbar.setNavigationContentDescription(R.string.navigation_back)
             toolbar.setNavigationOnClickListener {
-                (activity as? MainActivity)?.binding?.drawerLayout?.openDrawer(GravityCompat.START)
+                (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_mobile_home)
             }
         }
         // White theme: the toolbar is white, so the navigation icon turns dark
