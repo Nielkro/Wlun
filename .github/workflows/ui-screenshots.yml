@@ -25,12 +25,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          trap 'tail -n 100 "$RUNNER_TEMP/emulator.log" 2>/dev/null || true' EXIT
           SDK="$ANDROID_HOME/cmdline-tools/latest/bin"
           yes | "$SDK/sdkmanager" 'system-images;android-35;google_apis;x86_64' 'emulator' 'platform-tools' > /dev/null || test -d "$ANDROID_HOME/system-images/android-35/google_apis/x86_64"
           echo no | "$SDK/avdmanager" create avd -n qthrone-preview -k 'system-images;android-35;google_apis;x86_64' --force
           if test -e /dev/kvm; then sudo chmod a+rw /dev/kvm; fi
           "$ANDROID_HOME/emulator/emulator" -avd qthrone-preview -no-window -no-audio -no-snapshot -no-boot-anim -gpu swiftshader_indirect > "$RUNNER_TEMP/emulator.log" 2>&1 &
-          "$ANDROID_HOME/platform-tools/adb" wait-for-device
+          timeout 180 "$ANDROID_HOME/platform-tools/adb" wait-for-device
           for attempt in $(seq 1 180); do
             if test "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed | tr -d '\r')" = 1; then break; fi
             sleep 3
