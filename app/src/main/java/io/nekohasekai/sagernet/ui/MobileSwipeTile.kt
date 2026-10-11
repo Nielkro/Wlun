@@ -98,6 +98,16 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         canvas.restoreToCount(save)
         return drawn
     }
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        // The profile determines the tile height; hidden action panels must not fill the scroll viewport.
+        row.measure(getChildMeasureSpec(widthMeasureSpec, 0, LayoutParams.MATCH_PARENT),
+            MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+        setMeasuredDimension(resolveSize(row.measuredWidth, widthMeasureSpec),
+            resolveSize(row.measuredHeight, heightMeasureSpec))
+        val heightSpec=MeasureSpec.makeMeasureSpec(measuredHeight, MeasureSpec.EXACTLY)
+        left.measure(MeasureSpec.makeMeasureSpec(widthPx.toInt(), MeasureSpec.EXACTLY),heightSpec)
+        right.measure(MeasureSpec.makeMeasureSpec(actionWidth.toInt(), MeasureSpec.EXACTLY),heightSpec)
+    }
     override fun onDetachedFromWindow() {
         settling?.cancel();settling=null
         super.onDetachedFromWindow()
