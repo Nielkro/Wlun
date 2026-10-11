@@ -33,6 +33,11 @@ class MobilePowerArtwork(private val accent: Int) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     var connected = false
         set(value) { field=value; invalidateSelf() }
+    var statusText = ""
+        set(value) { if(field!=value) { field=value;invalidateSelf() } }
+    var elapsedText = ""
+        set(value) { if(field!=value) { field=value;invalidateSelf() } }
+    var captionSize = 0f
     override fun draw(canvas: Canvas) {
         val cx=bounds.exactCenterX(); val cy=bounds.exactCenterY()
         val r=minOf(bounds.width(),bounds.height())*.46f
@@ -54,6 +59,17 @@ class MobilePowerArtwork(private val accent: Int) : Drawable() {
         val glyphY=if(connected) cy-r*.2f else cy
         canvas.drawArc(RectF(cx-glyph,glyphY-glyph,cx+glyph,glyphY+glyph),-45f,270f,false,paint)
         canvas.drawLine(cx,glyphY-glyph*1.25f,cx,glyphY-glyph*.1f,paint)
+        if(connected) {
+            paint.style=Paint.Style.FILL
+            paint.textAlign=Paint.Align.CENTER
+            paint.textSize=if(captionSize>0f) captionSize else r*.112f
+            paint.typeface=Typeface.DEFAULT
+            paint.color=MobilePalette.muted
+            canvas.drawText(statusText,cx,cy+r*.17f,paint)
+            paint.typeface=Typeface.DEFAULT_BOLD
+            paint.color=MobilePalette.text
+            canvas.drawText(elapsedText,cx,cy+r*.39f,paint)
+        }
     }
     override fun setAlpha(alpha: Int) { }
     override fun setColorFilter(colorFilter: ColorFilter?) { }

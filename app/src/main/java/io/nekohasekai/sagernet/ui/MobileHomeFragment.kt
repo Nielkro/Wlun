@@ -285,7 +285,8 @@ class MobileHomeFragment : ToolbarFragment() {
     fun updateState() {
         val state = DataStore.serviceState
         power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
-        power?.contentDescription = getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
+        val description=getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
+        if(power?.contentDescription != description) power?.contentDescription=description
         power?.setTextColor(if (state.connected) Color.rgb(128,192,139) else blue)
         (power?.background as? MobilePowerArtwork)?.connected=state.connected
         currentCheck?.visibility=if(state.connected) View.VISIBLE else View.GONE
@@ -305,10 +306,13 @@ class MobileHomeFragment : ToolbarFragment() {
         }
         power?.apply {
             textSize=13f;gravity=Gravity.CENTER;setPadding(0,dp(75),0,0)
-            text=if(state.connected) {
-                val seconds=((android.os.SystemClock.elapsedRealtime()-DataStore.mobileConnectedAt)/1000).coerceAtLeast(0)
-                getString(R.string.qmobile_connected)+"\n"+String.format(java.util.Locale.ROOT,"%02d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60)
-            } else ""
+            val seconds=((android.os.SystemClock.elapsedRealtime()-DataStore.mobileConnectedAt)/1000).coerceAtLeast(0)
+            val fontSize=textSize
+            (background as? MobilePowerArtwork)?.apply {
+                captionSize=fontSize
+                statusText=getString(R.string.qmobile_connected)
+                elapsedText=String.format(java.util.Locale.ROOT,"%02d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60)
+            }
         }
     }
     private fun updateLatencies() {
