@@ -457,8 +457,10 @@ class ConfigGenerator @JvmOverloads constructor(
     private fun buildInboundSection(state: BuildState) {
         if (state.forTest) return
         val inbounds = JsonArray()
-        inbounds.add(jsonObjectOf("tag" to Tags.DNS_IN, "type" to "direct", "listen" to "127.0.0.1", "listen_port" to settings.dnsInPort))
-        if (settings.mixedInboundEnabled) {
+        // Android apps share loopback across UIDs. VPN uses the core's native TUN,
+        // so exposing a second proxy/DNS listener would bypass per-app VPN selection.
+        if (!settings.vpnMode) inbounds.add(jsonObjectOf("tag" to Tags.DNS_IN, "type" to "direct", "listen" to "127.0.0.1", "listen_port" to settings.dnsInPort))
+        if (settings.mixedInboundEnabled && !settings.vpnMode) {
             val mixed = jsonObjectOf(
                 "tag" to Tags.MIXED_IN,
                 "type" to "mixed",
@@ -502,7 +504,7 @@ class ConfigGenerator @JvmOverloads constructor(
             if (packages.isNotEmpty()) tun[if (settings.perAppBypass) "exclude_package" else "include_package"] = packages
         }
         // ProxyInfo carries no credentials: apps would only get 407 from a mixed inbound with users.
-        if (settings.mixedInboundEnabled && settings.httpProxyEnabled && !settings.mixedAuth) {
+        if (settings.mixedInboundEnabled && !settings.vpnMode && settings.httpProxyEnabled && !settings.mixedAuth) {
             val httpProxy = jsonObjectOf("enabled" to true, "server" to "127.0.0.1", "server_port" to settings.mixedPort)
             val bypass = JsonValues.stringArray(settings.httpProxyBypassDomains.map { it.trim() })
             if (bypass.isNotEmpty()) httpProxy["bypass_domain"] = bypass

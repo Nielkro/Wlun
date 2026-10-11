@@ -9,7 +9,6 @@ import xml.etree.ElementTree as ET
 adb = os.path.join(os.environ['ANDROID_HOME'], 'platform-tools', 'adb')
 out = Path('ui-screenshots')
 out.mkdir(exist_ok=True)
-activity = 'app.qthrone.mobile/app.qthrone.mobile.ui.MainActivity'
 
 def shell(*args):
     return subprocess.check_output([adb, 'shell', *args], text=True)
@@ -30,6 +29,10 @@ def tap_text(text):
             return
     raise RuntimeError(f'UI control missing: {text}')
 
+packages = [line.removeprefix('package:').strip() for line in shell('pm', 'list', 'packages').splitlines()
+            if line.startswith('package:app.qthrone.mobile')]
+assert len(packages) == 1, 'Expected one isolated qThrone installation'
+activity = packages[0] + '/app.qthrone.mobile.ui.MainActivity'
 shell('am', 'start', '-n', activity)
 time.sleep(8)
 capture('01-home-empty')

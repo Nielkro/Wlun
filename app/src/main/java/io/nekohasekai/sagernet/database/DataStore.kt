@@ -260,7 +260,11 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var disableTrafficStats by SettingsRegistry.DISABLE_TRAFFIC_STATS
     var coreBoxClashApi by SettingsRegistry.CORE_BOX_CLASH_API
     var coreBoxClashListenAddr by SettingsRegistry.CORE_BOX_CLASH_LISTEN_ADDR
-    var coreBoxClashApiSecret by SettingsRegistry.CORE_BOX_CLASH_API_SECRET
+    var coreBoxClashApiSecret: String
+        get() = SettingsRegistry.CORE_BOX_CLASH_API_SECRET.read(configurationStore).ifEmpty {
+            UUID.randomUUID().toString().replace("-", "").also { coreBoxClashApiSecret = it }
+        }
+        set(value) = SettingsRegistry.CORE_BOX_CLASH_API_SECRET.write(configurationStore, value)
 
     /** core_box_api_secret; an empty one is replaced by a random one and saved, as SettingsRepo.cpp:15-19 does. */
     var coreBoxApiSecret: String
