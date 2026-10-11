@@ -142,8 +142,8 @@ shell('input','swipe',str((x1+x2)//2),str(y),str(x2+140),str(y),'350')
 capture('08-profile-swipe-actions')
 tap_text('Share profile')
 share=screen_xml()
-assert 'text="URL"' in share and 'text="JSON"' in share and 'QR code' in share,'The three share options are missing'
-capture('11-profile-share');shell('input','keyevent','4');time.sleep(1)
+assert 'content-desc="URL"' in share and 'content-desc="JSON"' in share and 'QR code' in share,'The three share options are missing'
+capture('11-profile-share');tap_text('URL');time.sleep(1)
 shell('input','swipe',str((x1+x2)//2),str(y),str(x2+140),str(y),'350')
 shell('input','tap',str(x2),str(y))
 shell('input','swipe',str(x2-40),str(y),str(x1+20),str(y),'350')

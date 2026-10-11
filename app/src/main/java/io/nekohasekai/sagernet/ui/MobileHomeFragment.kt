@@ -250,21 +250,22 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     private fun pinnedGroups() = DataStore.mobilePinnedGroups.split(',').mapNotNull { it.toLongOrNull() }.toSet()
     private fun shareProfile(profile:ProxyEntity) {
-        openSwipe?.closeActions()
-        val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
-        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(24),dp(20),dp(24),dp(24));setBackgroundColor(MobilePalette.background) }
-        body.addView(text(getString(R.string.qmobile_share),20f))
-        fun option(label:String,icon:Int,callback:()->Unit) {
-            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL;isFocusable=true;contentDescription=label;setOnClickListener { dialog.dismiss();callback() } }
-            row.addView(ImageView(requireContext()).apply { setImageResource(icon);imageTintList=android.content.res.ColorStateList.valueOf(muted) },LinearLayout.LayoutParams(dp(28),dp(28)))
-            row.addView(text(label,18f),LinearLayout.LayoutParams(-1,dp(56)));body.addView(row)
+        val swipe=openSwipe ?: return
+        fun option(label:String,icon:Int,callback:()->Unit):View {
+            return LinearLayout(requireContext()).apply {
+                orientation=LinearLayout.VERTICAL;gravity=Gravity.CENTER;isFocusable=true;contentDescription=label;setBackgroundColor(Color.rgb(105,93,176))
+                setOnClickListener { swipe.closeActions();callback() }
+                addView(ImageView(requireContext()).apply { setImageResource(icon);imageTintList=android.content.res.ColorStateList.valueOf(Color.WHITE);importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO },LinearLayout.LayoutParams(dp(23),dp(23)))
+                addView(text(label,10f,Color.WHITE).apply { setPadding(0,dp(4),0,0);importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO })
+            }
         }
         fun copy(value:String) { Toast.makeText(requireContext(),if(SagerNet.trySetPrimaryClip(value)) R.string.action_export_msg else R.string.action_export_err,Toast.LENGTH_SHORT).show() }
         val link=profile.exportLink().ifBlank { profile.exportJsonLink() }
-        option("URL",R.drawable.ic_mobile_link) { copy(link) }
-        option(getString(R.string.qmobile_qr),R.drawable.ic_mobile_qr) { app.qthrone.mobile.widget.QRCodeDialog(link,profile.displayName()).show(parentFragmentManager,"profile-qr") }
-        option("JSON",R.drawable.ic_mobile_json) { copy(org.json.JSONObject(profile.outbound.exportToJson().toCompact()).toString(2)) }
-        dialog.setContentView(body);dialog.show()
+        swipe.showShareChoices(
+            option("URL",R.drawable.ic_mobile_link) { copy(link) },
+            option(getString(R.string.qmobile_qr),R.drawable.ic_mobile_qr) { app.qthrone.mobile.widget.QRCodeDialog(link,profile.displayName()).show(parentFragmentManager,"profile-qr") },
+            option("JSON",R.drawable.ic_mobile_json) { copy(org.json.JSONObject(profile.outbound.exportToJson().toCompact()).toString(2)) },
+        )
     }
     private fun groupMenu(group: ProxyGroup, anchor: View) {
         val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())

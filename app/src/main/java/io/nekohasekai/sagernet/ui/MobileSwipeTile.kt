@@ -11,12 +11,27 @@ import kotlin.math.abs
 /** Horizontal swipe reveals actions; vertical drags continue scrolling the subscription list. */
 class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View):FrameLayout(context) {
     var onOpened: ((MobileSwipeTile) -> Unit)? = null
+    private val primaryActions=listOf(test,share)
+    private val actionWidth=56*resources.displayMetrics.density
+    fun showShareChoices(vararg choices:View) {
+        left.removeAllViews()
+        choices.forEach { left.addView(it,LinearLayout.LayoutParams(0,-1,1f)) }
+        widthPx=actionWidth*choices.size
+        left.layoutParams=left.layoutParams.apply { width=widthPx.toInt() }
+        row.animate().translationX(widthPx*direction).setDuration(180).start()
+    }
+    private fun restoreActions() {
+        left.removeAllViews()
+        primaryActions.forEach { left.addView(it,LinearLayout.LayoutParams(0,-1,1f)) }
+        widthPx=actionWidth*2
+        left.layoutParams=left.layoutParams.apply { width=widthPx.toInt() }
+    }
     fun closeActions() {
         left.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-        row.animate().translationX(0f).setDuration(180).withEndAction { left.visibility=View.INVISIBLE; right.visibility=View.INVISIBLE }.start()
+        row.animate().translationX(0f).setDuration(180).withEndAction { left.visibility=View.INVISIBLE; right.visibility=View.INVISIBLE;restoreActions() }.start()
     }
-    private val widthPx=112*resources.displayMetrics.density
+    private var widthPx=112*resources.displayMetrics.density
     private val slop=ViewConfiguration.get(context).scaledTouchSlop
     private var downX=0f; private var downY=0f; private var initial=0f
     private var dragging=false
@@ -47,20 +62,21 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         when(e.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
                 if(abs(e.x-downX)>slop && abs(e.x-downX)>abs(e.y-downY)) dragging=true
-                val offset=(initial+(e.x-downX)*direction).coerceIn(-widthPx/2,widthPx)
+                val offset=(initial+(e.x-downX)*direction).coerceIn(-actionWidth,widthPx)
                 left.visibility=if(offset>0) View.VISIBLE else View.INVISIBLE
                 right.visibility=if(offset<0) View.VISIBLE else View.INVISIBLE
                 row.translationX=offset*direction
             }
             MotionEvent.ACTION_UP,MotionEvent.ACTION_CANCEL -> {
                 val x=row.translationX*direction
-                val end=if(e.actionMasked==MotionEvent.ACTION_CANCEL || !dragging) 0f else if(x>widthPx*.35f) widthPx else if(x< -widthPx*.2f) -widthPx/2 else 0f
+                val end=if(e.actionMasked==MotionEvent.ACTION_CANCEL || !dragging) 0f else if(x>widthPx*.35f) widthPx else if(x< -actionWidth*.4f) -actionWidth else 0f
                 if(end!=0f) onOpened?.invoke(this)
                 left.importantForAccessibility=if(end>0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                 right.importantForAccessibility=if(end<0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                 row.animate().translationX(end*direction).setDuration(180).withEndAction {
                     left.visibility=if(end>0) View.VISIBLE else View.INVISIBLE
                     right.visibility=if(end<0) View.VISIBLE else View.INVISIBLE
+                    if(end==0f) restoreActions()
                 }.start()
                 parent.requestDisallowInterceptTouchEvent(false)
             }
