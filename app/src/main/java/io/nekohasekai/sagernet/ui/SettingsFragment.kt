@@ -40,6 +40,7 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        view.findViewById<View>(R.id.appbar)?.setBackgroundColor(android.graphics.Color.rgb(34,35,37))
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
         childFragmentManager.addOnBackStackChangedListener(backStackListener)

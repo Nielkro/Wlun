@@ -12,6 +12,14 @@ import androidx.recyclerview.widget.RecyclerView
 /** Shared palette for the settings root and every existing preference screen. */
 object MobileSettingsStyle {
     fun apply(fragment: PreferenceFragmentCompat, root: View) {
+        fun compact(group: androidx.preference.PreferenceGroup) {
+            for (i in 0 until group.preferenceCount) {
+                val preference = group.getPreference(i)
+                if (preference.icon == null) preference.isIconSpaceReserved = false
+                if (preference is androidx.preference.PreferenceGroup) compact(preference)
+            }
+        }
+        compact(fragment.preferenceScreen)
         root.setBackgroundColor(Color.rgb(30,30,30))
         val list=fragment.listView
         list.setBackgroundColor(Color.rgb(30,30,30))
