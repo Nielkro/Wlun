@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

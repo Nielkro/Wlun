@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.types.Masque
-import io.nekohasekai.sagernet.outbound.types.WireGuard
-import io.nekohasekai.sagernet.outbound.types.WireGuardPeer
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.types.Masque
+import app.qthrone.mobile.outbound.types.WireGuard
+import app.qthrone.mobile.outbound.types.WireGuardPeer
 
 /**
  * The built-in WARP hop of generate.cpp: the synthetic profile id (generate.h:98), the WireGuard or MASQUE endpoint

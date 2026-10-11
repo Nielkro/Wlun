@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
 import java.security.MessageDigest
 

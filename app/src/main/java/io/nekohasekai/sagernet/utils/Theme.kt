@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Build
 import androidx.appcompat.app.AppCompatDelegate
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.app
 
 object Theme {
 

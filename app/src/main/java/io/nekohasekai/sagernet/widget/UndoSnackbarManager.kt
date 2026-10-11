@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.widget
+package app.qthrone.mobile.widget
 
 import com.google.android.material.snackbar.Snackbar
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ui.ThemedActivity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ui.ThemedActivity
 
 /**
  * @param activity ThemedActivity.

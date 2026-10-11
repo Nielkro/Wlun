@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.settings
+package app.qthrone.mobile.ui.settings
 
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
@@ -7,17 +7,17 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SpeedTestSettings
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingValidators
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.database.preference.EditTextPreferenceModifiers
-import io.nekohasekai.sagernet.ktx.needReload
-import io.nekohasekai.sagernet.ktx.needRestart
-import io.nekohasekai.sagernet.ui.GroupSettingsActivity
-import io.nekohasekai.sagernet.ui.MainActivity
-import io.nekohasekai.sagernet.ui.profile.keepUnlistedValue
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SpeedTestSettings
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingValidators
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.database.preference.EditTextPreferenceModifiers
+import app.qthrone.mobile.ktx.needReload
+import app.qthrone.mobile.ktx.needRestart
+import app.qthrone.mobile.ui.GroupSettingsActivity
+import app.qthrone.mobile.ui.MainActivity
+import app.qthrone.mobile.ui.profile.keepUnlistedValue
 import moe.matsuri.nb4a.ui.LongClickListPreference
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 import kotlin.math.abs

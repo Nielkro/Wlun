@@ -73,7 +73,7 @@
             app:title="@string/xray_vless_preference"
             app:useSimpleSummaryProvider="true" />
         <Preference
-            app:fragment="io.nekohasekai.sagernet.ui.settings.XrayGeoSettingsFragment"
+            app:fragment="app.qthrone.mobile.ui.settings.XrayGeoSettingsFragment"
             app:key="xrayGeoAssets"
             app:summary="@string/xray_geo_assets_sum"
             app:title="@string/xray_geo_assets" />

@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.aidl;
+package app.qthrone.mobile.aidl;
 
-import io.nekohasekai.sagernet.aidl.ISubscriptionCallback;
-import io.nekohasekai.sagernet.aidl.ITestSessionCallback;
-import io.nekohasekai.sagernet.bg.test.TestSpec;
+import app.qthrone.mobile.aidl.ISubscriptionCallback;
+import app.qthrone.mobile.aidl.ITestSessionCallback;
+import app.qthrone.mobile.bg.test.TestSpec;
 
 interface ICoreService {
   // Test sessions: returns the session id, -1 while another session runs; stopTests stops the running one.

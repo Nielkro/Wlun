@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.bg.test
+package app.qthrone.mobile.bg.test
 
-import io.nekohasekai.sagernet.aidl.ITestSessionCallback
-import io.throneproj.mobile.Mobile
+import app.qthrone.mobile.aidl.ITestSessionCallback
+import app.qthrone.core.mobile.Mobile
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

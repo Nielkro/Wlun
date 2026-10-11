@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.content.pm.PackageManager
 import android.os.Build
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.outbound.config.ConfigGenerator
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.outbound.config.ConfigGenerator
 import java.io.File
 import java.io.IOException
 

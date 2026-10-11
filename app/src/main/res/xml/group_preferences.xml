@@ -41,7 +41,7 @@
         app:key="groupSubscription"
         app:title="@string/subscription">
 
-        <io.nekohasekai.sagernet.widget.LinkOrContentPreference
+        <app.qthrone.mobile.widget.LinkOrContentPreference
             app:icon="@drawable/ic_baseline_link_24"
             app:key="subscriptionLink"
             app:title="@string/grp_url"

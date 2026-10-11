@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.SpeedTestSettings
-import io.nekohasekai.sagernet.database.preference.SettingsStore
-import io.nekohasekai.sagernet.outbound.link.Hosts
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.SpeedTestSettings
+import app.qthrone.mobile.database.preference.SettingsStore
+import app.qthrone.mobile.outbound.link.Hosts
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -244,7 +244,7 @@ object SettingsRegistry {
 
     // ------------------------------------------------------------------------------------------------ testing
 
-    @JvmField val TEST_URL = string("test_url", "http://cp.cloudflare.com/") { it.isNotBlank() }
+    @JvmField val TEST_URL = string("test_url", "http://www.google.com/generate_204") { it.isNotBlank() }
     @JvmField val URL_TEST_TIMEOUT_MS = int("url_test_timeout_ms", 3000) { it > 0 }
     @JvmField val TEST_CONCURRENT = int("test_concurrent", 10) { it > 0 }
     @JvmField val DIRECT_TEST_URL = string("direct_test_url", "")
@@ -433,7 +433,7 @@ object SettingValidators {
     /** Hosts-file lines `address name…` (ParsePredefinedDNS). */
     @JvmStatic
     fun isPredefinedDns(lines: List<String>): Boolean =
-        io.nekohasekai.sagernet.outbound.config.PredefinedDns.parse(lines) != null
+        app.qthrone.mobile.outbound.config.PredefinedDns.parse(lines) != null
 
     /** Non-blank lines of a multi-line editor. */
     @JvmStatic

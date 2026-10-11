@@ -1,15 +1,15 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.app.Application
 import go.Seq
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.bg.test.TestEngine
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.throneproj.mobile.Instance
-import io.throneproj.mobile.LogSink
-import io.throneproj.mobile.Mobile
-import io.throneproj.mobile.SetupOptions
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.bg.test.TestEngine
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.core.mobile.Instance
+import app.qthrone.core.mobile.LogSink
+import app.qthrone.core.mobile.Mobile
+import app.qthrone.core.mobile.SetupOptions
 import moe.matsuri.nb4a.NativeInterface
 import moe.matsuri.nb4a.utils.CoreLog
 import java.io.File

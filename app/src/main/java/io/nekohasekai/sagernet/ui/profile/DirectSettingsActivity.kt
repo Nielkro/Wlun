@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.types.Direct
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.types.Direct
 
 /** A direct outbound: a name and the dial fields only. */
 class DirectSettingsActivity : BindingSettingsActivity<Direct>() {

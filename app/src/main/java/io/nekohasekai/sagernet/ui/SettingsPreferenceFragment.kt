@@ -1,17 +1,17 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.os.Bundle
 import android.view.View
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.FixedLinearLayoutManager
-import io.nekohasekai.sagernet.ktx.confirmAction
-import io.nekohasekai.sagernet.ktx.triggerFullRestart
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.FixedLinearLayoutManager
+import app.qthrone.mobile.ktx.confirmAction
+import app.qthrone.mobile.ktx.triggerFullRestart
 
 /**
- * The settings root: one entry per sub-screen (io.nekohasekai.sagernet.ui.settings, opened by [SettingsFragment]),
+ * The settings root: one entry per sub-screen (app.qthrone.mobile.ui.settings, opened by [SettingsFragment]),
  * the backup screen and the reset action.
  */
 class SettingsPreferenceFragment : PreferenceFragmentCompat() {

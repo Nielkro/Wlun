@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import android.os.Parcelable
 import androidx.annotation.ColorInt
@@ -11,12 +11,12 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
-import io.nekohasekai.sagernet.outbound.InvalidOutbound
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.OutboundFactory
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.types.Chain
+import app.qthrone.mobile.outbound.InvalidOutbound
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.OutboundFactory
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.types.Chain
 import kotlinx.parcelize.IgnoredOnParcel
 import kotlinx.parcelize.Parcelize
 

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager

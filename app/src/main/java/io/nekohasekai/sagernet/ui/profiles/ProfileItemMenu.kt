@@ -1,28 +1,28 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import io.nekohasekai.sagernet.ui.SaveDocument
+import app.qthrone.mobile.ui.SaveDocument
 import androidx.appcompat.widget.PopupMenu
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.confirmAction
-import io.nekohasekai.sagernet.ktx.needReload
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.ktx.showAllowingStateLoss
-import io.nekohasekai.sagernet.ktx.snackbar
-import io.nekohasekai.sagernet.ktx.startFilesForResult
-import io.nekohasekai.sagernet.ui.ConfigurationFragment
-import io.nekohasekai.sagernet.ui.profile.ProfileConfigExport
-import io.nekohasekai.sagernet.ui.profile.ProfileSettingsActivity
-import io.nekohasekai.sagernet.ui.profile.profileSettingsIntent
-import io.nekohasekai.sagernet.widget.QRCodeDialog
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.confirmAction
+import app.qthrone.mobile.ktx.needReload
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.ktx.showAllowingStateLoss
+import app.qthrone.mobile.ktx.snackbar
+import app.qthrone.mobile.ktx.startFilesForResult
+import app.qthrone.mobile.ui.ConfigurationFragment
+import app.qthrone.mobile.ui.profile.ProfileConfigExport
+import app.qthrone.mobile.ui.profile.ProfileSettingsActivity
+import app.qthrone.mobile.ui.profile.profileSettingsIntent
+import app.qthrone.mobile.widget.QRCodeDialog
 
 /** The actions of one profile row: edit, share, the ⋮ menu (tests, move up/down, delete). */
 class ProfileItemMenu(private val host: ConfigurationFragment) {

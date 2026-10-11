@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.outbound.import
+package app.qthrone.mobile.outbound.import
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.common.Transport
-import io.nekohasekai.sagernet.outbound.common.XrayStreamSetting
-import io.nekohasekai.sagernet.outbound.common.xrayNetworks
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.types.Custom
-import io.nekohasekai.sagernet.outbound.types.Shadowsocks
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.common.Transport
+import app.qthrone.mobile.outbound.common.XrayStreamSetting
+import app.qthrone.mobile.outbound.common.xrayNetworks
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.types.Custom
+import app.qthrone.mobile.outbound.types.Shadowsocks
 
 /**
  * Issue #63 (Android only): a node the core it would run in rejects, or that the parse silently turned into plain

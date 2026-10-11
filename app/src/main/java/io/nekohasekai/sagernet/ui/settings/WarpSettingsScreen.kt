@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.settings
+package app.qthrone.mobile.ui.settings
 
 import android.content.Context
 import android.util.AttributeSet
@@ -7,16 +7,16 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceDataStore
 import androidx.preference.SwitchPreference
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.database.preference.OnPreferenceDataStoreChangeListener
-import io.nekohasekai.sagernet.ktx.needReload
-import io.nekohasekai.sagernet.ktx.runOnMainDispatcher
-import io.nekohasekai.sagernet.ui.profile.ProfileSettingsActivity
-import io.nekohasekai.sagernet.ui.warp.WarpClient
-import io.nekohasekai.sagernet.ui.warp.WarpGenerate
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
+import app.qthrone.mobile.ktx.needReload
+import app.qthrone.mobile.ktx.runOnMainDispatcher
+import app.qthrone.mobile.ui.profile.ProfileSettingsActivity
+import app.qthrone.mobile.ui.warp.WarpClient
+import app.qthrone.mobile.ui.warp.WarpGenerate
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 /**

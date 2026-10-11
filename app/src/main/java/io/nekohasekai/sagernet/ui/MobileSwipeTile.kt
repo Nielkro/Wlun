@@ -1,0 +1,43 @@
+package app.qthrone.mobile.ui
+
+import android.content.Context
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.widget.FrameLayout
+import android.widget.LinearLayout
+import kotlin.math.abs
+
+/** Horizontal swipe reveals actions; vertical drags continue scrolling the subscription list. */
+class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View):FrameLayout(context) {
+    private val widthPx=112*resources.displayMetrics.density
+    private val slop=ViewConfiguration.get(context).scaledTouchSlop
+    private var downX=0f; private var downY=0f; private var initial=0f
+    init {
+        val left=LinearLayout(context)
+        left.addView(test,LinearLayout.LayoutParams(0,-1,1f));left.addView(share,LinearLayout.LayoutParams(0,-1,1f))
+        addView(left,LayoutParams(widthPx.toInt(),-1,android.view.Gravity.START))
+        addView(delete,LayoutParams((widthPx/2).toInt(),-1,android.view.Gravity.END))
+        addView(row,LayoutParams(-1,-2))
+        clipChildren=true
+    }
+    override fun onInterceptTouchEvent(e:MotionEvent):Boolean {
+        if(e.actionMasked==MotionEvent.ACTION_DOWN) { downX=e.x;downY=e.y;initial=row.translationX }
+        if(e.actionMasked==MotionEvent.ACTION_MOVE && abs(e.x-downX)>slop && abs(e.x-downX)>abs(e.y-downY)) {
+            parent.requestDisallowInterceptTouchEvent(true);return true
+        }
+        return super.onInterceptTouchEvent(e)
+    }
+    override fun onTouchEvent(e:MotionEvent):Boolean {
+        when(e.actionMasked) {
+            MotionEvent.ACTION_MOVE -> row.translationX=(initial+e.x-downX).coerceIn(-widthPx/2,widthPx)
+            MotionEvent.ACTION_UP,MotionEvent.ACTION_CANCEL -> {
+                val x=row.translationX
+                val end=if(e.actionMasked==MotionEvent.ACTION_CANCEL) 0f else if(x>widthPx*.35f) widthPx else if(x< -widthPx*.2f) -widthPx/2 else 0f
+                row.animate().translationX(end).setDuration(180).start()
+                parent.requestDisallowInterceptTouchEvent(false)
+            }
+        }
+        return true
+    }
+}

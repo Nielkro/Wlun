@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.ui.json.engine
+package app.qthrone.mobile.ui.json.engine
 
-import io.nekohasekai.sagernet.ui.json.engine.SchemaDocument.Companion.list
-import io.nekohasekai.sagernet.ui.json.engine.SchemaDocument.Companion.obj
-import io.nekohasekai.sagernet.ui.json.engine.SchemaDocument.Companion.scalarText
+import app.qthrone.mobile.ui.json.engine.SchemaDocument.Companion.list
+import app.qthrone.mobile.ui.json.engine.SchemaDocument.Companion.obj
+import app.qthrone.mobile.ui.json.engine.SchemaDocument.Companion.scalarText
 import java.util.IdentityHashMap
 
 /**

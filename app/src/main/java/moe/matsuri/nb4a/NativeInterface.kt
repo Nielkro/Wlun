@@ -11,23 +11,23 @@ import android.os.Process
 import android.system.OsConstants
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.utils.DefaultNetworkListener
-import io.nekohasekai.sagernet.utils.PackageCache
-import io.nekohasekai.sagernet.utils.WifiStateAccess
-import io.throneproj.mobile.ConnectionOwner
-import io.throneproj.mobile.InterfaceUpdateListener
-import io.throneproj.mobile.LocalDNSTransport
-import io.throneproj.mobile.Mobile
-import io.throneproj.mobile.NetworkInterfaceIterator
-import io.throneproj.mobile.PlatformInterface
-import io.throneproj.mobile.StringIterator
-import io.throneproj.mobile.TunOptions
-import io.throneproj.mobile.WIFIState
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.utils.DefaultNetworkListener
+import app.qthrone.mobile.utils.PackageCache
+import app.qthrone.mobile.utils.WifiStateAccess
+import app.qthrone.core.mobile.ConnectionOwner
+import app.qthrone.core.mobile.InterfaceUpdateListener
+import app.qthrone.core.mobile.LocalDNSTransport
+import app.qthrone.core.mobile.Mobile
+import app.qthrone.core.mobile.NetworkInterfaceIterator
+import app.qthrone.core.mobile.PlatformInterface
+import app.qthrone.core.mobile.StringIterator
+import app.qthrone.core.mobile.TunOptions
+import app.qthrone.core.mobile.WIFIState
 import kotlinx.coroutines.runBlocking
 import moe.matsuri.nb4a.net.LocalResolverImpl
 import java.net.Inet6Address
@@ -36,8 +36,8 @@ import java.net.InterfaceAddress
 import java.net.NetworkInterface
 import java.util.Collections
 import java.util.WeakHashMap
-import io.throneproj.mobile.NetworkInterface as CoreNetworkInterface
-import io.throneproj.mobile.Notification as CoreNotification
+import app.qthrone.core.mobile.NetworkInterface as CoreNetworkInterface
+import app.qthrone.core.mobile.Notification as CoreNotification
 
 class NativeInterface : PlatformInterface {
 

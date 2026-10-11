@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.content.Context
 import android.graphics.Color
@@ -15,13 +15,13 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.TestShowItems
-import io.nekohasekai.sagernet.ktx.alert
-import io.nekohasekai.sagernet.ktx.getColorAttr
-import io.nekohasekai.sagernet.ktx.tryToShow
-import io.nekohasekai.sagernet.ui.test.RowPhase
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.TestShowItems
+import app.qthrone.mobile.ktx.alert
+import app.qthrone.mobile.ktx.getColorAttr
+import app.qthrone.mobile.ktx.tryToShow
+import app.qthrone.mobile.ui.test.RowPhase
 import moe.matsuri.nb4a.Protocols
 import moe.matsuri.nb4a.Protocols.getProtocolColor
 import java.math.BigDecimal

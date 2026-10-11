@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.settings
+package app.qthrone.mobile.ui.settings
 
 import android.os.Bundle
 import android.view.View
@@ -9,10 +9,10 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceGroup
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.preference.EditTextPreferenceModifiers
-import io.nekohasekai.sagernet.ktx.FixedLinearLayoutManager
-import io.nekohasekai.sagernet.ktx.needReload
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.preference.EditTextPreferenceModifiers
+import app.qthrone.mobile.ktx.FixedLinearLayoutManager
+import app.qthrone.mobile.ktx.needReload
 import moe.matsuri.nb4a.ui.EditConfigPreference
 
 /**

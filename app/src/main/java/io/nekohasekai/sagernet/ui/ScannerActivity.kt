@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.Manifest
 import android.content.Intent
@@ -19,10 +19,10 @@ import com.king.zxing.analyze.QRCodeAnalyzer
 import com.king.zxing.util.CodeUtils
 import com.king.zxing.util.LogUtils
 import com.king.zxing.util.PermissionUtils
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.databinding.LayoutScannerBinding
-import io.nekohasekai.sagernet.ktx.*
-import io.nekohasekai.sagernet.widget.applyInsetMargin
+import app.qthrone.mobile.R
+import app.qthrone.mobile.databinding.LayoutScannerBinding
+import app.qthrone.mobile.ktx.*
+import app.qthrone.mobile.widget.applyInsetMargin
 import java.util.concurrent.atomic.AtomicBoolean
 
 

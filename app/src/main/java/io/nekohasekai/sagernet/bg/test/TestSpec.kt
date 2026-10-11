@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.bg.test
+package app.qthrone.mobile.bg.test
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.ui.route
+package app.qthrone.mobile.ui.route
 
 import android.content.Context
 import androidx.annotation.StringRes
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.SettingValidators
-import io.nekohasekai.sagernet.route.RouteRule
-import io.nekohasekai.sagernet.route.RuleSetCatalog
-import io.nekohasekai.sagernet.route.RuleSets
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.SettingValidators
+import app.qthrone.mobile.route.RouteRule
+import app.qthrone.mobile.route.RuleSetCatalog
+import app.qthrone.mobile.route.RuleSets
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 

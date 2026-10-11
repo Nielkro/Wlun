@@ -1,14 +1,14 @@
-package io.nekohasekai.sagernet.bg.test
+package app.qthrone.mobile.bg.test
 
-import io.nekohasekai.sagernet.bg.CoreRuntime
-import io.nekohasekai.sagernet.bg.proto.CoreConfig
-import io.nekohasekai.sagernet.bg.proto.exitsThroughVpn
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.throneproj.mobile.Mobile
-import io.throneproj.mobile.TestRequest
-import io.throneproj.mobile.URLTestHandler
+import app.qthrone.mobile.bg.CoreRuntime
+import app.qthrone.mobile.bg.proto.CoreConfig
+import app.qthrone.mobile.bg.proto.exitsThroughVpn
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.core.mobile.Mobile
+import app.qthrone.core.mobile.TestRequest
+import app.qthrone.core.mobile.URLTestHandler
 import kotlinx.coroutines.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference

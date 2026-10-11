@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.SendHwid
-import io.nekohasekai.sagernet.ktx.appUserAgent
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.SendHwid
+import app.qthrone.mobile.ktx.appUserAgent
 
 /** RequestIdentity (GroupUpdater.hpp:19-26): the user agent and HWID headers of a subscription request. */
 class RequestIdentity(

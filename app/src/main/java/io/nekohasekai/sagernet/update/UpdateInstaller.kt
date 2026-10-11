@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.update
+package app.qthrone.mobile.update
 
 import android.app.PendingIntent
 import android.content.Context
@@ -11,7 +11,7 @@ import java.io.File
 /** Hands a verified APK to a PackageInstaller session; the result arrives at [UpdateReceiver]. */
 object UpdateInstaller {
 
-    const val ACTION_STATUS = "io.nekohasekai.sagernet.update.INSTALL_STATUS"
+    const val ACTION_STATUS = "app.qthrone.mobile.update.INSTALL_STATUS"
 
     fun install(context: Context, file: File) {
         val installer = context.packageManager.packageInstaller

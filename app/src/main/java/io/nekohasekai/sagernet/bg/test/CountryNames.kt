@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.bg.test
+package app.qthrone.mobile.bg.test
 
 /** CountryNameToCode (src/global/CountryHelper.cpp, table include/global/CountryHelper.hpp): speedtest.net server countries. */
 object CountryNames {

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.Manifest
 import android.content.ActivityNotFoundException
@@ -7,11 +7,11 @@ import android.os.Build
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ui.settings.GeneralSettingsFragment
-import io.nekohasekai.sagernet.utils.BatteryOptimizations
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ui.settings.GeneralSettingsFragment
+import app.qthrone.mobile.utils.BatteryOptimizations
 
 /**
  * The first start: the notification permission (13+), then the battery-optimization exemption, each asked once.

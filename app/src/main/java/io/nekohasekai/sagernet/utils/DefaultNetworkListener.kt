@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.annotation.TargetApi
 import android.net.ConnectivityManager
@@ -9,8 +9,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.SystemClock
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.ktx.Logs
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.ktx.Logs
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope

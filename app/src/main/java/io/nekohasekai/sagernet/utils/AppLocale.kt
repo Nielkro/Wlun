@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
-import io.nekohasekai.sagernet.database.DataStore
+import app.qthrone.mobile.database.DataStore
 
 object AppLocale {
 

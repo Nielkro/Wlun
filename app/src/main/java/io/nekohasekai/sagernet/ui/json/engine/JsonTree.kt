@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.json.engine
+package app.qthrone.mobile.ui.json.engine
 
 enum class JsonType { Null, Bool, Number, String, Array, Object }
 

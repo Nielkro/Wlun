@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.OutboundFactory
-import io.nekohasekai.sagernet.outbound.types.AutoSelector
-import io.nekohasekai.sagernet.outbound.types.Custom
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.OutboundFactory
+import app.qthrone.mobile.outbound.types.AutoSelector
+import app.qthrone.mobile.outbound.types.Custom
 import java.util.EnumMap
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException

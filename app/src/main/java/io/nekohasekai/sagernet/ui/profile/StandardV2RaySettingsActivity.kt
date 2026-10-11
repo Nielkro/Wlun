@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.types.Trojan
-import io.nekohasekai.sagernet.outbound.types.Vless
-import io.nekohasekai.sagernet.outbound.types.Vmess
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.types.Trojan
+import app.qthrone.mobile.outbound.types.Vless
+import app.qthrone.mobile.outbound.types.Vmess
 
 /**
  * One screen for the three sing-box V2Ray-family types (vmess, vless, trojan): the same transport, TLS and

@@ -1,15 +1,15 @@
-package io.nekohasekai.sagernet.bg.proto
+package app.qthrone.mobile.bg.proto
 
-import io.nekohasekai.sagernet.bg.CoreRuntime
-import io.nekohasekai.sagernet.bg.test.TestTags
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.ktx.completeWith
-import io.nekohasekai.sagernet.outbound.types.Chain
-import io.throneproj.mobile.Instance
-import io.throneproj.mobile.Mobile
-import io.throneproj.mobile.TestRequest
-import io.throneproj.mobile.URLTestHandler
+import app.qthrone.mobile.bg.CoreRuntime
+import app.qthrone.mobile.bg.test.TestTags
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.ktx.completeWith
+import app.qthrone.mobile.outbound.types.Chain
+import app.qthrone.core.mobile.Instance
+import app.qthrone.core.mobile.Mobile
+import app.qthrone.core.mobile.TestRequest
+import app.qthrone.core.mobile.URLTestHandler
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger

@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.ui.json
+package app.qthrone.mobile.ui.json
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.ui.json.JsonRelaxations.ExtraKey
-import io.nekohasekai.sagernet.ui.json.engine.JsonFormatter
-import io.nekohasekai.sagernet.ui.json.engine.SchemaStore
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.ui.json.JsonRelaxations.ExtraKey
+import app.qthrone.mobile.ui.json.engine.JsonFormatter
+import app.qthrone.mobile.ui.json.engine.SchemaStore
 
 /**
  * "Edit as JSON" of a typed profile: its ExportToJson, Throne's stored form, checked against the sing-box schema with

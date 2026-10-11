@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.Hosts
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.Hosts
 import java.util.TreeMap
 
 /** The tag vocabulary of generate.cpp:43-74. */

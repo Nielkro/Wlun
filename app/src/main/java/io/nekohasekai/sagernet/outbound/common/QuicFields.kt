@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.outbound.common
+package app.qthrone.mobile.outbound.common
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.LinkParser
-import io.nekohasekai.sagernet.outbound.link.ParsedLink
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.link.ParsedLink
 
 /**
  * QUICFields (include/configs/common/QUICFields.h, src/configs/common/QUICFields.cpp): built flat into the

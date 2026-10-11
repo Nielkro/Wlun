@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound.json
+package app.qthrone.mobile.outbound.json
 
 import java.math.BigDecimal
 import java.math.MathContext

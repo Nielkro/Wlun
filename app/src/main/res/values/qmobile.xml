@@ -1,0 +1,19 @@
+<resources>
+<item name="nav_mobile_home" type="id"/>
+<string name="qmobile_connect">Connect or disconnect VPN</string>
+<string name="qmobile_clipboard">From clipboard</string>
+<string name="qmobile_qr">QR code</string>
+<string name="qmobile_profiles">Profiles and tests</string>
+<string name="qmobile_empty">Add a subscription or server to connect.</string>
+<string name="qmobile_connected">Connected</string>
+<string name="qmobile_connecting">Connecting…</string>
+<string name="qmobile_disconnected">Not connected</string>
+<string name="qmobile_clipboard_empty">Clipboard is empty</string>
+<string name="qmobile_collapse_all">Collapse / expand all</string>
+<string name="qmobile_share">Share profile</string>
+<string name="qmobile_delete">Delete profile?</string>
+<string name="qmobile_ping">Latency test</string>
+<string name="qmobile_speed">Speed test</string>
+<string name="qmobile_tests">Testing</string>
+<string name="qmobile_stop">Stop</string>
+<color name="qmobile_launcher_background">#202020</color></resources>

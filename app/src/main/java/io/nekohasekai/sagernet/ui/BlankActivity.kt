@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.Logs
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.Logs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

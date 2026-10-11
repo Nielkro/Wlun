@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet
+package app.qthrone.mobile
 
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.ktx.PreferenceProxy
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.ktx.PreferenceProxy
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

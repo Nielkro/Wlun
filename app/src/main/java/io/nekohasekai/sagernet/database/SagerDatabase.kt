@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import android.util.Log
 import androidx.room.AutoMigration
@@ -8,10 +8,10 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.preference.SettingEntry
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.preference.SettingEntry
 import java.io.File
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope

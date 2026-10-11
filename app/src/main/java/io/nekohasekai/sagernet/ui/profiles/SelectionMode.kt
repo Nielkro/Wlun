@@ -1,19 +1,19 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.view.MenuItem
 import androidx.annotation.StringRes
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.GroupRepo
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.ktx.confirmAction
-import io.nekohasekai.sagernet.ktx.nameList
-import io.nekohasekai.sagernet.ktx.snackbar
-import io.nekohasekai.sagernet.ui.ConfigurationFragment
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.ktx.confirmAction
+import app.qthrone.mobile.ktx.nameList
+import app.qthrone.mobile.ktx.snackbar
+import app.qthrone.mobile.ui.ConfigurationFragment
 
 /**
  * Multi-selection in the current tab (the desktop's selected rows): long press starts it, taps toggle, the toolbar

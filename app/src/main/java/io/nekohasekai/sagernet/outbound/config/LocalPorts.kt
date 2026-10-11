@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.link.Hosts
+import app.qthrone.mobile.outbound.link.Hosts
 import java.io.IOException
 import java.net.InetAddress
 import java.net.InetSocketAddress

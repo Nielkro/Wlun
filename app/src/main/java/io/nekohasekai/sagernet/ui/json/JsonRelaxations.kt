@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.ui.json
+package app.qthrone.mobile.ui.json
 
 import android.os.Parcelable
-import io.nekohasekai.sagernet.ui.json.engine.JsonType
-import io.nekohasekai.sagernet.ui.json.engine.SchemaValidator
+import app.qthrone.mobile.ui.json.engine.JsonType
+import app.qthrone.mobile.ui.json.engine.SchemaValidator
 import kotlinx.parcelize.Parcelize
 
 /** Per-editor schema relaxations (the desktop's AllowExtraType plus what Throne's own stored forms need). */

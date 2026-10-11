@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import android.content.Context
 import android.text.InputType
@@ -10,12 +10,12 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreference
 import androidx.preference.TwoStatePreference
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingsMapper
-import io.nekohasekai.sagernet.database.preference.EditTextPreferenceModifiers
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.common.Ech
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingsMapper
+import app.qthrone.mobile.database.preference.EditTextPreferenceModifiers
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.common.Ech
 import moe.matsuri.nb4a.proxy.PreferenceBindingManager
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 

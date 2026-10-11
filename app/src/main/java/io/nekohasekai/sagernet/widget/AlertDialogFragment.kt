@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.widget
+package app.qthrone.mobile.widget
 
 import android.app.Activity
 import android.content.DialogInterface

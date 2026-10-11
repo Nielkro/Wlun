@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.os.SystemClock
 import android.transition.ChangeBounds

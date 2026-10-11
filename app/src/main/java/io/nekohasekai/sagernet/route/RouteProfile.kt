@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.route
+package app.qthrone.mobile.route
 
-import io.nekohasekai.sagernet.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonObject
 
 /**
  * A RouteProfile (include/database/entities/RouteProfile.h). [id] 0 means not saved yet. The desktop's raw profile

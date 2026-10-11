@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - '**'
+  workflow_dispatch:
   pull_request:
 concurrency:
   group: ci-${{ github.ref }}
@@ -20,3 +21,17 @@ jobs:
         uses: ./.github/actions/android-build
         with:
           tasks: app:testOssDebugUnitTest app:assembleOssDebug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: qThroneMobile-debug
+          path: app/build/outputs/apk/oss/debug/*.apk
+          if-no-files-found: error
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qThroneMobile-test-reports
+          path: app/build/reports/tests/
+          if-no-files-found: ignore

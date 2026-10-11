@@ -1,16 +1,16 @@
-package io.nekohasekai.sagernet.outbound.types
+package app.qthrone.mobile.outbound.types
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.import.ClashProxy
-import io.nekohasekai.sagernet.outbound.BuildResult
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.SecurityInfo
-import io.nekohasekai.sagernet.outbound.SecurityLevel
-import io.nekohasekai.sagernet.outbound.common.XrayMultiplex
-import io.nekohasekai.sagernet.outbound.common.XrayStreamSetting
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.LinkBuilder
-import io.nekohasekai.sagernet.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.import.ClashProxy
+import app.qthrone.mobile.outbound.BuildResult
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.SecurityInfo
+import app.qthrone.mobile.outbound.SecurityLevel
+import app.qthrone.mobile.outbound.common.XrayMultiplex
+import app.qthrone.mobile.outbound.common.XrayStreamSetting
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.LinkBuilder
+import app.qthrone.mobile.outbound.link.LinkParser
 
 /**
  * xrayVless (include/configs/outbounds/xrayVless.h, src/configs/outbounds/xrayVless.cpp): the Xray-core VLESS

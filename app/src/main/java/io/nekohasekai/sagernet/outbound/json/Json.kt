@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.outbound.json
+package app.qthrone.mobile.outbound.json
 
-import io.nekohasekai.sagernet.outbound.QtStrings
+import app.qthrone.mobile.outbound.QtStrings
 import java.math.BigDecimal
 import java.math.BigInteger
 

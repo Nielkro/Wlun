@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -18,17 +18,17 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.databinding.LayoutAddEntityBinding
-import io.nekohasekai.sagernet.databinding.LayoutProfileBinding
-import io.nekohasekai.sagernet.ktx.*
-import io.nekohasekai.sagernet.outbound.types.Chain
-import io.nekohasekai.sagernet.ui.ProfileSelectActivity
-import io.nekohasekai.sagernet.widget.applyInsetPadding
-import io.nekohasekai.sagernet.widget.applyListInsets
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.databinding.LayoutAddEntityBinding
+import app.qthrone.mobile.databinding.LayoutProfileBinding
+import app.qthrone.mobile.ktx.*
+import app.qthrone.mobile.outbound.types.Chain
+import app.qthrone.mobile.ui.ProfileSelectActivity
+import app.qthrone.mobile.widget.applyInsetPadding
+import app.qthrone.mobile.widget.applyListInsets
 import moe.matsuri.nb4a.Protocols.getProtocolColor
 import moe.matsuri.nb4a.proxy.PreferenceBindingManager
 

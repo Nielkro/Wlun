@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.widget
+package app.qthrone.mobile.widget
 
 import android.app.Dialog
 import android.graphics.Bitmap
@@ -17,19 +17,19 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.WriterException
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.dp2px
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.ui.MainActivity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.dp2px
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.ui.MainActivity
 import java.nio.charset.StandardCharsets
 import kotlin.math.roundToInt
 
 class QRCodeDialog() : DialogFragment() {
 
     companion object {
-        private const val KEY_URL = "io.nekohasekai.sagernet.QRCodeDialog.KEY_URL"
-        private const val KEY_NAME = "io.nekohasekai.sagernet.QRCodeDialog.KEY_NAME"
+        private const val KEY_URL = "app.qthrone.mobile.QRCodeDialog.KEY_URL"
+        private const val KEY_NAME = "app.qthrone.mobile.QRCodeDialog.KEY_NAME"
         private val iso88591 = StandardCharsets.ISO_8859_1.newEncoder()
     }
 

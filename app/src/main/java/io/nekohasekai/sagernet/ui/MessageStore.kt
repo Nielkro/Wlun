@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.app.Activity
 import android.view.View
 import androidx.annotation.StringRes
 import com.google.android.material.snackbar.Snackbar
-import io.nekohasekai.sagernet.ktx.Logs
+import app.qthrone.mobile.ktx.Logs
 import java.lang.ref.WeakReference
 
 object MessageStore {

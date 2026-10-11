@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

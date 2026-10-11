@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -8,10 +8,10 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
 
 /**
  * Reference-counted foreground promotion of [CoreService] (type dataSync) while test sessions or subscription jobs

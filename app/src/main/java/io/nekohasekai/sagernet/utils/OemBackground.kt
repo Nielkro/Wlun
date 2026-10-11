@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import io.nekohasekai.sagernet.ktx.launchCustomTab
+import app.qthrone.mobile.ktx.launchCustomTab
 import java.util.Locale
 
 /**

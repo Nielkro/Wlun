@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import androidx.room.InvalidationTracker
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.SagerDatabase
-import io.nekohasekai.sagernet.ktx.Logs
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.ktx.Logs
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable

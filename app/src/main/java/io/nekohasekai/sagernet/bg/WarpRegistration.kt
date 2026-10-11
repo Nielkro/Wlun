@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.throneproj.mobile.Mobile
-import io.throneproj.mobile.WarpRegisterRequest
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.core.mobile.Mobile
+import app.qthrone.core.mobile.WarpRegisterRequest
 
 /**
  * :bg side of ICoreService.warpRegister (rpc/warp.go through core/mobile/warp.go). Blocks the binder thread for at

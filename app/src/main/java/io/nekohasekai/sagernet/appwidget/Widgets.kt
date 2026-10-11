@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.appwidget
+package app.qthrone.mobile.appwidget
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -11,17 +11,17 @@ import android.text.format.Formatter
 import android.view.View
 import android.widget.RemoteViews
 import androidx.preference.PreferenceDataStore
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.QuickToggleShortcut
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.GroupRepo
-import io.nekohasekai.sagernet.database.ProfileOrder
-import io.nekohasekai.sagernet.database.SagerDatabase
-import io.nekohasekai.sagernet.database.preference.OnPreferenceDataStoreChangeListener
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.QuickToggleShortcut
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.ProfileOrder
+import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.runOnDefaultDispatcher
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -31,8 +31,8 @@ import kotlinx.coroutines.sync.withLock
  */
 object Widgets {
 
-    const val ACTION_NEXT = "io.nekohasekai.sagernet.appwidget.NEXT"
-    const val ACTION_PREVIOUS = "io.nekohasekai.sagernet.appwidget.PREVIOUS"
+    const val ACTION_NEXT = "app.qthrone.mobile.appwidget.NEXT"
+    const val ACTION_PREVIOUS = "app.qthrone.mobile.appwidget.PREVIOUS"
 
     private const val SPEED_INTERVAL_MS = 3000L
     private const val SMALL_WIDTH_DP = 100

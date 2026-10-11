@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.content.Context
 import android.content.Intent
@@ -21,15 +21,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import com.simplecityapps.recyclerview_fastscroll.views.FastScrollRecyclerView
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.databinding.LayoutAppListBinding
-import io.nekohasekai.sagernet.databinding.LayoutAppsItemBinding
-import io.nekohasekai.sagernet.ktx.crossFadeFrom
-import io.nekohasekai.sagernet.route.RouteRule
-import io.nekohasekai.sagernet.utils.PackageCache
-import io.nekohasekai.sagernet.widget.applyListInsets
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.databinding.LayoutAppListBinding
+import app.qthrone.mobile.databinding.LayoutAppsItemBinding
+import app.qthrone.mobile.ktx.crossFadeFrom
+import app.qthrone.mobile.route.RouteRule
+import app.qthrone.mobile.utils.PackageCache
+import app.qthrone.mobile.widget.applyListInsets
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive

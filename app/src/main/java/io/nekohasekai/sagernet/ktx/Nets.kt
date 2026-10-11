@@ -1,11 +1,11 @@
 @file:Suppress("SpellCheckingInspection")
 
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
 import moe.matsuri.nb4a.utils.NGUtil
 import okhttp3.ConnectionSpec
 import okhttp3.Credentials

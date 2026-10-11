@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.content.ActivityNotFoundException
 import android.content.Context

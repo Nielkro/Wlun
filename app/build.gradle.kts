@@ -33,7 +33,7 @@ android {
         viewBinding = true
         aidl = true
     }
-    namespace = "io.nekohasekai.sagernet"
+    namespace = "app.qthrone.mobile"
     packaging {
         jniLibs {
             useLegacyPackaging = true

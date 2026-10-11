@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingsRegistry
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingsRegistry
 import moe.matsuri.nb4a.utils.CoreLog
 import java.io.InputStream
 import java.io.OutputStream

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.os.Bundle
 import android.view.KeyEvent
@@ -8,9 +8,9 @@ import androidx.core.view.GravityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.appbar.AppBarLayout
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.utils.Theme
-import io.nekohasekai.sagernet.widget.applyTopInset
+import app.qthrone.mobile.R
+import app.qthrone.mobile.utils.Theme
+import app.qthrone.mobile.widget.applyTopInset
 
 open class ToolbarFragment : Fragment {
 

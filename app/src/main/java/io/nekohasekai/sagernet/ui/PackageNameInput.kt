@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.content.Context
 import android.text.InputType
@@ -6,8 +6,8 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.Toast
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.dp2px
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.dp2px
 
 /**
  * "Add package name…" of the package pickers, for apps the list cannot show (hidden, not installed yet, restored from

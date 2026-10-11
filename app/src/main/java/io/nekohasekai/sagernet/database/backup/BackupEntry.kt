@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.database.backup
+package app.qthrone.mobile.database.backup
 
 import android.content.Intent
 import android.net.Uri
 import androidx.fragment.app.FragmentActivity
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ui.MainActivity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ui.MainActivity
 
 // Entry for a .thrbackup opened from outside (VIEW/SEND intents).
 object BackupEntry {

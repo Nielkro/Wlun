@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
@@ -24,39 +24,39 @@ import androidx.preference.PreferenceDataStore
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.aidl.ISagerNetService
-import io.nekohasekai.sagernet.aidl.SpeedDisplayData
-import io.nekohasekai.sagernet.aidl.TrafficDataBatch
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.bg.SagerConnection
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.preference.OnPreferenceDataStoreChangeListener
-import io.nekohasekai.sagernet.database.backup.BackupEntry
-import io.nekohasekai.sagernet.databinding.LayoutMainBinding
-import io.nekohasekai.sagernet.ktx.alert
-import io.nekohasekai.sagernet.ktx.isPreview
-import io.nekohasekai.sagernet.ktx.launchCustomTab
-import io.nekohasekai.sagernet.ktx.onMainDispatcher
-import io.nekohasekai.sagernet.ui.profile.ProfileTextImport
-import io.nekohasekai.sagernet.ui.route.RouteImports
-import io.nekohasekai.sagernet.ui.settings.DnsSettingsFragment
-import io.nekohasekai.sagernet.ui.settings.XrayGeoSettingsFragment
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
-import io.nekohasekai.sagernet.ui.MessageStore
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.database.RouteManager
-import io.nekohasekai.sagernet.utils.AppShortcuts
-import io.nekohasekai.sagernet.utils.PlatformNotifications
-import io.nekohasekai.sagernet.utils.Theme
-import io.nekohasekai.sagernet.utils.WifiStateAccess
-import io.nekohasekai.sagernet.widget.bars
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.aidl.ISagerNetService
+import app.qthrone.mobile.aidl.SpeedDisplayData
+import app.qthrone.mobile.aidl.TrafficDataBatch
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.bg.SagerConnection
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
+import app.qthrone.mobile.database.backup.BackupEntry
+import app.qthrone.mobile.databinding.LayoutMainBinding
+import app.qthrone.mobile.ktx.alert
+import app.qthrone.mobile.ktx.isPreview
+import app.qthrone.mobile.ktx.launchCustomTab
+import app.qthrone.mobile.ktx.onMainDispatcher
+import app.qthrone.mobile.ui.profile.ProfileTextImport
+import app.qthrone.mobile.ui.route.RouteImports
+import app.qthrone.mobile.ui.settings.DnsSettingsFragment
+import app.qthrone.mobile.ui.settings.XrayGeoSettingsFragment
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.ktx.runOnDefaultDispatcher
+import app.qthrone.mobile.ui.MessageStore
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.database.RouteManager
+import app.qthrone.mobile.utils.AppShortcuts
+import app.qthrone.mobile.utils.PlatformNotifications
+import app.qthrone.mobile.utils.Theme
+import app.qthrone.mobile.utils.WifiStateAccess
+import app.qthrone.mobile.widget.bars
 import androidx.lifecycle.lifecycleScope
 import androidx.drawerlayout.widget.DrawerLayout
 import kotlinx.coroutines.Dispatchers
@@ -123,16 +123,16 @@ class MainActivity : ThemedActivity(),
         })
 
         if (savedInstanceState == null) {
-            displayFragmentWithId(R.id.nav_configuration)
+            displayFragmentWithId(R.id.nav_mobile_home)
         } else {
             currentMainFragment =
                 supportFragmentManager.findFragmentById(R.id.fragment_holder) as? ToolbarFragment
         }
         onBackPressedDispatcher.addCallback {
-            if (supportFragmentManager.findFragmentById(R.id.fragment_holder) is ConfigurationFragment) {
+            if (supportFragmentManager.findFragmentById(R.id.fragment_holder) is MobileHomeFragment) {
                 moveTaskToBack(true)
             } else {
-                displayFragmentWithId(R.id.nav_configuration)
+                displayFragmentWithId(R.id.nav_mobile_home)
             }
         }
 
@@ -378,6 +378,7 @@ class MainActivity : ThemedActivity(),
 
     fun displayFragmentWithId(@IdRes id: Int): Boolean {
         when (id) {
+            R.id.nav_mobile_home -> displayFragment(MobileHomeFragment())
             R.id.nav_configuration -> {
                 displayFragment(ConfigurationFragment())
             }
@@ -397,7 +398,7 @@ class MainActivity : ThemedActivity(),
 
             else -> return false
         }
-        navigation.menu.findItem(id).isChecked = true
+        navigation.menu.findItem(id)?.isChecked = true
         return true
     }
 
@@ -410,6 +411,7 @@ class MainActivity : ThemedActivity(),
         DataStore.serviceState = state
         refreshConfigurationProfileState()
         when (val fragment = currentMainFragment ?: supportFragmentManager.findFragmentById(R.id.fragment_holder)) {
+            is MobileHomeFragment -> fragment.updateState()
             is RouteFragment -> fragment.onServiceStateChanged()
             is DashboardFragment -> fragment.onServiceStateChanged()
         }
@@ -511,7 +513,7 @@ class MainActivity : ThemedActivity(),
     private val firstStart = FirstStartPrompts(this)
     private val wifiFlow = WifiPermissionFlow(this)
 
-    private fun toggleService() {
+    fun toggleService() {
         if (DataStore.serviceState.canStop) SagerNet.stopService() else startFromUi()
     }
 

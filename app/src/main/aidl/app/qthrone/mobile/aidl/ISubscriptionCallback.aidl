@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.aidl;
+package app.qthrone.mobile.aidl;
 
 // state: 0 idle, 1 queued, 2 running. popup: the desktop would show the change window (manual refresh + sub_show_change_popup).
 oneway interface ISubscriptionCallback {

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.warp
+package app.qthrone.mobile.ui.warp
 
 import android.content.Context
 import android.text.method.LinkMovementMethod
@@ -12,9 +12,9 @@ import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.readableMessage
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.readableMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

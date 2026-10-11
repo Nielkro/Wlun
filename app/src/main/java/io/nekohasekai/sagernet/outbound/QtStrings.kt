@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound
+package app.qthrone.mobile.outbound
 
 /**
  * QString helpers with the exact semantics the desktop profile code relies on

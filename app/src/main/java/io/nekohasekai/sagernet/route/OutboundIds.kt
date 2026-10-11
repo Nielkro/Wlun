@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.route
+package app.qthrone.mobile.route
 
 /** The desktop's predefined outbound ids (RouteRule.h:10-27); positive ids are server profiles. */
 object OutboundIds {

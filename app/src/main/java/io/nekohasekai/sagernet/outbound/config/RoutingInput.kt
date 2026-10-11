@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.route.RouteProfile
-import io.nekohasekai.sagernet.route.RuleSetCatalog
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.route.RouteProfile
+import app.qthrone.mobile.route.RuleSetCatalog
 
 /**
  * What a started config reads besides the settings and the outbounds (calculatePrerequisites, buildRouteSection,

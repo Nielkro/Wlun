@@ -1,16 +1,16 @@
-package io.nekohasekai.sagernet.outbound.types
+package app.qthrone.mobile.outbound.types
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.BuildResult
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.SecurityInfo
-import io.nekohasekai.sagernet.outbound.common.Tls
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
-import io.nekohasekai.sagernet.outbound.link.Hosts
-import io.nekohasekai.sagernet.outbound.link.LinkBuilder
-import io.nekohasekai.sagernet.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.BuildResult
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.SecurityInfo
+import app.qthrone.mobile.outbound.common.Tls
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.link.Hosts
+import app.qthrone.mobile.outbound.link.LinkBuilder
+import app.qthrone.mobile.outbound.link.LinkParser
 
 /** trusttunnel (include/configs/outbounds/trusttunnel.h, src/configs/outbounds/trusttunnel.cpp). */
 class TrustTunnel : Outbound("trusttunnel") {

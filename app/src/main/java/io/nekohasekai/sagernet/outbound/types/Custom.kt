@@ -1,21 +1,21 @@
-package io.nekohasekai.sagernet.outbound.types
+package app.qthrone.mobile.outbound.types
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.BuildResult
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.OutboundFactory
-import io.nekohasekai.sagernet.outbound.SecurityInfo
-import io.nekohasekai.sagernet.outbound.SecurityLevel
-import io.nekohasekai.sagernet.outbound.displayTransportName
-import io.nekohasekai.sagernet.outbound.withPrivateServer
-import io.nekohasekai.sagernet.outbound.common.xrayNetworks
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.JsonValues
-import io.nekohasekai.sagernet.outbound.json.JsonWriter
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.link.Hosts
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.BuildResult
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.OutboundFactory
+import app.qthrone.mobile.outbound.SecurityInfo
+import app.qthrone.mobile.outbound.SecurityLevel
+import app.qthrone.mobile.outbound.displayTransportName
+import app.qthrone.mobile.outbound.withPrivateServer
+import app.qthrone.mobile.outbound.common.xrayNetworks
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.json.JsonWriter
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.link.Hosts
 
 /**
  * Custom (include/configs/outbounds/custom.h, src/configs/outbounds/custom.cpp): raw JSON in one of four shapes.

@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.outbound
+package app.qthrone.mobile.outbound
 
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
-import io.nekohasekai.sagernet.outbound.link.LinkParser
-import io.nekohasekai.sagernet.outbound.types.Http
-import io.nekohasekai.sagernet.outbound.types.Shadowsocks
-import io.nekohasekai.sagernet.outbound.types.Socks
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.types.Http
+import app.qthrone.mobile.outbound.types.Shadowsocks
+import app.qthrone.mobile.outbound.types.Socks
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
  * src/configs/sub/SubscriptionParser.cpp:48-67 / 510-559, and useXrayVless (src/configs/common/utils.cpp:50-72).
  *
  * Extension point for the per-type work packages: a new type lives in one file,
- * `io.nekohasekai.sagernet.outbound.types.<ClassName>` with a public no-argument constructor, where ClassName is
+ * `app.qthrone.mobile.outbound.types.<ClassName>` with a public no-argument constructor, where ClassName is
  * the entry of [CONVENTION_CLASSES] for its factory string. [newByType] finds it by name, so the factory itself
  * never changes; [register] can override any entry explicitly (an app initialiser may do that to avoid reflection
  * once every type exists). Release builds shrink with R8, so a keep rule for that package is required.
@@ -42,7 +42,7 @@ object OutboundFactory {
     @JvmField
     val UNSUPPORTED_TYPES: Set<String> = setOf("tailscale", "extracore")
 
-    /** Factory string to the class expected in io.nekohasekai.sagernet.outbound.types for the types other packages add. */
+    /** Factory string to the class expected in app.qthrone.mobile.outbound.types for the types other packages add. */
     @JvmField
     val CONVENTION_CLASSES: Map<String, String> = mapOf(
         "vmess" to "Vmess", "trojan" to "Trojan", "vless" to "Vless", "xrayvless" to "XrayVless",
@@ -53,7 +53,7 @@ object OutboundFactory {
         "autoselector" to "AutoSelector",
     )
 
-    private const val TYPES_PACKAGE = "io.nekohasekai.sagernet.outbound.types."
+    private const val TYPES_PACKAGE = "app.qthrone.mobile.outbound.types."
 
     private val builtin: Map<String, () -> Outbound> = mapOf<String, () -> Outbound>(
         "socks" to { Socks() },

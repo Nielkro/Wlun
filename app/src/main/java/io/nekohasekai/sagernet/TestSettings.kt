@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet
+package app.qthrone.mobile
 
 import java.net.URI
 

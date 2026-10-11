@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.settings
+package app.qthrone.mobile.ui.settings
 
 import android.text.InputType
 import android.text.format.Formatter
@@ -7,12 +7,12 @@ import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.XrayGeoAssets
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.databinding.DialogGeoDownloadBinding
-import io.nekohasekai.sagernet.ktx.needReload
-import io.nekohasekai.sagernet.ktx.readableMessage
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.XrayGeoAssets
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.databinding.DialogGeoDownloadBinding
+import app.qthrone.mobile.ktx.needReload
+import app.qthrone.mobile.ktx.readableMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

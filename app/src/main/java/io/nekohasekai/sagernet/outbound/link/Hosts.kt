@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound.link
+package app.qthrone.mobile.outbound.link
 
 import java.text.Normalizer
 import java.util.Locale

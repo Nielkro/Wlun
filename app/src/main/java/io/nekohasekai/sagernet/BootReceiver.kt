@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet
+package app.qthrone.mobile
 
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -6,8 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.app
 
 class BootReceiver : BroadcastReceiver() {
     companion object {

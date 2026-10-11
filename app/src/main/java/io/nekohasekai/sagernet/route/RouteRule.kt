@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.route
+package app.qthrone.mobile.route
 
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.JsonValues
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.json.jsonObjectOf
 import kotlin.reflect.KMutableProperty1
 
 /**

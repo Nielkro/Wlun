@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonValues
-import io.nekohasekai.sagernet.route.RouteRule
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.route.RouteRule
 
 /**
  * The desktop's `route_rules` row (RoutesRepo.cpp:51-94) plus the Android-only `network_type_json`,

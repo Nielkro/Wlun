@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
@@ -22,17 +22,17 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.preference.Preference
 import com.jakewharton.processphoenix.ProcessPhoenix
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.R
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.R
 import com.google.android.material.snackbar.Snackbar
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.aidl.ISagerNetService
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.bg.SagerConnection
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ui.MainActivity
-import io.nekohasekai.sagernet.ui.MessageStore
-import io.nekohasekai.sagernet.ui.ThemedActivity
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.aidl.ISagerNetService
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.bg.SagerConnection
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ui.MainActivity
+import app.qthrone.mobile.ui.MessageStore
+import app.qthrone.mobile.ui.ThemedActivity
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.delay
 

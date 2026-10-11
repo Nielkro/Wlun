@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound.link
+package app.qthrone.mobile.outbound.link
 
 /**
  * Percent-encoding/decoding with the exact per-component behaviour of Qt's QUrl (TolerantMode parsing,

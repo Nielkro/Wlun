@@ -1,21 +1,21 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.core.view.MenuCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.GroupSortMethod
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.TestBy
-import io.nekohasekai.sagernet.database.TestShowItems
-import io.nekohasekai.sagernet.database.TrafficBy
-import io.nekohasekai.sagernet.database.TypeBy
-import io.nekohasekai.sagernet.ui.ConfigurationFragment
-import io.nekohasekai.sagernet.ui.route.RouteQuickSwitch
-import io.nekohasekai.sagernet.ui.test.TestSessionClient
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.GroupSortMethod
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.TestBy
+import app.qthrone.mobile.database.TestShowItems
+import app.qthrone.mobile.database.TrafficBy
+import app.qthrone.mobile.database.TypeBy
+import app.qthrone.mobile.ui.ConfigurationFragment
+import app.qthrone.mobile.ui.route.RouteQuickSwitch
+import app.qthrone.mobile.ui.test.TestSessionClient
 
 /** The ⋮ menu of the profiles screen: actions on the current tab's group (the desktop's Groups menu). */
 class GroupMenu(private val host: ConfigurationFragment) {

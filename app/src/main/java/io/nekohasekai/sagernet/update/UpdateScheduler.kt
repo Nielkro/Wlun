@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.update
+package app.qthrone.mobile.update
 
 import android.content.Context
 import androidx.work.Constraints
@@ -12,11 +12,11 @@ import androidx.work.multiprocess.RemoteListenableWorker
 import androidx.work.multiprocess.RemoteWorkManager
 import androidx.work.multiprocess.RemoteWorkerService
 import com.google.common.util.concurrent.ListenableFuture
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.runOnDefaultDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext

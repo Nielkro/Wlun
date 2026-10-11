@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.outbound.types.XrayVless
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.outbound.types.XrayVless
 
 /** The Xray-core VLESS outbound: uuid / encryption / flow, the Xray stream settings and the Xray mux. */
 class XrayVlessSettingsActivity : BindingSettingsActivity<XrayVless>() {

@@ -1,15 +1,15 @@
-package io.nekohasekai.sagernet.update
+package app.qthrone.mobile.update
 
 import android.content.Context
 import android.os.Build
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.USER_AGENT
-import io.nekohasekai.sagernet.ktx.appRequestsViaProxy
-import io.nekohasekai.sagernet.ktx.newHttpClient
-import io.nekohasekai.sagernet.ktx.readableMessage
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.USER_AGENT
+import app.qthrone.mobile.ktx.appRequestsViaProxy
+import app.qthrone.mobile.ktx.newHttpClient
+import app.qthrone.mobile.ktx.readableMessage
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
@@ -25,7 +25,7 @@ import java.io.InputStream
  */
 object UpdateChecker {
 
-    const val REPOSITORY = "throneproj/ThroneForAndroid"
+    const val REPOSITORY = "ttrroyy/qThroneMobile"
     const val RELEASES_PAGE = "https://github.com/$REPOSITORY/releases"
     private const val RELEASES_API = "https://api.github.com/repos/$REPOSITORY/releases?per_page=20"
     private const val MANIFEST = "throne-update.json"

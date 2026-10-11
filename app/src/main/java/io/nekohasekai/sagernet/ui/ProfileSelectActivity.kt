@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.content.Intent
 import android.os.Bundle
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.ProxyEntity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.ProxyEntity
 
 class ProfileSelectActivity : ThemedActivity(R.layout.layout_empty),
     ConfigurationFragment.SelectCallback {

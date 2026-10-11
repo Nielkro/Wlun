@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.outbound.types
+package app.qthrone.mobile.outbound.types
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.BuildResult
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.SecurityInfo
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.BuildResult
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.SecurityInfo
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonValues
 
 /** chain (include/configs/outbounds/chain.h): a list of profile ids the generator expands into hops (R2 §F). */
 class Chain : Outbound("chain") {

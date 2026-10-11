@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
 import androidx.preference.PreferenceDataStore
 import kotlin.reflect.KProperty

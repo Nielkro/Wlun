@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.types.Socks
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.types.Socks
 
 /** ChainBuildRequest (generate.cpp:1413-1428). */
 internal class ChainRequest(

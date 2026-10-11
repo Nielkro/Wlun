@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.database.backup
+package app.qthrone.mobile.database.backup
 
 import android.util.Xml
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.app
 import okhttp3.Credentials
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull

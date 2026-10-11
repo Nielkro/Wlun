@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database.preference
+package app.qthrone.mobile.database.preference
 
 import androidx.room.Entity
 import androidx.room.Insert

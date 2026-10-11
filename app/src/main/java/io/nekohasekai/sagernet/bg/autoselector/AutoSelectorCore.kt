@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.bg.autoselector
+package app.qthrone.mobile.bg.autoselector
 
-import io.throneproj.mobile.Instance
-import io.throneproj.mobile.AutoSelectorStatus as CoreStatus
+import app.qthrone.core.mobile.Instance
+import app.qthrone.core.mobile.AutoSelectorStatus as CoreStatus
 
 /**
  * The running core's auto-selector [groupTag] (the desktop's QueryAutoSelectors / AutoSelectorAction RPC,

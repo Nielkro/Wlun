@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
-import io.nekohasekai.sagernet.database.SubUserInfo
-import io.nekohasekai.sagernet.outbound.`import`.ProfileImport
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
+import app.qthrone.mobile.database.SubUserInfo
+import app.qthrone.mobile.outbound.`import`.ProfileImport
+import app.qthrone.mobile.outbound.link.Base64Strict
 
 /**
  * What a subscription says about itself (GroupUpdater::fetch, GroupUpdater.cpp:615-697): the response headers

@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.bg.autoselector
+package app.qthrone.mobile.bg.autoselector
 
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.jsonObjectOf
 
 /**
  * What the service reports about the auto-selector it runs (AutoSelectorView, AutoSelectorMonitor.hpp), carried as JSON

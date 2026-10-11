@@ -1,25 +1,25 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import androidx.annotation.PluralsRes
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.GroupRepo
-import io.nekohasekai.sagernet.database.GroupSort
-import io.nekohasekai.sagernet.database.GroupSortAction
-import io.nekohasekai.sagernet.database.GroupSortMethod
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.TestShowItems
-import io.nekohasekai.sagernet.group.SubscriptionClient
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.confirmAction
-import io.nekohasekai.sagernet.ktx.nameList
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.ktx.snackbar
-import io.nekohasekai.sagernet.ui.ConfigurationFragment
-import io.nekohasekai.sagernet.ui.MainActivity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.GroupSortAction
+import app.qthrone.mobile.database.GroupSortMethod
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.TestShowItems
+import app.qthrone.mobile.group.SubscriptionClient
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.confirmAction
+import app.qthrone.mobile.ktx.nameList
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.ktx.snackbar
+import app.qthrone.mobile.ui.ConfigurationFragment
+import app.qthrone.mobile.ui.MainActivity
 
 /** The desktop's group actions on the current tab (mainwindow_profiles.cpp, mainwindow_setup.cpp). */
 internal object GroupActions {

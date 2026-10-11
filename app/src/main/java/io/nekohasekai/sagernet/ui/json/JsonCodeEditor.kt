@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.json
+package app.qthrone.mobile.ui.json
 
 import android.content.Context
 import android.util.AttributeSet

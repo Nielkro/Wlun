@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.aidl
+package app.qthrone.mobile.aidl
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

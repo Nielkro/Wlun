@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.widget
+package app.qthrone.mobile.widget
 
 import android.view.View
 import android.view.ViewGroup
@@ -7,7 +7,7 @@ import androidx.core.view.OnApplyWindowInsetsListener
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.appbar.AppBarLayout
-import io.nekohasekai.sagernet.R
+import app.qthrone.mobile.R
 import kotlin.math.max
 
 /*

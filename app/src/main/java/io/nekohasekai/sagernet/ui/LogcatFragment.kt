@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.annotation.SuppressLint
 import android.graphics.Color
@@ -11,11 +11,11 @@ import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.doOnLayout
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.databinding.LayoutLogcatBinding
-import io.nekohasekai.sagernet.ktx.*
-import io.nekohasekai.sagernet.widget.applyListInsets
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.databinding.LayoutLogcatBinding
+import app.qthrone.mobile.ktx.*
+import app.qthrone.mobile.widget.applyListInsets
 import moe.matsuri.nb4a.utils.CoreLog
 import moe.matsuri.nb4a.utils.LogExport
 import moe.matsuri.nb4a.utils.SendLog

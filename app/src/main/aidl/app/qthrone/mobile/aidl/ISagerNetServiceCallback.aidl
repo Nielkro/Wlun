@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.aidl;
+package app.qthrone.mobile.aidl;
 
-import io.nekohasekai.sagernet.aidl.SpeedDisplayData;
-import io.nekohasekai.sagernet.aidl.TrafficDataBatch;
+import app.qthrone.mobile.aidl.SpeedDisplayData;
+import app.qthrone.mobile.aidl.TrafficDataBatch;
 
 oneway interface ISagerNetServiceCallback {
   void stateChanged(int state, String profileName, String msg);

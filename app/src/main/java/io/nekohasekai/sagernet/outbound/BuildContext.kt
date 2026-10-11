@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound
+package app.qthrone.mobile.outbound
 
 /**
  * Every build-time global the desktop's Build() paths read from SettingsRepo (include/database/SettingsRepo.h),

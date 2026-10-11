@@ -5,10 +5,10 @@ import android.os.Build
 import android.os.CancellationSignal
 import android.system.ErrnoException
 import androidx.annotation.RequiresApi
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.ktx.Logs
-import io.throneproj.mobile.ExchangeContext
-import io.throneproj.mobile.LocalDNSTransport
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.core.mobile.ExchangeContext
+import app.qthrone.core.mobile.LocalDNSTransport
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import java.net.InetAddress

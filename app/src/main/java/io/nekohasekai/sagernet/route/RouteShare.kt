@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.route
+package app.qthrone.mobile.route
 
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.JsonValues
-import io.nekohasekai.sagernet.outbound.json.JsonWriter
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.json.JsonWriter
+import app.qthrone.mobile.outbound.link.Base64Strict
 
 /** The desktop's route share formats (RouteProfile.cpp:438-627). */
 object RouteShare {

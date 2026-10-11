@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.os.Bundle
 import android.view.View
@@ -9,10 +9,10 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.Fragment
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ui.settings.SettingsScreenFragment
-import io.nekohasekai.sagernet.utils.Theme
-import io.nekohasekai.sagernet.widget.applyListInsets
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ui.settings.SettingsScreenFragment
+import app.qthrone.mobile.utils.Theme
+import app.qthrone.mobile.widget.applyListInsets
 
 /** Hosts the settings root and its sub-screens; back and the toolbar arrow return to the previous screen. */
 class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),

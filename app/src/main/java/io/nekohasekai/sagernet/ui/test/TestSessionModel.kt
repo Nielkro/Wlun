@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.ui.test
+package app.qthrone.mobile.ui.test
 
 import android.os.SystemClock
-import io.nekohasekai.sagernet.aidl.ICoreService
-import io.nekohasekai.sagernet.bg.proto.SpeedTestSnapshot
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.database.GroupSort
-import io.nekohasekai.sagernet.database.ProxyEntity
+import app.qthrone.mobile.aidl.ICoreService
+import app.qthrone.mobile.bg.proto.SpeedTestSnapshot
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.ProxyEntity
 import kotlin.math.min
 
 /** Mutable state of one session; every call happens under [TestSessionClient]'s lock. */

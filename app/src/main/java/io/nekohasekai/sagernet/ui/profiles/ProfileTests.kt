@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.ktx.snackbar
-import io.nekohasekai.sagernet.ui.ConfigurationFragment
-import io.nekohasekai.sagernet.ui.test.TestSessionClient
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.ktx.snackbar
+import app.qthrone.mobile.ui.ConfigurationFragment
+import app.qthrone.mobile.ui.test.TestSessionClient
 
 /** The test entry points of the profiles screen (desktop TestRunner scopes: group, selection, one profile, current). */
 internal object ProfileTests {

@@ -1,13 +1,13 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
 import androidx.core.net.toUri
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.SubUserInfo
-import io.nekohasekai.sagernet.ktx.HttpGetOptions
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.httpGet
-import io.nekohasekai.sagernet.ktx.readableMessage
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.SubUserInfo
+import app.qthrone.mobile.ktx.HttpGetOptions
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.httpGet
+import app.qthrone.mobile.ktx.readableMessage
 import java.io.ByteArrayOutputStream
 
 /** GroupUpdater::fetch (GroupUpdater.cpp:448-463), plus the Android `content://` subscription URLs. */

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.widget
+package app.qthrone.mobile.widget
 
 import android.content.Context
 import android.graphics.drawable.Drawable
@@ -15,8 +15,8 @@ import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.progressindicator.BaseProgressIndicator
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.BaseService
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.BaseService
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import java.util.*

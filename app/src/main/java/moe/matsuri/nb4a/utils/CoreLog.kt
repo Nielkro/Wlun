@@ -1,7 +1,7 @@
 package moe.matsuri.nb4a.utils
 
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.app
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream

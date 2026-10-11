@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import java.util.concurrent.ConcurrentHashMap
 

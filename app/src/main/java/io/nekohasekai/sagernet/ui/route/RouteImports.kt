@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.route
+package app.qthrone.mobile.ui.route
 
 import android.content.Context
 import android.widget.Toast
@@ -6,12 +6,12 @@ import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.RouteManager
-import io.nekohasekai.sagernet.databinding.LayoutRouteRemotePromptBinding
-import io.nekohasekai.sagernet.group.RemoteRouteUpdater
-import io.nekohasekai.sagernet.route.RouteProfile
-import io.nekohasekai.sagernet.route.RouteShare
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.RouteManager
+import app.qthrone.mobile.databinding.LayoutRouteRemotePromptBinding
+import app.qthrone.mobile.group.RemoteRouteUpdater
+import app.qthrone.mobile.route.RouteProfile
+import app.qthrone.mobile.route.RouteShare
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

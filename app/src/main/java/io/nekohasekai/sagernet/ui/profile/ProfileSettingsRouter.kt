@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import android.content.Context
 import android.content.Intent
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.outbound.OutboundFactory
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.outbound.OutboundFactory
 
 /** The editor activity of a desktop profile type string ("custom" and unknown types open the raw JSON editor). */
 fun settingsActivityFor(type: String): Class<out ProfileSettingsActivity<*>> =

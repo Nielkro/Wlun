@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.app.Service
 import android.content.Intent

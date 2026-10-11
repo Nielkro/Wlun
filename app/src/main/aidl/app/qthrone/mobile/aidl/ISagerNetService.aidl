@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.aidl;
+package app.qthrone.mobile.aidl;
 
-import io.nekohasekai.sagernet.aidl.ISagerNetServiceCallback;
+import app.qthrone.mobile.aidl.ISagerNetServiceCallback;
 
 interface ISagerNetService {
   int getState();

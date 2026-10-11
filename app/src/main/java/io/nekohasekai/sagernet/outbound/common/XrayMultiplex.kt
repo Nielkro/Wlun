@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.outbound.common
+package app.qthrone.mobile.outbound.common
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.import.ClashProxy
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.LinkParser
-import io.nekohasekai.sagernet.outbound.link.ParsedLink
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.import.ClashProxy
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.link.ParsedLink
 
 /** xrayMultiplex (include/configs/common/xrayMultiplex.h, src/configs/common/xrayMultiplex.cpp). `useDefault` true means "Keep Default". */
 class XrayMultiplex {

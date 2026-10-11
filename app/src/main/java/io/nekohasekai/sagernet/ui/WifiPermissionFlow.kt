@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.Manifest
 import android.content.ActivityNotFoundException
@@ -9,10 +9,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.Action
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.utils.WifiStateAccess
-import io.nekohasekai.sagernet.utils.WifiStateAccess.Status
+import app.qthrone.mobile.Action
+import app.qthrone.mobile.R
+import app.qthrone.mobile.utils.WifiStateAccess
+import app.qthrone.mobile.utils.WifiStateAccess.Status
 
 /**
  * Walks the user through what Wi-Fi rules need (WifiStateAccess): precise location, then "all the time", then location

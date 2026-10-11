@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.outbound.import
+package app.qthrone.mobile.outbound.import
 
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonNull
-import io.nekohasekai.sagernet.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonNull
+import app.qthrone.mobile.outbound.json.JsonObject
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.math.BigDecimal

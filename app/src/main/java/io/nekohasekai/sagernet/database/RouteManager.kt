@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import androidx.room.InvalidationTracker
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.runOnIoDispatcher
-import io.nekohasekai.sagernet.route.RouteProfile
-import io.nekohasekai.sagernet.route.RuleSetCatalog
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.runOnIoDispatcher
+import app.qthrone.mobile.route.RouteProfile
+import app.qthrone.mobile.route.RuleSetCatalog
 import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.CopyOnWriteArrayList

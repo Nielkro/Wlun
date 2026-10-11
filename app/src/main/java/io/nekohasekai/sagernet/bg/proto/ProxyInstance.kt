@@ -1,14 +1,14 @@
-package io.nekohasekai.sagernet.bg.proto
+package app.qthrone.mobile.bg.proto
 
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.bg.ServiceNotification
-import io.nekohasekai.sagernet.bg.XrayGeoAssets
-import io.nekohasekai.sagernet.bg.autoselector.AutoSelectorRuntime
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.SagerDatabase
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
-import io.nekohasekai.sagernet.outbound.config.AutoSelectorBuild
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.bg.ServiceNotification
+import app.qthrone.mobile.bg.XrayGeoAssets
+import app.qthrone.mobile.bg.autoselector.AutoSelectorRuntime
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.runOnDefaultDispatcher
+import app.qthrone.mobile.outbound.config.AutoSelectorBuild
 import kotlinx.coroutines.runBlocking
 
 class ProxyInstance(profile: ProxyEntity, var service: BaseService.Interface? = null) :

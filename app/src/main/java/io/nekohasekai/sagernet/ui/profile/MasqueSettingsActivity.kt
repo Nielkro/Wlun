@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.types.Masque
-import io.nekohasekai.sagernet.ui.warp.WarpClient
-import io.nekohasekai.sagernet.ui.warp.WarpGenerate
-import io.nekohasekai.sagernet.ui.warp.setFieldText
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.types.Masque
+import app.qthrone.mobile.ui.warp.WarpClient
+import app.qthrone.mobile.ui.warp.WarpGenerate
+import app.qthrone.mobile.ui.warp.setFieldText
 
 /** MASQUE endpoint: the TLS camouflage (no Reality, masque.cpp strips it) and QUIC blocks; the rest through Raw JSON. */
 class MasqueSettingsActivity : BindingSettingsActivity<Masque>() {

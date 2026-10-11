@@ -1,18 +1,18 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import android.os.Binder
 import androidx.preference.PreferenceDataStore
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.bg.VpnService
-import io.nekohasekai.sagernet.database.preference.OnPreferenceDataStoreChangeListener
-import io.nekohasekai.sagernet.database.preference.RoomPreferenceDataStore
-import io.nekohasekai.sagernet.database.preference.SettingsStore
-import io.nekohasekai.sagernet.ktx.boolean
-import io.nekohasekai.sagernet.ktx.int
-import io.nekohasekai.sagernet.ktx.long
-import io.nekohasekai.sagernet.ktx.string
-import io.nekohasekai.sagernet.ktx.stringToInt
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.bg.VpnService
+import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
+import app.qthrone.mobile.database.preference.RoomPreferenceDataStore
+import app.qthrone.mobile.database.preference.SettingsStore
+import app.qthrone.mobile.ktx.boolean
+import app.qthrone.mobile.ktx.int
+import app.qthrone.mobile.ktx.long
+import app.qthrone.mobile.ktx.string
+import app.qthrone.mobile.ktx.stringToInt
 import moe.matsuri.nb4a.TempDatabase
 import java.util.UUID
 

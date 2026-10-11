@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.types.Chain
-import io.nekohasekai.sagernet.outbound.types.Custom
-import io.nekohasekai.sagernet.outbound.types.Hysteria
-import io.nekohasekai.sagernet.outbound.types.Socks
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.types.Chain
+import app.qthrone.mobile.outbound.types.Custom
+import app.qthrone.mobile.outbound.types.Hysteria
+import app.qthrone.mobile.outbound.types.Socks
 
 /** The desktop's Profile::Chain() / Custom() / Hysteria() / Socks() casts, which yield nothing for any other type. */
 internal object TypeAccess {

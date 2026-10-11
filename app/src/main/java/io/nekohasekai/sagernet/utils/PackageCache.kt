@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.listenForPackageChanges
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.listenForPackageChanges
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

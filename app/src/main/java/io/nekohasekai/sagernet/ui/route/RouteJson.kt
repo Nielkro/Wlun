@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.ui.route
+package app.qthrone.mobile.ui.route
 
-import io.nekohasekai.sagernet.route.OutboundIds
-import io.nekohasekai.sagernet.route.RouteProfile
-import io.nekohasekai.sagernet.route.RouteRule
+import app.qthrone.mobile.route.OutboundIds
+import app.qthrone.mobile.route.RouteProfile
+import app.qthrone.mobile.route.RouteRule
 import org.json.JSONArray
 import org.json.JSONObject
 

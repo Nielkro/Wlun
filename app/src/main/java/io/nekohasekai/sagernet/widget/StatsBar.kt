@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.widget
+package app.qthrone.mobile.widget
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -13,14 +13,14 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.whenStarted
 import com.google.android.material.bottomappbar.BottomAppBar
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.ktx.*
-import io.nekohasekai.sagernet.ui.MainActivity
-import io.nekohasekai.sagernet.ui.test.TestFormat
-import io.nekohasekai.sagernet.SagerNet
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.ktx.*
+import app.qthrone.mobile.ui.MainActivity
+import app.qthrone.mobile.ui.test.TestFormat
+import app.qthrone.mobile.SagerNet
 import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.route
+package app.qthrone.mobile.route
 
 import java.util.zip.CRC32
 

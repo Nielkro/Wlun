@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import android.os.Parcelable
 import androidx.room.TypeConverter
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
 import kotlinx.parcelize.Parcelize
 
 /** Group.h:11-16, stored in `groups.test_sort_by`. */

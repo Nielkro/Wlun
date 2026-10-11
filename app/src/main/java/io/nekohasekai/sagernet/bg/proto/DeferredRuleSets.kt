@@ -1,15 +1,15 @@
-package io.nekohasekai.sagernet.bg.proto
+package app.qthrone.mobile.bg.proto
 
-import io.nekohasekai.sagernet.bg.CoreRuntime
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.ktx.runOnIoDispatcher
-import io.nekohasekai.sagernet.outbound.config.ConfigGenerator
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.throneproj.mobile.Instance
+import app.qthrone.mobile.bg.CoreRuntime
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.ktx.runOnIoDispatcher
+import app.qthrone.mobile.outbound.config.ConfigGenerator
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.core.mobile.Instance
 import kotlinx.coroutines.delay
 import java.io.ByteArrayOutputStream
 import java.io.File

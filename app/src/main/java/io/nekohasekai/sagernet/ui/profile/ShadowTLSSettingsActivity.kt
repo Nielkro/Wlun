@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.types.ShadowTls
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.types.ShadowTls
 
 class ShadowTLSSettingsActivity : BindingSettingsActivity<ShadowTls>() {
 

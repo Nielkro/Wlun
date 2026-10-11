@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.test
+package app.qthrone.mobile.ui.test
 
 import android.content.Context
 import android.graphics.Canvas
@@ -8,8 +8,8 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import androidx.annotation.ColorInt
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.ProxyEntity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.ProxyEntity
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt

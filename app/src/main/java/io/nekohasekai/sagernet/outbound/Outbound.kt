@@ -1,20 +1,20 @@
-package io.nekohasekai.sagernet.outbound
+package app.qthrone.mobile.outbound
 
-import io.nekohasekai.sagernet.outbound.common.DialFields
-import io.nekohasekai.sagernet.outbound.common.Multiplex
-import io.nekohasekai.sagernet.outbound.common.QuicFields
-import io.nekohasekai.sagernet.outbound.common.Tls
-import io.nekohasekai.sagernet.outbound.common.Transport
-import io.nekohasekai.sagernet.outbound.common.XrayMultiplex
-import io.nekohasekai.sagernet.outbound.common.XrayStreamSetting
-import io.nekohasekai.sagernet.outbound.import.ClashProxy
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
-import io.nekohasekai.sagernet.outbound.link.Hosts
-import io.nekohasekai.sagernet.outbound.link.LinkBuilder
-import io.nekohasekai.sagernet.outbound.link.LinkParser
-import io.nekohasekai.sagernet.outbound.link.ParsedLink
+import app.qthrone.mobile.outbound.common.DialFields
+import app.qthrone.mobile.outbound.common.Multiplex
+import app.qthrone.mobile.outbound.common.QuicFields
+import app.qthrone.mobile.outbound.common.Tls
+import app.qthrone.mobile.outbound.common.Transport
+import app.qthrone.mobile.outbound.common.XrayMultiplex
+import app.qthrone.mobile.outbound.common.XrayStreamSetting
+import app.qthrone.mobile.outbound.import.ClashProxy
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.link.Hosts
+import app.qthrone.mobile.outbound.link.LinkBuilder
+import app.qthrone.mobile.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.link.ParsedLink
 
 /** BuildResult (baseConfig.h:9-12). */
 class BuildResult(@JvmField val json: JsonObject, @JvmField val error: String = "") {

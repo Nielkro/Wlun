@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.outbound.types.Custom
-import io.nekohasekai.sagernet.ui.json.engine.SchemaStore
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.outbound.types.Custom
+import app.qthrone.mobile.ui.json.engine.SchemaStore
 import moe.matsuri.nb4a.ui.EditConfigPreference
 
 /** A raw JSON profile in one of the four custom subtypes (sing-box / Xray, outbound / full config). */

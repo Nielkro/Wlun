@@ -1,13 +1,13 @@
-package io.nekohasekai.sagernet.bg.autoselector
+package app.qthrone.mobile.bg.autoselector
 
-import io.nekohasekai.sagernet.bg.test.TestEngine
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.SagerDatabase
-import io.nekohasekai.sagernet.database.SettingsMapper
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.outbound.config.AutoSelectorPlanner
-import io.nekohasekai.sagernet.outbound.types.AutoSelector
+import app.qthrone.mobile.bg.test.TestEngine
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.database.SettingsMapper
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.outbound.config.AutoSelectorPlanner
+import app.qthrone.mobile.outbound.types.AutoSelector
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

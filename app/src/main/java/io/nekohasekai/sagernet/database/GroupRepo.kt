@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
-import io.nekohasekai.sagernet.SagerNet
+import app.qthrone.mobile.SagerNet
 import java.util.concurrent.Callable
 import java.util.concurrent.CopyOnWriteArrayList
 

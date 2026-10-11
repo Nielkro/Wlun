@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.link.Hosts
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.link.Hosts
 
 /** directDomainResolver (generate.cpp:788-790). */
 internal fun directDomainResolver(ctx: BuildContext): JsonObject =

@@ -1,9 +1,9 @@
 package moe.matsuri.nb4a
 
 import android.content.Context
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.getColorAttr
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.getColorAttr
 
 // Settings for all protocols
 object Protocols {

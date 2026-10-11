@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.appwidget
+package app.qthrone.mobile.appwidget
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider

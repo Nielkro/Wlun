@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.settings
+package app.qthrone.mobile.ui.settings
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -10,22 +10,22 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.preference.MultiSelectListPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
-import io.nekohasekai.sagernet.BootReceiver
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.ktx.needReload
-import io.nekohasekai.sagernet.ktx.remove
-import io.nekohasekai.sagernet.ui.MainActivity
-import io.nekohasekai.sagernet.update.UpdateScheduler
-import io.nekohasekai.sagernet.utils.AlwaysOnVpn
-import io.nekohasekai.sagernet.utils.AppLocale
-import io.nekohasekai.sagernet.utils.BatteryOptimizations
-import io.nekohasekai.sagernet.utils.OemBackground
-import io.nekohasekai.sagernet.utils.Theme
+import app.qthrone.mobile.BootReceiver
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.ktx.needReload
+import app.qthrone.mobile.ktx.remove
+import app.qthrone.mobile.ui.MainActivity
+import app.qthrone.mobile.update.UpdateScheduler
+import app.qthrone.mobile.utils.AlwaysOnVpn
+import app.qthrone.mobile.utils.AppLocale
+import app.qthrone.mobile.utils.BatteryOptimizations
+import app.qthrone.mobile.utils.OemBackground
+import app.qthrone.mobile.utils.Theme
 import moe.matsuri.nb4a.ui.ColorPickerPreference
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 

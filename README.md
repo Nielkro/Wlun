@@ -1,3 +1,15 @@
+# qThroneMobile
+
+Android client based on ThroneForAndroid, with a gray and blue qThrone interface.
+
+Subscriptions and profile storage use the upstream repositories and update queue. The new home screen exposes connection, clipboard/QR imports, collapsible subscription tiles, refresh, latency/speed tests and swipe actions.
+
+Development build; additional qWDTT, CSQTT, OpenFlux and olcRTC integration is in progress. These protocols are not yet available in this build.
+
+Upstream: https://github.com/throneproj/ThroneForAndroid. GPL-3.0 licence and third-party notices are retained.
+
+---
+
 # Throne for Android (Formerly NekoBox for Android)
 
 [![API](https://img.shields.io/badge/API-24%2B-brightgreen.svg?style=flat)](https://android-arsenal.com/api?level=24)

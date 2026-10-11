@@ -1,17 +1,17 @@
-package io.nekohasekai.sagernet.outbound.import
+package app.qthrone.mobile.outbound.import
 
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.OutboundFactory
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
-import io.nekohasekai.sagernet.outbound.link.LinkCodec
-import io.nekohasekai.sagernet.outbound.types.Custom
-import io.nekohasekai.sagernet.outbound.types.OpenConnect
-import io.nekohasekai.sagernet.outbound.types.OpenVpn
-import io.nekohasekai.sagernet.outbound.types.Shadowsocks
-import io.nekohasekai.sagernet.outbound.types.WireGuard
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.OutboundFactory
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.link.LinkCodec
+import app.qthrone.mobile.outbound.types.Custom
+import app.qthrone.mobile.outbound.types.OpenConnect
+import app.qthrone.mobile.outbound.types.OpenVpn
+import app.qthrone.mobile.outbound.types.Shadowsocks
+import app.qthrone.mobile.outbound.types.WireGuard
 import java.io.ByteArrayOutputStream
 import java.util.zip.Inflater
 

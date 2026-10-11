@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.types.Snell
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.types.Snell
 
 /** Snell v4 (obfs) and v6 (mode); the core speaks no other client version. */
 class SnellSettingsActivity : BindingSettingsActivity<Snell>() {

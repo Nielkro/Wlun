@@ -1,16 +1,16 @@
-package io.nekohasekai.sagernet.bg.proto
+package app.qthrone.mobile.bg.proto
 
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.SagerDatabase
-import io.nekohasekai.sagernet.database.SettingsMapper
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.config.ConfigGenerator
-import io.nekohasekai.sagernet.outbound.config.GeneratedConfig
-import io.nekohasekai.sagernet.outbound.config.GeneratorSettings
-import io.nekohasekai.sagernet.outbound.config.ProfileProvider
-import io.nekohasekai.sagernet.outbound.config.RoutingInput
-import io.nekohasekai.sagernet.outbound.config.TestCandidate
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.database.SettingsMapper
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.config.ConfigGenerator
+import app.qthrone.mobile.outbound.config.GeneratedConfig
+import app.qthrone.mobile.outbound.config.GeneratorSettings
+import app.qthrone.mobile.outbound.config.ProfileProvider
+import app.qthrone.mobile.outbound.config.RoutingInput
+import app.qthrone.mobile.outbound.config.TestCandidate
 
 /**
  * The config generator wired to the app: profiles come from the profile table, the settings and the build-time

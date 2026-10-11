@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import android.database.sqlite.SQLiteCantOpenDatabaseException
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.aidl.TrafficData
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.outbound.Outbound
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.aidl.TrafficData
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.outbound.Outbound
 import java.io.IOException
 import java.sql.SQLException
 import java.util.concurrent.Callable

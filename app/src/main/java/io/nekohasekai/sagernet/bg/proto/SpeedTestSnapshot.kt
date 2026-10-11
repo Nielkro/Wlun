@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.bg.proto
+package app.qthrone.mobile.bg.proto
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

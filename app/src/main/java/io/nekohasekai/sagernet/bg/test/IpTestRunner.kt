@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.bg.test
+package app.qthrone.mobile.bg.test
 
-import io.nekohasekai.sagernet.bg.CoreRuntime
-import io.nekohasekai.sagernet.database.ProxyEntity
-import io.throneproj.mobile.IPTestHandler
-import io.throneproj.mobile.Mobile
+import app.qthrone.mobile.bg.CoreRuntime
+import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.core.mobile.IPTestHandler
+import app.qthrone.core.mobile.Mobile
 
 /** Egress IP and country tests (runIpProbe, TestRunner.cpp:234-293): results stream as the core reports them. */
 internal class IpTestRunner(session: TestSession) : LatencySweep(session) {

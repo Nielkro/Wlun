@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.appwidget
+package app.qthrone.mobile.appwidget
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProfileOrder
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProfileOrder
+import app.qthrone.mobile.ktx.runOnDefaultDispatcher
 
 /**
  * Previous/next from the status widget, non-exported in :bg: a running service switches in place, a stopped one only

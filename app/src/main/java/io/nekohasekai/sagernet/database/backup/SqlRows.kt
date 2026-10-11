@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.database.backup
+package app.qthrone.mobile.database.backup
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteProgram
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteProgram
-import io.nekohasekai.sagernet.SagerNet
+import app.qthrone.mobile.SagerNet
 import java.io.File
 
 /** Rows of one table as the cursor typed them (Long, Double, String, ByteArray or null), copied column by name. */

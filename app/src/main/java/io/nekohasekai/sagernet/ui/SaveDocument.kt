@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.app.Activity
 import android.content.ContentValues
@@ -13,8 +13,8 @@ import android.provider.MediaStore
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.Logs
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.Logs
 import java.io.File
 
 /**

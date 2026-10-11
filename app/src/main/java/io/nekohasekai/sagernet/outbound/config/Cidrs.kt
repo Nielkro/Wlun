@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.link.Hosts
+import app.qthrone.mobile.outbound.link.Hosts
 
 /** The prefix arithmetic of generate.cpp:249-328 (prefixesOverlap, parsePrefix, prefixContains, subtractPrefix). */
 internal object Cidrs {

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.content.res.Configuration
 import android.graphics.Color
@@ -13,9 +13,9 @@ import androidx.core.graphics.ColorUtils
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.utils.Theme
-import io.nekohasekai.sagernet.widget.applyTopInset
+import app.qthrone.mobile.R
+import app.qthrone.mobile.utils.Theme
+import app.qthrone.mobile.widget.applyTopInset
 
 abstract class ThemedActivity : AppCompatActivity {
     constructor() : super()

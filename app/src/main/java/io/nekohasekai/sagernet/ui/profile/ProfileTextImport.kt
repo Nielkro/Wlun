@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
-import io.nekohasekai.sagernet.database.SettingsMapper
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.`import`.ProfileImport
+import app.qthrone.mobile.database.SettingsMapper
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.`import`.ProfileImport
 
 /**
  * The UI's entry to the profile text parser (WP-S `ProfileImport`): clipboard text, QR payloads and file contents

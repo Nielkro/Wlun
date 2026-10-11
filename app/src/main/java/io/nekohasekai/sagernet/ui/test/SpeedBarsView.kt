@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.test
+package app.qthrone.mobile.ui.test
 
 import android.content.Context
 import android.graphics.Canvas

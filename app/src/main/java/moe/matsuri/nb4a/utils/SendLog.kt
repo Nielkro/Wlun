@@ -5,8 +5,8 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.R
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.R
 import java.io.File
 
 object SendLog {

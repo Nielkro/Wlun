@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 import android.os.Parcelable
 import androidx.room.ColumnInfo
@@ -8,8 +8,8 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Update
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.app
 import kotlinx.parcelize.Parcelize
 
 /**

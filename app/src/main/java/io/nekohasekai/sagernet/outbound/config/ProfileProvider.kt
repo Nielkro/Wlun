@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.Outbound
+import app.qthrone.mobile.outbound.Outbound
 
 /**
  * The storage layer's lookup of a stored profile by id (ProfilesRepo::GetProfile): the parsed outbound of the row,

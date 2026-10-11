@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.SubscriptionOptions
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.outbound.Outbound
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.SubscriptionOptions
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.outbound.Outbound
 import java.util.regex.Pattern
 import java.util.regex.PatternSyntaxException
 

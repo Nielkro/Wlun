@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.bg.proto
+package app.qthrone.mobile.bg.proto
 
-import io.throneproj.mobile.Instance
+import app.qthrone.core.mobile.Instance
 
 /** Per-tag traffic of the running box, read once per tick. */
 class TrafficUpdater(private val box: Instance, tags: Collection<String>) {

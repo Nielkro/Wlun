@@ -18,7 +18,7 @@
  *                                                                             *
  *******************************************************************************/
 
-package io.nekohasekai.sagernet
+package app.qthrone.mobile
 
 import android.app.Activity
 import android.content.Intent
@@ -29,10 +29,10 @@ import androidx.core.content.getSystemService
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
-import io.nekohasekai.sagernet.aidl.ISagerNetService
-import io.nekohasekai.sagernet.bg.BaseService
-import io.nekohasekai.sagernet.bg.SagerConnection
-import io.nekohasekai.sagernet.database.DataStore
+import app.qthrone.mobile.aidl.ISagerNetService
+import app.qthrone.mobile.bg.BaseService
+import app.qthrone.mobile.bg.SagerConnection
+import app.qthrone.mobile.database.DataStore
 
 @Suppress("DEPRECATION")
 class QuickToggleShortcut : Activity(), SagerConnection.Callback {

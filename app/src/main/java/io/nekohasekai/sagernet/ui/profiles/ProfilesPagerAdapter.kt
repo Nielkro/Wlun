@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.annotation.SuppressLint
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import io.nekohasekai.sagernet.database.ProxyGroup
+import app.qthrone.mobile.database.ProxyGroup
 
 /** One page per group in tab order (`display_order`); the page id is the group id. */
 class ProfilesPagerAdapter(host: Fragment) : FragmentStateAdapter(host) {

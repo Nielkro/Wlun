@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.os.Bundle
 import android.view.View
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.backup.BackupEntry
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.backup.BackupEntry
 
 class ToolsFragment : ToolbarFragment(R.layout.layout_tools) {
 

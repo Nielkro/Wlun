@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.database
+package app.qthrone.mobile.database
 
 /** The one profile order shared by the list, the notification, the widgets and the TV controls: user_order. */
 object ProfileOrder {

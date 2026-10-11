@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.SagerDatabase
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.SagerDatabase
 import java.util.concurrent.Callable
 
 /** Single-field writes of the profiles screen (scroll position, sort sub-criteria, shown test items). */

@@ -1,0 +1,212 @@
+package app.qthrone.mobile.ui
+
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.os.Bundle
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.*
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.ui.test.TestSessionClient
+import androidx.room.InvalidationTracker
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.*
+import app.qthrone.mobile.group.SubscriptionClient
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/** Mobile dashboard backed by the existing Room repositories and subscription queue. */
+class MobileHomeFragment : ToolbarFragment() {
+    private val blue = Color.rgb(83, 190, 243)
+    private val surface = Color.rgb(43, 43, 43)
+    private val muted = Color.rgb(163, 169, 175)
+    private var content: LinearLayout? = null
+    private var power: TextView? = null
+    private var status: TextView? = null
+    private var load: Job? = null
+    private val collapsed = mutableSetOf<Long>()
+    private var observer: InvalidationTracker.Observer? = null
+    private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+    private fun tile(selected: Boolean = false) = GradientDrawable().apply {
+        setColor(if (selected) Color.rgb(48, 62, 69) else surface)
+        cornerRadius = dp(3).toFloat()
+        setStroke(dp(1), if (selected) blue else Color.rgb(68, 68, 68))
+    }
+    private fun text(value: String, size: Float = 16f, color: Int = Color.WHITE) = TextView(requireContext()).apply {
+        text = value; textSize = size; setTextColor(color)
+        setPadding(dp(14), dp(12), dp(14), dp(12))
+    }
+    private fun action(label: String, callback: () -> Unit) = text(label, 16f, blue).apply {
+        gravity = Gravity.CENTER; minHeight = dp(48); background = tile()
+        isFocusable = true; setOnClickListener { callback() }
+    }
+    private fun host() = requireActivity() as MainActivity
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
+        val scroll = ScrollView(requireContext()).apply {
+            setBackgroundColor(Color.rgb(30, 30, 30)); isFillViewport = true
+        }
+        content = LinearLayout(requireContext()).apply {
+            orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(20))
+        }
+        scroll.addView(content)
+        ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
+        }
+        return scroll
+    }
+    override fun onViewCreated(view: View, state: Bundle?) {
+        super.onViewCreated(view, state)
+        state?.getLongArray("collapsedGroups")?.let { collapsed.addAll(it.toList()) }
+        observer = object : InvalidationTracker.Observer("groups", "profiles") {
+            override fun onInvalidated(tables: Set<String>) { activity?.runOnUiThread { refresh() } }
+        }.also { SagerDatabase.instance.invalidationTracker.addObserver(it) }
+        viewLifecycleOwner.lifecycleScope.launch { SubscriptionClient.states.collect { refresh() } }
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putLongArray("collapsedGroups", collapsed.toLongArray())
+        super.onSaveInstanceState(outState)
+    }
+    override fun onResume() { super.onResume(); refresh() }
+    override fun onDestroyView() {
+        observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
+        observer = null; load?.cancel(); content = null; power = null; status = null
+        super.onDestroyView()
+    }
+    fun refresh() {
+        if (content == null || !isAdded) return
+        load?.cancel()
+        load = viewLifecycleOwner.lifecycleScope.launch {
+            val groups = withContext(Dispatchers.IO) {
+                GroupRepo.all().map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
+            }
+            val column = content ?: return@launch
+            column.removeAllViews()
+            val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
+            header.addView(action("⚙") { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            header.addView(text("qThrone", 18f).apply { gravity = Gravity.CENTER; setTypeface(typeface, Typeface.BOLD) }, LinearLayout.LayoutParams(0, dp(48), 1f))
+            header.addView(action("＋") { addMenu() }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            column.addView(header)
+            val centre = FrameLayout(requireContext())
+            power = action("⏻") { host().toggleService() }.apply {
+                textSize = 68f; contentDescription = getString(R.string.qmobile_connect)
+                background = GradientDrawable().apply {
+                    shape = GradientDrawable.OVAL; setColor(Color.rgb(48, 48, 48)); setStroke(dp(2), blue)
+                }
+            }
+            centre.addView(power, FrameLayout.LayoutParams(dp(176), dp(176), Gravity.CENTER))
+            column.addView(centre, LinearLayout.LayoutParams(-1, dp(218)))
+            status = text("", 14f, muted).apply { gravity = Gravity.CENTER }
+            column.addView(status)
+            updateState()
+            val imports = LinearLayout(requireContext())
+            imports.addView(action(getString(R.string.qmobile_clipboard)) { importClipboard() }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginEnd = dp(6) })
+            imports.addView(action(getString(R.string.qmobile_qr)) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginStart = dp(6) })
+            column.addView(imports)
+            if (groups.all { it.second.isEmpty() }) column.addView(text(getString(R.string.qmobile_empty), 15f, muted))
+            column.addView(action(getString(R.string.qmobile_collapse_all)) {
+                val ids=groups.map { it.first.id }
+                if (ids.all { it in collapsed }) collapsed.clear() else collapsed.addAll(ids)
+                refresh()
+            }, LinearLayout.LayoutParams(-1,dp(44)))
+            for ((group, profiles) in groups) {
+                if (profiles.isEmpty() && !group.isSubscription) continue
+                val box = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; background = tile() }
+                val title = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
+                title.addView(text((if (group.id in collapsed) "▸ " else "▾ ") + group.displayName(), 17f).apply {
+                    maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END
+                    setOnClickListener { if (!collapsed.add(group.id)) collapsed.remove(group.id); refresh() }
+                }, LinearLayout.LayoutParams(0, dp(54), 1f))
+                if (group.isSubscription) title.addView(action(if (SubscriptionClient.states.value.containsKey(group.id)) "…" else "↻") { SubscriptionClient.refreshGroup(group.id, true) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+                title.addView(action("◴") { testMenu(profiles.map { it.id }.toLongArray(), group.displayName(), group.id) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+                title.addView(action("⋯") { viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) } }, LinearLayout.LayoutParams(dp(48), dp(48)))
+                box.addView(title)
+                if (group.id !in collapsed) for (profile in profiles) {
+                    val row = LinearLayout(requireContext()).apply {
+                        gravity = Gravity.CENTER_VERTICAL; background = tile(profile.id == DataStore.selectedProxy)
+                        isFocusable = true
+                        setOnClickListener {
+                            DataStore.selectedProxy = profile.id
+                            if (DataStore.serviceState.connected) SagerNet.reloadService()
+                            refresh()
+                        }
+                        setOnLongClickListener {
+                            viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) }; true
+                        }
+                    }
+                    val labels = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(9), dp(8), dp(9)) }
+                    labels.addView(text(profile.displayName(), 16f).apply { setPadding(0,0,0,dp(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    labels.addView(text(profile.displayType(), 12f, muted).apply { setPadding(0,0,0,0); maxLines=1 })
+                    row.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
+                    row.addView(text(if (profile.latency > 0) "${profile.latency} ms" else "›", 13f, if (profile.latency > 0) Color.rgb(128,192,139) else muted))
+                    val swipe = MobileSwipeTile(requireContext(), row,
+                        action("◴") { testMenu(longArrayOf(profile.id),profile.displayName(),group.id) },
+                        action("↗") { startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply { type="text/plain"; putExtra(Intent.EXTRA_TEXT,profile.exportLink().ifBlank { profile.exportJsonLink() }) }, getString(R.string.qmobile_share))) },
+                        action("×") {
+                            MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_delete).setMessage(profile.displayName())
+                                .setNegativeButton(android.R.string.cancel,null).setPositiveButton(android.R.string.ok) { _,_ ->
+                                    viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { ProfileManager.deleteProfile(group.id,profile.id) } }
+                                }.show()
+                        })
+                    box.addView(swipe, LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(5),0,dp(5),dp(5)) })
+                }
+                column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(16) })
+            }
+            column.addView(action(getString(R.string.qmobile_profiles)) { host().displayFragmentWithId(R.id.nav_configuration) }, LinearLayout.LayoutParams(-1,dp(50)).apply { topMargin=dp(16) })
+        }
+    }
+    fun updateState() {
+        val state = DataStore.serviceState
+        power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
+        status?.text = getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
+        power?.setTextColor(if (state.connected) Color.rgb(128,192,139) else blue)
+    }
+    private fun testMenu(ids: LongArray, label: String, gid: Long) {
+        val labels = arrayOf(getString(R.string.qmobile_ping),getString(R.string.qmobile_speed))
+        MaterialAlertDialogBuilder(requireContext()).setTitle(label).setItems(labels) { _, index ->
+            val spec=TestSpec(if(index==0) TestSpec.KIND_URL else TestSpec.KIND_SPEED, profileIds=ids,scopeLabel=label)
+            if(!TestSessionClient.start(spec,gid)) { showTestProgress(); return@setItems }
+            showTestProgress()
+        }.show()
+    }
+    private fun showTestProgress() {
+        val info=text("",15f,muted)
+        val dialog=MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_tests).setView(info)
+            .setNegativeButton(R.string.qmobile_stop) { _,_ -> TestSessionClient.stop() }.setPositiveButton(android.R.string.ok,null).create()
+        dialog.show()
+        val job=viewLifecycleOwner.lifecycleScope.launch {
+            TestSessionClient.state.collect { state ->
+                info.text="${state.done} / ${state.total}"
+                dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.isEnabled=state.running
+            }
+        }
+        dialog.setOnDismissListener { job.cancel() }
+    }
+    private fun importClipboard() {
+        val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val value = clip.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(requireContext())?.toString()
+        if (!value.isNullOrBlank()) SubscribeFlows.importText(requireActivity(), value)
+        else Toast.makeText(requireContext(), R.string.qmobile_clipboard_empty, Toast.LENGTH_SHORT).show()
+    }
+    private fun addMenu() {
+        val popup = android.widget.PopupMenu(requireContext(), requireView())
+        popup.menu.add(getString(R.string.qmobile_clipboard)).setOnMenuItemClickListener { importClipboard(); true }
+        popup.menu.add(getString(R.string.qmobile_qr)).setOnMenuItemClickListener { startActivity(Intent(requireContext(), ScannerActivity::class.java)); true }
+        popup.menu.add(getString(R.string.qmobile_profiles)).setOnMenuItemClickListener { host().displayFragmentWithId(R.id.nav_configuration); true }
+        popup.show()
+    }
+}

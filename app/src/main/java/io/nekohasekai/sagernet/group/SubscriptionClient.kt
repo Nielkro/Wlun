@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
-import io.nekohasekai.sagernet.aidl.ICoreService
-import io.nekohasekai.sagernet.aidl.ISubscriptionCallback
-import io.nekohasekai.sagernet.bg.CoreServiceClient
-import io.nekohasekai.sagernet.database.GroupRepo
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.readableMessage
+import app.qthrone.mobile.aidl.ICoreService
+import app.qthrone.mobile.aidl.ISubscriptionCallback
+import app.qthrone.mobile.bg.CoreServiceClient
+import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.readableMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers

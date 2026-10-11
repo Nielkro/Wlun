@@ -1,16 +1,16 @@
-package io.nekohasekai.sagernet.ui.settings
+package app.qthrone.mobile.ui.settings
 
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import androidx.preference.SwitchPreference
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.database.preference.EditTextPreferenceModifiers
-import io.nekohasekai.sagernet.group.DeviceDetails
-import io.nekohasekai.sagernet.group.RequestIdentity
-import io.nekohasekai.sagernet.group.SubscriptionScheduler
-import io.nekohasekai.sagernet.ktx.USER_AGENT
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.database.preference.EditTextPreferenceModifiers
+import app.qthrone.mobile.group.DeviceDetails
+import app.qthrone.mobile.group.RequestIdentity
+import app.qthrone.mobile.group.SubscriptionScheduler
+import app.qthrone.mobile.ktx.USER_AGENT
 import kotlin.math.abs
 
 /**

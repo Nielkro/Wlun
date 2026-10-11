@@ -1,12 +1,12 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
-import io.nekohasekai.sagernet.aidl.ICoreService
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.aidl.ICoreService
+import app.qthrone.mobile.ktx.app
 import kotlinx.coroutines.CompletableDeferred
 
 // Main-process client of the :bg CoreService; each call binds for its own duration.

@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.aidl;
+package app.qthrone.mobile.aidl;
 
-import io.nekohasekai.sagernet.bg.proto.SpeedTestSnapshot;
+import app.qthrone.mobile.bg.proto.SpeedTestSnapshot;
 
 // Streams one test session of ICoreService.startTest. Latency codes follow the desktop: >0 ms, -1 failed,
 // -2 connected but the probe failed, 0 aborted (untested). Speeds are the core's strings ("N/A" on failure).

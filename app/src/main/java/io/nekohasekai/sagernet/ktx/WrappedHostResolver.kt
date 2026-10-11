@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
 import java.util.Collections
 import java.util.IdentityHashMap

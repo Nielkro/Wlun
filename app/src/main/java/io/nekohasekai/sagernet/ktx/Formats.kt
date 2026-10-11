@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ktx
+package app.qthrone.mobile.ktx
 
 import com.google.gson.JsonParser
 import moe.matsuri.nb4a.utils.JavaUtil.gson

@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.route
+package app.qthrone.mobile.route
 
 /** The name → .srs URL map of the routeprofiles `srslist.h` (the desktop's compiled-in ruleSetList). */
 class RuleSetCatalog(entries: List<Pair<String, String>>) {

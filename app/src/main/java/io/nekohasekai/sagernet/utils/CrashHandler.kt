@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.utils
+package app.qthrone.mobile.utils
 
 import android.content.Intent
 import android.util.Log
 import com.jakewharton.processphoenix.ProcessPhoenix
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ui.BlankActivity
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ui.BlankActivity
 
 /** Logs an uncaught exception and restarts into [BlankActivity], which shares a redacted log export. */
 object CrashHandler : Thread.UncaughtExceptionHandler {

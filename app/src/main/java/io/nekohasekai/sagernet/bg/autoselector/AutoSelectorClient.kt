@@ -1,11 +1,11 @@
-package io.nekohasekai.sagernet.bg.autoselector
+package app.qthrone.mobile.bg.autoselector
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
  * The UI's copy of the service's auto-selector status without its member table, fed by every
- * [io.nekohasekai.sagernet.bg.SagerConnection].
+ * [app.qthrone.mobile.bg.SagerConnection].
  */
 object AutoSelectorClient {
 

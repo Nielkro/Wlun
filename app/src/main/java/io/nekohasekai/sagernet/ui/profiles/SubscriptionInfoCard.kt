@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.profiles
+package app.qthrone.mobile.ui.profiles
 
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -19,10 +19,10 @@ import androidx.core.view.isVisible
 import androidx.core.widget.ImageViewCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.database.SubUserInfo
-import io.nekohasekai.sagernet.ktx.getColorAttr
+import app.qthrone.mobile.R
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.SubUserInfo
+import app.qthrone.mobile.ktx.getColorAttr
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale

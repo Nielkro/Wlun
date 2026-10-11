@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.types.Hysteria
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.types.Hysteria
 
 /** Hysteria v1 and v2 on one screen; the version menu gates the version-specific fields and the v2 realm block. */
 class HysteriaSettingsActivity : BindingSettingsActivity<Hysteria>() {

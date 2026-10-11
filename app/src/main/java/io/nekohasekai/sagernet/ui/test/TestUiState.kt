@@ -1,6 +1,6 @@
-package io.nekohasekai.sagernet.ui.test
+package app.qthrone.mobile.ui.test
 
-import io.nekohasekai.sagernet.bg.test.TestSpec
+import app.qthrone.mobile.bg.test.TestSpec
 import kotlin.math.min
 
 enum class RowPhase { QUEUED, TESTING, DONE }

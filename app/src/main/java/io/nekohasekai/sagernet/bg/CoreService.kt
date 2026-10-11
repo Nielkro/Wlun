@@ -1,14 +1,14 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import io.nekohasekai.sagernet.aidl.ICoreService
-import io.nekohasekai.sagernet.aidl.ISubscriptionCallback
-import io.nekohasekai.sagernet.aidl.ITestSessionCallback
-import io.nekohasekai.sagernet.bg.test.TestEngine
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.group.SubscriptionQueue
+import app.qthrone.mobile.aidl.ICoreService
+import app.qthrone.mobile.aidl.ISubscriptionCallback
+import app.qthrone.mobile.aidl.ITestSessionCallback
+import app.qthrone.mobile.bg.test.TestEngine
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.group.SubscriptionQueue
 
 // Always-bindable :bg host for the probe boxes, so the main process never loads the core.
 class CoreService : Service() {

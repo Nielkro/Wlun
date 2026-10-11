@@ -1,0 +1,18 @@
+<resources>
+<string name="qmobile_connect">Подключить или отключить VPN</string>
+<string name="qmobile_clipboard">Из буфера</string>
+<string name="qmobile_qr">QR-код</string>
+<string name="qmobile_profiles">Профили и тесты</string>
+<string name="qmobile_empty">Добавьте подписку или сервер для подключения.</string>
+<string name="qmobile_connected">Подключено</string>
+<string name="qmobile_connecting">Подключение…</string>
+<string name="qmobile_disconnected">Не подключено</string>
+<string name="qmobile_clipboard_empty">Буфер обмена пуст</string>
+<string name="qmobile_collapse_all">Скрыть / раскрыть все</string>
+<string name="qmobile_share">Поделиться профилем</string>
+<string name="qmobile_delete">Удалить профиль?</string>
+<string name="qmobile_ping">Тест задержки</string>
+<string name="qmobile_speed">Тест скорости</string>
+<string name="qmobile_tests">Тестирование</string>
+<string name="qmobile_stop">Остановить</string>
+</resources>

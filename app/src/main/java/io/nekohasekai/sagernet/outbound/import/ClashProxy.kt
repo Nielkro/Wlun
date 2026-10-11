@@ -1,7 +1,7 @@
-package io.nekohasekai.sagernet.outbound.import
+package app.qthrone.mobile.outbound.import
 
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonObject
 import java.util.TreeMap
 
 /**

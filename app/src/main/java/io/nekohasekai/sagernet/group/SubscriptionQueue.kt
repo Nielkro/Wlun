@@ -1,16 +1,16 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
 import android.net.Uri
 import android.os.RemoteCallbackList
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.aidl.ISubscriptionCallback
-import io.nekohasekai.sagernet.bg.CoreForeground
-import io.nekohasekai.sagernet.bg.test.TestEngine
-import io.nekohasekai.sagernet.database.GroupRepo
-import io.nekohasekai.sagernet.database.ProxyGroup
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.readableMessage
+import app.qthrone.mobile.R
+import app.qthrone.mobile.aidl.ISubscriptionCallback
+import app.qthrone.mobile.bg.CoreForeground
+import app.qthrone.mobile.bg.test.TestEngine
+import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.readableMessage
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope

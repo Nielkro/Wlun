@@ -1,17 +1,17 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.json.JsonArray
-import io.nekohasekai.sagernet.outbound.json.JsonInput
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.JsonValues
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.types.AutoSelector
-import io.nekohasekai.sagernet.route.OutboundIds
-import io.nekohasekai.sagernet.route.RouteProfile
-import io.nekohasekai.sagernet.route.RuleSets
-import io.nekohasekai.sagernet.route.RuleType
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.json.JsonArray
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.types.AutoSelector
+import app.qthrone.mobile.route.OutboundIds
+import app.qthrone.mobile.route.RouteProfile
+import app.qthrone.mobile.route.RuleSets
+import app.qthrone.mobile.route.RuleType
 
 /**
  * The desktop's config generator (src/configs/generate.cpp) for the Android app: [build] is BuildSingBoxConfig

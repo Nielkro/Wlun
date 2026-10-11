@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -6,17 +6,17 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.databinding.LayoutRouteRemotePromptBinding
-import io.nekohasekai.sagernet.databinding.LayoutSubscribeChoiceBinding
-import io.nekohasekai.sagernet.group.SubscriptionClient
-import io.nekohasekai.sagernet.ktx.Logs
-import io.nekohasekai.sagernet.ktx.app
-import io.nekohasekai.sagernet.ktx.onMainDispatcher
-import io.nekohasekai.sagernet.ktx.readableMessage
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
-import io.nekohasekai.sagernet.ui.route.RouteImports
+import app.qthrone.mobile.R
+import app.qthrone.mobile.databinding.LayoutRouteRemotePromptBinding
+import app.qthrone.mobile.databinding.LayoutSubscribeChoiceBinding
+import app.qthrone.mobile.group.SubscriptionClient
+import app.qthrone.mobile.ktx.Logs
+import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.onMainDispatcher
+import app.qthrone.mobile.ktx.readableMessage
+import app.qthrone.mobile.ktx.runOnDefaultDispatcher
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.ui.route.RouteImports
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 

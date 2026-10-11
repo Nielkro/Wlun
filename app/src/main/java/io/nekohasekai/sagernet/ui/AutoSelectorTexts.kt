@@ -1,8 +1,8 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.content.Context
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.autoselector.AutoSelectorStatus
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.autoselector.AutoSelectorStatus
 
 /** The texts of AutoSelectorView (AutoSelectorMonitor.cpp:21-72) shared by the status line and the stats screen. */
 internal object AutoSelectorTexts {

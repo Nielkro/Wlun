@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui.test
+package app.qthrone.mobile.ui.test
 
 import android.content.Context
 import android.text.format.Formatter
@@ -6,10 +6,10 @@ import android.util.TypedValue
 import androidx.annotation.AttrRes
 import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.proto.SpeedTestSnapshot
-import io.nekohasekai.sagernet.bg.test.TestSpec
-import io.nekohasekai.sagernet.database.ProxyEntity
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.proto.SpeedTestSnapshot
+import app.qthrone.mobile.bg.test.TestSpec
+import app.qthrone.mobile.database.ProxyEntity
 import java.text.DecimalFormat
 import java.util.Locale
 

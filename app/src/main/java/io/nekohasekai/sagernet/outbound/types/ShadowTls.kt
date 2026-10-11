@@ -1,13 +1,13 @@
-package io.nekohasekai.sagernet.outbound.types
+package app.qthrone.mobile.outbound.types
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.BuildResult
-import io.nekohasekai.sagernet.outbound.Outbound
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.common.Tls
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.link.LinkBuilder
-import io.nekohasekai.sagernet.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.BuildResult
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.common.Tls
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.link.LinkBuilder
+import app.qthrone.mobile.outbound.link.LinkParser
 
 /** shadowtls (include/configs/outbounds/shadowtls.h, src/configs/outbounds/shadowtls.cpp). */
 class ShadowTls : Outbound("shadowtls") {

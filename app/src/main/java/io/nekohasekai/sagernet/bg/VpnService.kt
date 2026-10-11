@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.bg
+package app.qthrone.mobile.bg
 
 import android.app.Service
 import android.content.Intent
@@ -7,16 +7,16 @@ import android.net.IpPrefix
 import android.net.ProxyInfo
 import android.os.Build
 import android.os.ParcelFileDescriptor
-import io.nekohasekai.sagernet.*
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.*
-import io.nekohasekai.sagernet.ui.VpnRequestActivity
-import io.nekohasekai.sagernet.utils.PlatformNotifications
-import io.throneproj.mobile.Mobile
-import io.throneproj.mobile.RoutePrefix
-import io.throneproj.mobile.RoutePrefixIterator
-import io.throneproj.mobile.StringIterator
-import io.throneproj.mobile.TunOptions
+import app.qthrone.mobile.*
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.*
+import app.qthrone.mobile.ui.VpnRequestActivity
+import app.qthrone.mobile.utils.PlatformNotifications
+import app.qthrone.core.mobile.Mobile
+import app.qthrone.core.mobile.RoutePrefix
+import app.qthrone.core.mobile.RoutePrefixIterator
+import app.qthrone.core.mobile.StringIterator
+import app.qthrone.core.mobile.TunOptions
 import java.net.InetAddress
 import android.net.VpnService as BaseVpnService
 

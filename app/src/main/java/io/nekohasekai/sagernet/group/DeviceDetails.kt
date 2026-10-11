@@ -1,10 +1,10 @@
-package io.nekohasekai.sagernet.group
+package app.qthrone.mobile.group
 
 import android.annotation.SuppressLint
 import android.os.Build
 import android.provider.Settings
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.ktx.app
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ktx.app
 import java.util.UUID
 
 /**

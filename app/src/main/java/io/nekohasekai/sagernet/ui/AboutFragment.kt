@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import android.content.Context
 import android.os.Build
@@ -14,15 +14,15 @@ import com.danielstone.materialaboutlibrary.items.MaterialAboutActionItem
 import com.danielstone.materialaboutlibrary.model.MaterialAboutCard
 import com.danielstone.materialaboutlibrary.model.MaterialAboutList
 import com.google.android.material.card.MaterialCardView
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.databinding.LayoutAboutBinding
-import io.nekohasekai.sagernet.ktx.*
-import io.nekohasekai.sagernet.update.UpdateActivity
-import io.nekohasekai.sagernet.update.UpdateChecker
-import io.nekohasekai.sagernet.widget.applyListInsets
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.R
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.databinding.LayoutAboutBinding
+import app.qthrone.mobile.ktx.*
+import app.qthrone.mobile.update.UpdateActivity
+import app.qthrone.mobile.update.UpdateChecker
+import app.qthrone.mobile.widget.applyListInsets
 
 class AboutFragment : ToolbarFragment(R.layout.layout_about) {
 
@@ -118,7 +118,7 @@ class AboutFragment : ToolbarFragment(R.layout.layout_about) {
                                 .text(R.string.github)
                                 .setOnClickAction {
                                     requireContext().launchCustomTab(
-                                        "https://github.com/throneproj/ThroneForAndroid"
+                                        "https://github.com/ttrroyy/qThroneMobile"
 
                                     )
                                 }

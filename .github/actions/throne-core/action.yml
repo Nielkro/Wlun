@@ -1,6 +1,6 @@
 name: Build ThroneCore AAR
 description: >-
-  Builds app/libs/ThroneCore.aar and generates app/src/main/assets/schema/sing-box.json (with the Android build tags)
+  Builds app/libs/qThroneCore.aar and generates app/src/main/assets/schema/sing-box.json (with the Android build tags)
   from throneproj/Throne at the THRONE_CORE_REF pinned in nb4a.properties. Both are cached on the resolved commit and
   the core build script.
 runs:
@@ -15,7 +15,7 @@ runs:
         THRONE_DIR="$(dirname "$GITHUB_WORKSPACE")/Throne"
         rm -rf "$THRONE_DIR"
         git init -q "$THRONE_DIR"
-        git -C "$THRONE_DIR" remote add origin https://github.com/throneproj/Throne
+        git -C "$THRONE_DIR" remote add origin https://github.com/ttrroyy/qThrone
         git -C "$THRONE_DIR" fetch -q --depth 1 origin "$REF"
         git -C "$THRONE_DIR" checkout -q --detach FETCH_HEAD
         {
@@ -29,7 +29,7 @@ runs:
       uses: actions/cache@v6
       with:
         path: |
-          app/libs/ThroneCore.aar
+          app/libs/qThroneCore.aar
           app/src/main/assets/schema/sing-box.json
         key: throne-core-${{ env.THRONE_CORE_REF }}-${{ env.THRONE_CORE_SHA }}-${{ env.THRONE_CORE_SCRIPT_SHA }}-${{ hashFiles('.github/actions/throne-core/action.yml') }}
     - name: Install Golang
@@ -71,7 +71,9 @@ runs:
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ${{ env.THRONE_DIR }}
-      run: DEST="$GITHUB_WORKSPACE/app/libs" bash script/build_android.sh
+      run: |
+        sed -i -e 's/ThroneCore.aar/qThroneCore.aar/g' -e 's/-javapkg=io.throneproj/-javapkg=app.qthrone.core/g' -e 's/-libname=throne/-libname=qthrone/g' script/build_android.sh
+        DEST="$GITHUB_WORKSPACE/app/libs" bash script/build_android.sh
     # Same registries as the AAR: the Android TAGS of script/build_android.sh (cf. script/gen_schema.sh). with_purego and
     # CGO_ENABLED=0 only keep cronet-go from linking its static library; option registration does not depend on them.
     - name: Generate sing-box schema
@@ -89,15 +91,15 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        test -s app/libs/ThroneCore.aar
-        unzip -l app/libs/ThroneCore.aar > "$RUNNER_TEMP/throne-core-aar.txt"
-        unzip -p app/libs/ThroneCore.aar classes.jar > "$RUNNER_TEMP/throne-core-classes.jar"
+        test -s app/libs/qThroneCore.aar
+        unzip -l app/libs/qThroneCore.aar > "$RUNNER_TEMP/throne-core-aar.txt"
+        unzip -p app/libs/qThroneCore.aar classes.jar > "$RUNNER_TEMP/throne-core-classes.jar"
         unzip -l "$RUNNER_TEMP/throne-core-classes.jar" > "$RUNNER_TEMP/throne-core-classes.txt"
-        grep -q 'io/throneproj/mobile/Mobile.class' "$RUNNER_TEMP/throne-core-classes.txt"
+        grep -q 'app/qthrone/core/mobile/Mobile.class' "$RUNNER_TEMP/throne-core-classes.txt"
         grep -q 'go/Seq.class' "$RUNNER_TEMP/throne-core-classes.txt"
         # the APK splits (buildSrc Helpers.kt) must match the core targets
         for abi in arm64-v8a armeabi-v7a x86_64; do
-          grep -q "jni/$abi/libthrone.so" "$RUNNER_TEMP/throne-core-aar.txt" \
-            || { echo "::error::ThroneCore.aar has no jni/$abi/libthrone.so"; exit 1; }
+          grep -q "jni/$abi/libqthrone.so" "$RUNNER_TEMP/throne-core-aar.txt" \
+            || { echo "::error::qThroneCore.aar has no jni/$abi/libqthrone.so"; exit 1; }
         done
         python3 -c 'import json, sys; json.load(open(sys.argv[1]))' app/src/main/assets/schema/sing-box.json

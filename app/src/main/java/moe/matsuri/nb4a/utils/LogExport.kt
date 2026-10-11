@@ -2,13 +2,13 @@ package moe.matsuri.nb4a.utils
 
 import android.content.Context
 import android.os.Build
-import io.nekohasekai.sagernet.BuildConfig
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.SettingsRegistry
-import io.nekohasekai.sagernet.update.UpdateChecker
+import app.qthrone.mobile.BuildConfig
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.SagerNet
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.SettingsRegistry
+import app.qthrone.mobile.update.UpdateChecker
 import java.io.File
 import java.io.Writer
 import java.text.SimpleDateFormat

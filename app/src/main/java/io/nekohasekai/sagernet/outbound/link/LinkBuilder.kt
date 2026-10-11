@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound.link
+package app.qthrone.mobile.outbound.link
 
 /**
  * Builds `QUrl::toString(QUrl::FullyEncoded)` output for the setScheme/setHost/setPort/setUserName/setPassword/

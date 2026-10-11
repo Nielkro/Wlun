@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.update
+package app.qthrone.mobile.update
 
 import android.annotation.SuppressLint
 import android.app.NotificationChannel
@@ -10,7 +10,7 @@ import android.os.Build
 import android.text.format.Formatter
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import io.nekohasekai.sagernet.R
+import app.qthrone.mobile.R
 
 /** The update channel: "available" (daily check), download progress, install prompt and failures. */
 @SuppressLint("MissingPermission")

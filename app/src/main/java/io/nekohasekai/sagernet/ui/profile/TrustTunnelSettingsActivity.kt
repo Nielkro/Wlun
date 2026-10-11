@@ -1,9 +1,9 @@
-package io.nekohasekai.sagernet.ui.profile
+package app.qthrone.mobile.ui.profile
 
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.outbound.types.TrustTunnel
+import app.qthrone.mobile.R
+import app.qthrone.mobile.outbound.types.TrustTunnel
 
 class TrustTunnelSettingsActivity : BindingSettingsActivity<TrustTunnel>() {
 

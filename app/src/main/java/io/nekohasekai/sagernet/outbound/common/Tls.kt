@@ -1,15 +1,15 @@
-package io.nekohasekai.sagernet.outbound.common
+package app.qthrone.mobile.outbound.common
 
-import io.nekohasekai.sagernet.outbound.BuildContext
-import io.nekohasekai.sagernet.outbound.import.ClashProxy
-import io.nekohasekai.sagernet.outbound.QtStrings
-import io.nekohasekai.sagernet.outbound.json.JsonObject
-import io.nekohasekai.sagernet.outbound.json.JsonValues
-import io.nekohasekai.sagernet.outbound.json.jsonObjectOf
-import io.nekohasekai.sagernet.outbound.link.Base64Strict
-import io.nekohasekai.sagernet.outbound.link.Hosts
-import io.nekohasekai.sagernet.outbound.link.LinkParser
-import io.nekohasekai.sagernet.outbound.link.ParsedLink
+import app.qthrone.mobile.outbound.BuildContext
+import app.qthrone.mobile.outbound.import.ClashProxy
+import app.qthrone.mobile.outbound.QtStrings
+import app.qthrone.mobile.outbound.json.JsonObject
+import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.json.jsonObjectOf
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.link.Hosts
+import app.qthrone.mobile.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.link.ParsedLink
 
 private val SHA256_HEX = Regex("[0-9a-fA-F]{64}")
 private const val LOWER_HEX = "0123456789abcdef"

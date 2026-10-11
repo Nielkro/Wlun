@@ -1,13 +1,13 @@
-package io.nekohasekai.sagernet.ui
+package app.qthrone.mobile.ui
 
 import androidx.preference.PreferenceDataStore
-import io.nekohasekai.sagernet.Key
-import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.bg.autoselector.AutoSelectorClient
-import io.nekohasekai.sagernet.bg.autoselector.AutoSelectorProfiles
-import io.nekohasekai.sagernet.database.DataStore
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.preference.OnPreferenceDataStoreChangeListener
+import app.qthrone.mobile.Key
+import app.qthrone.mobile.R
+import app.qthrone.mobile.bg.autoselector.AutoSelectorClient
+import app.qthrone.mobile.bg.autoselector.AutoSelectorProfiles
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay

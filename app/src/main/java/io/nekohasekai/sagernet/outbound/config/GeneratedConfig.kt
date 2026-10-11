@@ -1,4 +1,4 @@
-package io.nekohasekai.sagernet.outbound.config
+package app.qthrone.mobile.outbound.config
 
 /**
  * BuildConfigResult / BuildTestConfigResult (include/configs/generate.h:35-63) as the service layer consumes them:
@@ -7,7 +7,7 @@ package io.nekohasekai.sagernet.outbound.config
  * - [coreConfig]: the sing-box config.
  * - [xrayConfig]: the Xray config when one is needed (generated, or the wrapped custom xrayfullconfig of a started
  *   profile), else null. [needXray] is `isXrayNeeded`.
- * - [xrayDnsStrategy]: `xray_outbound_dns_strategy` ([io.nekohasekai.sagernet.outbound.BuildContext.xrayOutboundDomainStrategy])
+ * - [xrayDnsStrategy]: `xray_outbound_dns_strategy` ([app.qthrone.mobile.outbound.BuildContext.xrayOutboundDomainStrategy])
  *   when any Xray instance runs, else "".
  * - [xrayFullConfigs]: opaque custom Xray full configs, one instance each: test candidates, or the members of a
  *   started auto-selector.
