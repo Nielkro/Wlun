@@ -1,4 +1,5 @@
-name: CI
+name: qThroneMobile CI
+run-name: qThroneMobile CI
 on:
   push:
     branches:
@@ -13,7 +14,7 @@ permissions:
   actions: read
 jobs:
   build:
-    name: Unit tests and debug build
+    name: Tests and APK
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

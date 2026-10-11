@@ -1,4 +1,5 @@
-name: Android carrier clients
+name: qThroneMobile transports
+run-name: qThroneMobile transports
 on:
   workflow_dispatch:
 permissions:

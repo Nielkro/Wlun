@@ -1,4 +1,5 @@
-name: Preview
+name: qThroneMobile preview
+run-name: qThroneMobile preview
 on:
   workflow_dispatch:
 concurrency:
@@ -6,7 +7,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   preview:
-    name: Build a preview
+    name: APK
     runs-on: ubuntu-latest
     env:
       SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}

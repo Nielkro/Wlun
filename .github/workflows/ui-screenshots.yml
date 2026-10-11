@@ -1,4 +1,5 @@
-name: Android UI screenshots
+name: qThroneMobile UI
+run-name: qThroneMobile UI
 on:
   workflow_dispatch:
     inputs:
