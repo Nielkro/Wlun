@@ -14,7 +14,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
     fun closeActions() {
         left.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-        row.animate().translationX(0f).setDuration(180).start()
+        row.animate().translationX(0f).setDuration(180).withEndAction { left.visibility=View.INVISIBLE; right.visibility=View.INVISIBLE }.start()
     }
     private val widthPx=112*resources.displayMetrics.density
     private val slop=ViewConfiguration.get(context).scaledTouchSlop
@@ -30,6 +30,8 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         addView(delete,LayoutParams((widthPx/2).toInt(),-1,android.view.Gravity.END))
         addView(row,LayoutParams(-1,-2))
         clipChildren=true
+        left.visibility=View.INVISIBLE
+        right.visibility=View.INVISIBLE
         left.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }
@@ -43,14 +45,22 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
     }
     override fun onTouchEvent(e:MotionEvent):Boolean {
         when(e.actionMasked) {
-            MotionEvent.ACTION_MOVE -> row.translationX=(initial+(e.x-downX)*direction).coerceIn(-widthPx/2,widthPx)*direction
+            MotionEvent.ACTION_MOVE -> {
+                val offset=(initial+(e.x-downX)*direction).coerceIn(-widthPx/2,widthPx)
+                left.visibility=if(offset>0) View.VISIBLE else View.INVISIBLE
+                right.visibility=if(offset<0) View.VISIBLE else View.INVISIBLE
+                row.translationX=offset*direction
+            }
             MotionEvent.ACTION_UP,MotionEvent.ACTION_CANCEL -> {
                 val x=row.translationX*direction
                 val end=if(e.actionMasked==MotionEvent.ACTION_CANCEL || !dragging) 0f else if(x>widthPx*.35f) widthPx else if(x< -widthPx*.2f) -widthPx/2 else 0f
                 if(end!=0f) onOpened?.invoke(this)
                 left.importantForAccessibility=if(end>0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
                 right.importantForAccessibility=if(end<0) View.IMPORTANT_FOR_ACCESSIBILITY_AUTO else View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-                row.animate().translationX(end*direction).setDuration(180).start()
+                row.animate().translationX(end*direction).setDuration(180).withEndAction {
+                    left.visibility=if(end>0) View.VISIBLE else View.INVISIBLE
+                    right.visibility=if(end<0) View.VISIBLE else View.INVISIBLE
+                }.start()
                 parent.requestDisallowInterceptTouchEvent(false)
             }
         }

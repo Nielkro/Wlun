@@ -9,11 +9,12 @@
             app:summary="@string/use_system_theme_summary"
             app:title="@string/use_system_theme" />
         <moe.matsuri.nb4a.ui.ColorPickerPreference
+            app:defaultValue="9"
             android:title="@string/theme"
             app:icon="@drawable/ic_baseline_color_lens_24"
             app:key="appTheme" />
         <moe.matsuri.nb4a.ui.SimpleMenuPreference
-            app:defaultValue="0"
+            app:defaultValue="1"
             app:entries="@array/night_mode"
             app:entryValues="@array/int_array_4"
             app:icon="@drawable/ic_baseline_wb_sunny_24"
