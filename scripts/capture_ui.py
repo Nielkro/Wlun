@@ -48,7 +48,10 @@ for label in ('Finland-demo', 'Sweden-demo', 'Germany-demo'):
     time.sleep(2)
     # Existing import flow asks for confirmation; retain a diagnostic screenshot if it differs.
     try:
-        tap_text('OK')
+        tap_text('Yes')
+        time.sleep(3)
+        shell('input', 'keyevent', '4')
+        time.sleep(2)
     except RuntimeError:
         capture('04-import-dialog')
         break
