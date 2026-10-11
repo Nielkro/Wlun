@@ -25,21 +25,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-      # The tag is v<VERSION_NAME>; a published release never reuses an existing tag.
+      # Public tags use three version components and always increase.
       - name: Version
         id: version
         env:
           PUBLISH: ${{ inputs.publish }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '\r[:space:]')
-          test -n "$VERSION_NAME"
-          TAG="v$VERSION_NAME"
-          if [ "$PUBLISH" = "true" ] && git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
-            echo "::error::$TAG already exists: raise VERSION_NAME in nb4a.properties for a new release"
-            exit 1
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          python3 buildScript/release_tag.py
       - name: Download verified native transports
         uses: actions/download-artifact@v8
         with:
@@ -81,6 +75,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_NAME: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "${TAG#v}" --prerelease --notes-file RELEASE_NOTES.md
+          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --prerelease --notes-file RELEASE_NOTES.md
