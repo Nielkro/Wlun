@@ -31,9 +31,9 @@ import kotlinx.coroutines.withContext
 
 /** Mobile dashboard backed by the existing Room repositories and subscription queue. */
 class MobileHomeFragment : ToolbarFragment() {
-    private val blue = Color.rgb(83, 190, 243)
-    private val surface = Color.rgb(43, 43, 43)
-    private val muted = Color.rgb(163, 169, 175)
+    private val blue = Color.rgb(29, 105, 139)
+    private val surface = Color.rgb(190, 194, 198)
+    private val muted = Color.rgb(83, 91, 101)
     private var content: LinearLayout? = null
     private var power: TextView? = null
     private var status: TextView? = null
@@ -43,27 +43,27 @@ class MobileHomeFragment : ToolbarFragment() {
     private var testDialog: androidx.appcompat.app.AlertDialog? = null
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun tile(selected: Boolean = false) = GradientDrawable().apply {
-        setColor(if (selected) Color.rgb(48, 62, 69) else surface)
-        cornerRadius = dp(3).toFloat()
-        setStroke(dp(1), if (selected) blue else Color.rgb(68, 68, 68))
+        setColor(if (selected) Color.rgb(165, 190, 203) else surface)
+        cornerRadius = dp(5).toFloat()
+        setStroke(dp(1), if (selected) blue else Color.argb(45, 103, 116, 128))
     }
-    private fun text(value: String, size: Float = 16f, color: Int = Color.WHITE) = TextView(requireContext()).apply {
+    private fun text(value: String, size: Float = 16f, color: Int = Color.rgb(40,46,53)) = TextView(requireContext()).apply {
         text = value; textSize = size; setTextColor(color)
         setPadding(dp(14), dp(12), dp(14), dp(12))
     }
     private fun action(label: String, callback: () -> Unit) = text(label, 16f, blue).apply {
-        gravity = Gravity.CENTER; minHeight = dp(48); background = tile()
+        gravity = Gravity.CENTER; minHeight = dp(48)
         isFocusable = true; setOnClickListener { callback() }
     }
     private fun host() = requireActivity() as MainActivity
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         val scroll = ScrollView(requireContext()).apply {
-            setBackgroundColor(Color.rgb(30, 30, 30)); isFillViewport = true
+            background = MobileHomeBackdrop(); isFillViewport = true
         }
         content = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(20))
         }
-        scroll.addView(content)
+        scroll.addView(content, ScrollView.LayoutParams(-1,-1))
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
@@ -99,33 +99,29 @@ class MobileHomeFragment : ToolbarFragment() {
             val column = content ?: return@launch
             column.removeAllViews()
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
-            header.addView(action("⚙") { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
-            header.addView(text("qThrone", 18f).apply { gravity = Gravity.CENTER; setTypeface(typeface, Typeface.BOLD) }, LinearLayout.LayoutParams(0, dp(48), 1f))
-            header.addView(action("＋") { addMenu() }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            header.addView(action("⚙") { host().displayFragmentWithId(R.id.nav_settings) }.apply { textSize=28f; setPadding(0,0,0,0) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            header.addView(View(requireContext()), LinearLayout.LayoutParams(0, dp(48), 1f))
+            header.addView(action("＋") { addMenu() }.apply { textSize=34f; setPadding(0,0,0,0) }, LinearLayout.LayoutParams(dp(48), dp(48)))
             column.addView(header)
-            column.addView(action(getString(R.string.qmobile_routing)) { host().displayFragment(MobileRoutingFragment()) })
             val centre = FrameLayout(requireContext())
-            power = action("⏻") { host().toggleService() }.apply {
-                textSize = 68f; contentDescription = getString(R.string.qmobile_connect)
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL; setColor(Color.rgb(48, 48, 48)); setStroke(dp(2), blue)
-                }
+            power = action("") { host().toggleService() }.apply {
+                contentDescription = getString(R.string.qmobile_connect)
+                background = MobilePowerArtwork()
             }
-            centre.addView(power, FrameLayout.LayoutParams(dp(176), dp(176), Gravity.CENTER))
-            column.addView(centre, LinearLayout.LayoutParams(-1, dp(218)))
-            status = text("", 14f, muted).apply { gravity = Gravity.CENTER }
+            centre.addView(power, FrameLayout.LayoutParams(dp(252), dp(252), Gravity.CENTER))
+            column.addView(centre, LinearLayout.LayoutParams(-1, dp(284)))
+            status = text("", 12f, muted).apply { gravity = Gravity.CENTER; setPadding(0,0,0,0) }
             column.addView(status)
             updateState()
             val imports = LinearLayout(requireContext())
             imports.addView(action(getString(R.string.qmobile_clipboard)) { importClipboard() }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginEnd = dp(6) })
             imports.addView(action(getString(R.string.qmobile_qr)) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(50), 1f).apply { marginStart = dp(6) })
-            column.addView(imports)
             if (groups.all { it.second.isEmpty() }) column.addView(text(getString(R.string.qmobile_empty), 15f, muted))
-            column.addView(action(getString(R.string.qmobile_collapse_all)) {
+            if(groups.any { it.second.isNotEmpty() || it.first.isSubscription }) column.addView(action(getString(R.string.qmobile_collapse_all)) {
                 val ids=groups.map { it.first.id }
                 if (ids.all { it in collapsed }) collapsed.clear() else collapsed.addAll(ids)
                 refresh()
-            }, LinearLayout.LayoutParams(-1,dp(44)))
+            }.apply { gravity=Gravity.END; textSize=12f; setPadding(0,dp(4),dp(4),dp(4)) }, LinearLayout.LayoutParams(-1,dp(36)))
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val box = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; background = tile() }
@@ -182,7 +178,8 @@ class MobileHomeFragment : ToolbarFragment() {
                 }
                 column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(16) })
             }
-            column.addView(action(getString(R.string.qmobile_profiles)) { host().displayFragmentWithId(R.id.nav_configuration) }, LinearLayout.LayoutParams(-1,dp(50)).apply { topMargin=dp(16) })
+            column.addView(View(requireContext()), LinearLayout.LayoutParams(-1,0,1f))
+            column.addView(imports,LinearLayout.LayoutParams(-1,dp(50)).apply { topMargin=dp(24) })
         }
     }
     fun updateState() {
@@ -190,6 +187,7 @@ class MobileHomeFragment : ToolbarFragment() {
         power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
         status?.text = getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
         power?.setTextColor(if (state.connected) Color.rgb(128,192,139) else blue)
+        (power?.background as? MobilePowerArtwork)?.connected=state.connected
     }
     private fun testMenu(ids: LongArray, label: String, gid: Long) {
         val labels = arrayOf(getString(R.string.qmobile_ping),getString(R.string.qmobile_speed))
