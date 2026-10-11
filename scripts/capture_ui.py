@@ -17,9 +17,12 @@ def capture(name):
     time.sleep(2)
     (out / f'{name}.png').write_bytes(subprocess.check_output([adb, 'exec-out', 'screencap', '-p']))
 
-def tap_text(text):
+def screen_xml():
     shell('uiautomator', 'dump', '/sdcard/qthrone-preview.xml')
-    xml = shell('cat', '/sdcard/qthrone-preview.xml')
+    return shell('cat', '/sdcard/qthrone-preview.xml')
+
+def tap_text(text):
+    xml = screen_xml()
     (out / 'last-screen.xml').write_text(xml)
     for node in ET.fromstring(xml).iter('node'):
         if node.get('text') == text or node.get('content-desc') == text:
@@ -54,14 +57,18 @@ for label in ('Finland-demo', 'Sweden-demo', 'Germany-demo'):
     # Existing import flow asks for confirmation; retain a diagnostic screenshot if it differs.
     try:
         tap_text('Yes')
-        time.sleep(3)
+        for attempt in range(12):
+            if label in screen_xml() and 'Confirm you want' not in screen_xml():
+                break
+            time.sleep(1)
         shell('input', 'keyevent', '4')
         time.sleep(2)
     except RuntimeError:
         capture('04-import-dialog')
         break
 capture('05-profiles')
-shell('uiautomator', 'dump', '/sdcard/qthrone-preview.xml')
-profile_xml = shell('cat', '/sdcard/qthrone-preview.xml')
+profile_xml = screen_xml()
 (out / 'profiles-screen.xml').write_text(profile_xml)
+# This is a fresh CI emulator with documentation-only fixtures, never the user's device.
+(out / 'emulator-logcat.txt').write_text(shell('logcat', '-d', '-t', '1500'))
 assert 'Finland-demo' in profile_xml, 'Imported demo profile is missing from the home screen'
