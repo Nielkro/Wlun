@@ -43,6 +43,12 @@ def tap_text(text):
             return
     raise RuntimeError(f'UI control missing: {text}')
 
+def choose_accent(label):
+    titles=[n for n in ET.fromstring(screen_xml()).iter('node') if n.get('text')=='Theme']
+    a,b,c,d=map(int,re.findall(r'\d+',titles[-1].attrib['bounds']))
+    shell('input','tap',str((a+c)//2),str((b+d)//2));time.sleep(1)
+    tap_text(label);time.sleep(3)
+
 packages = [line.removeprefix('package:').strip() for line in shell('pm', 'list', 'packages').splitlines()
             if line.startswith('package:app.qthrone.mobile')]
 assert len(packages) == 1, 'Expected one isolated qThrone installation'
@@ -170,6 +176,7 @@ subscription_more('Demo subscription');tap_text('Edit')
 assert 'http://127.0.0.1:8866/demo' in screen_xml(),'Editor did not open the selected subscription'
 capture('15-subscription-editor');shell('input','keyevent','4');time.sleep(2)
 tap_text('Settings');tap_text('Appearance');capture('16-appearance-gray')
+choose_accent('Purple');capture('22-settings-purple');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('New Year')
 time.sleep(3)
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
@@ -181,6 +188,7 @@ tap_text('Settings');tap_text('Appearance');tap_text('Night mode');tap_text('Ena
 time.sleep(4);tap_text('OLED black theme');time.sleep(4);capture('20-settings-oled')
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
 tap_text('Settings');tap_text('Appearance');tap_text('OLED black theme');time.sleep(3)
+choose_accent('White');capture('23-settings-white-theme');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('Halloween');time.sleep(3)
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
 (out/'ui-actions-result.txt').write_text('PASS: named subscription import without group selection; standalone profiles in Server list; URL, QR and JSON sharing; country flags; profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
