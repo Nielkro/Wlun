@@ -15,4 +15,19 @@
 <string name="qmobile_speed">Тест скорости</string>
 <string name="qmobile_tests">Тестирование</string>
 <string name="qmobile_stop">Остановить</string>
+
+<string name="qmobile_routing">Раздельная маршрутизация</string>
+<string name="qmobile_route_default">Куда направлять остальной трафик</string>
+<string name="qmobile_route_add">Добавить правило</string>
+<string name="qmobile_route_target">Куда направлять трафик</string>
+<string name="qmobile_route_main">Основной профиль</string>
+<string name="qmobile_route_direct">Напрямую</string>
+<string name="qmobile_route_remove">Удалить это правило?</string>
+<string name="qmobile_route_domains">Домены, включая поддомены</string>
+<string name="qmobile_route_ips">IP-адреса или сети CIDR</string>
+<string name="qmobile_route_apps">Приложения</string>
+<string name="qmobile_route_required">Введите хотя бы одно значение</string>
+<string name="qmobile_route_advanced">Подробный редактор маршрутов</string>
+<string name="qmobile_route_invalid">Введите корректные домены или IP-сети</string>
+<string name="qmobile_advanced_settings">Дополнительно</string>
 </resources>

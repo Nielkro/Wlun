@@ -16,4 +16,19 @@
 <string name="qmobile_speed">Speed test</string>
 <string name="qmobile_tests">Testing</string>
 <string name="qmobile_stop">Stop</string>
-<color name="qmobile_launcher_background">#202020</color></resources>
+<color name="qmobile_launcher_background">#202020</color>
+<string name="qmobile_routing">Split routing</string>
+<string name="qmobile_route_default">Default traffic destination</string>
+<string name="qmobile_route_add">Add a rule</string>
+<string name="qmobile_route_target">Traffic destination</string>
+<string name="qmobile_route_main">Main profile</string>
+<string name="qmobile_route_direct">Direct connection</string>
+<string name="qmobile_route_remove">Delete this rule?</string>
+<string name="qmobile_route_domains">Domains, including subdomains</string>
+<string name="qmobile_route_ips">IP addresses or CIDR networks</string>
+<string name="qmobile_route_apps">Applications</string>
+<string name="qmobile_route_required">Enter at least one value</string>
+<string name="qmobile_route_advanced">Advanced routing editor</string>
+<string name="qmobile_route_invalid">Enter valid domains or IP networks</string>
+<string name="qmobile_advanced_settings">Advanced</string>
+</resources>

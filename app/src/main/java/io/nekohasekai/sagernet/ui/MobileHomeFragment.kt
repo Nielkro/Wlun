@@ -101,6 +101,7 @@ class MobileHomeFragment : ToolbarFragment() {
             header.addView(text("qThrone", 18f).apply { gravity = Gravity.CENTER; setTypeface(typeface, Typeface.BOLD) }, LinearLayout.LayoutParams(0, dp(48), 1f))
             header.addView(action("＋") { addMenu() }, LinearLayout.LayoutParams(dp(48), dp(48)))
             column.addView(header)
+            column.addView(action(getString(R.string.qmobile_routing)) { host().displayFragment(MobileRoutingFragment()) })
             val centre = FrameLayout(requireContext())
             power = action("⏻") { host().toggleService() }.apply {
                 textSize = 68f; contentDescription = getString(R.string.qmobile_connect)

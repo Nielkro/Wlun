@@ -14,7 +14,7 @@ import app.qthrone.mobile.ktx.triggerFullRestart
  * The settings root: one entry per sub-screen (app.qthrone.mobile.ui.settings, opened by [SettingsFragment]),
  * the backup screen and the reset action.
  */
-class SettingsPreferenceFragment : PreferenceFragmentCompat() {
+open class SettingsPreferenceFragment(private val advanced: Boolean = false) : PreferenceFragmentCompat() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -24,7 +24,11 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.preferenceDataStore = DataStore.configurationStore
-        addPreferencesFromResource(R.xml.global_preferences)
+        addPreferencesFromResource(if (advanced) R.xml.global_preferences else R.xml.qmobile_settings)
+        findPreference<Preference>("qmobileRouting")?.setOnPreferenceClickListener {
+            (activity as? MainActivity)?.displayFragment(MobileRoutingFragment())
+            true
+        }
 
         findPreference<Preference>(KEY_BACKUP)!!.setOnPreferenceClickListener {
             (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_tools)
@@ -49,3 +53,5 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         const val KEY_RESET_SETTINGS = "resetSettings"
     }
 }
+
+class AdvancedSettingsPreferenceFragment : SettingsPreferenceFragment(true)
