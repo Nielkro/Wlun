@@ -1,5 +1,5 @@
 """Isolated emulator VPN lifecycle and HTTP probe smoke test with a local SOCKS fixture."""
-import os, re, socketserver, subprocess, threading, time
+import os, re, socket, socketserver, subprocess, threading, time
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -78,6 +78,15 @@ for cycle in range(2):
     wait_for('Connect or disconnect VPN, Connected')
     state=shell('dumpsys','connectivity')
     assert 'TRANSPORT_VPN' in state or 'Transports: VPN' in state, 'No Android VPN network'
+    # A different Android UID must not obtain an unauthenticated local SOCKS path.
+    subprocess.check_call([adb,'forward','tcp:18880','tcp:2080'])
+    reply=b''
+    try:
+        with socket.create_connection(('127.0.0.1',18880),timeout=2) as probe:
+            probe.settimeout(2); probe.sendall(b'\x05\x01\x00'); reply=probe.recv(2)
+    except OSError:
+        pass
+    assert reply!=b'\x05\x00', 'VPN exposes an unauthenticated local SOCKS listener'
     (out/f'10-vpn-connected-{cycle}.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
     previous=len(hits)
     for node in ET.fromstring(xml()).iter('node'):
@@ -90,5 +99,5 @@ for cycle in range(2):
     assert re.search(r'\d+ ms',xml()), 'Successful latency was not saved in the profile row'
     tap('Connect or disconnect VPN, Connected')
     wait_for('Connect or disconnect VPN, Not connected')
-(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; both HTTP generate_204 probes traversed the local SOCKS fixture.\n')
+(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; both HTTP generate_204 probes traversed the local SOCKS fixture; default local SOCKS port rejects unauthenticated access.\n')
 server.shutdown()
