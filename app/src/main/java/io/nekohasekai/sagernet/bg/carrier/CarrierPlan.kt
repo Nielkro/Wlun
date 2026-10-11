@@ -16,11 +16,11 @@ class CarrierPlan private constructor(
         it.username=credentials.username;it.password=credentials.password
     }
     companion object {
-        fun qwdtt(profileId:Long, profile:Qwdtt):CarrierPlan {
+        fun qwdtt(profileId:Long, profile:NativeCarrier):CarrierPlan {
             val loopback=InetAddress.getByName("127.0.0.1")
             val credentials=CarrierBridgeCredentials.fresh()
             return ServerSocket(0,1,loopback).use { tcp -> DatagramSocket(0,loopback).use { udp ->
-                CarrierPlan(profileId,CarrierKind.QWDTT,tcp.localPort,credentials,
+                CarrierPlan(profileId,profile.carrierKind,tcp.localPort,credentials,
                     profile.privateConfig(tcp.localPort,udp.localPort,credentials).toCompact())
             } }
         }

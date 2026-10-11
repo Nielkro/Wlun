@@ -136,6 +136,9 @@ internal object SubscriptionRefresh {
                     if(incoming is app.qthrone.mobile.outbound.types.Qwdtt && previous is app.qthrone.mobile.outbound.types.Qwdtt) {
                         incoming.deviceId=previous.deviceId
                         SagerDatabase.proxyDao.updateOutbound(oldId,newEnt.type,newEnt.name,incoming.exportToJson().toCompact())
+                    } else if(incoming is app.qthrone.mobile.outbound.types.OlcRtc && previous is app.qthrone.mobile.outbound.types.OlcRtc) {
+                        incoming.deviceId=previous.deviceId
+                        SagerDatabase.proxyDao.updateOutbound(oldId,newEnt.type,newEnt.name,incoming.exportToJson().toCompact())
                     } else SagerDatabase.proxyDao.updateOutbound(oldId, newEnt.type, newEnt.name, newEnt.outboundJson)
                 }
                 disturbed.add(oldId)

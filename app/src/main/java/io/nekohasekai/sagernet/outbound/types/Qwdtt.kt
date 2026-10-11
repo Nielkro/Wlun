@@ -8,7 +8,8 @@ import app.qthrone.mobile.bg.carrier.CarrierBridgeCredentials
 import java.util.UUID
 
 /** Desktop qwdtt.cpp configuration, without persisted runtime ports or bridge secrets. */
-class Qwdtt : Outbound("qwdtt") {
+open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrier {
+    override val carrierKind get() = CarrierKind.QWDTT
     init { serverPort=56000 }
     var password=""
     var hashes:List<String> = emptyList()
@@ -82,7 +83,7 @@ class Qwdtt : Outbound("qwdtt") {
         return url.build()
     }
     override fun build(ctx:BuildContext)=BuildResult(JsonObject(),"qWDTT requires a prepared native transport bridge")
-    fun privateConfig(port:Int, udpPort:Int, credentials:CarrierBridgeCredentials):JsonObject {
+    override fun privateConfig(port:Int, udpPort:Int, credentials:CarrierBridgeCredentials):JsonObject {
         require(server.isNotBlank() && serverPort in 1..65535 && rawPort in 1..65535)
         require(password.isNotEmpty() && password.none { it=='|' || it=='\n' || it=='\r' })
         require(deviceId.isNotEmpty() && deviceId.none { it=='|' || it=='\n' || it=='\r' })
