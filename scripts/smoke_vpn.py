@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 adb = os.path.join(os.environ['ANDROID_HOME'], 'platform-tools', 'adb')
 out = Path('ui-screenshots'); out.mkdir(exist_ok=True)
 hits = []
+stalled_started = []
 probe_gate = threading.Event()
 probe_gate.set()
 def shell(*args):
@@ -54,6 +55,7 @@ class Socks(socketserver.BaseRequestHandler):
                 request+=chunk
             if b'generate_204' not in request: return
             hits.append(request.split(b'\r\n',1)[0].decode('ascii','replace'))
+            if not probe_gate.is_set(): stalled_started.append(time.monotonic())
             probe_gate.wait(20)
             s.sendall(b'HTTP/1.1 204 No Content\r\nConnection: close\r\nContent-Length: 0\r\n\r\n')
         except (OSError,EOFError): pass
@@ -108,6 +110,9 @@ for cycle in range(2):
     tap('Connect or disconnect VPN, Connected')
     wait_for('Connect or disconnect VPN, Not connected')
 # A stalled probe must yield to a connection start without a separate cancellation UI.
+connect_node=next(n for n in ET.fromstring(xml()).iter('node') if n.get('content-desc')=='Connect or disconnect VPN, Not connected')
+a,b,c,d=map(int,re.findall(r'\d+',connect_node.attrib['bounds']))
+connect_x,connect_y=(a+c)//2,(b+d)//2
 probe_gate.clear()
 previous = len(hits)
 for node in ET.fromstring(xml()).iter('node'):
@@ -122,8 +127,9 @@ for _ in range(10):
     if len(hits)>previous: break
     time.sleep(.2)
 else: raise AssertionError('Stalled probe did not start')
+assert stalled_started and time.monotonic()-stalled_started[-1] < 2.5, 'Probe ended before the connection action'
 started = time.monotonic()
-tap('Connect or disconnect VPN, Not connected')
+shell('input','tap',str(connect_x),str(connect_y))
 wait_for('Connect or disconnect VPN, Connected')
 assert time.monotonic()-started < 15, 'Connection waited for the stalled probe timeout'
 probe_gate.set()
