@@ -80,7 +80,7 @@ class MobileRoutingFragment : ToolbarFragment() {
                         }.show()
                 })
             }
-            root.addView(line(getString(R.string.qmobile_route_advanced)) { (requireActivity() as MainActivity).displayFragmentWithId(R.id.nav_route) })
+            root.addView(line(getString(R.string.qmobile_route_advanced)) { (requireActivity() as MainActivity).displayFragment(SettingsFragment.forScreen("app.qthrone.mobile.ui.settings.RoutingSettingsFragment",getString(R.string.qmobile_route_advanced))) })
         }
     }
     private fun save(snapshot: RouteProfile, change: (RouteProfile) -> Unit) {

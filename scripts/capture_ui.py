@@ -44,7 +44,7 @@ def tap_text(text):
     raise RuntimeError(f'UI control missing: {text}')
 
 def choose_accent(label):
-    titles=[n for n in ET.fromstring(screen_xml()).iter('node') if n.get('text')=='Theme']
+    titles=[n for n in ET.fromstring(screen_xml()).iter('node') if n.get('text')=='Color']
     a,b,c,d=map(int,re.findall(r'\d+',titles[-1].attrib['bounds']))
     shell('input','tap',str((a+c)//2),str((b+d)//2));time.sleep(1)
     tap_text(label);time.sleep(3)
@@ -181,15 +181,26 @@ tap_text('Seasonal decoration');tap_text('New Year')
 time.sleep(3)
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
 capture('17-home-newyear')
-tap_text('Settings');tap_text('Appearance');tap_text('Night mode');tap_text('Disable')
+tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Light')
 time.sleep(4);capture('18-settings-white')
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('19-home-white')
-tap_text('Settings');tap_text('Appearance');tap_text('Night mode');tap_text('Enable')
-time.sleep(4);tap_text('OLED black theme');time.sleep(4);capture('20-settings-oled')
+tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark')
+time.sleep(4);tap_text('Theme');tap_text('OLED');time.sleep(4);capture('20-settings-oled')
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
-tap_text('Settings');tap_text('Appearance');tap_text('OLED black theme');time.sleep(3)
+tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark');time.sleep(3)
 choose_accent('White');capture('23-settings-white-theme');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('Halloween');time.sleep(3)
 shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+# Every group, including the last subscription, can be removed without confirmation.
+for attempt in range(10):
+    nodes=list(ET.fromstring(screen_xml()).iter('node'))
+    more=next((n for n in nodes if n.get('content-desc')=='More actions'),None)
+    if more is None: break
+    a,b,c,d=map(int,re.findall(r'\d+',more.attrib['bounds']))
+    shell('input','tap',str((a+c)//2),str((b+d)//2));time.sleep(1)
+    tap_text('Delete')
+    time.sleep(2)
+assert 'More actions' not in screen_xml(),'Deleting the last subscription left a group behind'
+capture('24-home-all-deleted')
 (out/'ui-actions-result.txt').write_text('PASS: named subscription import without group selection; standalone profiles in Server list; URL, QR and JSON sharing; country flags; profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
 server.shutdown()

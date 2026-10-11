@@ -18,7 +18,7 @@
 <string name="qmobile_clipboard_empty">Clipboard is empty</string>
 <string name="qmobile_collapse_all">Collapse / expand all</string>
 <string name="qmobile_share">Share profile</string>
-<string name="qmobile_delete">Delete profile?</string>
+<string name="qmobile_delete">Delete</string>
 <string name="qmobile_delete_failed">Could not delete the profile.</string>
 <string name="qmobile_ping">Latency test</string>
 <string name="qmobile_speed">Speed test</string>

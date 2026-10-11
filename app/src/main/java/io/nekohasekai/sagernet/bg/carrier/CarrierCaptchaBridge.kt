@@ -14,7 +14,7 @@ class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
         private set
     private var receiver: BroadcastReceiver? = null
     private var requestId: String? = null
-    fun accept(line: String) {
+    @Synchronized fun accept(line: String) {
         if(!line.startsWith("CAPTCHA_SOLVE|")) return
         val fields=line.split('|',limit=4)
         if(fields.size!=4 || fields[2].length>8192) return
@@ -24,20 +24,21 @@ class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
         waiting=true
         val callback=object: BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                if(intent.getStringExtra("id")!=requestId) return
-                val result=intent.getStringExtra("result") ?: return
-                if(result.length>16384 || result.any { it=='\n' || it=='\r' }) return
-                synchronized(process) {
-                    runCatching { process.outputStream.write(("CAPTCHA_RESULT|"+result+"\n").toByteArray());process.outputStream.flush() }
-                }
-                close()
+                respond(intent.getStringExtra("id"),intent.getStringExtra("result"))
             }
         }
         ContextCompat.registerReceiver(app,callback,IntentFilter(app.packageName+".CAPTCHA_RESULT"),app.packageName+".SERVICE",null,ContextCompat.RECEIVER_NOT_EXPORTED)
         receiver=callback
         app.sendBroadcast(Intent(app.packageName+".CAPTCHA_REQUEST").setPackage(app.packageName).putExtra("id",id).putExtra("url",fields[2]),app.packageName+".SERVICE")
     }
-    override fun close() {
+    @Synchronized private fun respond(id: String?,result: String?) {
+        if(id==null || id!=requestId || result==null || result.length>16384 || result.any { it=='\n' || it=='\r' }) return
+        synchronized(process) {
+            runCatching { process.outputStream.write(("CAPTCHA_RESULT|"+result+"\n").toByteArray());process.outputStream.flush() }
+        }
+        close()
+    }
+    @Synchronized override fun close() {
         receiver?.let { runCatching { app.unregisterReceiver(it) } }
         receiver=null
         waiting=false

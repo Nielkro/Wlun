@@ -35,12 +35,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         val filter=IntentFilter(host.packageName+".CAPTCHA_REQUEST").apply { addAction(host.packageName+".CAPTCHA_CLOSE") }
         ContextCompat.registerReceiver(host,receiver,filter,host.packageName+".SERVICE",null,ContextCompat.RECEIVER_NOT_EXPORTED)
     }
-    private fun allowed(value: String): Boolean {
-        val uri=Uri.parse(value)
-        val domain=uri.host?.lowercase() ?: return false
-        return uri.scheme=="https" && uri.userInfo==null && uri.port in listOf(-1,443) &&
-            listOf("vk.com","vk.ru","ok.ru","okcdn.ru").any { domain==it || domain.endsWith("."+it) }
-    }
+    private fun allowed(value: String)=CaptchaAddressPolicy.allowed(value)
     private fun reply(id: String,result: String) {
         host.sendBroadcast(Intent(host.packageName+".CAPTCHA_RESULT").setPackage(host.packageName).putExtra("id",id).putExtra("result",result),host.packageName+".SERVICE")
     }
