@@ -26,6 +26,7 @@ open class SettingsPreferenceFragment(private val advanced: Boolean = false) : P
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.preferenceDataStore = DataStore.configurationStore
         addPreferencesFromResource(if (advanced) R.xml.global_preferences else R.xml.qmobile_settings)
+        findPreference<Preference>("qmobileUpdate")?.setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),app.qthrone.mobile.update.UpdateActivity::class.java));true }
         findPreference<Preference>("qmobileRouting")?.setOnPreferenceClickListener {
             (activity as? MainActivity)?.displayFragment(MobileRoutingFragment())
             true

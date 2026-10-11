@@ -144,7 +144,7 @@ object SettingsRegistry {
     /** The selected group tab; resolved through GroupRepo (0 or a missing group = the first group). */
     @JvmField val CURRENT_GROUP = long("current_group", 0L) { it >= 0 }
     @JvmField val SHOW_CONFIG_SECURITY = bool("show_config_security", false)
-    @JvmField val ALLOW_BETA_UPDATE = bool("allow_beta_update", false)
+    @JvmField val ALLOW_BETA_UPDATE = bool("allow_beta_update", app.qthrone.mobile.BuildConfig.VERSION_NAME.contains("-beta."))
 
     // ------------------------------------------------------------------------------------------------ inbound
 

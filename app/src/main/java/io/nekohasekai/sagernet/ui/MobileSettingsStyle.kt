@@ -20,9 +20,9 @@ object MobileSettingsStyle {
             }
         }
         compact(fragment.preferenceScreen)
-        root.setBackgroundColor(Color.rgb(30,30,30))
+        root.setBackgroundColor(MobilePalette.background)
         val list=fragment.listView
-        list.setBackgroundColor(Color.rgb(30,30,30))
+        list.setBackgroundColor(MobilePalette.background)
         val divider=androidx.recyclerview.widget.DividerItemDecoration(list.context,RecyclerView.VERTICAL)
         divider.setDrawable(android.graphics.drawable.GradientDrawable().apply {
             setColor(Color.rgb(67,69,72)); setSize(1,(list.resources.displayMetrics.density).toInt().coerceAtLeast(1))
@@ -32,13 +32,13 @@ object MobileSettingsStyle {
             val position=list.getChildAdapterPosition(view)
             if(position==RecyclerView.NO_POSITION) return
             val category=(list.adapter as? PreferenceGroupAdapter)?.getItem(position) is PreferenceCategory
-            view.setBackgroundColor(if(category) Color.rgb(36,37,39) else Color.rgb(30,30,30))
+            view.setBackgroundColor(if(category) MobilePalette.toolbar else MobilePalette.background)
             view.findViewById<TextView>(android.R.id.title)?.apply {
-                setTextColor(if(category) Color.rgb(87,190,229) else Color.rgb(231,234,237))
+                setTextColor(if(category) MobilePalette.accent(list.context) else MobilePalette.text)
                 textSize=if(category) 16f else 16f
                 setTypeface(null,if(category) Typeface.BOLD else Typeface.NORMAL)
             }
-            view.findViewById<TextView>(android.R.id.summary)?.setTextColor(Color.rgb(173,182,191))
+            view.findViewById<TextView>(android.R.id.summary)?.setTextColor(MobilePalette.muted)
         }
         list.addOnChildAttachStateChangeListener(object: RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view:View) { style(view) }

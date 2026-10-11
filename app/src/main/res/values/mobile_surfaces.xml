@@ -1,0 +1,5 @@
+<resources>
+<style name="MobileSurfaceGray"><item name="android:windowBackground">#1e1e1e</item><item name="android:colorBackground">#1e1e1e</item><item name="colorSurface">#222325</item><item name="colorPrimary">#222325</item><item name="colorOnSurface">#e7eaed</item><item name="colorOnPrimary">#e7eaed</item><item name="android:textColorPrimary">#e7eaed</item></style>
+<style name="MobileSurfaceWhite"><item name="android:windowBackground">#eceeef</item><item name="android:colorBackground">#eceeef</item><item name="colorSurface">#f8f9fa</item><item name="colorPrimary">#e7e9eb</item><item name="colorOnSurface">#272c30</item><item name="colorOnPrimary">#272c30</item><item name="android:textColorPrimary">#272c30</item></style>
+<style name="MobileSurfaceOled"><item name="android:windowBackground">#000000</item><item name="android:colorBackground">#000000</item><item name="colorSurface">#0f0f0f</item><item name="colorPrimary">#000000</item><item name="colorOnSurface">#e7eaed</item><item name="colorOnPrimary">#e7eaed</item><item name="android:textColorPrimary">#e7eaed</item></style>
+</resources>

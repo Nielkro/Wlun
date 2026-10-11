@@ -17,7 +17,7 @@
                     android:id="@+id/action_selection_test_ip"
                     android:title="@string/profiles_test_ip" />
                 <item
-                    android:id="@+id/action_selection_test_speed"
+                    android:id="@+id/action_selection_test_speed" android:visible="false"
                     android:title="@string/profiles_test_speed" />
             </menu>
         </item>

@@ -40,6 +40,7 @@ object Theme {
     fun apply(context: Context) {
         context.setTheme(getTheme())
         applyAmoledOverlay(context)
+        context.theme.applyStyle(if (app.qthrone.mobile.ui.MobilePalette.light) R.style.MobileSurfaceWhite else if (app.qthrone.mobile.ui.MobilePalette.oled) R.style.MobileSurfaceOled else R.style.MobileSurfaceGray,true)
     }
 
     fun applyDialog(context: Context) {

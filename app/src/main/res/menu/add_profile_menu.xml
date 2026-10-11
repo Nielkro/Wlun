@@ -127,10 +127,10 @@
                         android:id="@+id/action_test_ip"
                         android:title="@string/profiles_test_ip" />
                     <item
-                        android:id="@+id/action_test_speed"
+                        android:id="@+id/action_test_speed" android:visible="false"
                         android:title="@string/profiles_test_speed" />
                     <item
-                        android:id="@+id/action_test_speed_current"
+                        android:id="@+id/action_test_speed_current" android:visible="false"
                         android:title="@string/profiles_test_speed_current" />
                     <item
                         android:id="@+id/action_test_stop"

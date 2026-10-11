@@ -1,0 +1,11 @@
+<resources>
+<string name="qmobile_seasonal">Сезонное украшение</string>
+<string name="qmobile_edit">Редактировать</string>
+<string name="qmobile_pin">Закрепить</string>
+<string name="qmobile_unpin">Открепить</string>
+<string name="qmobile_subscription_name">Название подписки</string>
+<string name="qmobile_subscription_url">Адрес подписки</string>
+<string name="qmobile_auto_update">Автообновление</string>
+<string name="qmobile_save">Сохранить</string>
+<string-array name="qmobile_seasons"><item>Выключено</item><item>Хэллоуин</item><item>Новый год</item></string-array>
+</resources>

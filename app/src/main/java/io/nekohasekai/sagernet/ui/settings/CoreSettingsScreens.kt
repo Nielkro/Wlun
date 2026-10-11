@@ -110,19 +110,7 @@ class TestingSettingsFragment : SettingsScreenFragment(R.xml.settings_testing) {
         pref<EditTextPreference>(SettingsRegistry.DIRECT_TEST_URL.key).summaryProvider =
             DefaultSummaryProvider(getString(R.string.direct_test_url_empty))
 
-        checkInt(SettingsRegistry.SPEED_TEST_TIMEOUT_MS.key, R.string.speed_test_timeout_invalid, reload = false) { it > 0 }
 
-        val simpleUrl = pref<EditTextPreference>(SettingsRegistry.SIMPLE_DL_URL.key)
-        simpleUrl.setOnBindEditTextListener { editText ->
-            editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
-            editText.setSingleLine()
-        }
-        checkText(simpleUrl.key, R.string.speed_test_url_invalid, reload = false, valid = SpeedTestSettings::isValidHttpUrl)
-        simpleUrl.isEnabled = DataStore.speedTestMode == SpeedTestSettings.SIMPLE_DOWNLOAD
-        pref<SimpleMenuPreference>(SettingsRegistry.SPEED_TEST_MODE.key).setOnPreferenceChangeListener { _, newValue ->
-            simpleUrl.isEnabled = (newValue as String).toIntOrNull() == SpeedTestSettings.SIMPLE_DOWNLOAD
-            true
-        }
     }
 }
 

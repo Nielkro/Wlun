@@ -93,8 +93,13 @@ for cycle in range(2):
         if node.get('text')=='VPN-smoke':
             a,b,c,d=map(int,re.findall(r'\d+',node.attrib['bounds'])); y=(b+d)//2
             shell('input','swipe',str((a+c)//2),str(y),'1000',str(y),'350'); break
-    time.sleep(1); tap('Testing'); tap('Latency test')
-    wait_for('1 / 1'); tap('OK')
+    time.sleep(1); tap('Testing')
+    for _ in range(30):
+        screen=xml()
+        assert 'text="Stop"' not in screen and 'text="Latency test"' not in screen, 'Ping opened a testing dialog'
+        if len(hits)>previous and re.search(r'text="[0-9]+ ms"',screen): break
+        time.sleep(1)
+    else: raise AssertionError('Inline ping result was not displayed')
     assert len(hits)>previous, 'Latency test did not send HTTP through the SOCKS fixture'
     assert re.search(r'\d+ ms',xml()), 'Successful latency was not saved in the profile row'
     tap('Connect or disconnect VPN, Connected')

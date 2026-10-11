@@ -121,6 +121,7 @@ class GeneralSettingsFragment : SettingsScreenFragment(R.xml.settings_general) {
 class AppearanceSettingsFragment : SettingsScreenFragment(R.xml.settings_appearance) {
 
     override fun bind() {
+        findPreference<androidx.preference.Preference>("seasonal_decoration")?.setOnPreferenceChangeListener { _, _ -> applyThemeInstantly(); true }
         val appTheme = pref<ColorPickerPreference>(Key.APP_THEME)
         val useSystemTheme = pref<SwitchPreference>(Key.USE_SYSTEM_THEME)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {

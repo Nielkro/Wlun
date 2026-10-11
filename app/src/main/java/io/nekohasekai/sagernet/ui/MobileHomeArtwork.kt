@@ -9,7 +9,7 @@ class MobileHomeBackdrop : Drawable() {
     override fun draw(canvas: Canvas) {
         val w = bounds.width().toFloat(); val h = bounds.height().toFloat()
         paint.shader = LinearGradient(0f, 0f, w, h,
-            intArrayOf(Color.rgb(30,30,30), Color.rgb(34,35,37), Color.rgb(30,30,30)),
+            intArrayOf(MobilePalette.background, MobilePalette.toolbar, MobilePalette.background),
             floatArrayOf(0f, .55f, 1f), Shader.TileMode.CLAMP)
         canvas.drawRect(bounds, paint)
         paint.shader = LinearGradient(0f, 0f, w, h, Color.argb(9,180,186,192), Color.TRANSPARENT, Shader.TileMode.CLAMP)
@@ -28,7 +28,7 @@ class MobileHomeBackdrop : Drawable() {
 }
 
 /** Rings and a crisp power glyph; the surrounding view remains transparent. */
-class MobilePowerArtwork : Drawable() {
+class MobilePowerArtwork(private val accent: Int) : Drawable() {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     var connected = false
         set(value) { field=value; invalidateSelf() }
@@ -39,16 +39,16 @@ class MobilePowerArtwork : Drawable() {
         paint.shader=LinearGradient(cx-r,cy-r,cx+r,cy+r,Color.argb(100,74,135,159),Color.argb(60,161,144,155),Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy,r,paint)
         paint.style=Paint.Style.FILL
-        paint.shader=LinearGradient(cx,cy-r,cx,cy+r,Color.rgb(63,66,70),Color.rgb(39,41,44),Shader.TileMode.CLAMP)
+        paint.shader=LinearGradient(cx,cy-r,cx,cy+r,MobilePalette.surface,MobilePalette.toolbar,Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy,r*.83f,paint)
         paint.shader=RadialGradient(cx-r*.2f,cy-r*.3f,r*1.1f,
-            intArrayOf(Color.rgb(73,77,81),Color.rgb(56,60,64),Color.rgb(45,49,53)),
+            intArrayOf(MobilePalette.surface,MobilePalette.surface,MobilePalette.toolbar),
             floatArrayOf(0f,.6f,1f),Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy-r*.025f,r*.66f,paint)
         paint.shader=null
         paint.style=Paint.Style.STROKE; paint.strokeCap=Paint.Cap.ROUND
         paint.strokeWidth=r*.04f
-        paint.color=if(connected) Color.rgb(87,190,229) else Color.rgb(158,170,181)
+        paint.color=if(connected) accent else MobilePalette.muted
         val glyph=r*.17f
         canvas.drawArc(RectF(cx-glyph,cy-glyph,cx+glyph,cy+glyph),-45f,270f,false,paint)
         canvas.drawLine(cx,cy-glyph*1.25f,cx,cy-glyph*.1f,paint)

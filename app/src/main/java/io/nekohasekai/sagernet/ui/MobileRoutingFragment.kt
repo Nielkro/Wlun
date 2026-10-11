@@ -30,18 +30,18 @@ class MobileRoutingFragment : ToolbarFragment() {
     private var column: LinearLayout? = null
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun line(label: String, action: (() -> Unit)? = null) = TextView(requireContext()).apply {
-        text = label; textSize = 16f; setTextColor(Color.rgb(83,190,243))
+        text = label; textSize = 16f; setTextColor(MobilePalette.accent(context))
         setPadding(dp(16),dp(16),dp(16),dp(16)); minHeight = dp(48)
         if (action != null) { isFocusable = true; setOnClickListener { action() } }
     }
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
         column = LinearLayout(requireContext()).apply {
-            orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(30,30,30))
+            orientation = LinearLayout.VERTICAL; setBackgroundColor(MobilePalette.background)
         }
         return ScrollView(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
             isFillViewport = true
-            setBackgroundColor(Color.rgb(30,30,30))
+            setBackgroundColor(MobilePalette.background)
             addView(column, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
                 val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -63,7 +63,7 @@ class MobileRoutingFragment : ToolbarFragment() {
             }
             val root = column ?: return@launch
             root.removeAllViews()
-            root.addView(line("‹  " + getString(R.string.qmobile_routing)) { requireActivity().onBackPressedDispatcher.onBackPressed() })
+            root.addView(line("вЂ№  " + getString(R.string.qmobile_routing)) { requireActivity().onBackPressedDispatcher.onBackPressed() })
             root.addView(line(getString(R.string.qmobile_route_default) + "\n" + target(route.default_outbound_id)) {
                 chooseTarget(route.default_outbound_id) { id -> save(route) { it.default_outbound_id=id } }
             })

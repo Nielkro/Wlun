@@ -15,4 +15,5 @@
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.AdvancedSettingsPreferenceFragment" app:title="@string/qmobile_advanced_settings" />
     <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="resetSettings" app:title="@string/reset_settings" />
     </PreferenceCategory>
+    <Preference app:key="qmobileUpdate" app:title="@string/update_check" app:widgetLayout="@layout/qmobile_preference_arrow" />
 </PreferenceScreen>

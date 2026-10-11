@@ -11,22 +11,4 @@
             app:key="direct_test_url"
             app:title="@string/direct_test_url" />
     </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/speed_test_settings">
-        <moe.matsuri.nb4a.ui.SimpleMenuPreference
-            app:entries="@array/speed_test_modes"
-            app:entryValues="@array/int_array_5"
-            app:icon="@drawable/ic_baseline_speed_24"
-            app:key="speed_test_mode"
-            app:title="@string/speed_test_mode"
-            app:useSimpleSummaryProvider="true" />
-        <EditTextPreference
-            app:key="speed_test_timeout_ms"
-            app:title="@string/speed_test_timeout_ms"
-            app:useSimpleSummaryProvider="true" />
-        <EditTextPreference
-            app:key="simple_dl_url"
-            app:title="@string/simple_download_url"
-            app:useSimpleSummaryProvider="true" />
-    </PreferenceCategory>
 </PreferenceScreen>

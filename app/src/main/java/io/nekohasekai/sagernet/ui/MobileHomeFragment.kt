@@ -23,6 +23,7 @@ import app.qthrone.mobile.R
 import app.qthrone.mobile.SagerNet
 import app.qthrone.mobile.database.*
 import app.qthrone.mobile.group.SubscriptionClient
+import app.qthrone.mobile.ui.profile.profileSettingsIntent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
@@ -31,23 +32,22 @@ import kotlinx.coroutines.withContext
 
 /** Mobile dashboard backed by the existing Room repositories and subscription queue. */
 class MobileHomeFragment : ToolbarFragment() {
-    private val blue = Color.rgb(87, 190, 229)
-    private val surface = Color.rgb(49, 51, 54)
-    private val muted = Color.rgb(173, 182, 191)
+    private val blue get() = MobilePalette.accent(requireContext())
+    private val surface get() = MobilePalette.surface
+    private val muted get() = MobilePalette.muted
     private var content: LinearLayout? = null
     private var power: TextView? = null
     private var load: Job? = null
     private val collapsed = mutableSetOf<Long>()
     private var observer: InvalidationTracker.Observer? = null
-    private var testDialog: androidx.appcompat.app.AlertDialog? = null
     private var openSwipe: MobileSwipeTile? = null
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
     private fun tile(selected: Boolean = false) = GradientDrawable().apply {
-        setColor(if (selected) Color.rgb(48, 67, 77) else surface)
+        setColor(if (selected) androidx.core.graphics.ColorUtils.blendARGB(surface,blue,.16f) else surface)
         cornerRadius = dp(5).toFloat()
         setStroke(dp(1), if (selected) blue else Color.argb(45, 103, 116, 128))
     }
-    private fun text(value: String, size: Float = 16f, color: Int = Color.rgb(231,234,237)) = TextView(requireContext()).apply {
+    private fun text(value: String, size: Float = 16f, color: Int = MobilePalette.text) = TextView(requireContext()).apply {
         text = value; textSize = size; setTextColor(color)
         setPadding(dp(14), dp(12), dp(14), dp(12))
     }
@@ -56,7 +56,7 @@ class MobileHomeFragment : ToolbarFragment() {
         isFocusable = true; setOnClickListener { callback() }
     }
     private fun iconAction(icon: Int, description: String, color: Int = Color.TRANSPARENT, callback: () -> Unit) = ImageButton(requireContext()).apply {
-        setImageResource(icon); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
+        setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.text); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
         contentDescription=description; setOnClickListener { callback() }
     }
     private fun host() = requireActivity() as MainActivity
@@ -92,7 +92,6 @@ class MobileHomeFragment : ToolbarFragment() {
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
         observer = null; load?.cancel(); content = null; power = null
         openSwipe=null
-        testDialog?.dismiss(); testDialog=null
         super.onDestroyView()
     }
     fun refresh() {
@@ -100,14 +99,14 @@ class MobileHomeFragment : ToolbarFragment() {
         load?.cancel()
         load = viewLifecycleOwner.lifecycleScope.launch {
             val groups = withContext(Dispatchers.IO) {
-                GroupRepo.all().map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
+                GroupRepo.all().sortedBy { if(it.id in pinnedGroups()) 0 else 1 }.map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
             }
             val column = content ?: return@launch
             column.removeAllViews()
             openSwipe=null
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
             fun headerIcon(icon: Int, description: String, callback: (View) -> Unit) = ImageButton(requireContext()).apply {
-                setImageResource(icon); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
+                setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.text); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
                 contentDescription = description; setOnClickListener { callback(it) }
             }
             header.addView(headerIcon(R.drawable.ic_mobile_settings, getString(R.string.qmobile_settings)) { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
@@ -117,7 +116,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val centre = FrameLayout(requireContext())
             power = action("") { host().toggleService() }.apply {
                 contentDescription = getString(R.string.qmobile_connect)
-                background = MobilePowerArtwork()
+                background = MobilePowerArtwork(blue)
             }
             centre.addView(power, FrameLayout.LayoutParams(dp(252), dp(252), Gravity.CENTER))
             column.addView(centre, LinearLayout.LayoutParams(-1, dp(284)))
@@ -126,24 +125,20 @@ class MobileHomeFragment : ToolbarFragment() {
             fun importButton(label: String, icon: Int, callback: () -> Unit) = LinearLayout(requireContext()).apply {
                 gravity=Gravity.CENTER; isFocusable=true; contentDescription=label
                 setOnClickListener { callback() }
-                background=GradientDrawable().apply { setColor(Color.argb(145,57,61,65)); cornerRadius=dp(16).toFloat() }
-                addView(ImageView(requireContext()).apply { setImageResource(icon); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(24),dp(24)).apply { marginEnd=dp(10) })
+                background=GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }
+                addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.text); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(24),dp(24)).apply { marginEnd=dp(10) })
                 addView(text(label,14f).apply { setPadding(0,0,0,0); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO })
             }
             imports.addView(importButton(getString(R.string.qmobile_clipboard), R.drawable.ic_mobile_clipboard) { importClipboard() }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
             imports.addView(importButton(getString(R.string.qmobile_qr), R.drawable.ic_mobile_qr) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
-            if(groups.any { it.second.isNotEmpty() || it.first.isSubscription }) column.addView(action(getString(R.string.qmobile_collapse_all)) {
-                val ids=groups.map { it.first.id }
-                if (ids.all { it in collapsed }) collapsed.clear() else collapsed.addAll(ids)
-                refresh()
-            }.apply { gravity=Gravity.END; textSize=12f; setPadding(0,dp(4),dp(4),dp(4)) }, LinearLayout.LayoutParams(-1,dp(36)))
+            column.addView(MobileSeasonalView(requireContext()), LinearLayout.LayoutParams(-1,dp(64)))
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val box = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; background = tile() }
                 val rows = LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
                 val title = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
                 val arrow = ImageView(requireContext()).apply {
-                    setImageResource(R.drawable.ic_mobile_chevron); rotation=if(group.id in collapsed) 0f else 90f
+                    setImageResource(R.drawable.ic_mobile_chevron); imageTintList=android.content.res.ColorStateList.valueOf(muted); rotation=if(group.id in collapsed) 0f else 90f
                 }
                 val heading = LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),0,0,0); isFocusable=true }
                 heading.addView(arrow,LinearLayout.LayoutParams(dp(20),dp(20)))
@@ -167,16 +162,16 @@ class MobileHomeFragment : ToolbarFragment() {
                     val quota=group.subInfo
                     val traffic=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),0,dp(12),dp(8)) }
                     traffic.addView(iconAction(R.drawable.ic_mobile_info,getString(R.string.qmobile_subscription_info)) {
-                        val expires=if(quota.expire>0) java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000)) else "—"
+                        val expires=if(quota.expire>0) java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000)) else "\u2014"
                         MaterialAlertDialogBuilder(requireContext()).setTitle(group.displayName()).setMessage(getString(R.string.qmobile_expiry,expires)).setPositiveButton(android.R.string.ok,null).show()
                     },LinearLayout.LayoutParams(dp(32),dp(32)))
-                    val bar=FrameLayout(requireContext()).apply { background=GradientDrawable().apply { setColor(Color.rgb(35,37,40)); cornerRadius=dp(3).toFloat(); setStroke(dp(1),Color.rgb(20,22,25)) } }
+                    val bar=FrameLayout(requireContext()).apply { background=GradientDrawable().apply { setColor(MobilePalette.toolbar); cornerRadius=dp(3).toFloat(); setStroke(dp(1),muted) } }
                     var usage=getString(R.string.qmobile_quota_unknown)
                     if (quota.valid && quota.hasQuota) {
                         val upload=quota.upload.coerceAtLeast(0); val download=quota.download.coerceAtLeast(0)
                         val bytes=if(download>Long.MAX_VALUE-upload) Long.MAX_VALUE else upload+download
                         val used=android.text.format.Formatter.formatShortFileSize(requireContext(),bytes)
-                        val total=if(quota.total>0) android.text.format.Formatter.formatShortFileSize(requireContext(),quota.total) else "∞"
+                        val total=if(quota.total>0) android.text.format.Formatter.formatShortFileSize(requireContext(),quota.total) else "\u221e"
                         usage="$used / $total"
                     }
                     bar.addView(text(usage,11f).apply { gravity=Gravity.CENTER; setPadding(dp(4),0,dp(4),0) },FrameLayout.LayoutParams(-1,-1))
@@ -192,11 +187,21 @@ class MobileHomeFragment : ToolbarFragment() {
                             refresh()
                         }
                         setOnLongClickListener {
-                            viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) }; true
+                            startActivity(profile.profileSettingsIntent(requireContext(),group.isSubscription)); true
                         }
                     }
+                    val displayName=profile.displayName().trim()
+                    val first=if(displayName.isNotEmpty()) displayName.codePointAt(0) else 0
+                    val firstLength=Character.charCount(first)
+                    val second=if(displayName.length>firstLength) displayName.codePointAt(firstLength) else 0
+                    val hasFlag=first in 0x1f1e6..0x1f1ff && second in 0x1f1e6..0x1f1ff
+                    val flagLength=if(hasFlag) firstLength+Character.charCount(second) else 0
+                    val badgeBackground=GradientDrawable().apply { setColor(MobilePalette.toolbar);cornerRadius=dp(7).toFloat() }
+                    val badge=if(hasFlag) text(displayName.substring(0,flagLength),25f).apply { gravity=Gravity.CENTER;setPadding(0,0,0,0) } else ImageView(requireContext()).apply { setImageResource(R.drawable.ic_mobile_globe);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.muted);setPadding(dp(5),dp(5),dp(5),dp(5)) }
+                    badge.background=badgeBackground;badge.clipToOutline=true
+                    row.addView(badge,LinearLayout.LayoutParams(dp(38),dp(38)).apply { marginStart=dp(10) })
                     val labels = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(9), dp(8), dp(9)) }
-                    labels.addView(text(profile.displayName(), 16f).apply { setPadding(0,0,0,dp(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    labels.addView(text(if(hasFlag) displayName.substring(flagLength).trimStart() else displayName, 16f).apply { setPadding(0,0,0,dp(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     labels.addView(text(profile.displayType(), 12f, muted).apply { setPadding(0,0,0,0); maxLines=1 })
                     row.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
                     if(profile.latency>0) row.addView(text("${profile.latency} ms",13f,Color.rgb(128,192,139)))
@@ -235,27 +240,7 @@ class MobileHomeFragment : ToolbarFragment() {
         (power?.background as? MobilePowerArtwork)?.connected=state.connected
     }
     private fun testMenu(ids: LongArray, label: String, gid: Long) {
-        val labels = arrayOf(getString(R.string.qmobile_ping),getString(R.string.qmobile_speed))
-        MaterialAlertDialogBuilder(requireContext()).setTitle(label).setItems(labels) { _, index ->
-            val spec=TestSpec(if(index==0) TestSpec.KIND_URL else TestSpec.KIND_SPEED, profileIds=ids,scopeLabel=label)
-            if(!TestSessionClient.start(spec,gid)) { showTestProgress(); return@setItems }
-            showTestProgress()
-        }.show()
-    }
-    private fun showTestProgress() {
-        if(testDialog?.isShowing == true) return
-        val info=text("",15f,muted)
-        val dialog=MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_tests).setView(info)
-            .setNegativeButton(R.string.qmobile_stop) { _,_ -> TestSessionClient.stop() }.setPositiveButton(android.R.string.ok,null).create()
-        dialog.show()
-        testDialog=dialog
-        val job=viewLifecycleOwner.lifecycleScope.launch {
-            TestSessionClient.state.collect { state ->
-                info.text="${state.done} / ${state.total}"
-                dialog.getButton(android.app.AlertDialog.BUTTON_NEGATIVE)?.isEnabled=state.running
-            }
-        }
-        dialog.setOnDismissListener { job.cancel(); if(testDialog===dialog) testDialog=null }
+        TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label),gid)
     }
     private fun importClipboard() {
         val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
@@ -263,16 +248,50 @@ class MobileHomeFragment : ToolbarFragment() {
         if (!value.isNullOrBlank()) SubscribeFlows.importText(requireActivity(), value)
         else Toast.makeText(requireContext(), R.string.qmobile_clipboard_empty, Toast.LENGTH_SHORT).show()
     }
+    private fun pinnedGroups() = DataStore.mobilePinnedGroups.split(',').mapNotNull { it.toLongOrNull() }.toSet()
     private fun groupMenu(group: ProxyGroup, anchor: View) {
-        val menu=android.widget.PopupMenu(requireContext(),anchor)
-        menu.menu.add(getString(R.string.qmobile_settings)).setOnMenuItemClickListener {
-            startActivity(Intent(requireContext(),GroupSettingsActivity::class.java).putExtra(GroupSettingsActivity.EXTRA_GROUP_ID,group.id)); true
+        val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val body=LinearLayout(requireContext()).apply {
+            orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(24)); setBackgroundColor(MobilePalette.background)
         }
-        menu.menu.add(getString(R.string.qmobile_profiles)).setOnMenuItemClickListener {
-            viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.setCurrent(group.id) }; host().displayFragmentWithId(R.id.nav_configuration) }; true
+        body.addView(View(requireContext()).apply { background=GradientDrawable().apply { setColor(MobilePalette.muted); cornerRadius=dp(2).toFloat() } },LinearLayout.LayoutParams(dp(40),dp(4)).apply { gravity=Gravity.CENTER_HORIZONTAL; bottomMargin=dp(20) })
+        body.addView(text(group.displayName(),18f).apply { setTypeface(null,Typeface.BOLD) })
+        fun entry(label:String,icon:Int,action:()->Unit) {
+            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; isFocusable=true; contentDescription=label; setOnClickListener { dialog.dismiss();action() } }
+            row.addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.muted) },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginStart=dp(14) })
+            row.addView(text(label,17f).apply { setTypeface(null,Typeface.BOLD) },LinearLayout.LayoutParams(-1,dp(56)))
+            body.addView(row)
         }
-        if(group.isSubscription) menu.menu.add(getString(R.string.action_copy)).setOnMenuItemClickListener { SagerNet.trySetPrimaryClip(group.url); true }
-        menu.show()
+        entry(getString(R.string.qmobile_settings),R.drawable.ic_mobile_settings) { editGroup(group,true) }
+        entry(getString(R.string.qmobile_routing),R.drawable.ic_baseline_transform_24) { host().displayFragment(MobileRoutingFragment()) }
+        if(group.isSubscription) entry(getString(R.string.qmobile_refresh),R.drawable.ic_mobile_refresh) { SubscriptionClient.refreshGroup(group.id,true) }
+        entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id) } }
+        entry(getString(R.string.qmobile_edit),R.drawable.ic_mobile_edit) { editGroup(group,false) }
+        val pinned=group.id in pinnedGroups()
+        entry(getString(if(pinned) R.string.qmobile_unpin else R.string.qmobile_pin),R.drawable.ic_mobile_pin) { val ids=pinnedGroups().toMutableSet();if(pinned) ids.remove(group.id) else ids.add(group.id);DataStore.mobilePinnedGroups=ids.joinToString(",");refresh() }
+        entry(getString(R.string.qmobile_delete),R.drawable.ic_mobile_delete) {
+            MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.qmobile_delete).setMessage(group.displayName()).setNegativeButton(android.R.string.cancel,null).setPositiveButton(android.R.string.ok) { _,_ ->
+                viewLifecycleOwner.lifecycleScope.launch { val deleted=withContext(Dispatchers.IO) { GroupRepo.delete(group.id) };if(!deleted) Toast.makeText(requireContext(),R.string.qmobile_delete_failed,Toast.LENGTH_LONG).show() }
+            }.show()
+        }
+        dialog.setContentView(body);dialog.show()
+    }
+    private fun editGroup(group:ProxyGroup,settings:Boolean) {
+        val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(24),dp(24),dp(24),dp(32));setBackgroundColor(MobilePalette.background) }
+        body.addView(text(getString(if(settings) R.string.qmobile_settings else R.string.qmobile_edit),20f))
+        val name=EditText(requireContext()).apply { setText(group.name);hint=getString(R.string.qmobile_subscription_name);setTextColor(MobilePalette.text);setHintTextColor(MobilePalette.muted);isSingleLine=true }
+        val url=EditText(requireContext()).apply { setText(group.url);hint=getString(R.string.qmobile_subscription_url);setTextColor(MobilePalette.text);setHintTextColor(MobilePalette.muted);inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI }
+        body.addView(name);if(group.isSubscription) body.addView(url)
+        val auto=androidx.appcompat.widget.SwitchCompat(requireContext()).apply { text=getString(R.string.qmobile_auto_update);isChecked=!group.skipAutoUpdate;setTextColor(MobilePalette.text) }
+        if(settings && group.isSubscription) body.addView(auto)
+        body.addView(action(getString(R.string.qmobile_save)) {
+            val nextUrl=if(group.isSubscription) url.text.toString().trim() else ""
+            if(group.isSubscription && (!nextUrl.startsWith("https://") && !nextUrl.startsWith("http://"))) { url.error=getString(R.string.qmobile_subscription_url);return@action }
+            group.name=name.text.toString().trim();group.url=nextUrl;if(settings) group.skipAutoUpdate=!auto.isChecked
+            viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) { GroupRepo.save(group) };dialog.dismiss();refresh() }
+        })
+        dialog.setContentView(body);dialog.show()
     }
     private fun addMenu(anchor: View) {
         val popup = android.widget.PopupMenu(requireContext(), anchor)

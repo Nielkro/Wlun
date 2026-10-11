@@ -1,0 +1,12 @@
+<resources>
+<string name="qmobile_seasonal">Seasonal decoration</string>
+<string name="qmobile_edit">Edit</string>
+<string name="qmobile_pin">Pin</string>
+<string name="qmobile_unpin">Unpin</string>
+<string name="qmobile_subscription_name">Subscription name</string>
+<string name="qmobile_subscription_url">Subscription URL</string>
+<string name="qmobile_auto_update">Automatic updates</string>
+<string name="qmobile_save">Save</string>
+<string-array name="qmobile_seasons"><item>None</item><item>Halloween</item><item>New Year</item></string-array>
+<string-array name="qmobile_season_values"><item>none</item><item>halloween</item><item>newyear</item></string-array>
+</resources>

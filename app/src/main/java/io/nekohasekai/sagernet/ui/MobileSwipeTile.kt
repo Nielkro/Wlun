@@ -36,7 +36,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         right.importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
     }
     override fun onInterceptTouchEvent(e:MotionEvent):Boolean {
-        if(e.actionMasked==MotionEvent.ACTION_DOWN) { row.animate().cancel(); downX=e.x;downY=e.y;initial=row.translationX*direction;dragging=false; touchedRow=e.x>=row.translationX && e.x<row.translationX+row.width }
+        if(e.actionMasked==MotionEvent.ACTION_DOWN) { row.animate().cancel(); downX=e.x;downY=e.y;initial=row.translationX*direction;dragging=false; touchedRow=e.x>=row.translationX && e.x<row.translationX+row.width; if(initial!=0f && touchedRow) return true }
         if(e.actionMasked==MotionEvent.ACTION_MOVE && abs(e.x-downX)>slop && abs(e.x-downX)>abs(e.y-downY)) {
             dragging=true;parent.requestDisallowInterceptTouchEvent(true);return true
         }
@@ -46,6 +46,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
     override fun onTouchEvent(e:MotionEvent):Boolean {
         when(e.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
+                if(abs(e.x-downX)>slop && abs(e.x-downX)>abs(e.y-downY)) dragging=true
                 val offset=(initial+(e.x-downX)*direction).coerceIn(-widthPx/2,widthPx)
                 left.visibility=if(offset>0) View.VISIBLE else View.INVISIBLE
                 right.visibility=if(offset<0) View.VISIBLE else View.INVISIBLE

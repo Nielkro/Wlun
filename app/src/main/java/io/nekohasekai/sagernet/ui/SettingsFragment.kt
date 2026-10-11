@@ -40,7 +40,7 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        view.findViewById<View>(R.id.appbar)?.setBackgroundColor(android.graphics.Color.rgb(34,35,37))
+        view.findViewById<View>(R.id.appbar)?.setBackgroundColor(MobilePalette.toolbar)
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
         childFragmentManager.addOnBackStackChangedListener(backStackListener)
@@ -95,8 +95,9 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
 
     private fun syncToolbar() {
         val toolbar = toolbar ?: return
-        toolbar.setBackgroundColor(android.graphics.Color.rgb(36,37,39))
-        toolbar.setTitleTextColor(android.graphics.Color.rgb(231,234,237))
+        toolbar.setBackgroundColor(MobilePalette.toolbar)
+        toolbar.setTitleTextColor(MobilePalette.text)
+        toolbar.navigationIcon?.setTint(MobilePalette.text)
         val nested = childFragmentManager.backStackEntryCount > 0
         backCallback.isEnabled = nested
         val current = childFragmentManager.findFragmentById(R.id.settings)
@@ -113,8 +114,9 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
                 (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_mobile_home)
             }
         }
+        toolbar.navigationIcon?.setTint(MobilePalette.text)
         // White theme: the toolbar is white, so the navigation icon turns dark
-        if (Theme.isWhiteTheme()) {
+        if (MobilePalette.light) {
             toolbar.navigationIcon?.setTint(ContextCompat.getColor(requireContext(), R.color.black))
         }
     }
