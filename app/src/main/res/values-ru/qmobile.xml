@@ -3,7 +3,9 @@
 <string name="qmobile_clipboard">Из буфера</string>
 <string name="qmobile_qr">QR-код</string>
 <string name="qmobile_profiles">Профили и тесты</string>
-<string name="qmobile_empty">Добавьте подписку или сервер для подключения.</string>
+<string name="qmobile_empty">Чтобы использовать приложение, вам необходимо добавить прокси-сервер и/или подписку в список серверов.</string>
+<string name="qmobile_settings">Настройки</string>
+<string name="qmobile_add">Добавить профиль или подписку</string>
 <string name="qmobile_connected">Подключено</string>
 <string name="qmobile_connecting">Подключение…</string>
 <string name="qmobile_disconnected">Не подключено</string>

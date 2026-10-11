@@ -36,7 +36,6 @@ class MobileHomeFragment : ToolbarFragment() {
     private val muted = Color.rgb(173, 182, 191)
     private var content: LinearLayout? = null
     private var power: TextView? = null
-    private var status: TextView? = null
     private var load: Job? = null
     private val collapsed = mutableSetOf<Long>()
     private var observer: InvalidationTracker.Observer? = null
@@ -86,7 +85,7 @@ class MobileHomeFragment : ToolbarFragment() {
     override fun onResume() { super.onResume(); refresh() }
     override fun onDestroyView() {
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
-        observer = null; load?.cancel(); content = null; power = null; status = null
+        observer = null; load?.cancel(); content = null; power = null
         testDialog?.dismiss(); testDialog=null
         super.onDestroyView()
     }
@@ -100,9 +99,13 @@ class MobileHomeFragment : ToolbarFragment() {
             val column = content ?: return@launch
             column.removeAllViews()
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
-            header.addView(action("⚙") { host().displayFragmentWithId(R.id.nav_settings) }.apply { textSize=28f; setPadding(0,0,0,0) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            fun headerIcon(icon: Int, description: String, callback: (View) -> Unit) = ImageButton(requireContext()).apply {
+                setImageResource(icon); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
+                contentDescription = description; setOnClickListener { callback(it) }
+            }
+            header.addView(headerIcon(R.drawable.ic_mobile_settings, getString(R.string.qmobile_settings)) { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
             header.addView(View(requireContext()), LinearLayout.LayoutParams(0, dp(48), 1f))
-            header.addView(action("＋") { addMenu() }.apply { textSize=34f; setPadding(0,0,0,0) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+            header.addView(headerIcon(R.drawable.ic_mobile_add, getString(R.string.qmobile_add)) { addMenu(it) }, LinearLayout.LayoutParams(dp(48), dp(48)))
             column.addView(header)
             val centre = FrameLayout(requireContext())
             power = action("") { host().toggleService() }.apply {
@@ -111,17 +114,17 @@ class MobileHomeFragment : ToolbarFragment() {
             }
             centre.addView(power, FrameLayout.LayoutParams(dp(252), dp(252), Gravity.CENTER))
             column.addView(centre, LinearLayout.LayoutParams(-1, dp(284)))
-            status = text("", 12f, muted).apply { gravity = Gravity.CENTER; setPadding(0,0,0,0) }
-            column.addView(status)
             updateState()
             val imports = LinearLayout(requireContext())
-            fun importButton(label: String, callback: () -> Unit) = action(label, callback).apply {
-                textSize=14f
+            fun importButton(label: String, icon: Int, callback: () -> Unit) = LinearLayout(requireContext()).apply {
+                gravity=Gravity.CENTER; isFocusable=true; contentDescription=label
+                setOnClickListener { callback() }
                 background=GradientDrawable().apply { setColor(Color.argb(145,57,61,65)); cornerRadius=dp(16).toFloat() }
+                addView(ImageView(requireContext()).apply { setImageResource(icon); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(24),dp(24)).apply { marginEnd=dp(10) })
+                addView(text(label,14f).apply { setPadding(0,0,0,0); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO })
             }
-            imports.addView(importButton(getString(R.string.qmobile_clipboard)) { importClipboard() }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginEnd = dp(8) })
-            imports.addView(importButton(getString(R.string.qmobile_qr)) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(46), 1f).apply { marginStart = dp(8) })
-            if (groups.all { it.second.isEmpty() }) column.addView(text(getString(R.string.qmobile_empty), 15f, muted))
+            imports.addView(importButton(getString(R.string.qmobile_clipboard), R.drawable.ic_mobile_clipboard) { importClipboard() }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
+            imports.addView(importButton(getString(R.string.qmobile_qr), R.drawable.ic_mobile_qr) { startActivity(Intent(requireContext(), ScannerActivity::class.java)) }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginStart = dp(8) })
             if(groups.any { it.second.isNotEmpty() || it.first.isSubscription }) column.addView(action(getString(R.string.qmobile_collapse_all)) {
                 val ids=groups.map { it.first.id }
                 if (ids.all { it in collapsed }) collapsed.clear() else collapsed.addAll(ids)
@@ -185,14 +188,15 @@ class MobileHomeFragment : ToolbarFragment() {
             }
             if(groups.all { it.second.isEmpty() && !it.first.isSubscription }) {
                 column.addView(View(requireContext()), LinearLayout.LayoutParams(-1,0,1f))
-                column.addView(imports,LinearLayout.LayoutParams(-1,dp(46)).apply { topMargin=dp(24) })
+                column.addView(text(getString(R.string.qmobile_empty),14f).apply { gravity=Gravity.CENTER; setPadding(dp(16),dp(16),dp(16),dp(12)) })
+                column.addView(imports,LinearLayout.LayoutParams(-1,dp(48)))
             }
         }
     }
     fun updateState() {
         val state = DataStore.serviceState
         power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
-        status?.text = getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
+        power?.contentDescription = getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
         power?.setTextColor(if (state.connected) Color.rgb(128,192,139) else blue)
         (power?.background as? MobilePowerArtwork)?.connected=state.connected
     }
@@ -225,8 +229,8 @@ class MobileHomeFragment : ToolbarFragment() {
         if (!value.isNullOrBlank()) SubscribeFlows.importText(requireActivity(), value)
         else Toast.makeText(requireContext(), R.string.qmobile_clipboard_empty, Toast.LENGTH_SHORT).show()
     }
-    private fun addMenu() {
-        val popup = android.widget.PopupMenu(requireContext(), requireView())
+    private fun addMenu(anchor: View) {
+        val popup = android.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(getString(R.string.qmobile_clipboard)).setOnMenuItemClickListener { importClipboard(); true }
         popup.menu.add(getString(R.string.qmobile_qr)).setOnMenuItemClickListener { startActivity(Intent(requireContext(), ScannerActivity::class.java)); true }
         popup.menu.add(getString(R.string.qmobile_profiles)).setOnMenuItemClickListener { host().displayFragmentWithId(R.id.nav_configuration); true }
