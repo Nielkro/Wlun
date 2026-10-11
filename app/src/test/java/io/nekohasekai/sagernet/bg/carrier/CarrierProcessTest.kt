@@ -3,7 +3,12 @@ package app.qthrone.mobile.bg.carrier
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.DataInputStream
+import java.net.InetAddress
+import java.net.ServerSocket
 import java.nio.file.Files
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Test
@@ -20,7 +25,7 @@ class CarrierProcessTest {
             var launched = false
             var destroyed = false
             val error = runCatching {
-                CarrierProcess.start(CarrierKind.QWDTT, root, configs, 24, privateJson, 12345) { builder ->
+                CarrierProcess.start(CarrierKind.QWDTT, root, configs, 24, privateJson, 12345, CarrierBridgeCredentials.fresh()) { builder ->
                     launched = true
                     assertEquals(3, builder.command().size)
                     assertEquals("-config", builder.command()[1])
@@ -47,12 +52,62 @@ class CarrierProcessTest {
     @Test fun csqttRejectsUnsupportedAndroidBeforeLaunching() = runBlocking {
         var launched = false
         val error = runCatching {
-            CarrierProcess.start(CarrierKind.CSQTT, File("missing"), File("missing"), 24, "{}", 12345) {
+            CarrierProcess.start(CarrierKind.CSQTT, File("missing"), File("missing"), 24, "{}", 12345, CarrierBridgeCredentials.fresh()) {
                 launched = true
                 error("must not launch")
             }
         }.exceptionOrNull()
         assertTrue(error is IllegalArgumentException)
         assertFalse(launched)
+    }
+
+    @Test fun readinessRejectsAnUnauthenticatedLocalProxy() {
+        probeServer { listener ->
+            listener.accept().use { socket ->
+                socket.soTimeout = 2000
+                DataInputStream(socket.getInputStream()).readFully(ByteArray(3))
+                socket.getOutputStream().write(byteArrayOf(5, 0))
+            }
+        }.let { assertFalse(it) }
+    }
+
+    @Test fun readinessRequiresSuccessfulPasswordAuthentication() {
+        for (accepted in listOf(true, false)) {
+            val ready = probeServer { listener ->
+                listener.accept().use { socket ->
+                    socket.soTimeout = 2000
+                    DataInputStream(socket.getInputStream()).readFully(ByteArray(3))
+                    socket.getOutputStream().write(byteArrayOf(5, -1))
+                }
+                listener.accept().use { socket ->
+                    socket.soTimeout = 2000
+                    val input = DataInputStream(socket.getInputStream())
+                    val greeting = ByteArray(3).also { input.readFully(it) }
+                    assertArrayEquals(byteArrayOf(5, 1, 2), greeting)
+                    socket.getOutputStream().write(byteArrayOf(5, 2))
+                    assertEquals(1, input.readUnsignedByte())
+                    val username = ByteArray(input.readUnsignedByte()).also { input.readFully(it) }
+                    val password = ByteArray(input.readUnsignedByte()).also { input.readFully(it) }
+                    assertEquals("fixture-user", String(username, Charsets.UTF_8))
+                    assertEquals("fixture-password", String(password, Charsets.UTF_8))
+                    socket.getOutputStream().write(byteArrayOf(1, if (accepted) 0 else 1))
+                }
+            }
+            assertEquals(accepted, ready)
+        }
+    }
+
+    private fun probeServer(serve: (ServerSocket) -> Unit): Boolean {
+        val executor = Executors.newSingleThreadExecutor()
+        try {
+            ServerSocket(0, 2, InetAddress.getByName("127.0.0.1")).use { listener ->
+                listener.soTimeout = 2000
+                val server = executor.submit { serve(listener) }
+                val ready = CarrierProcess.socksReady(listener.localPort,
+                    CarrierBridgeCredentials("fixture-user", "fixture-password"))
+                server.get(3, TimeUnit.SECONDS)
+                return ready
+            }
+        } finally { executor.shutdownNow() }
     }
 }

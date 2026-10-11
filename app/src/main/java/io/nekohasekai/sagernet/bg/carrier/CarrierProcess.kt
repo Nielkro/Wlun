@@ -4,6 +4,7 @@ import java.io.File
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -15,6 +16,17 @@ enum class CarrierKind(val executable: String, val configFlag: String, val minim
     CSQTT("libqwdtt.so", "-csqtt-config", 26),
     OPENFLUX("libopenflux.so", "--qthrone-config", 24),
     OLCRTC("libolcrtc.so", "--qthrone-config", 24),
+}
+
+/** Per-launch credentials, deliberately without a generated toString() containing secrets. */
+class CarrierBridgeCredentials(val username: String, val password: String) {
+    init {
+        require(username.toByteArray(Charsets.UTF_8).size in 1..255)
+        require(password.toByteArray(Charsets.UTF_8).size in 1..255)
+    }
+    companion object {
+        fun fresh() = CarrierBridgeCredentials(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+    }
 }
 
 /** Native client owner. Config contents and provider output must never enter application logs. */
@@ -36,6 +48,7 @@ class CarrierProcess private constructor(private val process: Process, private v
         suspend fun start(
             kind: CarrierKind, nativeDirectory: File, privateDirectory: File,
             apiLevel: Int, privateJson: String, socksPort: Int,
+            bridgeCredentials: CarrierBridgeCredentials,
             timeoutMs: Long = 60_000,
             launch: (ProcessBuilder) -> Process = { it.start() },
         ): CarrierProcess = withContext(Dispatchers.IO) {
@@ -72,7 +85,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                     coroutineContext.ensureActive()
                     val exited = try { child.exitValue(); true } catch (_: IllegalThreadStateException) { false }
                     check(!exited) { "Transport client stopped before becoming ready" }
-                    if (socksReady(socksPort)) return@withContext running
+                    if (socksReady(socksPort, bridgeCredentials)) return@withContext running
                     delay(100)
                 }
                 throw IllegalStateException("Transport client startup timed out")
@@ -83,13 +96,28 @@ class CarrierProcess private constructor(private val process: Process, private v
             }
         }
 
-        private fun socksReady(port: Int): Boolean = runCatching {
+        internal fun socksReady(port: Int, credentials: CarrierBridgeCredentials): Boolean = runCatching {
+            // A loopback address alone does not isolate this listener from other Android apps.
+            // Reject a client which accepts the no-authentication method, even if auth also works.
             Socket().use { socket ->
                 socket.connect(InetSocketAddress("127.0.0.1", port), 200)
                 socket.soTimeout = 200
                 socket.getOutputStream().write(byteArrayOf(5, 1, 0))
                 val input = socket.getInputStream()
-                input.read() == 5 && input.read() == 0
+                if (input.read() != 5 || input.read() != 255) return@runCatching false
+            }
+            Socket().use { socket ->
+                socket.connect(InetSocketAddress("127.0.0.1", port), 200)
+                socket.soTimeout = 200
+                val output = socket.getOutputStream()
+                output.write(byteArrayOf(5, 1, 2))
+                val input = socket.getInputStream()
+                if (input.read() != 5 || input.read() != 2) return@runCatching false
+                val username = credentials.username.toByteArray(Charsets.UTF_8)
+                val password = credentials.password.toByteArray(Charsets.UTF_8)
+                output.write(byteArrayOf(1, username.size.toByte()) + username +
+                    byteArrayOf(password.size.toByte()) + password)
+                input.read() == 1 && input.read() == 0
             }
         }.getOrDefault(false)
     }
