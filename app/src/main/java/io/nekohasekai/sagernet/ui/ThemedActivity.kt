@@ -61,7 +61,7 @@ abstract class ThemedActivity : AppCompatActivity {
     }
 
     /** Navigation bar icons follow the window background; 3-button navigation keeps a scrim. */
-    private fun navigationBarStyle() = SystemBarStyle.auto(LIGHT_SCRIM, DARK_SCRIM) { Theme.usingNightMode() }
+    private fun navigationBarStyle() = SystemBarStyle.auto(LIGHT_SCRIM, DARK_SCRIM) { !MobilePalette.light }
 
     override fun onContentChanged() {
         super.onContentChanged()
