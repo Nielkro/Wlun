@@ -28,7 +28,8 @@ object MobileRouteInput {
             32
         }
         if (parts.size == 2) require(parts[1].toIntOrNull()?.let { it in 0..bits } == true)
-        value
+        // The core expects CIDR even when the user enters a single host.
+        if (parts.size == 1) "$address/$bits" else "$address/${parts[1].toInt()}"
     }.distinct()
 
     private fun tokens(input: String): List<String> = input.split(Regex("[\\s,;]+"))

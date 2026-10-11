@@ -10,6 +10,8 @@ import android.widget.TextView
 import android.widget.EditText
 import android.graphics.Color
 import androidx.lifecycle.lifecycleScope
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import app.qthrone.mobile.R
 import app.qthrone.mobile.database.RouteManager
@@ -36,24 +38,37 @@ class MobileRoutingFragment : ToolbarFragment() {
         column = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(30,30,30))
         }
-        return ScrollView(requireContext()).apply { addView(column) }
+        return ScrollView(requireContext()).apply {
+            addView(column)
+            ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+                val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+                insets
+            }
+        }
     }
     override fun onViewCreated(view: View, state: Bundle?) { super.onViewCreated(view,state); render() }
     override fun onDestroyView() { column = null; super.onDestroyView() }
     private fun render() {
         viewLifecycleOwner.lifecycleScope.launch {
             val route = withContext(Dispatchers.IO) { RouteManager.current().copy() }
+            val profiles = withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getAll() }
+            fun target(id: Long): String = when (id) {
+                OutboundIds.PROXY -> getString(R.string.qmobile_route_main)
+                OutboundIds.DIRECT -> getString(R.string.qmobile_route_direct)
+                else -> profiles.firstOrNull { it.id == id }?.displayName() ?: "#$id"
+            }
             val root = column ?: return@launch
             root.removeAllViews()
-            root.addView(line(getString(R.string.qmobile_routing)))
-            root.addView(line(getString(R.string.qmobile_route_default)) {
+            root.addView(line("‹  " + getString(R.string.qmobile_routing)) { requireActivity().onBackPressedDispatcher.onBackPressed() })
+            root.addView(line(getString(R.string.qmobile_route_default) + "\n" + target(route.default_outbound_id)) {
                 chooseTarget(route.default_outbound_id) { id -> save(route) { it.default_outbound_id=id } }
             })
             root.addView(line(getString(R.string.qmobile_route_add)) { newRule(route) })
             for ((index, rule) in route.rules.withIndex()) {
                 val matches = rule.domain_suffix + rule.domain + rule.ip_cidr + rule.package_name
                 val title = rule.name.ifBlank { matches.joinToString(", ").ifBlank { getString(R.string.qmobile_route_advanced) } }
-                root.addView(line(title) {
+                root.addView(line(title + "\n" + target(rule.outbound_id)) {
                     MaterialAlertDialogBuilder(requireContext()).setTitle(title)
                         .setItems(arrayOf(getString(R.string.qmobile_route_target),getString(R.string.qmobile_route_remove))) { _,action ->
                             if (action==0) chooseTarget(rule.outbound_id) { id -> save(route) { it.rules[index].outbound_id=id } }

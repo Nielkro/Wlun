@@ -13,7 +13,7 @@ class MobileRouteInputTest {
             assertThrows(IllegalArgumentException::class.java) { MobileRouteInput.domains(value) }
     }
     @Test fun networksValidateBothFamilies() {
-        assertEquals(listOf("192.168.1.0/24", "2001:db8::/32", "127.0.0.1"), MobileRouteInput.networks("192.168.1.0/24,2001:db8::/32;127.0.0.1"))
+        assertEquals(listOf("192.168.1.0/24", "2001:db8::/32", "127.0.0.1/32", "::1/128"), MobileRouteInput.networks("192.168.1.0/24,2001:db8::/32;127.0.0.1 ::1"))
         for (value in listOf("example.com", "192.168.0.1/33", "256.0.0.1", "::/129", "::/", "1.2.3.4/8/9"))
             assertThrows(IllegalArgumentException::class.java) { MobileRouteInput.networks(value) }
     }
