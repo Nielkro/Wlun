@@ -16,6 +16,8 @@ import app.qthrone.mobile.ktx.needReload
 import app.qthrone.mobile.outbound.json.*
 import app.qthrone.mobile.route.ProviderRouting
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 class ProviderRoutingActivity : ThemedActivity() {
@@ -47,6 +49,7 @@ class ProviderRoutingActivity : ThemedActivity() {
         private var document = JsonObject()
         private val controls = mutableListOf<Preference>()
         private var saving: Job? = null
+        private val saveLock = Mutex()
         override fun onCreatePreferences(state: Bundle?, rootKey: String?) {
             preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
             lifecycleScope.launch {
@@ -132,6 +135,7 @@ class ProviderRoutingActivity : ThemedActivity() {
         private fun save() {
             val gid = group!!.id; val options = group!!.subOptions.copy()
             saving = lifecycleScope.launch {
+                saveLock.withLock {
                 withContext(Dispatchers.IO) {
                     SagerDatabase.instance.runInTransaction {
                         val latest = GroupRepo.get(gid) ?: return@runInTransaction
@@ -143,6 +147,7 @@ class ProviderRoutingActivity : ThemedActivity() {
                     }
                 }
                 needReload()
+                }
             }
         }
         override fun onDisplayPreferenceDialog(preference: Preference) {
