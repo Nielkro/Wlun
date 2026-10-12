@@ -237,12 +237,11 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             }
             if(path=="go_dns") preference.setOnPreferenceClickListener {
                 val values=arrayOf("yandex","cloudflare","google","doh-yandex","doh-cloudflare","doh-google","Ввести вручную")
-                com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext()).setTitle("DNS VK")
-                    .setSingleChoiceItems(values,values.indexOf(DataStore.profileCacheStore.getString(cache(path)))) { dialog,index ->
-                        dialog.dismiss()
-                        if(index==values.lastIndex) onDisplayPreferenceDialog(preference)
-                        else (preference as EditTextPreference).apply { text=values[index] }
-                    }.setNegativeButton(android.R.string.cancel,null).show()
+                app.qthrone.mobile.ui.MobileSelector.show(requireContext(), "DNS VK", values.toList(),
+                    values.indexOf(DataStore.profileCacheStore.getString(cache(path)))) { index ->
+                    if(index==values.lastIndex) onDisplayPreferenceDialog(preference)
+                    else (preference as EditTextPreference).apply { text=values[index] }
+                }
                 true
             }
             editors[path]=preference

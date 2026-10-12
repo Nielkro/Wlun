@@ -50,18 +50,21 @@
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/appProxyModeDisable"
+                                android:checkable="true"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/qmobile_apps_all" />
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/appProxyModeOn"
+                                android:checkable="true"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/qmobile_apps_only" />
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/appProxyModeBypass"
+                                android:checkable="true"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:checked="true"

@@ -143,7 +143,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 append(SubscriptionClient.states.value.toString())
                 for ((group, profiles) in groups) {
                     append(group.id); append(group.displayName()); append(group.subLastUpdate)
-                    append(group.subInfo.toString()); append(group.id in collapsed)
+                    append(group.subInfo.toString())
                     for (profile in profiles) {
                         append(profile.id); append(profile.displayName()); append(profile.displayType())
                     }
@@ -152,10 +152,6 @@ class MobileHomeFragment : ToolbarFragment() {
             if (renderedStructure == structure) {
                 groups.forEach { (_, profiles) -> profiles.forEach { profile ->
                     latencyViews[profile.id]?.tag = profile.latency
-                    profileRows[profile.id]?.let { row ->
-                        row.background = tile(profile.id == DataStore.selectedProxy)
-                        MobileFeedback.apply(row)
-                    }
                 } }
                 updateLatencies()
                 updateState()
