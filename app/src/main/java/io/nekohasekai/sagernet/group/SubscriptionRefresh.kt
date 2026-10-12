@@ -12,6 +12,11 @@ import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.outbound.Outbound
 import app.qthrone.mobile.outbound.`import`.ProfileImport
 import app.qthrone.mobile.route.ProviderRouting
+import app.qthrone.mobile.bg.XrayGeoAssets
+import app.qthrone.mobile.outbound.types.Custom
+import app.qthrone.mobile.route.ProviderGeoAssets
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.json.JsonObject
 
 /** GroupUpdater::refresh, importDocuments and afterUrlTest (GroupUpdater.cpp:465-683) over the Room data layer. */
 internal object SubscriptionRefresh {
@@ -75,7 +80,24 @@ internal object SubscriptionRefresh {
             return
         }
 
-        ProviderRouteStore.apply(gid, payload.commands)
+        ProviderRouteStore.apply(gid, payload.commands,servers.all { it.isXrayFullConfig() })
+        val fullConfigs = servers.filterIsInstance<Custom>()
+            .filter { it.isXrayFullConfig() }.map { it.config }
+        if (fullConfigs.isNotEmpty()) {
+            val needed = XrayGeoAssets.needed(fullConfigs)
+            val provider = GroupRepo.get(gid)?.subOptions
+            if (provider != null && provider.routingProvider.isNotBlank()) {
+                val document = JsonInput.parseObjectOrNull(provider.providerRouting) ?: JsonObject()
+                ProviderGeoAssets.prepare(gid,document)
+            } else {
+            val failures = XrayGeoAssets.ensure(needed)
+            if (failures.isNotEmpty()) SubscriptionQueue.error(gid,failures.values.joinToString("\n"))
+            }
+        }
+        if (fetched.subInfo.title.isNotBlank()) {
+            val latest = GroupRepo.get(gid)
+            if (latest != null) { latest.name = fetched.subInfo.title; SagerDatabase.groupDao.update(latest) }
+        }
         SagerDatabase.groupDao.setSubscriptionInfo(gid, System.currentTimeMillis() / 1000, fetched.subInfo.toJsonString())
         GroupRepo.postUpdate(gid)
 

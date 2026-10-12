@@ -34,7 +34,7 @@ internal object SubscriptionMetadata {
             info.title = it
             info.valid = true
         }
-        header("Profile-Web-Page-Url").takeIf { it.isNotEmpty() }?.let {
+        header("Profile-Web-Page-Url").ifBlank { header("homepage") }.takeIf { it.isNotEmpty() }?.let {
             info.webUrl = it
             info.valid = true
         }

@@ -7,6 +7,61 @@ import java.io.File
 import java.security.MessageDigest
 
 object ProviderGeoAssets {
+    data class Status(val file: String = "", val bytes: Long = 0, val total: Long = 0, val error: String = "", val complete: Boolean = false)
+    val states = kotlinx.coroutines.flow.MutableStateFlow<Map<Long, Status>>(emptyMap())
+    private fun status(gid: Long, value: Status) { synchronized(states) { states.value = states.value + (gid to value) } }
+    fun url(document: JsonObject, kind: String) = document.string(if (kind == "geoip") "Geoipurl" else "Geositeurl").ifBlank {
+        "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/$kind.dat"
+    }
+    fun file(document: JsonObject, kind: String) = File(File(app.filesDir, "provider-geodata"), "${digest(url(document,kind))}.dat")
+    @Synchronized
+    fun prepare(gid: Long, document: JsonObject, force: Boolean = false) {
+        try {
+            for (kind in listOf("geosite", "geoip")) download(gid, document, kind, force)
+            status(gid, Status(complete = true))
+        } catch (error: Exception) { status(gid, Status(error = error.readableMessage)); throw error }
+    }
+    @Synchronized
+    fun installXray(document: JsonObject, needed: Collection<String>) {
+        for (kind in listOf("geosite","geoip")) {
+            if ("$kind.dat" !in needed) continue
+            val source = download(0,document,kind,false)
+            val destination = File(app.filesDir,"$kind.dat")
+            val temp = File(app.filesDir,"$kind.${android.os.Process.myPid()}.${System.nanoTime()}.provider.tmp")
+            source.copyTo(temp,overwrite = true)
+            check(temp.renameTo(destination)) { "Cannot install geo file" }
+        }
+        status(0,Status(complete = true))
+    }
+    private fun download(gid: Long, document: JsonObject, kind: String, force: Boolean): File {
+        val source = file(document,kind)
+        if (!force && source.isFile && System.currentTimeMillis() - source.lastModified() < 7 * 86400000L) return source
+        val address = url(document,kind)
+        require(address.startsWith("https://") || address.startsWith("http://")) { "Invalid geo file URL" }
+        source.parentFile!!.mkdirs()
+        val temp = File(source.parentFile, "${source.name}.${android.os.Process.myPid()}.${System.nanoTime()}.download")
+        status(gid, Status(file = kind))
+        try {
+            val client = appHttpClient(appRequestsViaProxy() && serviceConnected(), 30).newBuilder().callTimeout(180, java.util.concurrent.TimeUnit.SECONDS).build()
+            client.newCall(okhttp3.Request.Builder().url(address).build()).execute().use { response ->
+                check(response.isSuccessful) { "HTTP ${response.code}" }
+                val body = response.body ?: error("Empty geo file")
+                val total = body.contentLength().coerceAtLeast(0)
+                check(total <= 64L * 1024 * 1024) { "Geo file is too large" }
+                body.byteStream().use { input -> temp.outputStream().use { output ->
+                    val buffer = ByteArray(65536); var bytes = 0L
+                    while (true) {
+                        val count = input.read(buffer); if (count < 0) break
+                        bytes += count; check(bytes <= 64L * 1024 * 1024) { "Geo file is too large" }
+                        output.write(buffer,0,count); status(gid,Status(kind,bytes,total))
+                    }
+                    check(bytes > 0) { "Empty geo file" }
+                } }
+            }
+            check(temp.renameTo(source)) { "Cannot save geo file" }
+            return source
+        } finally { temp.delete() }
+    }
     @Synchronized
     fun resolve(profile: RouteProfile, document: JsonObject, catalog: RuleSetCatalog): RuleSetCatalog {
         val entries = catalog.names().map { it to catalog.urlOf(it)!! }.toMutableList()
@@ -21,18 +76,11 @@ object ProviderGeoAssets {
                 }
                 require(url.startsWith("https://") || url.startsWith("http://")) { "Invalid geo file URL" }
                 val sourceId = digest(url)
-                val source = File(dir, "$sourceId.dat")
-                if (!source.isFile || System.currentTimeMillis() - source.lastModified() > 7 * 86400000L) {
-                    val response = httpGet(url, HttpGetOptions(maxBytes = 64L * 1024 * 1024))
-                    check(response.ok) { "Cannot download $kind: ${response.error}" }
-                    val temp = File(dir, "$sourceId.download")
-                    temp.writeBytes(response.data)
-                    check(temp.renameTo(source)) { "Cannot save geo file" }
-                }
+                val source = download(0,document,kind,false)
                 val key = digest("$url/$selector/${source.lastModified()}")
                 val converted = File(dir, "$key.srs")
                 if (!converted.isFile) {
-                    val temp = File(dir, "$key.tmp")
+                    val temp = File(dir, "$key.${android.os.Process.myPid()}.${System.nanoTime()}.tmp")
                     Mobile.convertGeoRuleSet(source.absolutePath, temp.absolutePath, kind, selector.substringAfter(':'))
                     check(temp.renameTo(converted)) { "Cannot save routing rules" }
                 }
@@ -41,6 +89,7 @@ object ProviderGeoAssets {
                 entries.add(tag to "file://${converted.absolutePath}")
             }
         }
+        status(0,Status(complete = true))
         return RuleSetCatalog(entries)
     }
     private fun digest(text: String) = MessageDigest.getInstance("SHA-256").digest(text.toByteArray()).joinToString("") { "%02x".format(it) }

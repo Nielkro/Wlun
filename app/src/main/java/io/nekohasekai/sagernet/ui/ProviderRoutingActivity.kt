@@ -1,6 +1,7 @@
 package app.qthrone.mobile.ui
 
 import android.os.Bundle
+import android.content.Intent
 import android.text.InputType
 import android.view.View
 import android.widget.FrameLayout
@@ -37,9 +38,9 @@ class ProviderRoutingActivity : ThemedActivity() {
         lifecycleScope.launch {
             val group = withContext(Dispatchers.IO) { GroupRepo.get(intent.getLongExtra("groupId",0)) }
             if (group == null) { finish(); return@launch }
-            toolbar.title = getString(R.string.provider_routing_title,group.subOptions.routingProvider)
+            toolbar.title = if (intent.getBooleanExtra("details",false)) getString(R.string.provider_rules_title) else getString(R.string.provider_routing_title,group.subOptions.routingProvider)
             if (state == null) supportFragmentManager.beginTransaction().replace(content.id,Screen().apply {
-                arguments = Bundle().apply { putLong("groupId",group.id) }
+                arguments = Bundle().apply { putLong("groupId",group.id); putBoolean("details",intent.getBooleanExtra("details",false)) }
             }).commit()
         }
     }
@@ -50,10 +51,16 @@ class ProviderRoutingActivity : ThemedActivity() {
         private val controls = mutableListOf<Preference>()
         private var saving: Job? = null
         private val saveLock = Mutex()
+        private var fullJson = false
         override fun onCreatePreferences(state: Bundle?, rootKey: String?) {
             preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
             lifecycleScope.launch {
-                group = withContext(Dispatchers.IO) { GroupRepo.get(requireArguments().getLong("groupId")) }
+                group = withContext(Dispatchers.IO) {
+                    val gid = requireArguments().getLong("groupId")
+                    val profiles = SagerDatabase.proxyDao.getByGroup(gid)
+                    fullJson = profiles.isNotEmpty() && profiles.all { it.outbound.isXrayFullConfig() }
+                    GroupRepo.get(gid)
+                }
                 if (group == null) return@launch
                 build()
             }
@@ -62,11 +69,17 @@ class ProviderRoutingActivity : ThemedActivity() {
             val options = group!!.subOptions
             document = JsonInput.parseObjectOrNull(options.providerRouting) ?: JsonObject()
             preferenceScreen.removeAll(); controls.clear()
+            val details = requireArguments().getBoolean("details")
+            fun category(label: Int) { preferenceScreen.addPreference(PreferenceCategory(requireContext()).apply { title = getString(label) }) }
+            if (!details) {
+            category(R.string.provider_general)
+            preferenceScreen.addPreference(Preference(requireContext()).apply { title = getString(R.string.provider_subscription_name); summary = group!!.displayName(); isSelectable = false })
             val enabled = SwitchPreferenceCompat(requireContext()).apply {
                 key = "providerEnabled"; isPersistent = false
                 title = getString(R.string.provider_routing_use,options.routingProvider)
                 summary = getString(R.string.provider_routing_use_summary)
                 isChecked = options.providerRoutingEnabled
+                if (fullJson) { isChecked = options.providerRouting != "off"; isEnabled = false }
                 setOnPreferenceChangeListener { _, value ->
                     options.providerRoutingEnabled = value as Boolean
                     controls.forEach { it.isVisible = value }
@@ -86,22 +99,29 @@ class ProviderRoutingActivity : ThemedActivity() {
                     document = profiles[(next as String).toInt()].copy(); options.providerRouting = document.toCompact()
                     save(); build(); true
                 }
-                isEnabled = profiles.isNotEmpty()
+                isEnabled = profiles.isNotEmpty() && !fullJson
             })
+            category(R.string.provider_profile_settings)
+            add(Preference(requireContext()).apply {
+                title = document.string("Name").ifBlank { "Default" }
+                setOnPreferenceClickListener {
+                    startActivity(Intent(requireContext(),ProviderRoutingActivity::class.java).putExtra("groupId",group!!.id).putExtra("details",true)); true
+                }
+            })
+            if (fullJson) add(Preference(requireContext()).apply { summary = getString(R.string.provider_json_notice,options.routingProvider); isSelectable = false })
+            return
+            }
+            fun add(preference: Preference) { preference.isPersistent = false; preferenceScreen.addPreference(preference) }
+            add(Preference(requireContext()).apply { title = getString(R.string.provider_profile_heading); summary = document.string("Name").ifBlank { "Default" }; isSelectable = false })
             fun toggle(keyName: String, label: Int, fallback: Boolean) = add(SwitchPreferenceCompat(requireContext()).apply {
                 key = keyName; title = getString(label); isChecked = ProviderRouting.truth(document,keyName,fallback)
                 setOnPreferenceChangeListener { _, next -> document[keyName] = (next as Boolean).toString(); update(); true }
             })
-            toggle("GlobalProxy",R.string.provider_routing_global,true)
-            toggle("FakeDNS",R.string.provider_routing_fake_dns,false)
             fun choice(keyName: String,label: Int,values: Array<String>,fallback: String) = add(SimpleMenuPreference(requireContext()).apply {
                 key = keyName; title = getString(label); entries = values; entryValues = values
                 value = document.string(keyName).ifBlank { fallback }; summary = value
                 setOnPreferenceChangeListener { _, next -> document[keyName] = next as String; summary = next; update(); true }
             })
-            choice("DomainStrategy",R.string.provider_routing_strategy,arrayOf("AsIs","IPIfNonMatch","IPOnDemand"),"AsIs")
-            choice("RemoteDNSType",R.string.provider_routing_remote_type,arrayOf("DoH","DoU"),"DoH")
-            choice("DomesticDNSType",R.string.provider_routing_direct_type,arrayOf("DoH","DoU"),"DoU")
             fun field(keyName: String,label: Int,default: String = "",array: Boolean = false,hosts: Boolean = false) = add(EditTextPreference(requireContext()).apply {
                 key = keyName; title = getString(label)
                 text = when { array -> document.array(keyName).strings().joinToString("\n"); hosts -> document.obj(keyName).toCompact(); else -> document.string(keyName).ifBlank { default } }
@@ -114,13 +134,39 @@ class ProviderRoutingActivity : ThemedActivity() {
                     document = candidate; update(); true
                 }
             })
-            field("RemoteDNSDomain",R.string.provider_routing_remote_domain,"https://cloudflare-dns.com/dns-query")
-            field("RemoteDNSIP",R.string.provider_routing_remote_ip,"1.1.1.1")
+            category(R.string.provider_geo_files)
+            for ((kind,label) in listOf("geosite" to R.string.provider_routing_geosite,"geoip" to R.string.provider_routing_geoip)) {
+                add(Preference(requireContext()).apply {
+                    key = "geo-$kind"; title = getString(label)
+                    val file = app.qthrone.mobile.route.ProviderGeoAssets.file(document,kind)
+                    summary = app.qthrone.mobile.route.ProviderGeoAssets.url(document,kind) + if (file.isFile) "\n" + java.text.DateFormat.getDateTimeInstance().format(java.util.Date(file.lastModified())) + ", " + android.text.format.Formatter.formatShortFileSize(requireContext(),file.length()) else ""
+                    isEnabled = !fullJson
+                    setOnPreferenceClickListener {
+                        lifecycleScope.launch {
+                            withContext(Dispatchers.IO) { runCatching { app.qthrone.mobile.route.ProviderGeoAssets.prepare(group!!.id,document,true) } }
+                            build()
+                        }; true
+                    }
+                })
+            }
+            if (!fullJson) {
+                field("Geoipurl",R.string.provider_routing_geoip,app.qthrone.mobile.route.ProviderGeoAssets.url(document,"geoip"))
+                field("Geositeurl",R.string.provider_routing_geosite,app.qthrone.mobile.route.ProviderGeoAssets.url(document,"geosite"))
+            }
+            category(if (fullJson) R.string.provider_tunnel_dns else R.string.provider_remote_dns)
+            choice("RemoteDNSType",if (fullJson) R.string.provider_tunnel_type else R.string.provider_routing_remote_type,arrayOf("DoH","DoU"),"DoH")
+            field("RemoteDNSDomain",if (fullJson) R.string.provider_tunnel_domain else R.string.provider_routing_remote_domain,"https://cloudflare-dns.com/dns-query")
+            field("RemoteDNSIP",if (fullJson) R.string.provider_tunnel_ip else R.string.provider_routing_remote_ip,"1.1.1.1")
+            if (fullJson) return
+            category(R.string.provider_direct_dns)
+            choice("DomesticDNSType",R.string.provider_routing_direct_type,arrayOf("DoH","DoU"),"DoU")
             field("DomesticDNSDomain",R.string.provider_routing_direct_domain)
             field("DomesticDNSIP",R.string.provider_routing_direct_ip,"8.8.8.8")
             field("DnsHosts",R.string.provider_routing_hosts,hosts = true)
-            field("Geoipurl",R.string.provider_routing_geoip,"https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat")
-            field("Geositeurl",R.string.provider_routing_geosite,"https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat")
+            category(R.string.provider_rules_title)
+            toggle("GlobalProxy",R.string.provider_routing_global,true)
+            toggle("FakeDNS",R.string.provider_routing_fake_dns,false)
+            choice("DomainStrategy",R.string.provider_routing_strategy,arrayOf("AsIs","IPIfNonMatch","IPOnDemand"),"AsIs")
             for ((key,label) in listOf("DirectSites" to R.string.provider_routing_direct_sites,"DirectIp" to R.string.provider_routing_direct_ips,"ProxySites" to R.string.provider_routing_proxy_sites,"ProxyIp" to R.string.provider_routing_proxy_ips,"BlockSites" to R.string.provider_routing_block_sites,"BlockIp" to R.string.provider_routing_block_ips)) field(key,label,array = true)
         }
         private fun update() {

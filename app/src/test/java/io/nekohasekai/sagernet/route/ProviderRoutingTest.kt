@@ -7,6 +7,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProviderRoutingTest {
+    @Test fun incyLegacyAndHeaderLinksKeepProvider() {
+        val encoded = Base64Strict.encode(jsonObjectOf("Name" to "RU", "GlobalProxy" to "false").toCompact())
+        assertTrue(ProviderRouting.isLink("://routing/onadd/$encoded"))
+        assertEquals("Incy",ProviderRouting.parse("://routing/onadd/$encoded","Incy").provider)
+        assertEquals("RU",ProviderRouting.parse("other://routing/onadd/$encoded","Incy").document!!.string("Name"))
+    }
+    @Test fun dnsBootstrapAddressIsPreserved() {
+        val settings = ProviderRouting.settings(jsonObjectOf("RemoteDNSType" to "DoH","RemoteDNSDomain" to "https://resolver.example/dns-query","RemoteDNSIP" to "192.0.2.53"),GeneratorSettings())
+        assertTrue(settings.dnsPredefinedRules.contains("192.0.2.53 resolver.example"))
+    }
     @Test fun embeddedRoutesAreSeparatedFromServers() {
         val document = jsonObjectOf("Name" to "Provider", "GlobalProxy" to "false", "DirectSites" to JsonArray.of("geosite:ru", "full:example.org"))
         val route = "incy://routing/onadd/" + Base64Strict.encode(document.toCompact())

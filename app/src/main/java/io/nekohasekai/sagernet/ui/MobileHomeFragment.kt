@@ -38,6 +38,20 @@ class MobileHomeFragment : ToolbarFragment() {
     private var content: LinearLayout? = null
     private var power: TextView? = null
     private var currentCheck: TextView? = null
+    private var geoStatus: TextView? = null
+    private fun updateGeoStatus() {
+        val states = app.qthrone.mobile.route.ProviderGeoAssets.states.value.values
+        val active = states.firstOrNull { !it.complete } ?: states.lastOrNull()
+        geoStatus?.apply {
+            visibility = if (active == null) View.GONE else View.VISIBLE
+            text = when {
+                active == null -> ""
+                active.error.isNotBlank() -> active.error
+                active.complete -> getString(R.string.provider_geo_complete)
+                else -> getString(R.string.provider_geo_loading) + " " + active.file + if (active.total > 0) "\n${active.bytes * 100 / active.total}% · " + android.text.format.Formatter.formatShortFileSize(requireContext(),active.bytes) + " / " + android.text.format.Formatter.formatShortFileSize(requireContext(),active.total) else ""
+            }
+        }
+    }
     private var currentPing: String? = null
     private var currentPingConnectionAt = 0L
     private var currentTestArmed = false
@@ -118,6 +132,7 @@ class MobileHomeFragment : ToolbarFragment() {
             override fun onInvalidated(tables: Set<String>) { activity?.runOnUiThread { refresh() } }
         }.also { SagerDatabase.instance.invalidationTracker.addObserver(it) }
         viewLifecycleOwner.lifecycleScope.launch { SubscriptionClient.states.collect { updateSubscriptionButtons() } }
+        viewLifecycleOwner.lifecycleScope.launch { app.qthrone.mobile.route.ProviderGeoAssets.states.collect { updateGeoStatus() } }
         viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.queuedProfiles.collect { updateLatencies() } }
         viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.state.collect {
             updateLatencies()
@@ -253,6 +268,9 @@ class MobileHomeFragment : ToolbarFragment() {
                     column.addView(above,LinearLayout.LayoutParams(-1,dp(64)))
                     updateState()
                 } else currentCheck=null
+                geoStatus = text("",14f).apply { background = GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }; visibility=View.GONE }
+                column.addView(geoStatus,LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
+                updateGeoStatus()
                 val serverColumn=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
                 val serverScroll=ScrollView(requireContext()).apply {
                     isVerticalScrollBarEnabled=false; isHorizontalScrollBarEnabled=false
@@ -319,8 +337,11 @@ class MobileHomeFragment : ToolbarFragment() {
                     val quota=group.subInfo
                     val traffic=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; setPadding(dp(12),0,dp(12),dp(8)) }
                     traffic.addView(iconAction(R.drawable.ic_mobile_info,getString(R.string.qmobile_subscription_info)) {
-                        val expires=if(quota.expire>0) java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000)) else "\u2014"
-                        MaterialAlertDialogBuilder(requireContext()).setTitle(group.displayName()).setMessage(getString(R.string.qmobile_expiry,expires)).setPositiveButton(android.R.string.ok,null).show()
+                        val url = quota.webUrl.ifBlank { group.url }
+                        val uri = android.net.Uri.parse(url)
+                        if (uri.scheme == "https" || uri.scheme == "http") runCatching {
+                            startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        }
                     },LinearLayout.LayoutParams(dp(32),dp(32)))
                     val bar=FrameLayout(requireContext()).apply { background=GradientDrawable().apply { setColor(MobilePalette.toolbar); cornerRadius=dp(3).toFloat(); setStroke(dp(1),muted) } }
                     var usage=getString(R.string.qmobile_quota_unknown)
@@ -332,7 +353,14 @@ class MobileHomeFragment : ToolbarFragment() {
                         usage="$used / $total"
                     }
                     bar.addView(text(usage,11f).apply { gravity=Gravity.CENTER; setPadding(dp(4),0,dp(4),0) },FrameLayout.LayoutParams(-1,-1))
-                    traffic.addView(bar,LinearLayout.LayoutParams(0,dp(20),1f).apply { marginStart=dp(8) }); box.addView(traffic)
+                    traffic.addView(bar,LinearLayout.LayoutParams(0,dp(20),1f).apply { marginStart=dp(8) })
+                    if (quota.expire > 0) traffic.addView(text(getString(R.string.qmobile_expiry,java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000))),11f,muted).apply { setPadding(dp(10),0,0,0) })
+                    if (quota.supportUrl.isNotBlank()) traffic.addView(iconAction(R.drawable.ic_mobile_globe,getString(R.string.qmobile_subscription_info)) {
+                        val uri = android.net.Uri.parse(quota.supportUrl)
+                        if (uri.scheme == "https" || uri.scheme == "http") runCatching { startActivity(Intent(Intent.ACTION_VIEW,uri)) }
+                    },LinearLayout.LayoutParams(dp(32),dp(32)))
+                    box.addView(traffic)
+                    if (quota.announce.isNotBlank()) box.addView(text(quota.announce,12f,muted).apply { setPadding(dp(14),0,dp(14),dp(10)) })
                 }
                 for (profile in profiles) {
                     val row = LinearLayout(requireContext()).apply {

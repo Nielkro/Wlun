@@ -46,10 +46,19 @@ object CoreConfigs {
             else -> app.qthrone.mobile.database.RouteManager.current().copy()
         }
         var routing = SettingsMapper.routingInput(route)
+        val fullJson = profile.outbound.isXrayFullConfig()
         app.qthrone.mobile.route.ProviderRouting.stored(route)?.let { (_, document) ->
-            settings = app.qthrone.mobile.route.ProviderRouting.settings(document, settings)
-            val catalog = app.qthrone.mobile.route.ProviderGeoAssets.resolve(route, document, routing.catalog)
-            routing = RoutingInput(route, catalog, routing.selectors, routing.memberCheck)
+            if (fullJson) {
+                val custom = profile.outbound as? app.qthrone.mobile.outbound.types.Custom
+                if (custom != null) app.qthrone.mobile.route.ProviderGeoAssets.installXray(document,app.qthrone.mobile.bg.XrayGeoAssets.needed(listOf(custom.config)))
+                val tunnel = app.qthrone.mobile.route.ProviderRouting.settings(document,settings)
+                settings = settings.copy(remoteDns = tunnel.remoteDns, dnsPredefinedRules = tunnel.dnsPredefinedRules, fakeDns = false)
+                routing = SettingsMapper.routingInput(app.qthrone.mobile.route.RouteProfile.defaultProfile())
+            } else {
+                settings = app.qthrone.mobile.route.ProviderRouting.settings(document, settings)
+                val catalog = app.qthrone.mobile.route.ProviderGeoAssets.resolve(route, document, routing.catalog)
+                routing = RoutingInput(route, catalog, routing.selectors, routing.memberCheck)
+            }
         }
         val generated = generator(routing, settings).build(profile.id, landing, front)
         if (!generated.ok) error(generated.error ?: "config generation failed")

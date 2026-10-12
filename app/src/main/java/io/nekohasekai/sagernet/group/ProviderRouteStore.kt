@@ -5,8 +5,11 @@ import app.qthrone.mobile.route.ProviderRouting
 import app.qthrone.mobile.outbound.json.*
 
 object ProviderRouteStore {
-    fun apply(gid: Long, commands: List<ProviderRouting.Command>) {
+    fun apply(gid: Long, commands: List<ProviderRouting.Command>, fullJson: Boolean = false) {
         if (commands.isEmpty()) return
+        for (command in commands) command.document?.let {
+            app.qthrone.mobile.route.ProviderGeoAssets.prepare(gid,it)
+        }
         SagerDatabase.instance.runInTransaction {
             val group = GroupRepo.get(gid) ?: return@runInTransaction
             val options = group.subOptions
@@ -15,6 +18,7 @@ object ProviderRouteStore {
                 options.routingProvider = command.provider
                 if (command.off) { options.providerRouting = "off"; continue }
                 val document = command.document ?: continue
+                if (fullJson) profiles.removeAll { it.string("Name") != document.string("Name") }
                 // Validate the complete replacement before changing the stored profile.
                 ProviderRouting.profile(document, command.provider)
                 val index = profiles.indexOfFirst { it.string("Name") == document.string("Name") }

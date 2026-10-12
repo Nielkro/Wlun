@@ -7,17 +7,18 @@ import app.qthrone.mobile.outbound.config.GeneratorSettings
 /** Happ and Incy routing documents are kept with their subscription, including unknown fields. */
 object ProviderRouting {
     data class Command(val provider: String, val activate: Boolean, val off: Boolean, val document: JsonObject?)
-    private val link = Regex("^(happ|incy)://routing/(add|onadd|off)(?:/([^?#]*))?(?:\\?data=([^#]*))?(?:#.*)?$", RegexOption.IGNORE_CASE)
+    private val link = Regex("^(happ|incy)?://routing/(add|onadd|off)(?:/([^?#]*))?(?:\\?data=([^#]*))?(?:#.*)?$", RegexOption.IGNORE_CASE)
     fun isLink(text: String) = link.matches(text.trim())
     fun parse(text: String, provider: String = "Happ"): Command {
         require(text.length <= 2 * 1024 * 1024) { "Routing profile is too large" }
-        val input = text.trim()
+        val raw = text.trim()
+        val input = if (raw.contains("://routing/") && !isLink(raw)) provider.lowercase() + raw.substring(raw.indexOf("://routing/")) else raw
         val match = link.matchEntire(input)
-        val source = match?.groupValues?.get(1)?.replaceFirstChar { it.uppercase() } ?: provider
+        val source = match?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.replaceFirstChar { it.uppercase() } ?: provider
         if (input.equals("off", true) || match?.groupValues?.get(2)?.equals("off", true) == true)
             return Command(source, false, true, null)
         val payload = match?.let { java.net.URLDecoder.decode(it.groupValues[3].ifEmpty { it.groupValues[4] }.replace("+", "%2B"), "UTF-8") } ?: input
-        val json = JsonInput.parseObjectOrNull(payload) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload))
+        val json = JsonInput.parseObjectOrNull(payload) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload)) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload,true))
             ?: error("Invalid $source routing profile")
         require(json.contains("GlobalProxy") || json.contains("DirectSites") || json.contains("Name")) { "Not a $source routing profile" }
         for (key in listOf("DirectSites", "DirectIp", "ProxySites", "ProxyIp", "BlockSites", "BlockIp")) {
@@ -88,7 +89,12 @@ object ProviderRouting {
             val ip = json.string("${prefix}DNSIP").ifBlank { json.string("${prefix}Dns") }
             return if (type.equals("DoH", true) && domain.isNotBlank()) domain else ip.ifBlank { fallback }
         }
-        val hosts = json.obj("DnsHosts").map { "${it.value} ${it.key}" }
+        val hosts = json.obj("DnsHosts").map { "${it.value} ${it.key}" }.toMutableList()
+        for (prefix in listOf("Remote","Domestic")) {
+            val host = runCatching { java.net.URI(json.string("${prefix}DNSDomain")).host }.getOrNull()
+            val ip = json.string("${prefix}DNSIP")
+            if (!host.isNullOrBlank() && ip.isNotBlank() && !json.obj("DnsHosts").contains(host)) hosts.add("$ip $host")
+        }
         return base.copy(remoteDns = dns("Remote", "https://cloudflare-dns.com/dns-query"),
             directDns = dns("Domestic", "8.8.8.8"), fakeDns = truth(json, "FakeDNS", false),
             dnsFinalOut = if (truth(json, "GlobalProxy", true)) "remote" else "direct",
