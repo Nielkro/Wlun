@@ -103,8 +103,22 @@ abstract class ThemedActivity : AppCompatActivity {
 
     fun snackbar(@StringRes resId: Int): Snackbar = snackbar("").setText(resId)
     fun snackbar(text: CharSequence): Snackbar = snackbarInternal(text).apply {
+        val density=resources.displayMetrics.density
+        setTextColor(MobilePalette.text)
+        setActionTextColor(MobilePalette.accent(this@ThemedActivity))
+        view.backgroundTintList=null
+        view.background=android.graphics.drawable.GradientDrawable().apply {
+            setColor(MobilePalette.surface)
+            cornerRadius=16*density
+            setStroke(density.toInt().coerceAtLeast(1),ColorUtils.setAlphaComponent(MobilePalette.muted,64))
+        }
         view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text).apply {
             maxLines = 10
+            textSize=14f
+        }
+        view.findViewById<TextView>(com.google.android.material.R.id.snackbar_action)?.apply {
+            textSize=14f
+            MobileFeedback.apply(this)
         }
     }
 
