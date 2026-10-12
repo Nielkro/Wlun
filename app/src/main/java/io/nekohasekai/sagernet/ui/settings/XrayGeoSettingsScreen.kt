@@ -61,6 +61,8 @@ class XrayGeoSettingsFragment : SettingsScreenFragment(R.xml.settings_xray_geo) 
             true
         }
         syncSource()
+        // File summaries must take part in the first measurement of the opening screen.
+        refreshFiles()
     }
 
     override fun onResume() {
