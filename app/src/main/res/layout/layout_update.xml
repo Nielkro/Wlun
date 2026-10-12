@@ -53,12 +53,12 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
         <Button
             android:id="@+id/neutral"
             style="@style/Widget.SagerNet.Button.TextButton.Dialog.Flush"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
@@ -70,14 +70,14 @@
         <Button
             android:id="@+id/negative"
             style="@style/Widget.SagerNet.Button.TextButton.Dialog"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone" />
 
         <Button
             android:id="@+id/positive"
             style="@style/Widget.SagerNet.Button.TextButton.Dialog"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:visibility="gone" />
 

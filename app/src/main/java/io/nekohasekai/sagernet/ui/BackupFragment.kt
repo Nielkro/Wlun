@@ -91,9 +91,16 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
         this.binding = binding
         view.applyListInsets()
         view.setBackgroundColor(MobilePalette.background)
+        (view as? android.widget.ScrollView)?.isVerticalScrollBarEnabled=false
+        (view as? androidx.core.widget.NestedScrollView)?.isVerticalScrollBarEnabled=false
         fun style(node: View) {
+            node.isVerticalScrollBarEnabled=false
             if(node is com.google.android.material.card.MaterialCardView) node.setCardBackgroundColor(MobilePalette.surface)
-            if(node is android.widget.TextView && node !is android.widget.Button) node.setTextColor(MobilePalette.text)
+            if(node is android.widget.Button) {
+                node.setTextColor(android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
+                    intArrayOf(MobilePalette.muted,MobilePalette.accent(requireContext()))))
+            } else if(node is android.widget.TextView) node.setTextColor(MobilePalette.text)
             if(node is android.view.ViewGroup) for(i in 0 until node.childCount) style(node.getChildAt(i))
         }
         style(view)

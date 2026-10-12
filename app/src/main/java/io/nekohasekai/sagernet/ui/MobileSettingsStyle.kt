@@ -15,6 +15,10 @@ object MobileSettingsStyle {
         fun compact(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val preference = group.getPreference(i)
+                if (preference is androidx.preference.EditTextPreference) {
+                    preference.positiveButtonText = fragment.getString(android.R.string.ok)
+                    preference.negativeButtonText = fragment.getString(android.R.string.cancel)
+                }
                 if (fragment !is SettingsPreferenceFragment) preference.icon = null
                 else if(preference !is PreferenceCategory) {
                     val icon=when {

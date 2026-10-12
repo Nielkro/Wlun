@@ -39,6 +39,8 @@ class MobileHomeFragment : ToolbarFragment() {
     private var power: TextView? = null
     private var currentCheck: TextView? = null
     private var currentPing: String? = null
+    private var currentPingConnectionAt = 0L
+    private var currentTestArmed = false
     private var powerPulse: android.animation.ObjectAnimator?=null
     private var pulseTarget: View?=null
     private var load: Job? = null
@@ -78,14 +80,14 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     private fun host() = requireActivity() as MainActivity
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, state: Bundle?): View {
-        val scroll = ScrollView(requireContext()).apply {
+        val scroll = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            background = MobileHomeBackdrop(); isFillViewport = true
+            background = MobileHomeBackdrop()
         }
         content = LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(16), dp(8), dp(16), dp(20))
         }
-        scroll.addView(content, FrameLayout.LayoutParams(-1,-2))
+        scroll.addView(content, FrameLayout.LayoutParams(-1,-1))
         ViewCompat.setOnApplyWindowInsetsListener(scroll) { v, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(bars.left, bars.top, bars.right, bars.bottom); insets
@@ -101,10 +103,11 @@ class MobileHomeFragment : ToolbarFragment() {
         viewLifecycleOwner.lifecycleScope.launch { SubscriptionClient.states.collect { refresh() } }
         viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.state.collect {
             updateLatencies()
-            if(it.testCurrent && !it.running && !it.cancelled) {
+            if(currentTestArmed && DataStore.serviceState.connected && it.testCurrent && !it.running && !it.cancelled) {
                 val ping=it.rows.values.firstOrNull { row -> row.ok && row.latency>0 }?.latency
                 currentPing=if(ping!=null) "$ping ms" else getString(R.string.qmobile_unavailable)
                 currentCheck?.text=currentPing
+                currentTestArmed=false
             }
         } }
         viewLifecycleOwner.lifecycleScope.launch {
@@ -184,12 +187,18 @@ class MobileHomeFragment : ToolbarFragment() {
                 above.addView(MobileSeasonalView(requireContext()),FrameLayout.LayoutParams(-1,dp(64)))
                 currentCheck=text(currentPing ?: getString(R.string.qmobile_check_connection),12f,muted).apply {
                     maxLines=2;setPadding(dp(2),0,dp(4),dp(8));gravity=Gravity.BOTTOM
-                    setOnClickListener { if(!TestSessionClient.state.value.running) TestSessionClient.startCurrent(TestSpec.KIND_URL) }
+                    setOnClickListener { if(DataStore.serviceState.connected && !TestSessionClient.state.value.running) { currentTestArmed=true; TestSessionClient.startCurrent(TestSpec.KIND_URL) } }
                 }
                 above.addView(currentCheck,FrameLayout.LayoutParams(dp(160),dp(48),Gravity.START or Gravity.BOTTOM))
                 column.addView(above,LinearLayout.LayoutParams(-1,dp(64)))
                 updateState()
             } else currentCheck=null
+            val serverColumn=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
+            val serverScroll=ScrollView(requireContext()).apply {
+                isVerticalScrollBarEnabled=false; isHorizontalScrollBarEnabled=false
+                clipToPadding=false; addView(serverColumn,FrameLayout.LayoutParams(-1,-2))
+            }
+            column.addView(serverScroll,LinearLayout.LayoutParams(-1,0,1f))
             var firstGroup = true
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
@@ -292,7 +301,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
                 box.addView(rows)
                 box.layoutTransition=android.animation.LayoutTransition().apply { setDuration(180) }
-                column.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=if(firstGroup) 0 else dp(16) })
+                serverColumn.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=if(firstGroup) 0 else dp(16) })
                 firstGroup = false
             }
             updateLatencies()
@@ -306,6 +315,11 @@ class MobileHomeFragment : ToolbarFragment() {
     fun updateState() {
         if(!isAdded || power==null) return
         val state = DataStore.serviceState
+        if(!state.connected || currentPingConnectionAt != DataStore.mobileConnectedAt) {
+            currentPing=null; currentTestArmed=false
+            currentPingConnectionAt=if(state.connected) DataStore.mobileConnectedAt else 0L
+            currentCheck?.text=getString(R.string.qmobile_check_connection)
+        }
         power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
         val description=getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
         if(power?.contentDescription != description) power?.contentDescription=description
@@ -431,7 +445,7 @@ class MobileHomeFragment : ToolbarFragment() {
         dialog.setContentView(body);dialog.show()
     }
     private fun addMenu(anchor: View) {
-        val popup = android.widget.PopupMenu(requireContext(), anchor)
+        val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)
         popup.menu.add(getString(R.string.grp_add_subscription)).setOnMenuItemClickListener { addSubscription();true }
         popup.menu.add(getString(R.string.qmobile_clipboard)).setOnMenuItemClickListener { importClipboard(); true }
         popup.menu.add(getString(R.string.qmobile_qr)).setOnMenuItemClickListener { startActivity(Intent(requireContext(), ScannerActivity::class.java)); true }

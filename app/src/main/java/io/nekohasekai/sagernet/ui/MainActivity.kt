@@ -341,6 +341,7 @@ class MainActivity : ThemedActivity(),
         }
         currentMainFragment = fragment
         val transaction=supportFragmentManager.beginTransaction()
+            .setCustomAnimations(R.anim.settings_enter, R.anim.settings_exit, R.anim.settings_pop_enter, R.anim.settings_pop_exit)
             .replace(R.id.fragment_holder, fragment)
         if(fragment !is MobileHomeFragment && supportFragmentManager.findFragmentById(R.id.fragment_holder)!=null) transaction.addToBackStack(null)
         transaction.commitAllowingStateLoss()

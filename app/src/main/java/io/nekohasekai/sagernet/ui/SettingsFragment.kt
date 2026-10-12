@@ -28,6 +28,10 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
 
     /** Every settings screen's list scrolls under the navigation bar and clears side bars. */
     private val listInsets = object : FragmentManager.FragmentLifecycleCallbacks() {
+        override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+            val dialog=(f as? androidx.fragment.app.DialogFragment)?.dialog as? androidx.appcompat.app.AlertDialog ?: return
+            for(id in listOf(-1,-2,-3)) dialog.getButton(id)?.setTextColor(MobilePalette.accent(requireContext()))
+        }
         override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, savedInstanceState: Bundle?) {
             (f as? PreferenceFragmentCompat)?.listView?.applyListInsets()
         }
@@ -75,6 +79,7 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
         }
         childFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
+            .setCustomAnimations(R.anim.settings_enter, R.anim.settings_exit, R.anim.settings_pop_enter, R.anim.settings_pop_exit)
             .replace(R.id.settings, fragment)
             .addToBackStack(null)
             .commitAllowingStateLoss()

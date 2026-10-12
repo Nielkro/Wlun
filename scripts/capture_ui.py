@@ -71,8 +71,14 @@ tap_text('Settings')
 capture('03-settings')
 for label,name in [('TUN settings','27-tun-settings'),('Core settings','28-core-settings')]:
     tap_text(label);capture(name)
+    if label=='TUN settings':
+        tap_text('MTU'); tap_text('Enter manually'); capture('30-custom-mtu')
+        assert 'OK' in screen_xml() and 'Cancel' in screen_xml(), 'Custom MTU actions missing'
+        tap_text('Cancel')
     if label=='Core settings':
-        tap_text('Latency test URL');capture('29-ping-url-dialog');tap_text('Cancel')
+        tap_text('Latency test URL');capture('29-ping-url-dialog')
+        assert 'OK' in screen_xml() and 'Cancel' in screen_xml(), 'Latency URL actions missing'
+        tap_text('Cancel')
     shell('input','keyevent','4');time.sleep(2)
     assert 'General settings' in screen_xml(), 'Settings back navigation returned to home'
 

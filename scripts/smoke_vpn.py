@@ -96,6 +96,7 @@ for cycle in range(2):
     time.sleep(2)
     if 'Connection request' in xml(): tap('OK')
     wait_for('Connect or disconnect VPN, Connected')
+    assert 'Check current connection' in xml(), 'Current connection ping did not reset after reconnect'
     state=shell('dumpsys','connectivity')
     assert 'TRANSPORT_VPN' in state or 'Transports: VPN' in state, 'No Android VPN network'
     # A different Android UID must not obtain an unauthenticated local SOCKS path.
