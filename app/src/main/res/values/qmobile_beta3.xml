@@ -4,6 +4,8 @@
  <string-array name="qmobile_surface_themes"><item>Use system theme</item><item>OLED</item><item>Dark</item><item>Light</item></string-array>
  <string-array name="qmobile_surface_values"><item>system</item><item>oled</item><item>dark</item><item>light</item></string-array>
 <string name="qmobile_check_connection">Check current connection</string>
+<string name="qmobile_ping_checking">Checking ping</string>
+<string name="qmobile_ping_success">Success: %1$d ms</string>
 <string name="qmobile_socks_auth">SOCKS5 authentication</string>
 <string name="qmobile_socks_user">SOCKS5 username</string>
 <string name="qmobile_socks_pass">SOCKS5 password</string>

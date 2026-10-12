@@ -6,6 +6,31 @@ import android.widget.*
 import androidx.preference.ListPreference
 
 object MobileSelector {
+    fun showAt(anchor: android.view.View, labels: List<CharSequence>, selected: Int, onSelect: (Int) -> Unit) {
+        val context = anchor.context
+        fun dp(n: Int) = (n * context.resources.displayMetrics.density).toInt()
+        val list = ListView(context).apply {
+            divider = null
+            adapter = object : ArrayAdapter<CharSequence>(context, android.R.layout.simple_list_item_1, labels) {
+                override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View =
+                    (super.getView(position, convertView, parent) as TextView).apply {
+                        text = if(position == selected) "✓  ${labels[position]}" else labels[position]
+                        setTextColor(if(position == selected) MobilePalette.accent(context) else MobilePalette.text)
+                        minimumHeight = dp(48)
+                    }
+            }
+        }
+        val popup = PopupWindow(list, minOf(anchor.width, dp(300)), minOf(labels.size * dp(48), context.resources.displayMetrics.heightPixels / 2), true).apply {
+            setBackgroundDrawable(android.graphics.drawable.GradientDrawable().apply {
+                setColor(MobilePalette.surface); cornerRadius = dp(16).toFloat()
+                setStroke(dp(1), MobilePalette.muted)
+            })
+            elevation = dp(8).toFloat()
+            isOutsideTouchable = true
+        }
+        list.setOnItemClickListener { _, _, index, _ -> popup.dismiss(); onSelect(index) }
+        popup.showAsDropDown(anchor, dp(12), -anchor.height)
+    }
     fun show(context: Context, preference: ListPreference): Boolean {
         val labels=preference.entries ?: return false
         val values=preference.entryValues ?: return false

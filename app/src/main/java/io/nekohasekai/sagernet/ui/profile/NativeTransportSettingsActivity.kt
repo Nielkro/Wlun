@@ -12,6 +12,8 @@ import app.qthrone.mobile.bg.carrier.NativeCarrier
 import app.qthrone.mobile.bg.carrier.CarrierBridgeCredentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import moe.matsuri.nb4a.ui.SimpleMenuPreference
+import app.qthrone.mobile.ui.AnchoredTextPreference
 
 /** Typed controls edit the exported document, preserving unrecognized members. */
 class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
@@ -182,13 +184,13 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     isChecked = DataStore.profileCacheStore.getString(cache(path)).toBoolean()
                     setOnPreferenceChangeListener { _, next -> DataStore.profileCacheStore.putString(cache(path), next.toString()); true }
                 }
-                choices.containsKey(key) || key=="workers" -> ListPreference(requireContext()).apply {
+                choices.containsKey(key) || key=="workers" -> SimpleMenuPreference(requireContext()).apply {
                     entryValues = (choices[key] ?: listOf("9")).toTypedArray()
                     entries = (captions[key] ?: choices[key] ?: listOf("9")).toTypedArray()
                     this.value=DataStore.profileCacheStore.getString(cache(path))
                     summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
                 }
-                else -> EditTextPreference(requireContext()).apply {
+                else -> (if(path in listOf("go_dns","dns")) AnchoredTextPreference(requireContext()) else EditTextPreference(requireContext())).apply {
                     summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                     positiveButtonText=getString(android.R.string.ok)
                     negativeButtonText=getString(android.R.string.cancel)
@@ -235,14 +237,17 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 refreshEditors()
                 true
             }
-            if(path=="go_dns") preference.setOnPreferenceClickListener {
-                val values=arrayOf("yandex","cloudflare","google","doh-yandex","doh-cloudflare","doh-google","Ввести вручную")
-                app.qthrone.mobile.ui.MobileSelector.show(requireContext(), "DNS VK", values.toList(),
+            if(path in listOf("go_dns","dns")) (preference as AnchoredTextPreference).onSelect = { anchor ->
+                val values=(if(path=="go_dns") listOf("yandex","cloudflare","google","doh-yandex","doh-cloudflare","doh-google")
+                    else listOf("8.8.8.8:53","1.1.1.1:53","77.88.8.8:53")).toMutableList()
+                val current=DataStore.profileCacheStore.getString(cache(path)).orEmpty()
+                if(current.isNotEmpty() && current !in values) values.add(current)
+                values.add("Ввести вручную")
+                app.qthrone.mobile.ui.MobileSelector.showAt(anchor, values,
                     values.indexOf(DataStore.profileCacheStore.getString(cache(path)))) { index ->
                     if(index==values.lastIndex) onDisplayPreferenceDialog(preference)
-                    else (preference as EditTextPreference).apply { text=values[index] }
+                    else if(preference.callChangeListener(values[index])) preference.text=values[index]
                 }
-                true
             }
             editors[path]=preference
             preferenceScreen.addPreference(preference)

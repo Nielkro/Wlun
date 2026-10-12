@@ -3,6 +3,8 @@
  <string name="qmobile_notification_speed">Показывать скорость в уведомлении</string>
  <string-array name="qmobile_surface_themes"><item>Использовать системную тему</item><item>OLED</item><item>Тёмная</item><item>Светлая</item></string-array>
 <string name="qmobile_check_connection">Проверить текущее подключение</string>
+<string name="qmobile_ping_checking">Проверка пинга</string>
+<string name="qmobile_ping_success">Успешно: %1$d мс</string>
 <string name="qmobile_socks_auth">SOCKS5 авторизация</string>
 <string name="qmobile_socks_user">SOCKS5 логин</string>
 <string name="qmobile_socks_pass">SOCKS5 пароль</string>
