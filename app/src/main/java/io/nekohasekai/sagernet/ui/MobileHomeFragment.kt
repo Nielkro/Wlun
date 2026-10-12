@@ -171,10 +171,11 @@ class MobileHomeFragment : ToolbarFragment() {
             val structure = buildString {
                 append(MobilePalette.surface); append(blue)
                 for ((group, profiles) in groups) {
-                    append(group.id); append(group.displayName()); append(group.subLastUpdate)
+                    append(group.id); append(group.displayName()); append(group.isSubscription); append(group.subLastUpdate)
                     append(group.subInfo.toString())
                     for (profile in profiles) {
                         append(profile.id); append(profile.displayName()); append(profile.displayType())
+                        append(profile.outboundJson)
                     }
                 }
             }
@@ -281,8 +282,8 @@ class MobileHomeFragment : ToolbarFragment() {
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val signature=buildString {
-                    append(surface); append(blue); append(group.displayName()); append(group.subLastUpdate); append(group.subInfo)
-                    profiles.forEach { append(it.id); append(it.displayName()); append(it.displayType()) }
+                    append(surface); append(blue); append(group.displayName()); append(group.isSubscription); append(group.subLastUpdate); append(group.subInfo)
+                    profiles.forEach { append(it.id); append(it.displayName()); append(it.displayType()); append(it.outboundJson) }
                 }
                 val retained=groupViews[group.id]?.takeIf { it.first==signature }?.second
                 if(retained != null) {
