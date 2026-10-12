@@ -26,7 +26,7 @@ object MobileSettingsStyle {
                         preference.key=="qmobileCore" -> app.qthrone.mobile.R.drawable.ic_mobile_core
                         preference.key=="settingsBackup" -> app.qthrone.mobile.R.drawable.ic_mobile_backup
                         preference.fragment?.contains("UpdateSettings")==true -> app.qthrone.mobile.R.drawable.ic_mobile_update
-                        preference.fragment?.contains("Appearance")==true -> app.qthrone.mobile.R.drawable.ic_mobile_color
+                        preference.fragment?.contains("Appearance")==true -> app.qthrone.mobile.R.drawable.ic_mobile_pumpkin
                         preference.fragment?.contains("Testing")==true -> app.qthrone.mobile.R.drawable.ic_mobile_test
                         preference.key=="qmobileRouting" -> app.qthrone.mobile.R.drawable.ic_mobile_route
                         preference.fragment?.contains("Dns")==true -> app.qthrone.mobile.R.drawable.ic_mobile_globe

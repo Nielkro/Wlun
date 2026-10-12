@@ -54,6 +54,32 @@ object TestSessionClient {
     var panelExpanded = false
 
     private var model: TestSessionModel? = null
+    private val pendingPings=java.util.ArrayDeque<Pair<TestSpec,Long>>()
+    private val mutableQueuedProfiles=MutableStateFlow<Set<Long>>(emptySet())
+    val queuedProfiles: StateFlow<Set<Long>> get()=mutableQueuedProfiles
+    private var queueJob: Job? = null
+    private var queueEpoch=0L
+
+    private fun publishQueueLocked() {
+        mutableQueuedProfiles.value=pendingPings.flatMap { it.first.profileIds.toList() }.toSet()
+    }
+    private fun advanceQueueLocked() {
+        if(pendingPings.isEmpty() || queueJob?.isActive==true) return
+        val epoch=queueEpoch
+        queueJob=scope.launch {
+            delay(200)
+            synchronized(lock) {
+                queueJob=null
+                if(epoch!=queueEpoch || model?.running==true || pendingPings.isEmpty()) return@synchronized
+                val waiting=pendingPings.toList()
+                pendingPings.clear()
+                val ids=waiting.flatMap { it.first.profileIds.toList() }.distinct().toLongArray()
+                val group=waiting.map { it.second }.distinct().singleOrNull() ?: 0L
+                start(waiting.first().first.copy(profileIds=ids),group)
+                publishQueueLocked()
+            }
+        }
+    }
     private var publishJob: Job? = null
     private var lastPublish = 0L
 
@@ -65,7 +91,18 @@ object TestSessionClient {
      * when every profile of the spec belongs to one group.
      */
     fun start(spec: TestSpec, groupId: Long): Boolean {
+        synchronized(lock) {
+            if(model?.running==true && spec.kind==TestSpec.KIND_URL && !spec.testCurrent) {
+                val active=mutableState.value.rows.filterValues { it.phase!=RowPhase.DONE }.keys
+                val waiting=mutableQueuedProfiles.value
+                val ids=spec.profileIds.filter { it !in active && it !in waiting }.toLongArray()
+                if(ids.isNotEmpty()) pendingPings.addLast(spec.copy(profileIds=ids) to groupId)
+                publishQueueLocked()
+                return true
+            }
+        }
         val m = begin(spec.kind, spec.scopeLabel, groupId, spec.testCurrent) ?: return false
+        synchronized(lock) { m.setIds(spec.profileIds); publishLocked() }
         prepare(m) {
             if (groupId <= 0 && !spec.testCurrent && spec.profileIds.isNotEmpty()) {
                 val gid = ProfileManager.getProfile(spec.profileIds[0])?.groupId ?: 0L
@@ -122,6 +159,10 @@ object TestSessionClient {
 
     /** Stops the running session; the engine reports the remaining profiles as aborted. */
     fun stop() {
+        synchronized(lock) {
+            queueEpoch++;queueJob?.cancel();queueJob=null
+            pendingPings.clear();publishQueueLocked()
+        }
         var target: TestSessionModel? = null
         var service: ICoreService? = null
         synchronized(lock) {
@@ -275,7 +316,12 @@ object TestSessionClient {
                         publishLocked()
                     }
 
-                    session == -1 -> finishLocked(m, cancelled = false, failure = TestFailure.BUSY)
+                    session == -1 -> {
+                        if(spec.kind==TestSpec.KIND_URL && !spec.testCurrent && !m.stopRequested) {
+                            pendingPings.addFirst(spec to m.groupId);publishQueueLocked()
+                            finishLocked(m,cancelled=false,failure=TestFailure.NONE)
+                        } else finishLocked(m, cancelled = false, failure = TestFailure.BUSY)
+                    }
                     else -> finishLocked(m, cancelled = true, failure = TestFailure.UNREACHABLE)
                 }
             }
@@ -299,6 +345,7 @@ object TestSessionClient {
         }
         release(m)
         if (m.kind != TestSpec.KIND_IP && !m.testCurrent) prune(m)
+        advanceQueueLocked()
     }
 
     // :bg may delete the failed profiles itself (auto_clear_unavailable); keep the remove action's count honest.

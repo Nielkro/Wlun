@@ -32,8 +32,17 @@ def screen_xml():
                 return shell('cat','/sdcard/qthrone-preview.xml')
     return xml
 
+def scroll_to_text(label):
+    for direction in (1,-1):
+        for _ in range(4):
+            value=screen_xml()
+            if any(n.get('text')==label or n.get('content-desc')==label for n in ET.fromstring(value).iter('node')): return value
+            shell('input','swipe','600','1800' if direction==1 else '1200','600','1200' if direction==1 else '1800','250')
+            time.sleep(.4)
+    return screen_xml()
+
 def tap_text(text):
-    xml = screen_xml()
+    xml = scroll_to_text(text)
     (out / 'last-screen.xml').write_text(xml)
     for node in reversed(list(ET.fromstring(xml).iter('node'))):
         if node.get('text') == text or node.get('content-desc') == text:
@@ -144,6 +153,8 @@ assert 'URL detected' not in screen_xml(),'Subscription import opened the old gr
 for attempt in range(15):
     xml=screen_xml()
     if 'Subscription-Finland' in xml: break
+    xml=scroll_to_text('Subscription-Finland')
+    if 'Subscription-Finland' in xml: break
     time.sleep(1)
 assert 'Subscription-Finland' in xml,'Subscription was not added to the dashboard'
 capture('06-subscription-expanded')
@@ -152,13 +163,13 @@ assert 'Subscription-Finland' not in screen_xml(),'Collapse did not hide subscri
 tap_text('Demo subscription')
 
 def profile_bounds(label):
-    for node in ET.fromstring(screen_xml()).iter('node'):
+    for node in ET.fromstring(scroll_to_text(label)).iter('node'):
         if node.get('text')==label:
             return list(map(int,re.findall(r'\d+',node.attrib['bounds'])))
     raise RuntimeError('Swipe fixture profile missing')
 
 def subscription_more(label):
-    nodes=list(ET.fromstring(screen_xml()).iter('node'))
+    nodes=list(ET.fromstring(scroll_to_text(label)).iter('node'))
     title=next(n for n in nodes if n.get('text')==label)
     _,top,_,bottom=map(int,re.findall(r'\d+',title.attrib['bounds']))
     center=(top+bottom)//2
@@ -198,22 +209,22 @@ assert 'Demo subscription' in screen_xml(),'Pinned subscription disappeared'
 subscription_more('Demo subscription');tap_text('Edit')
 assert 'http://127.0.0.1:8866/demo' in screen_xml(),'Editor did not open the selected subscription'
 capture('15-subscription-editor');shell('input','keyevent','4');time.sleep(2)
-tap_text('Settings');tap_text('General settings');tap_text('Appearance');capture('16-appearance-gray')
+tap_text('Settings');tap_text('Appearance');capture('16-appearance-gray')
 choose_accent('Purple');capture('22-settings-purple');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('New Year')
 time.sleep(3)
-shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+shell('input','keyevent','4');time.sleep(.3);shell('input','keyevent','4');time.sleep(2)
 capture('17-home-newyear')
-tap_text('Settings');tap_text('General settings');tap_text('Appearance');tap_text('Theme');tap_text('Light')
+tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Light')
 time.sleep(4);capture('18-settings-white')
-shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('19-home-white')
-tap_text('Settings');tap_text('General settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark')
+shell('input','keyevent','4');time.sleep(.3);shell('input','keyevent','4');time.sleep(2);capture('19-home-white')
+tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark')
 time.sleep(4);tap_text('Theme');tap_text('OLED');time.sleep(4);capture('20-settings-oled')
-shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
-tap_text('Settings');tap_text('General settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark');time.sleep(3)
+shell('input','keyevent','4');time.sleep(.3);shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
+tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark');time.sleep(3)
 choose_accent('White');capture('23-settings-white-theme');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('Halloween');time.sleep(3)
-shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+shell('input','keyevent','4');time.sleep(.3);shell('input','keyevent','4');time.sleep(2)
 # Every group, including the last subscription, can be removed without confirmation.
 for attempt in range(10):
     nodes=list(ET.fromstring(screen_xml()).iter('node'))

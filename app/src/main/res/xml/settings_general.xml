@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
-    <Preference app:fragment="app.qthrone.mobile.ui.settings.AppearanceSettingsFragment" app:title="@string/settings_appearance" app:widgetLayout="@layout/qmobile_preference_arrow" />
     <PreferenceCategory app:title="@string/cag_connection">
         <moe.matsuri.nb4a.ui.SimpleMenuPreference
             app:defaultValue="vpn"

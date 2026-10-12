@@ -101,6 +101,7 @@ class MobileHomeFragment : ToolbarFragment() {
             override fun onInvalidated(tables: Set<String>) { activity?.runOnUiThread { refresh() } }
         }.also { SagerDatabase.instance.invalidationTracker.addObserver(it) }
         viewLifecycleOwner.lifecycleScope.launch { SubscriptionClient.states.collect { refresh() } }
+        viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.queuedProfiles.collect { updateLatencies() } }
         viewLifecycleOwner.lifecycleScope.launch { TestSessionClient.state.collect {
             updateLatencies()
             if(currentTestArmed && DataStore.serviceState.connected && it.testCurrent && !it.running && !it.cancelled) {
@@ -355,7 +356,7 @@ class MobileHomeFragment : ToolbarFragment() {
         val state=TestSessionClient.state.value
         latencyViews.forEach { (id, holder) ->
             val result=state.rows[id].takeUnless { state.testCurrent }
-            val busy=state.running && result != null && result.phase != app.qthrone.mobile.ui.test.RowPhase.DONE
+            val busy=id in TestSessionClient.queuedProfiles.value || (state.running && result != null && result.phase != app.qthrone.mobile.ui.test.RowPhase.DONE)
             val latency=result?.takeIf { it.ok }?.latency ?: (holder.tag as? Int ?: 0)
             val unavailable=result?.failed==true || (result?.error?.isNotEmpty()==true && !ProxyEntity.isTestAborted(result.error))
             val label=if(unavailable) getString(R.string.qmobile_unavailable) else if(latency>0) "$latency ms" else ""
@@ -374,7 +375,7 @@ class MobileHomeFragment : ToolbarFragment() {
         }
     }
     private fun testMenu(ids: LongArray, label: String, gid: Long) {
-        if(!TestSessionClient.state.value.running) TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label),gid)
+        TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label),gid)
     }
     private fun importClipboard() {
         val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

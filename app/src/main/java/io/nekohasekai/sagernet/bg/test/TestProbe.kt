@@ -291,11 +291,8 @@ internal abstract class LatencySweep(protected val session: TestSession) {
         val transports=mutableListOf<app.qthrone.mobile.bg.carrier.CarrierPool.Lease>()
         try {
             if(probe.carrierPlans.isNotEmpty()) {
-                check(!app.qthrone.mobile.database.DataStore.serviceState.started ||
-                    probe.carrierPlans.all { app.qthrone.mobile.bg.carrier.CarrierPool.isActive(it) } ||
-                    app.qthrone.mobile.database.DataStore.baseService?.data?.proxy?.config?.carrierPlans?.isNotEmpty()==true) {
-                    "Stop the current VPN before testing a new native transport; this VPN does not bypass native sockets"
-                }
+                // TunApplicationPolicy excludes this app UID for every VPN configuration,
+                // so all native carrier subprocesses can probe outside an already running TUN.
                 withTimeout(session.options.timeoutMs.toLong()) {
                     for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
                 }

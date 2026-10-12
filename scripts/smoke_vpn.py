@@ -28,10 +28,10 @@ def wait_for(value):
         time.sleep(1)
     (out/'vpn-failed.xml').write_text(xml())
     raise AssertionError('State not reached: '+value)
-def profile_latency():
+def profile_latency(name='VPN-smoke'):
     tree=ET.fromstring(xml())
     parents={child:parent for parent in tree.iter() for child in parent}
-    node=next(n for n in tree.iter('node') if n.get('text')=='VPN-smoke')
+    node=next(n for n in tree.iter('node') if n.get('text')==name)
     row=parents[parents[node]]
     return next((n.get('text') for n in row.iter('node') if re.fullmatch(r'[0-9]+ ms',n.get('text',''))),None)
 
@@ -90,6 +90,15 @@ time.sleep(5); tap('Yes')
 # A clean installation also asks about background battery restrictions.
 if 'Keep Throne running' in xml(): tap('Not now')
 wait_for('VPN-smoke')
+shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d','socks5://127.0.0.1:8868#VPN-queued')
+time.sleep(3);tap('Yes');wait_for('VPN-queued')
+# Keep the fixture stalled long enough to inspect two independently requested scopes.
+tap('Settings');tap('Core settings');tap('Test timeout (ms)')
+edit=next(n for n in ET.fromstring(xml()).iter('node') if n.get('class')=='android.widget.EditText')
+a,b,c,d=map(int,re.findall(r'\d+',edit.attrib['bounds']))
+shell('input','tap',str((a+c)//2),str((b+d)//2));shell('input','keyevent','123')
+shell('input','keyevent',*(['67']*12));shell('input','text','15000');tap('OK')
+shell('input','keyevent','4');time.sleep(.4);shell('input','keyevent','4');time.sleep(2)
 tap('VPN-smoke')
 for cycle in range(2):
     tap('Connect or disconnect VPN, Not connected')
@@ -139,6 +148,22 @@ for cycle in range(2):
         (out/'26-current-connection-ping.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
     tap('Connect or disconnect VPN, Connected')
     wait_for('Connect or disconnect VPN, Not connected')
+# Independent speedometers accept a second request while the first probe waits.
+probe_gate.clear()
+def ping_profile(name):
+    node=next(n for n in ET.fromstring(xml()).iter('node') if n.get('text')==name)
+    a,b,c,d=map(int,re.findall(r'\d+',node.attrib['bounds'])); y=(b+d)//2
+    shell('input','swipe',str((a+c)//2),str(y),'1000',str(y),'250')
+    time.sleep(.3);tap('Testing')
+ping_profile('VPN-smoke');ping_profile('VPN-queued')
+waiting=ET.fromstring(xml())
+assert len([n for n in waiting.iter('node') if n.get('class')=='android.widget.ProgressBar'])>=2, 'Second ping request was ignored instead of showing a spinner'
+(out/'31-queued-pings.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
+probe_gate.set()
+for _ in range(30):
+    if profile_latency() and profile_latency('VPN-queued'): break
+    time.sleep(1)
+else: raise AssertionError('Queued ping did not complete after the first probe')
 # A stalled probe must yield to a connection start without a separate cancellation UI.
 connect_node=next(n for n in ET.fromstring(xml()).iter('node') if n.get('content-desc')=='Connect or disconnect VPN, Not connected')
 a,b,c,d=map(int,re.findall(r'\d+',connect_node.attrib['bounds']))
@@ -165,5 +190,5 @@ assert time.monotonic()-started < 15, 'Connection waited for the stalled probe t
 probe_gate.set()
 tap('Connect or disconnect VPN, Connected')
 wait_for('Connect or disconnect VPN, Not connected')
-(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; profile and current-connection HTTP generate_204 probes traversed the local SOCKS fixture; current connection ping stays separate from profile latency; default local SOCKS port rejects unauthenticated access; a connection start preempts a stalled probe.\n')
+(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; profile and current-connection HTTP generate_204 probes traversed the local SOCKS fixture; current connection ping stays separate from profile latency; current ping resets after reconnect; independently requested ping scopes show queued spinners and complete; default local SOCKS port rejects unauthenticated access; a connection start preempts a stalled probe.\n')
 server.shutdown()
