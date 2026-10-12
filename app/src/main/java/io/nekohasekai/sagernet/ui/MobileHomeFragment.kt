@@ -126,7 +126,8 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     override fun onViewCreated(view: View, state: Bundle?) {
         super.onViewCreated(view, state)
-        state?.getLongArray("collapsedGroups")?.let { collapsed.addAll(it.toList()) }
+        collapsed.clear()
+        collapsed.addAll(requireContext().getSharedPreferences("dashboard",Context.MODE_PRIVATE).getStringSet("collapsedGroups",emptySet()).orEmpty().mapNotNull { it.toLongOrNull() })
         state?.getLongArray("knownGroups")?.let { knownGroups.addAll(it.toList()) }
         observer = object : InvalidationTracker.Observer("groups", "profiles") {
             override fun onInvalidated(tables: Set<String>) { activity?.runOnUiThread { refresh() } }
@@ -323,6 +324,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 heading.addView(names,LinearLayout.LayoutParams(0,-2,1f))
                 heading.setOnClickListener {
                     if (!collapsed.add(group.id)) collapsed.remove(group.id)
+                    requireContext().getSharedPreferences("dashboard",Context.MODE_PRIVATE).edit().putStringSet("collapsedGroups",collapsed.map { it.toString() }.toSet()).apply()
                     rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
                     arrow.animate().rotation(if(group.id in collapsed) 0f else 90f).setDuration(180).start()
                 }

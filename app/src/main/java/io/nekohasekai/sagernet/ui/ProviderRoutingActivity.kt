@@ -73,13 +73,13 @@ class ProviderRoutingActivity : ThemedActivity() {
             fun category(label: Int) { preferenceScreen.addPreference(PreferenceCategory(requireContext()).apply { title = getString(label) }) }
             if (!details) {
             category(R.string.provider_general)
-            preferenceScreen.addPreference(Preference(requireContext()).apply { title = getString(R.string.provider_subscription_name); summary = group!!.displayName(); isSelectable = false })
+            preferenceScreen.addPreference(Preference(requireContext()).apply { setIcon(R.drawable.ic_mobile_subscriptions); title = getString(R.string.provider_subscription_name); summary = group!!.displayName(); isSelectable = false })
             val enabled = SwitchPreferenceCompat(requireContext()).apply {
                 key = "providerEnabled"; isPersistent = false
                 title = getString(R.string.provider_routing_use,options.routingProvider)
                 summary = getString(R.string.provider_routing_use_summary)
                 isChecked = options.providerRoutingEnabled
-                if (fullJson) { isChecked = options.providerRouting != "off"; isEnabled = false }
+                setIcon(R.drawable.ic_mobile_route)
                 setOnPreferenceChangeListener { _, value ->
                     options.providerRoutingEnabled = value as Boolean
                     controls.forEach { it.isVisible = value }
@@ -90,6 +90,7 @@ class ProviderRoutingActivity : ThemedActivity() {
             fun add(preference: Preference) { preference.isPersistent = false; preference.isVisible = enabled.isChecked; controls.add(preference); preferenceScreen.addPreference(preference) }
             val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.filterIsInstance<JsonObject>().orEmpty()
             add(SimpleMenuPreference(requireContext()).apply {
+                setIcon(R.drawable.ic_mobile_route)
                 key = "providerProfile"; title = getString(R.string.provider_routing_profile)
                 entries = profiles.map { it.string("Name").ifBlank { "Default" } }.toTypedArray()
                 entryValues = profiles.indices.map { it.toString() }.toTypedArray()
@@ -103,15 +104,24 @@ class ProviderRoutingActivity : ThemedActivity() {
             })
             category(R.string.provider_profile_settings)
             add(Preference(requireContext()).apply {
+                setIcon(R.drawable.ic_mobile_route)
                 title = document.string("Name").ifBlank { "Default" }
                 setOnPreferenceClickListener {
                     startActivity(Intent(requireContext(),ProviderRoutingActivity::class.java).putExtra("groupId",group!!.id).putExtra("details",true)); true
                 }
             })
-            if (fullJson) add(Preference(requireContext()).apply { summary = getString(R.string.provider_json_notice,options.routingProvider); isSelectable = false })
+            if (fullJson) preferenceScreen.addPreference(Preference(requireContext()).apply { key = "providerJsonWarning"; summary = getString(R.string.provider_json_notice,options.routingProvider); isSelectable = false; isPersistent = false })
             return
             }
-            fun add(preference: Preference) { preference.isPersistent = false; preferenceScreen.addPreference(preference) }
+            fun add(preference: Preference) {
+                preference.isPersistent = false
+                preference.setIcon(when {
+                    preference.key?.startsWith("geo-") == true -> R.drawable.ic_baseline_folder_open_24
+                    preference.key?.contains("DNS") == true || preference.key == "DnsHosts" -> R.drawable.ic_action_dns
+                    else -> R.drawable.ic_mobile_route
+                })
+                preferenceScreen.addPreference(preference)
+            }
             add(Preference(requireContext()).apply { title = getString(R.string.provider_profile_heading); summary = document.string("Name").ifBlank { "Default" }; isSelectable = false })
             fun toggle(keyName: String, label: Int, fallback: Boolean) = add(SwitchPreferenceCompat(requireContext()).apply {
                 key = keyName; title = getString(label); isChecked = ProviderRouting.truth(document,keyName,fallback)

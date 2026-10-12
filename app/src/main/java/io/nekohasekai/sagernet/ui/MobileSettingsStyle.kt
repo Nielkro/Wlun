@@ -67,6 +67,7 @@ object MobileSettingsStyle {
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
             val category=preference is PreferenceCategory
+            val warning=preference?.key == "providerJsonWarning"
             if(category) {
                 view.minimumHeight=0
                 view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())
@@ -91,10 +92,10 @@ object MobileSettingsStyle {
                 }
             }
             view.background=android.graphics.drawable.GradientDrawable().apply {
-                setColor(if(category) MobilePalette.background else MobilePalette.surface)
+                setColor(if(category || warning) MobilePalette.background else MobilePalette.surface)
                 cornerRadius=16*density
             }
-            if(!category) MobileFeedback.apply(view)
+            if(!category && !warning) MobileFeedback.apply(view)
             styledBackgrounds[view] = view.background
             view.findViewById<android.widget.ImageView>(android.R.id.icon)?.apply {
                 visibility=if(preference?.icon!=null) View.VISIBLE else View.GONE
