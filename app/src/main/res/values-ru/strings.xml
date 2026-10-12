@@ -602,7 +602,7 @@
     <string name="cag_route_profiles">Маршрутизирующие профили</string>
     <string name="cag_security">Безопасность</string>
     <string name="cag_statistics">Статистика</string>
-    <string name="cag_tun_address">Адрес tun</string>
+    <string name="cag_tun_address">Адрес TUN</string>
     <string name="cag_updates">Обновления</string>
     <string name="cag_url_test">Тест задержки</string>
     <string name="cag_utls">uTLS</string>
@@ -1175,7 +1175,7 @@
     <string name="settings_subscriptions_sum">Автообновление, HWID, UserAgent, собственные запросы приложения</string>
     <string name="settings_testing">Тестирование</string>
     <string name="settings_testing_sum">Тесты задержки и скорости</string>
-    <string name="settings_tun">TUN / VPN</string>
+    <string name="settings_tun">TUN</string>
     <string name="settings_tun_sum">Стек, MTU, IPv6, частные диапазоны, прокси по приложениям</string>
     <string name="share_target_missing">Нет приложения, способного принять файл</string>
     <string name="skip_cert_sum">По умолчанию пропускать проверку сертификатов TLS (allowInsecure)</string>

@@ -34,15 +34,7 @@
             app:title="@string/restore_default_ranges" />
     </PreferenceCategory>
 
-    <PreferenceCategory app:title="@string/apps">
-        <SwitchPreference
-            app:icon="@drawable/ic_navigation_apps"
-            app:key="proxyApps"
-            app:summary="@string/proxied_apps_summary"
-            app:title="@string/proxied_apps" />
-    </PreferenceCategory>
-
-    <PreferenceCategory app:title="@string/cag_tun_address">
+<PreferenceCategory app:title="@string/cag_tun_address">
         <EditTextPreference
             app:key="vpn_tun_ipv4_cidr"
             app:title="@string/tun_ipv4_cidr"

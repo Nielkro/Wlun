@@ -37,10 +37,12 @@ class MobilePowerArtwork(private val accent: Int) : Drawable() {
         set(value) { if(field!=value) { field=value;invalidateSelf() } }
     var elapsedText = ""
         set(value) { if(field!=value) { field=value;invalidateSelf() } }
+    var pressScale = 1f
+        set(value) { field=value; invalidateSelf() }
     var captionSize = 0f
     override fun draw(canvas: Canvas) {
         val cx=bounds.exactCenterX(); val cy=bounds.exactCenterY()
-        val r=minOf(bounds.width(),bounds.height())*.46f
+        val r=minOf(bounds.width(),bounds.height())*.46f*pressScale
         paint.style=Paint.Style.STROKE; paint.strokeWidth=r*.005f
         paint.shader=LinearGradient(cx-r,cy-r,cx+r,cy+r,Color.argb(100,74,135,159),Color.argb(60,161,144,155),Shader.TileMode.CLAMP)
         canvas.drawCircle(cx,cy,r,paint)

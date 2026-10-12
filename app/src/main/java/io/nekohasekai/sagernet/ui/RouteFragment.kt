@@ -93,6 +93,8 @@ class RouteFragment : ToolbarFragment(R.layout.layout_route), Toolbar.OnMenuItem
         list.applyListInsets()
         list.layoutManager = FixedLinearLayoutManager(list)
         list.adapter = adapter
+        view.setBackgroundColor(MobilePalette.background)
+        MobileViewStyle.apply(view)
         onServiceStateChanged()
         RouteManager.addListener(onRoutesChanged)
         reload()
@@ -542,6 +544,7 @@ class RouteFragment : ToolbarFragment(R.layout.layout_route), Toolbar.OnMenuItem
     private inner class ProfileHolder(val binding: LayoutRouteProfileItemBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(profile: RouteProfile, current: Boolean) {
+            MobileViewStyle.apply(itemView)
             val context = itemView.context
             binding.profileName.text = profile.name
             binding.profileName.setTypeface(null, if (current) Typeface.BOLD else Typeface.NORMAL)

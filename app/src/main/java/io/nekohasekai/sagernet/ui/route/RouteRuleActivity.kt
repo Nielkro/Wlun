@@ -335,6 +335,7 @@ class RouteRuleActivity : ThemedActivity(R.layout.layout_config_settings), OnPre
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
             listView.layoutManager = FixedLinearLayoutManager(listView)
+            app.qthrone.mobile.ui.MobileSettingsStyle.apply(this,view)
             ViewCompat.setOnApplyWindowInsetsListener(listView, ListListener)
         }
 

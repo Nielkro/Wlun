@@ -74,11 +74,6 @@ class GeneralSettingsFragment : SettingsScreenFragment(R.xml.settings_general) {
             true
         }
 
-        pref<Preference>(KEY_UPDATES).isVisible = BuildConfig.IN_APP_UPDATER
-        pref<Preference>(Key.UPDATE_CHECK_AUTO).setOnPreferenceChangeListener { _, newValue ->
-            UpdateScheduler.schedule(enabled = newValue as Boolean)
-            true
-        }
     }
 
     override fun onResume() {

@@ -1,22 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory app:title="@string/qmobile_section_interface">
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.AppearanceSettingsFragment" app:title="@string/settings_appearance" />
-    </PreferenceCategory>
-    <PreferenceCategory app:title="@string/qmobile_section_connection">
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.TunSettingsFragment" app:title="@string/settings_tun" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.InboundSettingsFragment" app:title="@string/settings_inbound" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.CoreSettingsFragment" app:title="@string/settings_core" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.PresetSettingsFragment" app:title="@string/settings_presets" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="qmobileRouting" app:title="@string/qmobile_routing" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.DnsSettingsFragment" app:title="@string/settings_dns" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.GeneralSettingsFragment" app:title="@string/settings_general" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.TestingSettingsFragment" app:title="@string/settings_testing" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.SubscriptionSettingsFragment" app:title="@string/subscriptions" />
-    </PreferenceCategory>
-    <PreferenceCategory app:title="@string/qmobile_section_other">
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="settingsBackup" app:title="@string/settings_backup" />
-    <Preference app:widgetLayout="@layout/qmobile_preference_arrow" app:key="resetSettings" app:title="@string/reset_settings" />
-    </PreferenceCategory>
-    <Preference app:key="qmobileUpdate" app:title="@string/update_check" app:widgetLayout="@layout/qmobile_preference_arrow" />
+    <Preference app:key="qmobileGeneral" app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.GeneralSettingsFragment" app:title="@string/qmobile_general" />
+    <Preference app:key="qmobileTun" app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.TunSettingsFragment" app:title="@string/qmobile_tun" />
+    <Preference app:key="qmobileCore" app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.CoreSettingsFragment" app:title="@string/qmobile_core" />
+    <Preference app:key="qmobileDns" app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.DnsSettingsFragment" app:title="@string/qmobile_dns" />
+    <Preference app:key="qmobileRouting" app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.RoutingSettingsFragment" app:title="@string/qmobile_routes" />
+    <Preference app:key="qmobileSubscription" app:widgetLayout="@layout/qmobile_preference_arrow" app:fragment="app.qthrone.mobile.ui.settings.SubscriptionSettingsFragment" app:title="@string/qmobile_subscriptions" />
+    <Preference app:key="settingsBackup" app:widgetLayout="@layout/qmobile_preference_arrow" app:title="@string/qmobile_backup" />
+    <Preference app:fragment="app.qthrone.mobile.ui.settings.UpdateSettingsFragment" app:widgetLayout="@layout/qmobile_preference_arrow" app:title="@string/qmobile_updates" />
 </PreferenceScreen>

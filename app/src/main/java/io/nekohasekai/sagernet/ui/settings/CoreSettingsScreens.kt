@@ -26,7 +26,7 @@ import kotlin.math.abs
  * Preset Settings: the globals a profile inherits unless it sets its own (multiplex, TLS fragment, TLS tricks, uTLS,
  * HTTP/2 and QUIC). TLS spoof is left out on Android (decision D8).
  */
-class PresetSettingsFragment : SettingsScreenFragment(R.xml.settings_presets) {
+open class PresetSettingsFragment(@androidx.annotation.XmlRes preferences: Int = R.xml.settings_presets) : SettingsScreenFragment(preferences) {
 
     override fun bind() {
         reloadOn(
@@ -118,9 +118,27 @@ class TestingSettingsFragment : SettingsScreenFragment(R.xml.settings_testing) {
  * Logging, statistics, the Clash API, the sing-box API that serves the dashboard, Xray import preference,
  * certificate defaults and the NTP client.
  */
-class CoreSettingsFragment : SettingsScreenFragment(R.xml.settings_core) {
+class CoreSettingsFragment : PresetSettingsFragment(R.xml.settings_core_combined) {
 
     override fun bind() {
+        super.bind()
+        checkText("test_url", R.string.speed_test_url_invalid, reload=false) { SpeedTestSettings.isValidHttpUrl(it) }
+        checkText("direct_test_url", R.string.speed_test_url_invalid, reload=false) { it.isEmpty() || SpeedTestSettings.isValidHttpUrl(it) }
+        fun numeric(key: String, current: Int, limits: IntRange, save: (Int) -> Unit) {
+            pref<androidx.preference.EditTextPreference>(key).apply {
+                isPersistent=false
+                text=current.toString()
+                setOnBindEditTextListener { it.inputType=android.text.InputType.TYPE_CLASS_NUMBER }
+                setOnPreferenceChangeListener { _, next ->
+                    val value=next.toString().toIntOrNull()
+                    if(value==null || value !in limits) { toast(R.string.invalid_number,next.toString()); false }
+                    else { save(value); true }
+                }
+            }
+        }
+        numeric("test_concurrent",DataStore.testConcurrent,1..32) { DataStore.testConcurrent=it }
+        numeric("url_test_timeout_ms",DataStore.urlTestTimeoutMs,100..120000) { DataStore.urlTestTimeoutMs=it }
+
         val logLevel = pref<LongClickListPreference>(SettingsRegistry.LOG_LEVEL.key)
         logLevel.dialogLayoutResource = R.layout.layout_loglevel_help
         logLevel.setOnPreferenceChangeListener { _, _ ->

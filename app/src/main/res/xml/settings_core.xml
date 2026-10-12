@@ -72,12 +72,7 @@
             app:key="xray_vless_preference"
             app:title="@string/xray_vless_preference"
             app:useSimpleSummaryProvider="true" />
-        <Preference
-            app:fragment="app.qthrone.mobile.ui.settings.XrayGeoSettingsFragment"
-            app:key="xrayGeoAssets"
-            app:summary="@string/xray_geo_assets_sum"
-            app:title="@string/xray_geo_assets" />
-    </PreferenceCategory>
+</PreferenceCategory>
 
     <PreferenceCategory app:title="@string/cag_security">
         <SwitchPreference

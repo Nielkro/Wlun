@@ -38,6 +38,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private var content: LinearLayout? = null
     private var power: TextView? = null
     private var currentCheck: TextView? = null
+    private var currentPing: String? = null
     private var powerPulse: android.animation.ObjectAnimator?=null
     private var pulseTarget: View?=null
     private var load: Job? = null
@@ -61,7 +62,7 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     private fun iconAction(icon: Int, description: String, color: Int = Color.TRANSPARENT, callback: () -> Unit) = ImageButton(requireContext()).apply {
         setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.text); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
-        contentDescription=description; setOnClickListener { callback() }
+        contentDescription=description; setOnClickListener { callback() }; MobileFeedback.apply(this, circle=true)
     }
     private fun View.showUpdating(updating: Boolean) {
         if(!updating) return
@@ -102,7 +103,8 @@ class MobileHomeFragment : ToolbarFragment() {
             updateLatencies()
             if(it.testCurrent && !it.running && !it.cancelled) {
                 val ping=it.rows.values.firstOrNull { row -> row.ok && row.latency>0 }?.latency
-                currentCheck?.text=if(ping!=null) "$ping ms" else getString(R.string.qmobile_unavailable)
+                currentPing=if(ping!=null) "$ping ms" else getString(R.string.qmobile_unavailable)
+                currentCheck?.text=currentPing
             }
         } }
         viewLifecycleOwner.lifecycleScope.launch {
@@ -133,7 +135,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
             fun headerIcon(icon: Int, description: String, callback: (View) -> Unit) = ImageButton(requireContext()).apply {
                 setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.text); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
-                contentDescription = description; setOnClickListener { callback(it) }
+                contentDescription = description; setOnClickListener { callback(it) }; MobileFeedback.apply(this,circle=true)
             }
             header.addView(headerIcon(R.drawable.ic_mobile_settings, getString(R.string.qmobile_settings)) { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
             header.addView(View(requireContext()), LinearLayout.LayoutParams(0, dp(48), 1f))
@@ -143,6 +145,25 @@ class MobileHomeFragment : ToolbarFragment() {
             power = action("") { host().toggleService() }.apply {
                 contentDescription = getString(R.string.qmobile_connect)
                 background = MobilePowerArtwork(blue)
+                var pressAnimator: android.animation.ValueAnimator? = null
+                setOnTouchListener { _, event ->
+                    val artwork=background as? MobilePowerArtwork
+                    val target=when(event.actionMasked) {
+                        android.view.MotionEvent.ACTION_DOWN -> .94f
+                        android.view.MotionEvent.ACTION_UP, android.view.MotionEvent.ACTION_CANCEL -> 1f
+                        else -> null
+                    }
+                    if(artwork!=null && target!=null) {
+                        pressAnimator?.cancel()
+                        pressAnimator=android.animation.ValueAnimator.ofFloat(artwork.pressScale,target).apply {
+                            duration=if(target<1f) 90 else 150
+                            interpolator=android.view.animation.DecelerateInterpolator()
+                            addUpdateListener { artwork.pressScale=it.animatedValue as Float }
+                            start()
+                        }
+                    }
+                    false
+                }
             }
             centre.addView(power, FrameLayout.LayoutParams(dp(252), dp(252), Gravity.CENTER))
             column.addView(centre, LinearLayout.LayoutParams(-1, dp(284)))
@@ -161,7 +182,7 @@ class MobileHomeFragment : ToolbarFragment() {
             if (hasServers) {
                 val above=FrameLayout(requireContext())
                 above.addView(MobileSeasonalView(requireContext()),FrameLayout.LayoutParams(-1,dp(64)))
-                currentCheck=text(getString(R.string.qmobile_check_connection),12f,muted).apply {
+                currentCheck=text(currentPing ?: getString(R.string.qmobile_check_connection),12f,muted).apply {
                     maxLines=2;setPadding(dp(2),0,dp(4),dp(8));gravity=Gravity.BOTTOM
                     setOnClickListener { if(!TestSessionClient.state.value.running) TestSessionClient.startCurrent(TestSpec.KIND_URL) }
                 }
@@ -319,13 +340,14 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun updateLatencies() {
         val state=TestSessionClient.state.value
         latencyViews.forEach { (id, holder) ->
-            val result=state.rows[id]
+            val result=state.rows[id].takeUnless { state.testCurrent }
             val busy=state.running && result != null && result.phase != app.qthrone.mobile.ui.test.RowPhase.DONE
             val latency=result?.takeIf { it.ok }?.latency ?: (holder.tag as? Int ?: 0)
             val unavailable=result?.failed==true || (result?.error?.isNotEmpty()==true && !ProxyEntity.isTestAborted(result.error))
             val label=if(unavailable) getString(R.string.qmobile_unavailable) else if(latency>0) "$latency ms" else ""
             val marker=if(busy) "busy" else label
-            if(holder.contentDescription?.toString()==marker) return@forEach
+            val previous=holder.contentDescription?.toString()
+            if(previous==marker) return@forEach
             holder.contentDescription=marker
             holder.removeAllViews()
             if(busy) holder.addView(ProgressBar(requireContext()).apply {
@@ -333,7 +355,7 @@ class MobileHomeFragment : ToolbarFragment() {
             },FrameLayout.LayoutParams(dp(20),dp(20),Gravity.CENTER))
             else holder.addView(text(label,12f,if(unavailable) muted else Color.rgb(128,192,139)).apply {
                 gravity=Gravity.CENTER;setPadding(0,0,0,0)
-                alpha=0f;animate().alpha(1f).setDuration(180).start()
+                if(previous=="busy") { alpha=0f;animate().alpha(1f).setDuration(180).start() }
             },FrameLayout.LayoutParams(-1,-1))
         }
     }

@@ -27,27 +27,13 @@ open class SettingsPreferenceFragment(private val advanced: Boolean = false) : P
         preferenceManager.preferenceDataStore = DataStore.configurationStore
         addPreferencesFromResource(if (advanced) R.xml.global_preferences else R.xml.qmobile_settings)
         findPreference<Preference>("qmobileUpdate")?.setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),app.qthrone.mobile.update.UpdateActivity::class.java));true }
-        findPreference<Preference>("qmobileRouting")?.setOnPreferenceClickListener {
-            (activity as? MainActivity)?.displayFragment(MobileRoutingFragment())
-            true
-        }
 
         findPreference<Preference>(KEY_BACKUP)!!.setOnPreferenceClickListener {
             (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_tools)
             true
         }
 
-        findPreference<Preference>(KEY_RESET_SETTINGS)!!.setOnPreferenceClickListener {
-            requireContext().confirmAction(
-                getString(R.string.confirm_reset_settings),
-                getString(R.string.reset_settings_message),
-                R.string.confirm_restore,
-            ) {
-                DataStore.configurationStore.reset()
-                triggerFullRestart(requireContext())
-            }
-            true
-        }
+
     }
 
     private companion object {

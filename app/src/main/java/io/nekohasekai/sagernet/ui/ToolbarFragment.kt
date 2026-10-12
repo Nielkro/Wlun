@@ -24,8 +24,8 @@ open class ToolbarFragment : Fragment {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<AppBarLayout>(R.id.appbar)?.applyTopInset()
         toolbar = view.findViewById(R.id.toolbar)
-        toolbar?.setNavigationIcon(R.drawable.ic_navigation_menu)
-        toolbar?.setNavigationContentDescription(R.string.navigation_open_drawer)
+        toolbar?.setNavigationIcon(R.drawable.baseline_arrow_back_24)
+        toolbar?.setNavigationContentDescription(R.string.navigation_back)
         // White theme: the toolbar is white, so the menu, title and navigation icon turn dark
         if (Theme.isWhiteTheme()) {
             toolbar?.apply {
@@ -34,7 +34,7 @@ open class ToolbarFragment : Fragment {
             }
         }
         toolbar?.setNavigationOnClickListener {
-            (activity as? MainActivity)?.binding?.drawerLayout?.openDrawer(GravityCompat.START)
+            requireActivity().onBackPressedDispatcher.onBackPressed()
         }
     }
 

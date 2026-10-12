@@ -30,7 +30,7 @@ import kotlin.math.abs
  * The mixed inbound (Basic Settings › Inbound Settings) and the DNS server port (Basic Settings › Core), plus the
  * Android system HTTP proxy switch and its bypass list.
  */
-class InboundSettingsFragment : SettingsScreenFragment(R.xml.settings_inbound) {
+open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int = R.xml.settings_inbound) : SettingsScreenFragment(preferences) {
 
     override fun beforeInflate() {
         DataStore.initGlobal()
@@ -138,11 +138,11 @@ class InboundSettingsFragment : SettingsScreenFragment(R.xml.settings_inbound) {
 }
 
 /** Tun Settings: stack, MTU, IPv6, tun routing, private range bypass, per-app proxy and the tun addresses. */
-class TunSettingsFragment : SettingsScreenFragment(R.xml.settings_tun) {
+class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined) {
 
-    private lateinit var proxyApps: SwitchPreference
 
     override fun bind() {
+        super.bind()
         reloadOn(
             SettingsRegistry.VPN_MTU.key, SettingsRegistry.VPN_IPV6.key,
             SettingsRegistry.ENABLE_TUN_ROUTING.key,
@@ -184,17 +184,6 @@ class TunSettingsFragment : SettingsScreenFragment(R.xml.settings_tun) {
             true
         }
 
-        proxyApps = pref(Key.PROXY_APPS)
-        proxyApps.setOnPreferenceChangeListener { _, newValue ->
-            startActivity(Intent(activity, AppManagerActivity::class.java))
-            if (newValue as Boolean) DataStore.dirty = true
-            newValue
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (::proxyApps.isInitialized) proxyApps.isChecked = DataStore.proxyApps
     }
 
     private companion object {
@@ -211,8 +200,18 @@ class TunSettingsFragment : SettingsScreenFragment(R.xml.settings_tun) {
 class RoutingSettingsFragment : SettingsScreenFragment(R.xml.settings_routing) {
 
     override fun bind() {
+        pref<SwitchPreference>(Key.PROXY_APPS).setOnPreferenceChangeListener { _, newValue ->
+            if (newValue as Boolean) startActivity(Intent(activity, AppManagerActivity::class.java))
+            DataStore.dirty = true
+            true
+        }
+        pref<Preference>("routingApplications").setOnPreferenceClickListener {
+            startActivity(Intent(activity, AppManagerActivity::class.java))
+            true
+        }
+
         pref<Preference>(KEY_ROUTE_PROFILES).setOnPreferenceClickListener {
-            (activity as? MainActivity)?.displayFragment(app.qthrone.mobile.ui.MobileRoutingFragment())
+            (activity as? MainActivity)?.displayFragment(app.qthrone.mobile.ui.RouteFragment())
             true
         }
         pref<Preference>(KEY_CURRENT_ROUTE).setOnPreferenceClickListener {
@@ -258,6 +257,7 @@ class RoutingSettingsFragment : SettingsScreenFragment(R.xml.settings_routing) {
 
     override fun onResume() {
         super.onResume()
+        pref<SwitchPreference>(Key.PROXY_APPS).isChecked = DataStore.proxyApps
         showCurrentRoute()
     }
 

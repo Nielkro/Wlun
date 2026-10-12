@@ -29,6 +29,7 @@ import app.qthrone.mobile.database.backup.WebDavBackup
 import app.qthrone.mobile.databinding.LayoutBackupBinding
 import app.qthrone.mobile.databinding.LayoutImportBinding
 import app.qthrone.mobile.databinding.LayoutProgressBinding
+import app.qthrone.mobile.ktx.confirmAction
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.onMainDispatcher
@@ -97,6 +98,15 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
         }
         style(view)
 
+        binding.resetSettings.setOnClickListener {
+            requireContext().confirmAction(
+                getString(R.string.confirm_reset_settings),
+                getString(R.string.reset_settings_message), R.string.confirm_restore,
+            ) {
+                DataStore.configurationStore.reset()
+                triggerFullRestart(requireContext())
+            }
+        }
         binding.backupCreate.setOnClickListener {
             if (selection() != null) startFilesForResult(saveBackup, fileName())
         }

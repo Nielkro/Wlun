@@ -105,6 +105,12 @@ class MainActivity : ThemedActivity(),
             binding.drawerLayout.removeView(binding.navView)
         }
         navigation.setNavigationItemSelectedListener(this)
+        binding.drawerLayout.closeDrawers()
+        binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
+        navigation.visibility = View.GONE
+        supportFragmentManager.addOnBackStackChangedListener {
+            currentMainFragment = supportFragmentManager.findFragmentById(R.id.fragment_holder) as? ToolbarFragment
+        }
         // NavigationView pads its header and menu itself (top/bottom); its side follows side bars and cutouts.
         ViewCompat.setOnApplyWindowInsetsListener(binding.drawerLayout) { _, insets ->
             val bars = insets.bars()
@@ -130,7 +136,9 @@ class MainActivity : ThemedActivity(),
                 supportFragmentManager.findFragmentById(R.id.fragment_holder) as? ToolbarFragment
         }
         onBackPressedDispatcher.addCallback {
-            if (supportFragmentManager.findFragmentById(R.id.fragment_holder) is MobileHomeFragment) {
+            if(supportFragmentManager.backStackEntryCount>0) {
+                supportFragmentManager.popBackStack()
+            } else if (supportFragmentManager.findFragmentById(R.id.fragment_holder) is MobileHomeFragment) {
                 moveTaskToBack(true)
             } else {
                 displayFragmentWithId(R.id.nav_mobile_home)
@@ -328,10 +336,14 @@ class MainActivity : ThemedActivity(),
 
     @SuppressLint("CommitTransaction")
     fun displayFragment(fragment: ToolbarFragment) {
+        if (fragment is MobileHomeFragment) {
+            supportFragmentManager.popBackStackImmediate(null, androidx.fragment.app.FragmentManager.POP_BACK_STACK_INCLUSIVE)
+        }
         currentMainFragment = fragment
-        supportFragmentManager.beginTransaction()
+        val transaction=supportFragmentManager.beginTransaction()
             .replace(R.id.fragment_holder, fragment)
-            .commitAllowingStateLoss()
+        if(fragment !is MobileHomeFragment && supportFragmentManager.findFragmentById(R.id.fragment_holder)!=null) transaction.addToBackStack(null)
+        transaction.commitAllowingStateLoss()
         binding.drawerLayout.closeDrawers()
         syncMainControls(fragment, showWhenConnected = false, animate = true)
     }
@@ -609,29 +621,7 @@ class MainActivity : ThemedActivity(),
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        // the drawer sits at the start edge: the right one in RTL layouts
-        val rtl = binding.root.layoutDirection == View.LAYOUT_DIRECTION_RTL
-        val towardsDrawer = if (rtl) KeyEvent.KEYCODE_DPAD_RIGHT else KeyEvent.KEYCODE_DPAD_LEFT
-        val awayFromDrawer = if (rtl) KeyEvent.KEYCODE_DPAD_LEFT else KeyEvent.KEYCODE_DPAD_RIGHT
         when (keyCode) {
-            towardsDrawer -> {
-                if (super.onKeyDown(keyCode, event)) return true
-                // Row buttons, grid columns, tabs and toolbar items come first; the drawer opens at the edge.
-                val direction = if (rtl) View.FOCUS_RIGHT else View.FOCUS_LEFT
-                if (!binding.drawerLayout.isOpen && screenFocusTarget(direction) == null) {
-                    binding.drawerLayout.open()
-                    navigation.requestFocus()
-                    return true
-                }
-            }
-
-            awayFromDrawer -> {
-                if (binding.drawerLayout.isOpen) {
-                    binding.drawerLayout.close()
-                    return true
-                }
-            }
-
             KeyEvent.KEYCODE_DPAD_DOWN -> if (!binding.drawerLayout.isOpen && focusMainControls()) return true
 
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE -> if (SagerNet.isTv) {

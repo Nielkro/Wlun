@@ -164,16 +164,16 @@ class VpnService : BaseVpnService(),
         }
 
         // Native transport sockets cannot call the in-process protect(fd). Keep this
-        // application's UID outside the TUN when a native transport is in the plan.
-        val nativeTransport=data.proxy?.config?.carrierPlans?.isNotEmpty() == true
+        // application's UID outside every TUN: a native probe may start while a
+        // regular protocol is connected, after this builder has already run.
         val included=options.getIncludePackage().toList()
         val excluded=options.getExcludePackage().toList()
         if(included.isNotEmpty()) {
-            val effective=if(nativeTransport) included.filter { it!=packageName } else included
+            val effective=included.filter { it!=packageName }
             check(effective.isNotEmpty()) { "Native transports require at least one other included application" }
             effective.forEach { try { builder.addAllowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {} }
         } else {
-            (excluded + if(nativeTransport) listOf(packageName) else emptyList()).distinct().forEach {
+            (excluded + packageName).distinct().forEach {
                 try { builder.addDisallowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {}
             }
         }

@@ -528,7 +528,7 @@
     <string name="settings_appearance_sum">Theme, language, profile list, notification</string>
     <string name="settings_inbound">Inbound</string>
     <string name="settings_inbound_sum">Local proxy port, LAN access, authentication</string>
-    <string name="settings_tun">TUN / VPN</string>
+    <string name="settings_tun">TUN</string>
     <string name="settings_tun_sum">Stack, MTU, IPv6, private ranges, per-app proxy</string>
     <string name="settings_routing">Routing</string>
     <string name="settings_routing_sum">Domain strategies, rule-set mirror, AdBlock, profile updates</string>

@@ -103,6 +103,8 @@ class RouteProfileActivity : ThemedActivity(R.layout.layout_route_profile) {
         list = findViewById(R.id.rule_list)
         list.layoutManager = FixedLinearLayoutManager(list)
         list.adapter = ConcatAdapter(headerAdapter, rawAdapter, titleAdapter, rulesAdapter, footerAdapter)
+        findViewById<android.view.View>(R.id.coordinator).setBackgroundColor(app.qthrone.mobile.ui.MobilePalette.background)
+        app.qthrone.mobile.ui.MobileViewStyle.apply(findViewById(R.id.coordinator))
         list.applyListInsets(ime = true)
         undoManager = UndoSnackbarManager(this, rulesAdapter)
         touchHelper = ItemTouchHelper(TouchCallback()).also { it.attachToRecyclerView(list) }
