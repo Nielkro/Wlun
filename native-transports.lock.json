@@ -23,5 +23,10 @@
       "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
       "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-x86_64.tar.gz"
     }
-  ]
+  ],
+  "inputs": {
+    "scripts/build_carrier_clients.sh": "c07e8dbfb029865469a40aee0c3a0929141a9b82e96d3c32a3530a9d8a7acee5",
+    "scripts/secure_carrier_wrappers.py": "865e334e3e99d210a800f0ebab691d2bc0406a48d05b864ced42e66ea37aea87",
+    "scripts/prepare_android_captcha.py": "bc7a00d04b09a4cca53bb2bc12d9d562cab842d25372333dc599a8c1eebdbacc"
+  }
 }

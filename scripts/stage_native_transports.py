@@ -10,6 +10,8 @@ root = Path(__file__).resolve().parent.parent
 lock = json.loads((root / 'native-transports.lock.json').read_text())
 properties = dict(line.split('=', 1) for line in (root / 'nb4a.properties').read_text().splitlines() if '=' in line)
 assert properties['THRONE_CORE_REF'] == lock['core_commit'], 'Update the transport lock for the new core pin'
+for name, expected in lock['inputs'].items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected, 'Rebuild transports after changing ' + name
 for item in lock['archives']:
     with urllib.request.urlopen(item['url'], timeout=60) as response:
         archive = response.read()
