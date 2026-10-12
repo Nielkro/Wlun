@@ -9,6 +9,7 @@ import app.qthrone.mobile.bg.test.TestEngine
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
 import app.qthrone.mobile.database.ProxyGroup
+import app.qthrone.mobile.database.SubscriptionOptions
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.readableMessage
@@ -179,7 +180,7 @@ object SubscriptionQueue {
                         name = name.trim().ifEmpty { runCatching { Uri.parse(content).host }.getOrNull().orEmpty() },
                         url = content,
                         skipAutoUpdate = !autoUpdate,
-                        subOptions = app.qthrone.mobile.database.SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty()),
+                        subOptions = SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty()),
                     )
                 )
             }

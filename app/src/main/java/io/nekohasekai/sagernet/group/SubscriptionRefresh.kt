@@ -11,6 +11,7 @@ import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.outbound.Outbound
 import app.qthrone.mobile.outbound.`import`.ProfileImport
+import app.qthrone.mobile.route.ProviderRouting
 
 /** GroupUpdater::refresh, importDocuments and afterUrlTest (GroupUpdater.cpp:465-683) over the Room data layer. */
 internal object SubscriptionRefresh {
@@ -45,7 +46,7 @@ internal object SubscriptionRefresh {
         }
         // A body without a single profile is far likelier a broken or blocked response than an emptied subscription:
         // abort before the first write (no deletion, no update time). Parsing writes nothing, so it runs first.
-        val payload = app.qthrone.mobile.route.ProviderRouting.subscription(fetched.body, fetched.routing, options.routingProvider.ifBlank { "Happ" })
+        val payload = ProviderRouting.subscription(fetched.body, fetched.routing, options.routingProvider.ifBlank { "Happ" })
         val parsed = parse(payload.body)
         if (parsed.isEmpty()) {
             // GroupUpdater.cpp:746-752: panels answer a device or quota limit with an empty list and an announcement
@@ -74,7 +75,7 @@ internal object SubscriptionRefresh {
             return
         }
 
-        app.qthrone.mobile.group.ProviderRouteStore.apply(gid, payload.commands)
+        ProviderRouteStore.apply(gid, payload.commands)
         SagerDatabase.groupDao.setSubscriptionInfo(gid, System.currentTimeMillis() / 1000, fetched.subInfo.toJsonString())
         GroupRepo.postUpdate(gid)
 
@@ -225,9 +226,9 @@ internal object SubscriptionRefresh {
         val sink = ImportSink(target, null)
         Logs.i(">>>>>>>> " + str(R.string.subs_processing))
         for (document in documents) {
-            val payload = app.qthrone.mobile.route.ProviderRouting.subscription(document)
+            val payload = ProviderRouting.subscription(document)
             for (outbound in parse(payload.body)) sink.add(outbound)
-            app.qthrone.mobile.group.ProviderRouteStore.apply(target, payload.commands)
+            ProviderRouteStore.apply(target, payload.commands)
         }
         sink.flush()
         Logs.i(">>>>>>>> " + str(R.string.subs_process_complete))
