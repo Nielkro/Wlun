@@ -244,5 +244,34 @@ for attempt in range(10):
     time.sleep(2)
 assert 'More actions' not in screen_xml(),'Deleting the last subscription left a group behind'
 capture('24-home-all-deleted')
+# Native editors use desktop field slots; these documentation-address fixtures never connect.
+from urllib.parse import urlencode, quote
+native_links=[
+    ('qwdtt-editor','qwdtt://config?'+urlencode({'peer':'192.0.2.1:56000','pass':'test-password','hashes':','.join('test_hash_123456789_'+str(i) for i in range(1,8)),'device_id':'ci-editor','name':'qwdtt-editor'}),4),
+    ('csqtt-editor','csqtt://connect?v=2&host=192.0.2.1&peer=46000&password=test-password&name=csqtt-editor&hashes='+'+'.join('test_hash_123456789_'+str(i) for i in range(1,9)),6),
+]
+for index,(name,link,slots) in enumerate(native_links):
+    shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d',link)
+    time.sleep(3);tap_text('Yes')
+    bounds=profile_bounds(name);a,b,c,d=bounds;y=(b+d)//2
+    shell('input','swipe',str((a+c)//2),str(y),str((a+c)//2),str(y),'900');time.sleep(2)
+    assert 'NativeTransportSettingsActivity' in shell('dumpsys','activity','activities')
+    capture('33-native-editor-'+str(slots))
+    for slot in range(1,slots+1):
+        tap_text('Хэш VK '+str(slot))
+        dialog=screen_xml()
+        assert 'test_hash_123456789_'+str(slot) in dialog
+        assert 'OK' in dialog and 'Cancel' in dialog
+        if slot==1: capture('34-hash-dialog-'+str(slots))
+        tap_text('Cancel')
+    tap_text('Хэш VK 1')
+    node=next(n for n in ET.fromstring(screen_xml()).iter('node') if n.get('class')=='android.widget.EditText')
+    a,b,c,d=map(int,re.findall(r'\d+',node.attrib['bounds']))
+    shell('input','tap',str((a+c)//2),str((b+d)//2));shell('input','keyevent','123');shell('input','text','x');tap_text('OK')
+    shell('input','keyevent','4');time.sleep(1)
+    dialog=screen_xml()
+    assert 'Save' in dialog and 'Discard' in dialog and 'Cancel' in dialog,'Unsaved dialog actions missing'
+    capture('35-unsaved-dialog-'+str(slots));tap_text('Discard')
+
 (out/'ui-actions-result.txt').write_text('PASS: named subscription import without group selection; standalone profiles in Server list; URL, QR and JSON sharing; country flags; profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
 server.shutdown()
