@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 import re
+import shlex
 import subprocess
 import time
 import xml.etree.ElementTree as ET
@@ -14,6 +15,7 @@ def shell(*args):
     return subprocess.check_output([adb, 'shell', *args], text=True)
 
 def capture(name):
+    print(f'Capturing screen: {name}', flush=True)
     time.sleep(2)
     (out / f'{name}.png').write_bytes(subprocess.check_output([adb, 'exec-out', 'screencap', '-p']))
 
@@ -251,7 +253,7 @@ native_links=[
     ('csqtt-editor','csqtt://connect?v=2&host=192.0.2.1&peer=46000&password=test-password&name=csqtt-editor&hashes='+'+'.join('test_hash_123456789_'+str(i) for i in range(1,9)),6),
 ]
 for index,(name,link,slots) in enumerate(native_links):
-    shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d',link)
+    shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d',shlex.quote(link))
     time.sleep(3);tap_text('Yes')
     bounds=profile_bounds(name);a,b,c,d=bounds;y=(b+d)//2
     shell('input','swipe',str((a+c)//2),str(y),str((a+c)//2),str(y),'900');time.sleep(2)
