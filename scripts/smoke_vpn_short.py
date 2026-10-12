@@ -5,6 +5,7 @@ source = Path(__file__).with_name('smoke_vpn.py').read_text()
 setup = source.split("shell('am','start','-n',activity,'-a','android.intent.action.VIEW','-d','socks5://127.0.0.1:8868#VPN-queued')")[0]
 setup = setup.replace('assert len(packages)==1', "packages = [p for p in packages if not p.endswith('.test')]\nassert len(packages)==1")
 exec(compile(setup, 'smoke_vpn.py setup', 'exec'))
+tap('VPN-smoke')
 tap('Connect or disconnect VPN, Not connected')
 time.sleep(2)
 if 'Connection request' in xml():

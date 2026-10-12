@@ -67,6 +67,7 @@ jobs:
           mkdir -p security-results
           "$ANDROID_HOME/platform-tools/adb" logcat -d > security-results/logcat.txt
           cp "$RUNNER_TEMP/emulator.log" security-results/
+          if test -d ui-screenshots; then cp -r ui-screenshots security-results/; fi
       - uses: actions/upload-artifact@v7
         if: always()
         with:
