@@ -14,7 +14,17 @@ def shell(*args):
     return subprocess.check_output([adb, 'shell', *args], text=True)
 def xml():
     shell('uiautomator', 'dump', '/sdcard/vpn-smoke.xml')
-    return shell('cat', '/sdcard/vpn-smoke.xml')
+    value=shell('cat', '/sdcard/vpn-smoke.xml')
+    # Dismiss only the known Google launcher boot ANR, never an application ANR.
+    if "Pixel Launcher isn't responding" in value:
+        (out/'launcher-anr.xml').write_text(value)
+        for node in ET.fromstring(value).iter('node'):
+            if node.get('resource-id')=='android:id/aerr_close':
+                a,b,c,d=map(int,re.findall(r'\d+',node.attrib['bounds']))
+                shell('input','tap',str((a+c)//2),str((b+d)//2));time.sleep(3)
+                shell('uiautomator','dump','/sdcard/vpn-smoke.xml')
+                return shell('cat','/sdcard/vpn-smoke.xml')
+    return value
 def tap(label):
     nodes=list(ET.fromstring(xml()).iter('node'))
     # A revealed profile speedometer follows the group speedometer in the tree.
@@ -24,6 +34,8 @@ def tap(label):
             a,b,c,d = map(int,re.findall(r'\d+',node.attrib['bounds']))
             shell('input','tap',str((a+c)//2),str((b+d)//2)); time.sleep(1)
             return
+    (out/'vpn-failed.xml').write_text(xml())
+    (out/'vpn-failed.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
     raise AssertionError('Missing control: '+label)
 def wait_for(value):
     for _ in range(30):
