@@ -63,7 +63,7 @@ object ProviderRouting {
                         else -> rule.domain_suffix.add(entry.removePrefix("domain:"))
                     }
                 }
-                if (!rule.isEmpty()) rules.add(rule)
+                if (rule.domain.isNotEmpty() || rule.domain_suffix.isNotEmpty() || rule.domain_keyword.isNotEmpty() || rule.domain_regex.isNotEmpty() || rule.rule_set.isNotEmpty() || rule.ip_cidr.isNotEmpty()) rules.add(rule)
             }
         }
         if (json.string("DomainStrategy") == "IPIfNonMatch") {
