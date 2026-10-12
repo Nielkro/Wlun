@@ -16,7 +16,10 @@ def xml():
     shell('uiautomator', 'dump', '/sdcard/vpn-smoke.xml')
     return shell('cat', '/sdcard/vpn-smoke.xml')
 def tap(label):
-    for node in ET.fromstring(xml()).iter('node'):
+    nodes=list(ET.fromstring(xml()).iter('node'))
+    # A revealed profile speedometer follows the group speedometer in the tree.
+    # Select that specific control rather than accidentally retesting the group.
+    for node in (reversed(nodes) if label=='Testing' else nodes):
         if label in (node.get('text'), node.get('content-desc')):
             a,b,c,d = map(int,re.findall(r'\d+',node.attrib['bounds']))
             shell('input','tap',str((a+c)//2),str((b+d)//2)); time.sleep(1)
