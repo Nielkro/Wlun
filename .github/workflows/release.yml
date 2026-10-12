@@ -62,4 +62,4 @@ jobs:
           RELEASE_NAME: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --prerelease --notes-file RELEASE_NOTES.md
+          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
