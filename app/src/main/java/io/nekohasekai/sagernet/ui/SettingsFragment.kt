@@ -116,7 +116,7 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
             toolbar.setNavigationIcon(R.drawable.baseline_arrow_back_24)
             toolbar.setNavigationContentDescription(R.string.navigation_back)
             toolbar.setNavigationOnClickListener {
-                (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_mobile_home)
+                requireActivity().onBackPressedDispatcher.onBackPressed()
             }
         }
         toolbar.navigationIcon?.setTint(MobilePalette.text)
