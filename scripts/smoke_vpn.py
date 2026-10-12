@@ -146,6 +146,10 @@ for cycle in range(2):
         assert any(int(value.split()[0])>=250 for value in readings), 'Current probe did not measure the controlled delay'
         response_delay=0.0
         (out/'26-current-connection-ping.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
+        tap('Settings');tap('TUN settings');tap('MTU');tap('1500')
+        (out/'36-themed-reload-panel.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
+        assert 'Apply' in xml(),'Reload action disappeared'
+        shell('input','keyevent','4');time.sleep(.3);shell('input','keyevent','4');time.sleep(1)
     tap('Connect or disconnect VPN, Connected')
     wait_for('Connect or disconnect VPN, Not connected')
 # Independent speedometers accept a second request while the first probe waits.
