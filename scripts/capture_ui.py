@@ -64,6 +64,8 @@ screen_xml()
 capture('01-home-empty')
 shell('input','swipe','1','650','700','650','400')
 assert 'Configuration' not in screen_xml() and 'Sing-box dashboard' not in screen_xml(), 'Legacy navigation drawer opened'
+# An edge swipe can be Android's Back gesture on the home page; resume the app before checking its controls.
+shell('am','start','-n',activity);time.sleep(3)
 
 tap_text('Settings')
 capture('03-settings')
