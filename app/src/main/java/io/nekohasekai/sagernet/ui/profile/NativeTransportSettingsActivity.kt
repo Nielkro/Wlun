@@ -185,7 +185,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 choices.containsKey(key) || key=="workers" -> ListPreference(requireContext()).apply {
                     entryValues = (choices[key] ?: listOf("9")).toTypedArray()
                     entries = (captions[key] ?: choices[key] ?: listOf("9")).toTypedArray()
-                    value=DataStore.profileCacheStore.getString(cache(path))
+                    this.value=DataStore.profileCacheStore.getString(cache(path))
                     summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
                 }
                 else -> EditTextPreference(requireContext()).apply {
