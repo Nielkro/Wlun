@@ -33,7 +33,9 @@ class MTUPreference @JvmOverloads constructor(
             inputType=InputType.TYPE_CLASS_NUMBER
             setText(value.orEmpty()); selectAll()
             val vertical = (8 * context.resources.displayMetrics.density).toInt()
-            setPadding(0, vertical, 0, vertical)
+            val inset = android.graphics.Rect()
+            background?.getPadding(inset)
+            setPadding(inset.left, vertical, inset.right, vertical)
         }
         input.setTextColor(app.qthrone.mobile.ui.MobilePalette.text)
         input.backgroundTintList=android.content.res.ColorStateList.valueOf(app.qthrone.mobile.ui.MobilePalette.accent(context))

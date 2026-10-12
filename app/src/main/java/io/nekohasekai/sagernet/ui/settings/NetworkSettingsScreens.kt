@@ -198,6 +198,16 @@ class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined)
  * the route profiles themselves live on the Route screen.
  */
 class RoutingSettingsFragment : SettingsScreenFragment(R.xml.settings_routing) {
+    private var routeNameReady = false
+    private var routeLoad: kotlinx.coroutines.Job? = null
+
+    override fun onViewCreated(view: android.view.View, savedInstanceState: android.os.Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        // Keep the previous screen until the real route name has been bound and measured.
+        view.viewTreeObserver.addOnPreDrawListener { routeNameReady }
+        showCurrentRoute()
+    }
+
 
     override fun bind() {
         pref<SwitchPreference>(Key.PROXY_APPS).setOnPreferenceChangeListener { _, newValue ->
@@ -262,9 +272,15 @@ class RoutingSettingsFragment : SettingsScreenFragment(R.xml.settings_routing) {
     }
 
     private fun showCurrentRoute() {
-        lifecycleScope.launch {
-            val name = withContext(Dispatchers.IO) { RouteManager.current().name }
-            findPreference<Preference>(KEY_CURRENT_ROUTE)?.summary = name
+        if (routeLoad?.isActive == true) return
+        routeLoad = lifecycleScope.launch {
+            try {
+                val name = withContext(Dispatchers.IO) { RouteManager.current().name }
+                findPreference<Preference>(KEY_CURRENT_ROUTE)?.summary = name
+            } finally {
+                routeNameReady = true
+                view?.requestLayout()
+            }
         }
     }
 
