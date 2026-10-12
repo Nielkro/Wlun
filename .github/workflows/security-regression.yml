@@ -59,6 +59,8 @@ jobs:
           "$ADB" shell am instrument -w -r "$COMPONENT" | tee security-results/instrumentation.txt
           grep -E 'OK \([0-9]+ tests\)' security-results/instrumentation.txt
           ! grep -E 'FAILURES|INSTRUMENTATION_FAILED|Process crashed' security-results/instrumentation.txt
+      - name: Short VPN and unauthorized command check
+        run: python3 scripts/smoke_vpn_short.py
       - name: Collect diagnostics
         if: always()
         run: |

@@ -6,6 +6,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.qthrone.mobile.database.SagerDatabase
 import app.qthrone.mobile.ui.QuickDisableShortcut
+import app.qthrone.mobile.ui.QuickToggleShortcut
 import app.qthrone.mobile.utils.ShortcutAuthorization
 import org.json.JSONObject
 import org.junit.Assert.*
