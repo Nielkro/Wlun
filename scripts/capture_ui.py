@@ -67,6 +67,13 @@ assert 'Configuration' not in screen_xml() and 'Sing-box dashboard' not in scree
 
 tap_text('Settings')
 capture('03-settings')
+for label,name in [('TUN settings','27-tun-settings'),('Core settings','28-core-settings')]:
+    tap_text(label);capture(name)
+    if label=='Core settings':
+        tap_text('Latency test URL');capture('29-ping-url-dialog');tap_text('Cancel')
+    shell('input','keyevent','4');time.sleep(2)
+    assert 'General settings' in screen_xml(), 'Settings back navigation returned to home'
+
 tap_text('Routing settings')
 capture('02-routing')
 assert 'AdBlock' in screen_xml(), 'Routing options missing'

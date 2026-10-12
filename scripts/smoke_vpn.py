@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 adb = os.path.join(os.environ['ANDROID_HOME'], 'platform-tools', 'adb')
 out = Path('ui-screenshots'); out.mkdir(exist_ok=True)
 hits = []
+response_delay = 0.0
 stalled_started = []
 probe_gate = threading.Event()
 probe_gate.set()
@@ -27,6 +28,13 @@ def wait_for(value):
         time.sleep(1)
     (out/'vpn-failed.xml').write_text(xml())
     raise AssertionError('State not reached: '+value)
+def profile_latency():
+    tree=ET.fromstring(xml())
+    parents={child:parent for parent in tree.iter() for child in parent}
+    node=next(n for n in tree.iter('node') if n.get('text')=='VPN-smoke')
+    row=parents[parents[node]]
+    return next((n.get('text') for n in row.iter('node') if re.fullmatch(r'[0-9]+ ms',n.get('text',''))),None)
+
 def exact(stream,n):
     data=b''
     while len(data)<n:
@@ -57,6 +65,7 @@ class Socks(socketserver.BaseRequestHandler):
             hits.append(request.split(b'\r\n',1)[0].decode('ascii','replace'))
             if not probe_gate.is_set(): stalled_started.append(time.monotonic())
             probe_gate.wait(20)
+            time.sleep(response_delay)
             s.sendall(b'HTTP/1.1 204 No Content\r\nConnection: close\r\nContent-Length: 0\r\n\r\n')
         except (OSError,EOFError): pass
 class Server(socketserver.ThreadingTCPServer):
@@ -108,11 +117,25 @@ for cycle in range(2):
     for _ in range(30):
         screen=xml()
         assert 'text="Stop"' not in screen and 'text="Latency test"' not in screen, 'Ping opened a testing dialog'
-        if len(hits)>previous and re.search(r'text="[0-9]+ ms"',screen): break
+        if len(hits)>previous and profile_latency(): break
         time.sleep(1)
     else: raise AssertionError('Inline ping result was not displayed')
     assert len(hits)>previous, 'Latency test did not send HTTP through the SOCKS fixture'
     assert re.search(r'\d+ ms',xml()), 'Successful latency was not saved in the profile row'
+    if cycle==0:
+        saved_ping=profile_latency()
+        previous=len(hits)
+        response_delay=.3
+        tap('Check current connection')
+        for _ in range(30):
+            readings=[n.get('text') for n in ET.fromstring(xml()).iter('node') if re.fullmatch(r'[0-9]+ ms',n.get('text',''))]
+            if len(hits)>previous and len(readings)>=2: break
+            time.sleep(1)
+        else: raise AssertionError('Current connection result was not shown separately')
+        assert profile_latency()==saved_ping, 'Current connection test overwrote profile latency'
+        assert any(int(value.split()[0])>=250 for value in readings), 'Current probe did not measure the controlled delay'
+        response_delay=0.0
+        (out/'26-current-connection-ping.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
     tap('Connect or disconnect VPN, Connected')
     wait_for('Connect or disconnect VPN, Not connected')
 # A stalled probe must yield to a connection start without a separate cancellation UI.
@@ -141,5 +164,5 @@ assert time.monotonic()-started < 15, 'Connection waited for the stalled probe t
 probe_gate.set()
 tap('Connect or disconnect VPN, Connected')
 wait_for('Connect or disconnect VPN, Not connected')
-(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; both HTTP generate_204 probes traversed the local SOCKS fixture; default local SOCKS port rejects unauthenticated access; a connection start preempts a stalled probe.\n')
+(out/'vpn-smoke-result.txt').write_text('PASS: Android VPN connected and stopped twice; profile and current-connection HTTP generate_204 probes traversed the local SOCKS fixture; current connection ping stays separate from profile latency; default local SOCKS port rejects unauthenticated access; a connection start preempts a stalled probe.\n')
 server.shutdown()
