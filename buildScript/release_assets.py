@@ -103,15 +103,14 @@ def main():
     by_abi = {}
     for element in metadata["elements"]:
         abi = next((f["value"] for f in element.get("filters", []) if f["filterType"] == "ABI"), None)
-        if abi:
-            by_abi[abi] = element
-    if sorted(by_abi) != sorted(ABIS):
+        by_abi[abi or "universal"] = element
+    if sorted(by_abi) != sorted(ABIS+["universal"]):
         fail(f"expected APKs for {ABIS}, output-metadata.json lists {sorted(by_abi)}")
 
     dist.mkdir(parents=True, exist_ok=True)
     manifest = None
     assets = {}
-    for abi in ABIS:
+    for abi in ABIS+["universal"]:
         element = by_abi[abi]
         apk = apk_dir / element["outputFile"]
         if apk.name.endswith("-unsigned.apk"):
@@ -125,8 +124,9 @@ def main():
             fail(f"{apk.name}: version {info['versionName']} ({info['versionCode']}) differs from output-metadata.json")
         if info["packageName"] != metadata["applicationId"]:
             fail(f"{apk.name}: package {info['packageName']} differs from {metadata['applicationId']}")
-        if info["abis"] != [abi]:
-            fail(f"{apk.name}: native code {info['abis']}, expected [{abi}]")
+        expected_abis=ABIS if abi=="universal" else [abi]
+        if sorted(info["abis"]) != sorted(expected_abis):
+            fail(f"{apk.name}: native code {info['abis']}, expected {expected_abis}")
         if ("-pre." in info["versionName"]) != (channel == "preview"):
             fail(f"{apk.name}: versionName {info['versionName']} does not match the {channel} channel")
 

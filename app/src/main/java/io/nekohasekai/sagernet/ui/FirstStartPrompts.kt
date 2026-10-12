@@ -68,21 +68,13 @@ class FirstStartPrompts(private val activity: MainActivity) {
         // No request screen (TVs, trimmed ROMs): nothing to offer.
         val intent = BatteryOptimizations.requestIntent(activity) ?: return
         if (activity.isFinishing || activity.isDestroyed) return
-        MaterialAlertDialogBuilder(activity)
-            .setTitle(R.string.battery_prompt_title)
-            .setMessage(R.string.battery_prompt_message)
-            .setPositiveButton(R.string.battery_prompt_allow) { _, _ ->
-                try {
-                    batteryRequest.launch(intent)
-                } catch (_: ActivityNotFoundException) {
-                    showLaterHint()
-                } catch (_: SecurityException) {
-                    showLaterHint()
-                }
-            }
-            .setNegativeButton(R.string.not_now) { _, _ -> showLaterHint() }
-            .setOnCancelListener { showLaterHint() }
-            .show()
+        try {
+            batteryRequest.launch(intent)
+        } catch (_: ActivityNotFoundException) {
+            showLaterHint()
+        } catch (_: SecurityException) {
+            showLaterHint()
+        }
     }
 
     private fun showLaterHint() {

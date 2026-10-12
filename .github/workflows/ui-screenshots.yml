@@ -60,6 +60,11 @@ jobs:
           test -n "$APK"
           test "$("$ANDROID_HOME/platform-tools/adb" shell getprop ro.product.cpu.abi | tr -d '\r')" = x86_64
           "$ANDROID_HOME/platform-tools/adb" install "$APK"
+          UNIVERSAL=$(find preview-apk -name '*universal*.apk' -print -quit)
+          test -n "$UNIVERSAL"
+          "$ANDROID_HOME/platform-tools/adb" install -r "$UNIVERSAL"
+          mkdir -p ui-screenshots
+          printf '%s\n' "PASS: ABI APK installed, universal APK installed over it with the same signature" > ui-screenshots/universal-install-result.txt
           PACKAGE=$("$ANDROID_HOME/platform-tools/adb" shell pm list packages | sed -n 's/^package:\(app.qthrone.mobile[^[:space:]]*\).*/\1/p' | tr -d '\r')
           test -n "$PACKAGE"
           "$ANDROID_HOME/platform-tools/adb" shell dumpsys package "$PACKAGE" | grep -F 'primaryCpuAbi=x86_64'
