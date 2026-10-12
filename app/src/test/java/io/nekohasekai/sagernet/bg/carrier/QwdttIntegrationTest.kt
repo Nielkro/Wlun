@@ -42,4 +42,24 @@ class QwdttIntegrationTest {
         val profile=profile();profile.password="bad|secret"
         try { CarrierPlan.qwdtt(7,profile);fail("invalid password accepted") } catch(_:IllegalArgumentException) {}
     }
+    @Test fun excessQwdttHashesKeepFirstFourSlots() {
+        val input=profile().exportToJson()
+        val hashes=(1..7).map { "test_hash_123456789_$it" }
+        input["hashes"]=app.qthrone.mobile.outbound.json.JsonArray.of(*hashes.toTypedArray())
+        val restored=Qwdtt()
+        assertTrue(restored.parseFromJson(input))
+        assertEquals(hashes.take(4),restored.hashes)
+        assertEquals(hashes.take(4),Qwdtt().apply { assertTrue(parseFromLink(restored.exportToLink())) }.hashes)
+    }
+    @Test fun excessCsqttLinkHashesKeepFirstSixSlots() {
+        val hashes=(1..8).map { "test_hash_123456789_$it" }
+        val link="csqtt://connect?v=2&host=192.0.2.1&peer=46000&password=test-password&hashes="+hashes.joinToString("+")
+        val restored=app.qthrone.mobile.outbound.types.Csqtt()
+        assertTrue(restored.parseFromLink(link))
+        assertEquals(hashes.take(6),restored.hashes)
+        val again=app.qthrone.mobile.outbound.types.Csqtt()
+        assertTrue(again.parseFromLink(restored.exportToLink()))
+        assertEquals(restored.hashes,again.hashes)
+    }
+
 }

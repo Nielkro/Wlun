@@ -55,8 +55,8 @@ object MobileSettingsStyle {
             override fun getItemOffsets(outRect: android.graphics.Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
                 val position=parent.getChildAdapterPosition(view)
                 val category=position>=0 && (parent.adapter as? PreferenceGroupAdapter)?.getItem(position) is PreferenceCategory
-                outRect.top=if(category && position>0) (18*density).toInt() else 0
-                outRect.bottom=(12*density).toInt()
+                outRect.top=if(category && position>0) (8*density).toInt() else 0
+                outRect.bottom=((if(category) 6 else 10)*density).toInt()
             }
         })
         fun style(view: View) {
@@ -64,6 +64,10 @@ object MobileSettingsStyle {
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
             val category=preference is PreferenceCategory
+            if(category) {
+                view.minimumHeight=0
+                view.setPadding(view.paddingLeft,(10*density).toInt(),view.paddingRight,(6*density).toInt())
+            }
             val oldCopy=view.findViewWithTag<View>("socks-copy")
             (oldCopy?.parent as? android.view.ViewGroup)?.removeView(oldCopy)
             if(preference?.key in listOf("inbound_user","inbound_pass")) {
@@ -88,7 +92,10 @@ object MobileSettingsStyle {
                 cornerRadius=16*density
             }
             if(!category) MobileFeedback.apply(view)
-            view.findViewById<android.widget.ImageView>(android.R.id.icon)?.imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+            view.findViewById<android.widget.ImageView>(android.R.id.icon)?.apply {
+                visibility=if(fragment is SettingsPreferenceFragment && preference?.icon!=null) View.VISIBLE else View.GONE
+                imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+            }
             view.findViewById<TextView>(android.R.id.title)?.apply {
                 setTextColor(if(category) MobilePalette.accent(list.context) else MobilePalette.text)
                 textSize=if(category) 16f else 16f

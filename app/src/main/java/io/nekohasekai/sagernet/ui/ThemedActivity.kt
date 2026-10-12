@@ -46,6 +46,13 @@ abstract class ThemedActivity : AppCompatActivity {
 
         super.onCreate(savedInstanceState)
 
+        supportFragmentManager.registerFragmentLifecycleCallbacks(object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentStarted(manager: androidx.fragment.app.FragmentManager, fragment: androidx.fragment.app.Fragment) {
+                val dialog=(fragment as? androidx.fragment.app.DialogFragment)?.dialog as? androidx.appcompat.app.AlertDialog ?: return
+                val colors=android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),intArrayOf(MobilePalette.muted,MobilePalette.accent(this@ThemedActivity)))
+                for(which in listOf(-1,-2,-3)) dialog.getButton(which)?.setTextColor(colors)
+            }
+        },true)
         uiMode = resources.configuration.uiMode
     }
 

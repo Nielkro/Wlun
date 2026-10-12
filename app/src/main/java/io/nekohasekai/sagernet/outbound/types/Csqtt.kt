@@ -28,7 +28,7 @@ class Csqtt:Qwdtt() {
             obj["password"]=q.valueFully("password")
             if(q.has("name")) obj["tag"]=q.valueFully("name") else if(q.has("remark")) obj["tag"]=q.valueFully("remark")
             if(q.has("hashes")) {
-                val hashes=q.value("hashes").split('+').map { LinkCodec.decodeFully(it) }
+                val hashes=q.value("hashes").split('+').map { LinkCodec.decodeFully(it) }.filter { it.isNotBlank() }.distinct().take(6)
                 if(hashes.size !in 1..6 || hashes.any { it.length<16 || it.any(Char::isWhitespace) } || hashes.distinct().size!=hashes.size) return false
                 obj["hashes"]=JsonArray.of(*hashes.toTypedArray())
             }

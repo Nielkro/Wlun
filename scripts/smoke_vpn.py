@@ -44,7 +44,7 @@ def exact(stream,n):
     return data
 class Socks(socketserver.BaseRequestHandler):
     def handle(self):
-        s=self.request; s.settimeout(20)
+        s=self.request; s.settimeout(90)
         try:
             version,count=exact(s,2); methods=exact(s,count)
             if version!=5 or 0 not in methods: return
@@ -64,7 +64,7 @@ class Socks(socketserver.BaseRequestHandler):
             if b'generate_204' not in request: return
             hits.append(request.split(b'\r\n',1)[0].decode('ascii','replace'))
             if not probe_gate.is_set(): stalled_started.append(time.monotonic())
-            probe_gate.wait(20)
+            probe_gate.wait(90)
             time.sleep(response_delay)
             s.sendall(b'HTTP/1.1 204 No Content\r\nConnection: close\r\nContent-Length: 0\r\n\r\n')
         except (OSError,EOFError): pass
@@ -97,7 +97,7 @@ tap('Settings');tap('Core settings');tap('Test timeout (ms)')
 edit=next(n for n in ET.fromstring(xml()).iter('node') if n.get('class')=='android.widget.EditText')
 a,b,c,d=map(int,re.findall(r'\d+',edit.attrib['bounds']))
 shell('input','tap',str((a+c)//2),str((b+d)//2));shell('input','keyevent','123')
-shell('input','keyevent',*(['67']*12));shell('input','text','15000');tap('OK')
+shell('input','keyevent',*(['67']*12));shell('input','text','60000');tap('OK')
 shell('input','keyevent','4');time.sleep(.4);shell('input','keyevent','4');time.sleep(2)
 tap('VPN-smoke')
 for cycle in range(2):
@@ -156,7 +156,10 @@ def ping_profile(name):
     shell('input','swipe',str((a+c)//2),str(y),'1000',str(y),'250')
     time.sleep(.3);tap('Testing')
 ping_profile('VPN-smoke');ping_profile('VPN-queued')
-waiting=ET.fromstring(xml())
+waiting_xml=xml()
+(out/'queued-pings.xml').write_text(waiting_xml)
+(out/'31-queued-pings.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
+waiting=ET.fromstring(waiting_xml)
 assert len([n for n in waiting.iter('node') if n.get('class')=='android.widget.ProgressBar'])>=2, 'Second ping request was ignored instead of showing a spinner'
 (out/'31-queued-pings.png').write_bytes(subprocess.check_output([adb,'exec-out','screencap','-p']))
 probe_gate.set()

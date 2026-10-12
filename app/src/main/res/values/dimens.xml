@@ -10,7 +10,7 @@
 
     <dimen name="input_corner_radius">12dp</dimen>
     <dimen name="popup_corner_radius">12dp</dimen>
-    <dimen name="dialog_corner_radius">28dp</dimen>
+    <dimen name="dialog_corner_radius">16dp</dimen>
     <dimen name="dialog_background_inset">24dp</dimen>
 
     <dimen name="nav_item_corner_radius">14dp</dimen>
