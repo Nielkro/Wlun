@@ -246,6 +246,7 @@ object TestSessionClient {
                     m.speedTimeoutMs = speedTimeoutMs
                     m.concurrency = concurrency
                     if (resolved.scopeLabel.isNotEmpty()) m.scopeLabel = resolved.scopeLabel
+                    clearedResults.removeAll(resolved.profileIds.toSet())
                     m.setIds(resolved.profileIds)
                     publishLocked()
                 }

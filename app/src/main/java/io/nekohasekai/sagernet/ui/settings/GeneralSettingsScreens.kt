@@ -73,7 +73,8 @@ class GeneralSettingsFragment : SettingsScreenFragment(R.xml.settings_general) {
             OemBackground.open(requireContext())
             true
         }
-
+        // Populate summaries before the list is first measured, not midway through the entrance.
+        refreshStates()
     }
 
     override fun onResume() {

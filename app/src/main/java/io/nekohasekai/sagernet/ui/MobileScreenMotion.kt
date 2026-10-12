@@ -1,33 +1,28 @@
 package app.qthrone.mobile.ui
 
 import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
+import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.view.View
 import androidx.fragment.app.Fragment
 import app.qthrone.mobile.R
 
-/** Animate the actual laid-out screen, including its children, as one surface. */
+/** A short incoming slide; outgoing screens fade in place instead of exposing clipped edges. */
 object MobileScreenMotion {
     fun create(fragment: Fragment, nextAnim: Int): Animator? {
         val view = fragment.view ?: return null
-        val width = (view.parent as? View)?.width?.takeIf { it > 0 }
-            ?: fragment.resources.displayMetrics.widthPixels
-        val (from, to) = when (nextAnim) {
-            R.anim.settings_enter -> width.toFloat() to 0f
-            R.anim.settings_exit -> 0f to -width * .12f
-            R.anim.settings_pop_enter -> -width * .12f to 0f
-            R.anim.settings_pop_exit -> 0f to width.toFloat()
-            else -> return null
-        }
-        return ObjectAnimator.ofFloat(view, View.TRANSLATION_X, from, to).apply {
-            duration = 220
+        val offset = 24 * fragment.resources.displayMetrics.density
+        val incoming = nextAnim == R.anim.settings_enter || nextAnim == R.anim.settings_pop_enter
+        if (nextAnim !in listOf(R.anim.settings_enter, R.anim.settings_exit, R.anim.settings_pop_enter, R.anim.settings_pop_exit)) return null
+        val from = if (incoming) (if (nextAnim == R.anim.settings_pop_enter) -offset else offset) else 0f
+        view.translationX = from
+        view.alpha = if (incoming) 0f else 1f
+        return AnimatorSet().apply {
+            playTogether(
+                ObjectAnimator.ofFloat(view, View.TRANSLATION_X, from, 0f),
+                ObjectAnimator.ofFloat(view, View.ALPHA, if (incoming) 0f else 1f, if (incoming) 1f else 0f))
+            duration = if (incoming) 180 else 90
             interpolator = android.view.animation.DecelerateInterpolator(1.5f)
-            addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationStart(animation: Animator) { view.setLayerType(View.LAYER_TYPE_HARDWARE, null) }
-                override fun onAnimationEnd(animation: Animator) { view.setLayerType(View.LAYER_TYPE_NONE, null) }
-                override fun onAnimationCancel(animation: Animator) { view.setLayerType(View.LAYER_TYPE_NONE, null) }
-            })
         }
     }
 }

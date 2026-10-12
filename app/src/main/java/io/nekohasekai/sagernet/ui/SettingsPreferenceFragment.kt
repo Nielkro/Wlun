@@ -16,6 +16,9 @@ import app.qthrone.mobile.ktx.triggerFullRestart
  */
 open class SettingsPreferenceFragment(private val advanced: Boolean = false) : PreferenceFragmentCompat() {
 
+    override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): android.animation.Animator? =
+        MobileScreenMotion.create(this, nextAnim)
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 

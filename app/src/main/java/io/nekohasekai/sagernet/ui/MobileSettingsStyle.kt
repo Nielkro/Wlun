@@ -60,7 +60,9 @@ object MobileSettingsStyle {
                 outRect.bottom=((if(category) 2 else 6)*density).toInt()
             }
         })
+        val styledBackgrounds = java.util.WeakHashMap<View, android.graphics.drawable.Drawable>()
         fun style(view: View) {
+            if (view.background != null && styledBackgrounds[view] === view.background) return
             val position=list.getChildAdapterPosition(view)
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
@@ -93,6 +95,7 @@ object MobileSettingsStyle {
                 cornerRadius=16*density
             }
             if(!category) MobileFeedback.apply(view)
+            styledBackgrounds[view] = view.background
             view.findViewById<android.widget.ImageView>(android.R.id.icon)?.apply {
                 visibility=if(preference?.icon!=null) View.VISIBLE else View.GONE
                 imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
@@ -115,6 +118,12 @@ object MobileSettingsStyle {
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int, payload: Any?) = restyle()
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) = restyle()
         })
+        // A Preference rebind can restore its stock background without reattaching the row.
+        // Restore the surface before drawing, including rows whose summaries arrive later.
+        list.viewTreeObserver.addOnPreDrawListener {
+            for (i in 0 until list.childCount) style(list.getChildAt(i))
+            true
+        }
         list.post { for(i in 0 until list.childCount) style(list.getChildAt(i)) }
     }
 }
