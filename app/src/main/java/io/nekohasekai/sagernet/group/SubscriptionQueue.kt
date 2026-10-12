@@ -6,6 +6,7 @@ import app.qthrone.mobile.R
 import app.qthrone.mobile.aidl.ISubscriptionCallback
 import app.qthrone.mobile.bg.CoreForeground
 import app.qthrone.mobile.bg.test.TestEngine
+import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
 import app.qthrone.mobile.database.ProxyGroup
 import app.qthrone.mobile.ktx.Logs
@@ -60,7 +61,9 @@ object SubscriptionQueue {
         groupChangedListeners.addIfAbsent(listener)
     }
 
-    private class Job(val gid: Long, val batch: Boolean, val foreground: Boolean, val run: suspend () -> Unit)
+    private class Job(val gid: Long, val batch: Boolean, val foreground: Boolean, val run: suspend () -> Unit) {
+        var holdsForeground = false
+    }
 
     // Guards the queue and the state events: a callback registered meanwhile never sees them out of order.
     private val lock = Any()
@@ -295,7 +298,10 @@ object SubscriptionQueue {
     private fun enqueueLocked(job: Job) {
         queue.addLast(job)
         outstanding.update { it + 1 }
-        if (job.foreground) CoreForeground.acquire(FOREGROUND_REASON)
+        // The VPN already keeps :bg alive and owns the normal connection notification.
+        // Do not create a second progress notification for subscription refreshes then.
+        job.holdsForeground = job.foreground && !DataStore.serviceState.connected
+        if (job.holdsForeground) CoreForeground.acquire(FOREGROUND_REASON)
         if (job.gid >= 0) stateLocked(job.gid, STATE_QUEUED)
         if (draining) return
         draining = true
@@ -330,7 +336,7 @@ object SubscriptionQueue {
                     }
                     if (job.batch) pendingBatch--
                 }
-                if (job.foreground) CoreForeground.release(FOREGROUND_REASON)
+                if (job.holdsForeground) CoreForeground.release(FOREGROUND_REASON)
                 outstanding.update { it - 1 }
             }
         }
