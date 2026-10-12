@@ -20,14 +20,14 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-      # BUILD = commits since the last stable tag (vX.Y.Z), at most 998: previews of X.Y.Z sort below its release (999).
+      # BUILD = commits since the latest public release tag, at most 998: previews sort below their release (999).
       - name: Build number
         id: version
         run: |
           set -euo pipefail
           VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '\r[:space:]')
           test -n "$VERSION_NAME"
-          LAST=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude '*-*' 2>/dev/null || true)
+          LAST=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude '*-pre.*' 2>/dev/null || true)
           if [ -n "$LAST" ]; then COUNT=$(git rev-list --count "$LAST..HEAD"); else COUNT=$(git rev-list --count HEAD); fi
           if [ "$COUNT" -eq 0 ]; then
             echo "::notice::HEAD is the stable tag $LAST: no preview"
