@@ -35,7 +35,7 @@ def screen_xml():
 def tap_text(text):
     xml = screen_xml()
     (out / 'last-screen.xml').write_text(xml)
-    for node in ET.fromstring(xml).iter('node'):
+    for node in reversed(list(ET.fromstring(xml).iter('node'))):
         if node.get('text') == text or node.get('content-desc') == text:
             x1, y1, x2, y2 = map(int, re.findall(r'\d+', node.attrib['bounds']))
             shell('input', 'tap', str((x1+x2)//2), str((y1+y2)//2))
