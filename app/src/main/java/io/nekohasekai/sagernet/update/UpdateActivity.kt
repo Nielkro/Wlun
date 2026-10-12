@@ -240,13 +240,13 @@ class UpdateActivity : ThemedActivity() {
     private fun show(title: String, message: String?, progress: Boolean? = null) {
         progressBar(progress)
         binding.title.text = title
-        binding.message.text = message
+        binding.message.text = message.orEmpty()
         val width=(resources.displayMetrics.widthPixels*.8f - 48*resources.displayMetrics.density).toInt()
         binding.message.measure(View.MeasureSpec.makeMeasureSpec(width,View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(0,View.MeasureSpec.UNSPECIFIED))
         binding.messageScroll.layoutParams=binding.messageScroll.layoutParams.apply {
             height=binding.message.measuredHeight.coerceAtMost((resources.displayMetrics.heightPixels*.45f).toInt())
             (this as? android.widget.LinearLayout.LayoutParams)?.weight=0f
-        }.orEmpty()
+        }
         binding.messageScroll.visibility = if (message.isNullOrEmpty()) View.GONE else View.VISIBLE
     }
 
