@@ -62,7 +62,7 @@ abstract class BoxInstance(
     }
 
     open suspend fun init() {
-        buildConfig()
+        withContext(Dispatchers.IO) { buildConfig() }
         core = CoreConfig.from(config, listOf(CoreConfig.TAG_PROXY))
         CoreRuntime.applyLogLevel(config.coreConfig)
         ensureXrayAssets()

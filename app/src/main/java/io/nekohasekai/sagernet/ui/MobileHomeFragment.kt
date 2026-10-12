@@ -167,7 +167,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 GroupRepo.all().sortedBy { if(it.id in pinnedGroups()) 0 else 1 }.map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
             }
             val column = content ?: return@launch
-            groups.forEach { (group, _) -> if(knownGroups.add(group.id) && group.isSubscription) collapsed.add(group.id) }
+            groups.forEach { (group, _) -> knownGroups.add(group.id) }
             val structure = buildString {
                 append(MobilePalette.surface); append(blue)
                 for ((group, profiles) in groups) {

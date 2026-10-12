@@ -93,7 +93,18 @@ class Custom : Outbound("custom") {
             val protocol = capitalized(configObject().string("protocol"))
             if (protocol.isEmpty()) "Custom Xray Outbound" else "Custom Xray $protocol Outbound"
         }
-        CUSTOM_XRAY_FULL_CONFIG -> "Custom Xray Config"
+        CUSTOM_XRAY_FULL_CONFIG -> {
+            val outbound = firstXrayEgress(configObject().array("outbounds"))
+            when (val protocol = outbound.string("protocol")) {
+                "vless" -> "VLESS (Xray)"
+                "vmess" -> "VMess (Xray)"
+                "trojan" -> "Trojan (Xray)"
+                "hysteria" -> if (outbound.obj("settings").int("version") == 2 || outbound.obj("streamSettings").obj("hysteriaSettings").int("version") == 2) "Hysteria2 (Xray)" else "Hysteria (Xray)"
+                "shadowsocks" -> "Shadowsocks (Xray)"
+                "" -> "Custom Xray Config"
+                else -> "${capitalized(protocol)} (Xray)"
+            }
+        }
         else -> subtype
     }
 
