@@ -11,7 +11,9 @@ import androidx.recyclerview.widget.RecyclerView
 
 /** Shared palette for the settings root and every existing preference screen. */
 object MobileSettingsStyle {
+    private val styledRoots=java.util.WeakHashMap<View,Boolean>()
     fun apply(fragment: PreferenceFragmentCompat, root: View) {
+        if(styledRoots.put(root,true)==true) return
         fun compact(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val preference = group.getPreference(i)

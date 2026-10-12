@@ -47,6 +47,9 @@ abstract class ThemedActivity : AppCompatActivity {
         super.onCreate(savedInstanceState)
 
         supportFragmentManager.registerFragmentLifecycleCallbacks(object : androidx.fragment.app.FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentViewCreated(manager: androidx.fragment.app.FragmentManager, fragment: androidx.fragment.app.Fragment, view: android.view.View, state: Bundle?) {
+                if(fragment is androidx.preference.PreferenceFragmentCompat) MobileSettingsStyle.apply(fragment,view)
+            }
             override fun onFragmentStarted(manager: androidx.fragment.app.FragmentManager, fragment: androidx.fragment.app.Fragment) {
                 val dialog=(fragment as? androidx.fragment.app.DialogFragment)?.dialog as? androidx.appcompat.app.AlertDialog ?: return
                 val colors=android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),intArrayOf(MobilePalette.muted,MobilePalette.accent(this@ThemedActivity)))
