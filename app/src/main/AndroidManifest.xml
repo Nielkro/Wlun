@@ -183,6 +183,8 @@
                 <data android:scheme="awg" />
                 <data android:scheme="tt" />
                 <data android:scheme="throne" />
+                <data android:scheme="happ" />
+                <data android:scheme="incy" />
                 <data android:scheme="json" />
             </intent-filter>
         </activity>

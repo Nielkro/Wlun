@@ -597,7 +597,7 @@ class MobileHomeFragment : ToolbarFragment() {
         body.addView(name);body.addView(url)
         body.addView(action(getString(R.string.qmobile_save)) {
             val address=url.text.toString().trim()
-            val parsed=android.net.Uri.parse(address)
+            val parsed=android.net.Uri.parse(app.qthrone.mobile.group.ProviderLinks.subscription(address)?.data ?: address)
             if(parsed.scheme !in listOf("https","http") || parsed.host.isNullOrBlank()) { url.error=getString(R.string.qmobile_subscription_url);return@action }
             viewLifecycleOwner.lifecycleScope.launch {
                 try {

@@ -66,6 +66,16 @@ object ProviderRouting {
                 if (!rule.isEmpty()) rules.add(rule)
             }
         }
+        if (json.string("DomainStrategy") == "IPIfNonMatch") {
+            val dns = rules.first()
+            val domainRules = rules.drop(1).filter { it.name.endsWith("Sites") }
+            val ipRules = rules.drop(1).filter { it.name.endsWith("Ip") }
+            rules = mutableListOf(dns).apply {
+                addAll(domainRules)
+                if (ipRules.isNotEmpty()) add(RouteRule().apply { name = "Resolve unmatched domains"; action = "resolve"; strategy = "prefer_ipv4" })
+                addAll(ipRules)
+            }
+        }
     }
     fun stored(profile: RouteProfile): Pair<String, JsonObject>? {
         val stored = JsonInput.parseObjectOrNull(profile.raw_route) ?: return null
@@ -83,6 +93,6 @@ object ProviderRouting {
             directDns = dns("Domestic", "8.8.8.8"), fakeDns = truth(json, "FakeDNS", false),
             dnsFinalOut = if (truth(json, "GlobalProxy", true)) "remote" else "direct",
             dnsPredefinedEnable = true, dnsPredefinedRules = base.dnsPredefinedRules + hosts,
-            resolveDomainStrategy = if (json.string("DomainStrategy") == "AsIs") "" else "prefer_ipv4")
+            resolveDomainStrategy = if (json.string("DomainStrategy") == "IPOnDemand") "prefer_ipv4" else "")
     }
 }
