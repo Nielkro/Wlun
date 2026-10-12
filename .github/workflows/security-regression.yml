@@ -53,7 +53,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p security-results
-          "$ANDROID_HOME/platform-tools/adb" shell am instrument -w -r app.qthrone.mobile.test/androidx.test.runner.AndroidJUnitRunner | tee security-results/instrumentation.txt
+          ADB="$ANDROID_HOME/platform-tools/adb"
+          COMPONENT="$("$ADB" shell pm list instrumentation | sed -n 's/^instrumentation:\([^ ]*\/androidx.test.runner.AndroidJUnitRunner\).*/\1/p' | tr -d '\r')"
+          test -n "$COMPONENT"
+          "$ADB" shell am instrument -w -r "$COMPONENT" | tee security-results/instrumentation.txt
           grep -E 'OK \([0-9]+ tests\)' security-results/instrumentation.txt
           ! grep -E 'FAILURES|INSTRUMENTATION_FAILED|Process crashed' security-results/instrumentation.txt
       - name: Collect diagnostics
