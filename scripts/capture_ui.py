@@ -62,10 +62,18 @@ shell('am', 'start', '-n', activity)
 time.sleep(8)
 screen_xml()
 capture('01-home-empty')
+shell('input','swipe','1','650','700','650','400')
+assert 'Configuration' not in screen_xml() and 'Sing-box dashboard' not in screen_xml(), 'Legacy navigation drawer opened'
+
 tap_text('Settings')
 capture('03-settings')
-tap_text('Split routing')
+tap_text('Routing settings')
 capture('02-routing')
+assert 'AdBlock' in screen_xml(), 'Routing options missing'
+tap_text('Routing profiles');capture('25-route-profiles')
+shell('input','keyevent','4');time.sleep(2)
+assert 'Routing profiles' in screen_xml(), 'Back from routes did not return to routing settings'
+
 shell('input', 'keyevent', '4')
 time.sleep(2)
 for label in ('Finland-demo', 'Sweden-demo', 'Germany-demo'):
@@ -175,22 +183,22 @@ assert 'Demo subscription' in screen_xml(),'Pinned subscription disappeared'
 subscription_more('Demo subscription');tap_text('Edit')
 assert 'http://127.0.0.1:8866/demo' in screen_xml(),'Editor did not open the selected subscription'
 capture('15-subscription-editor');shell('input','keyevent','4');time.sleep(2)
-tap_text('Settings');tap_text('Appearance');capture('16-appearance-gray')
+tap_text('Settings');tap_text('General settings');tap_text('Appearance');capture('16-appearance-gray')
 choose_accent('Purple');capture('22-settings-purple');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('New Year')
 time.sleep(3)
-shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
 capture('17-home-newyear')
-tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Light')
+tap_text('Settings');tap_text('General settings');tap_text('Appearance');tap_text('Theme');tap_text('Light')
 time.sleep(4);capture('18-settings-white')
-shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('19-home-white')
-tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark')
+shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('19-home-white')
+tap_text('Settings');tap_text('General settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark')
 time.sleep(4);tap_text('Theme');tap_text('OLED');time.sleep(4);capture('20-settings-oled')
-shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
-tap_text('Settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark');time.sleep(3)
+shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2);capture('21-home-oled')
+tap_text('Settings');tap_text('General settings');tap_text('Appearance');tap_text('Theme');tap_text('Dark');time.sleep(3)
 choose_accent('White');capture('23-settings-white-theme');choose_accent('Cyan')
 tap_text('Seasonal decoration');tap_text('Halloween');time.sleep(3)
-shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
+shell('input','keyevent','4');shell('input','keyevent','4');shell('input','keyevent','4');time.sleep(2)
 # Every group, including the last subscription, can be removed without confirmation.
 for attempt in range(10):
     nodes=list(ET.fromstring(screen_xml()).iter('node'))

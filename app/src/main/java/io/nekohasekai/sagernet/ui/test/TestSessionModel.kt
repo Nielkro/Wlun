@@ -132,6 +132,7 @@ internal class TestSessionModel(
     }
 
     fun onUrlResult(profileId: Long, latency: Int, error: String) {
+        if (!testCurrent && profileId !in position) return
         val ok = ProxyEntity.isWorking(latency)
         val aborted = !ok && (latency == 0 || ProxyEntity.isTestAborted(error))
         put(profileId, RowState(RowPhase.DONE, latency = latency, error = error, ok = ok, failed = !ok && !aborted))

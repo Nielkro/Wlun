@@ -166,17 +166,9 @@ class VpnService : BaseVpnService(),
         // Native transport sockets cannot call the in-process protect(fd). Keep this
         // application's UID outside every TUN: a native probe may start while a
         // regular protocol is connected, after this builder has already run.
-        val included=options.getIncludePackage().toList()
-        val excluded=options.getExcludePackage().toList()
-        if(included.isNotEmpty()) {
-            val effective=included.filter { it!=packageName }
-            check(effective.isNotEmpty()) { "Native transports require at least one other included application" }
-            effective.forEach { try { builder.addAllowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {} }
-        } else {
-            (excluded + packageName).distinct().forEach {
-                try { builder.addDisallowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {}
-            }
-        }
+        val packages=TunApplicationPolicy.resolve(packageName,options.getIncludePackage().toList(),options.getExcludePackage().toList())
+        packages.included.forEach { try { builder.addAllowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {} }
+        packages.excluded.forEach { try { builder.addDisallowedApplication(it) } catch(_:PackageManager.NameNotFoundException) {} }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && options.isHTTPProxyEnabled()) {
             builder.setHttpProxy(
