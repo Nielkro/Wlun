@@ -1,0 +1,88 @@
+package app.qthrone.mobile.route
+
+import app.qthrone.mobile.outbound.json.*
+import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.outbound.config.GeneratorSettings
+
+/** Happ and Incy routing documents are kept with their subscription, including unknown fields. */
+object ProviderRouting {
+    data class Command(val provider: String, val activate: Boolean, val off: Boolean, val document: JsonObject?)
+    private val link = Regex("^(happ|incy)://routing/(add|onadd|off)(?:/([^?#]*))?(?:\\?data=([^#]*))?(?:#.*)?$", RegexOption.IGNORE_CASE)
+    fun isLink(text: String) = link.matches(text.trim())
+    fun parse(text: String, provider: String = "Happ"): Command {
+        require(text.length <= 2 * 1024 * 1024) { "Routing profile is too large" }
+        val input = text.trim()
+        val match = link.matchEntire(input)
+        val source = match?.groupValues?.get(1)?.replaceFirstChar { it.uppercase() } ?: provider
+        if (input.equals("off", true) || match?.groupValues?.get(2)?.equals("off", true) == true)
+            return Command(source, false, true, null)
+        val payload = match?.let { java.net.URLDecoder.decode(it.groupValues[3].ifEmpty { it.groupValues[4] }.replace("+", "%2B"), "UTF-8") } ?: input
+        val json = JsonInput.parseObjectOrNull(payload) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload))
+            ?: error("Invalid $source routing profile")
+        require(json.contains("GlobalProxy") || json.contains("DirectSites") || json.contains("Name")) { "Not a $source routing profile" }
+        for (key in listOf("DirectSites", "DirectIp", "ProxySites", "ProxyIp", "BlockSites", "BlockIp")) {
+            require(!json.contains(key) || json.isArray(key)) { "$key must be a list" }
+            require(json.array(key).size <= 100000) { "Too many routing rules" }
+        }
+        return Command(source, match?.groupValues?.get(2)?.equals("onadd", true) == true, false, json)
+    }
+    data class Payload(val body: String, val commands: List<Command>)
+    fun subscription(body: String, header: String = "", provider: String = "Happ"): Payload {
+        var text = body.trim()
+        if (!text.contains("://") && !text.startsWith("{") && !text.startsWith("[")) {
+            val decoded = Base64Strict.decodeToString(text.filterNot { it.isWhitespace() })
+            if (decoded.contains("://")) text = decoded
+        }
+        val commands = mutableListOf<Command>()
+        if (header.isNotBlank()) commands.add(parse(header, provider))
+        val cleaned = text.lineSequence().filter { line ->
+            if (isLink(line.trim())) { commands.add(parse(line.trim(), provider)); false } else true
+        }.joinToString("\n")
+        return Payload(cleaned, commands)
+    }
+    fun truth(json: JsonObject, key: String, default: Boolean): Boolean = when (val value = json[key]) {
+        is Boolean -> value
+        is String -> value.equals("true", true) || value == "1"
+        else -> default
+    }
+    fun profile(json: JsonObject, provider: String): RouteProfile = RouteProfile.defaultProfile().apply {
+        name = json.string("Name").ifBlank { "$provider Default" }
+        default_outbound_id = if (truth(json, "GlobalProxy", true)) OutboundIds.PROXY else OutboundIds.DIRECT
+        raw_route = jsonObjectOf("provider" to provider, "profile" to json).toCompact()
+        prevent_modifications = true
+        for ((prefix, outbound) in listOf("Block" to OutboundIds.BLOCK, "Proxy" to OutboundIds.PROXY, "Direct" to OutboundIds.DIRECT)) {
+            for ((key, ip) in listOf("${prefix}Sites" to false, "${prefix}Ip" to true)) {
+                val rule = RouteRule().apply { name = key; outbound_id = outbound }
+                for (entry in json.array(key).strings().filter { it.isNotBlank() }) {
+                    when {
+                        entry.startsWith("geosite:") || entry.startsWith("geoip:") -> rule.rule_set.add(entry)
+                        ip -> rule.ip_cidr.addAll(MobileRouteInput.networks(entry))
+                        entry.startsWith("full:") -> rule.domain.add(entry.removePrefix("full:"))
+                        entry.startsWith("regexp:") -> rule.domain_regex.add(entry.removePrefix("regexp:"))
+                        entry.startsWith("keyword:") -> rule.domain_keyword.add(entry.removePrefix("keyword:"))
+                        else -> rule.domain_suffix.add(entry.removePrefix("domain:"))
+                    }
+                }
+                if (!rule.isEmpty()) rules.add(rule)
+            }
+        }
+    }
+    fun stored(profile: RouteProfile): Pair<String, JsonObject>? {
+        val stored = JsonInput.parseObjectOrNull(profile.raw_route) ?: return null
+        return if (stored.string("provider") in listOf("Happ", "Incy")) stored.string("provider") to stored.obj("profile") else null
+    }
+    fun settings(json: JsonObject, base: GeneratorSettings): GeneratorSettings {
+        fun dns(prefix: String, fallback: String): String {
+            val type = json.string("${prefix}DNSType")
+            val domain = json.string("${prefix}DNSDomain")
+            val ip = json.string("${prefix}DNSIP").ifBlank { json.string("${prefix}Dns") }
+            return if (type.equals("DoH", true) && domain.isNotBlank()) domain else ip.ifBlank { fallback }
+        }
+        val hosts = json.obj("DnsHosts").map { "${it.value} ${it.key}" }
+        return base.copy(remoteDns = dns("Remote", "https://cloudflare-dns.com/dns-query"),
+            directDns = dns("Domestic", "8.8.8.8"), fakeDns = truth(json, "FakeDNS", false),
+            dnsFinalOut = if (truth(json, "GlobalProxy", true)) "remote" else "direct",
+            dnsPredefinedEnable = true, dnsPredefinedRules = base.dnsPredefinedRules + hosts,
+            resolveDomainStrategy = if (json.string("DomainStrategy") == "AsIs") "" else "prefer_ipv4")
+    }
+}

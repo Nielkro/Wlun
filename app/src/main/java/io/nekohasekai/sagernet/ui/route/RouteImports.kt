@@ -21,7 +21,7 @@ object RouteImports {
 
     fun isRouteLink(text: String): Boolean {
         val t = text.trim()
-        return t.startsWith(RouteShare.ROUTE_LINK_PREFIX, true) || t.startsWith(RouteShare.REMOTE_ROUTE_LINK_PREFIX, true)
+        return t.startsWith(RouteShare.ROUTE_LINK_PREFIX, true) || t.startsWith(RouteShare.REMOTE_ROUTE_LINK_PREFIX, true) || app.qthrone.mobile.route.ProviderRouting.isLink(t)
     }
 
     fun isRemoteRouteLink(text: String) = text.trim().startsWith(RouteShare.REMOTE_ROUTE_LINK_PREFIX, true)

@@ -45,7 +45,8 @@ internal object SubscriptionRefresh {
         }
         // A body without a single profile is far likelier a broken or blocked response than an emptied subscription:
         // abort before the first write (no deletion, no update time). Parsing writes nothing, so it runs first.
-        val parsed = parse(fetched.body)
+        val payload = app.qthrone.mobile.route.ProviderRouting.subscription(fetched.body, fetched.routing, options.routingProvider.ifBlank { "Happ" })
+        val parsed = parse(payload.body)
         if (parsed.isEmpty()) {
             // GroupUpdater.cpp:746-752: panels answer a device or quota limit with an empty list and an announcement
             // saying why.
@@ -73,6 +74,7 @@ internal object SubscriptionRefresh {
             return
         }
 
+        app.qthrone.mobile.group.ProviderRouteStore.apply(gid, payload.commands)
         SagerDatabase.groupDao.setSubscriptionInfo(gid, System.currentTimeMillis() / 1000, fetched.subInfo.toJsonString())
         GroupRepo.postUpdate(gid)
 
@@ -223,7 +225,9 @@ internal object SubscriptionRefresh {
         val sink = ImportSink(target, null)
         Logs.i(">>>>>>>> " + str(R.string.subs_processing))
         for (document in documents) {
-            for (outbound in parse(document)) sink.add(outbound)
+            val payload = app.qthrone.mobile.route.ProviderRouting.subscription(document)
+            for (outbound in parse(payload.body)) sink.add(outbound)
+            app.qthrone.mobile.group.ProviderRouteStore.apply(target, payload.commands)
         }
         sink.flush()
         Logs.i(">>>>>>>> " + str(R.string.subs_process_complete))

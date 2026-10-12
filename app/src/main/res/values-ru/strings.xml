@@ -1751,4 +1751,26 @@
     <string name="exit_ip_location">%1$s, %2$s</string>
     <string name="exit_ip_summary">Выходной IP: %1$s</string>
     <string name="exit_ip_summary_location">Выходной IP: %1$s (%2$s)</string>
+    <string name="provider_routing_title">Маршрутизация %1$s</string>
+    <string name="provider_routing_use">Использовать Маршрутизацию %1$s</string>
+    <string name="provider_routing_use_summary">Если выключено, используются общие настройки маршрутизации qThrone.</string>
+    <string name="provider_routing_profile">Профиль маршрутизации</string>
+    <string name="provider_routing_global">По умолчанию через прокси</string>
+    <string name="provider_routing_fake_dns">FakeDNS</string>
+    <string name="provider_routing_strategy">Стратегия доменов</string>
+    <string name="provider_routing_remote_type">Тип удалённого DNS</string>
+    <string name="provider_routing_remote_domain">URL удалённого DNS</string>
+    <string name="provider_routing_remote_ip">IP удалённого DNS</string>
+    <string name="provider_routing_direct_type">Тип прямого DNS</string>
+    <string name="provider_routing_direct_domain">URL прямого DNS</string>
+    <string name="provider_routing_direct_ip">IP прямого DNS</string>
+    <string name="provider_routing_hosts">DNS Hosts (JSON)</string>
+    <string name="provider_routing_geoip">URL GeoIP</string>
+    <string name="provider_routing_geosite">URL GeoSite</string>
+    <string name="provider_routing_direct_sites">Домены напрямую</string>
+    <string name="provider_routing_direct_ips">IP напрямую</string>
+    <string name="provider_routing_proxy_sites">Домены через прокси</string>
+    <string name="provider_routing_proxy_ips">IP через прокси</string>
+    <string name="provider_routing_block_sites">Блокируемые домены</string>
+    <string name="provider_routing_block_ips">Блокируемые IP</string>
 </resources>

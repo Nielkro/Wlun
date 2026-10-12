@@ -364,7 +364,12 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             group.autoClearUnavailable = store.getBoolean(KEY_AUTO_CLEAR, false)
             group.url = if (DataStore.groupType == TYPE_SUBSCRIPTION) url else ""
             group.skipAutoUpdate = store.getBoolean(KEY_SKIP_AUTO_UPDATE, false)
-            group.subOptions = optionsFromCache()
+            group.subOptions = optionsFromCache().also {
+                it.routingProvider = group.subOptions.routingProvider
+                it.providerRoutingEnabled = group.subOptions.providerRoutingEnabled
+                it.providerRouting = group.subOptions.providerRouting
+                it.providerRoutingProfiles = group.subOptions.providerRoutingProfiles
+            }
             group.frontProxyId = proxyId(KEY_FRONT)
             group.landingProxyId = proxyId(KEY_LANDING)
             if (editingId > 0) GroupRepo.save(group) else GroupRepo.add(group)

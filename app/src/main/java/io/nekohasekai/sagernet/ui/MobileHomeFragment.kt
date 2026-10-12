@@ -244,12 +244,12 @@ class MobileHomeFragment : ToolbarFragment() {
                     val above=FrameLayout(requireContext())
                     above.addView(MobileSeasonalView(requireContext()),FrameLayout.LayoutParams(-1,dp(64)))
                     currentCheck=text(currentPing ?: getString(R.string.qmobile_check_connection),12f,muted).apply {
-                        maxLines=2;setPadding(dp(2),0,dp(4),dp(8));gravity=Gravity.BOTTOM
+                        maxLines=2;setPadding(dp(2),dp(2),dp(2),dp(2));gravity=Gravity.BOTTOM
                         isFocusable=true
                         MobileFeedback.apply(this,white=true)
                         setOnClickListener { checkCurrentConnection() }
                     }
-                    above.addView(currentCheck,FrameLayout.LayoutParams(dp(160),dp(48),Gravity.START or Gravity.BOTTOM))
+                    above.addView(currentCheck,FrameLayout.LayoutParams(-2,-2,Gravity.START or Gravity.BOTTOM).apply { bottomMargin=dp(6) })
                     column.addView(above,LinearLayout.LayoutParams(-1,dp(64)))
                     updateState()
                 } else currentCheck=null
@@ -539,6 +539,9 @@ class MobileHomeFragment : ToolbarFragment() {
             body.addView(row)
         }
         if(group.isSubscription) entry(getString(R.string.qmobile_refresh),R.drawable.ic_mobile_refresh) { SubscriptionClient.refreshGroup(group.id,false) }
+        if(group.subOptions.routingProvider.isNotBlank()) entry(getString(R.string.provider_routing_title,group.subOptions.routingProvider),R.drawable.ic_mobile_route) {
+            startActivity(Intent(requireContext(),ProviderRoutingActivity::class.java).putExtra("groupId",group.id))
+        }
         entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id) } }
         entry(getString(R.string.qmobile_edit),R.drawable.ic_mobile_edit) { editGroup(group,false) }
         val pinned=group.id in pinnedGroups()

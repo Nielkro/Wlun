@@ -29,6 +29,8 @@ def patch(core: Path):
     for source in (Path(__file__).resolve().parents[1] / "core-patches" / "trusttunnel").glob("*.go"):
         shutil.copyfile(source, target / source.name)
     subprocess.run(["go", "mod", "edit", "-replace=" + module + "=./.qthrone/trusttunnel"], cwd=core, check=True)
+    for source in (Path(__file__).resolve().parents[1] / "core-patches" / "mobile").glob("*.go"):
+        shutil.copyfile(source, core / "mobile" / source.name)
 
 
 if __name__ == "__main__":

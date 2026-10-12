@@ -38,7 +38,8 @@ func (t *httpsFallbackTransport) RoundTrip(request *http.Request) (*http.Respons
 		return nil, net.ErrClosed
 	}
 	if t.selected == nil {
-		ctx, cancel := context.WithTimeout(request.Context(), 3*time.Second)
+		// Leave time for TLS and the URL probe within Android's three-second test.
+		ctx, cancel := context.WithTimeout(request.Context(), 750*time.Millisecond)
 		probe := newRequest(t.owner.server.String(), HealthCheckMagicAddress, nil).WithContext(ctx)
 		probe.Header.Set("Proxy-Authorization", t.owner.auth)
 		probe.Header.Set("User-Agent", t.owner.userAgents.HealthCheckUserAgent)

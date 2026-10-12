@@ -64,6 +64,11 @@ object RouteShare {
      */
     fun fromShareInput(text: String, profileIdByName: (String) -> Long?): Imported {
         var input = text.trim()
+        if (ProviderRouting.isLink(input)) return try {
+            val command = ProviderRouting.parse(input)
+            val profile = command.document?.let { ProviderRouting.profile(it, command.provider) }
+            if (profile == null) failure("Routing off is only supported for a subscription") else Imported(profile, "", emptyList(), false)
+        } catch (e: Exception) { failure(e.message ?: "Invalid routing profile") }
         if (input.isEmpty()) return failure("Empty input")
         if (input.startsWith(ROUTE_LINK_PREFIX, ignoreCase = true)) {
             input = UrlText.deepLinkPayload(input, ROUTE_LINK_PREFIX.length)

@@ -1029,6 +1029,7 @@ class ConfigGenerator @JvmOverloads constructor(
     }
 
     private fun remoteRuleSet(tag: String, url: String): JsonObject {
+        if (url.startsWith("file://")) return jsonObjectOf("type" to "local", "tag" to tag, "format" to "binary", "path" to url.removePrefix("file://"))
         val ruleSet = jsonObjectOf("type" to "remote", "tag" to tag, "format" to "binary", "url" to url)
         if (settings.deferRuleSets) {
             // StartContext reads initial_path only without a cached copy, instead of failing the start on a fetch

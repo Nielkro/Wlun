@@ -84,6 +84,10 @@ data class SubscriptionOptions(
     var nameExclude: String = "",
     /** Android-only: the subscription info card above the profiles; stored only when off. */
     var showInfoCard: Boolean = true,
+    var routingProvider: String = "",
+    var providerRoutingEnabled: Boolean = true,
+    var providerRouting: String = "",
+    var providerRoutingProfiles: String = "[]",
 ) : Parcelable {
 
     fun toJson(): JsonObject {
@@ -104,6 +108,12 @@ data class SubscriptionOptions(
         if (nameInclude.isNotEmpty()) json["name_include"] = nameInclude
         if (nameExclude.isNotEmpty()) json["name_exclude"] = nameExclude
         if (!showInfoCard) json["show_info_card"] = false
+        if (routingProvider.isNotEmpty()) {
+            json["routing_provider"] = routingProvider
+            json["provider_routing_enabled"] = providerRoutingEnabled
+            json["provider_routing"] = providerRouting
+            json["provider_routing_profiles"] = providerRoutingProfiles
+        }
         return json
     }
 
@@ -133,6 +143,10 @@ data class SubscriptionOptions(
                 nameInclude = json.string("name_include"),
                 nameExclude = json.string("name_exclude"),
                 showInfoCard = !json.isBool("show_info_card") || json.bool("show_info_card"),
+                routingProvider = json.string("routing_provider"),
+                providerRoutingEnabled = !json.isBool("provider_routing_enabled") || json.bool("provider_routing_enabled"),
+                providerRouting = json.string("provider_routing"),
+                providerRoutingProfiles = json.string("provider_routing_profiles").ifBlank { "[]" },
             )
         }
 

@@ -20,7 +20,7 @@ object SubscriptionFetch {
     private const val MAX_LOGGED_BODY = 4096
 
     /** [error] is null on success; [subInfo] is what the headers and the body's head said ([SubscriptionMetadata]). */
-    class Result(@JvmField val body: String, @JvmField val subInfo: SubUserInfo, @JvmField val error: String?)
+    class Result(@JvmField val body: String, @JvmField val subInfo: SubUserInfo, @JvmField val error: String?, val routing: String = "")
 
     fun fetch(url: String, name: String, identity: RequestIdentity): Result {
         Logs.i(">>>>>>>> " + app.getString(R.string.subs_requesting, name))
@@ -43,7 +43,7 @@ object SubscriptionFetch {
             return Result(body, SubUserInfo(), response.error)
         }
         val body = String(response.data, Charsets.UTF_8)
-        return Result(body, SubscriptionMetadata.read(response::header, body), null)
+        return Result(body, SubscriptionMetadata.read(response::header, body), null, response.header("routing"))
     }
 
     private fun readContent(url: String): Result = try {

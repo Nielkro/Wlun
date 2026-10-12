@@ -32,8 +32,8 @@ object SettingsMapper {
      * The route profile of current_route_id (the first profile when it is gone), the rule-set list, the tracked
      * groups of auto-selectors and, in :bg, the core's member check.
      */
-    fun routingInput(): RoutingInput = RoutingInput(
-        RouteManager.current(),
+    fun routingInput(profile: app.qthrone.mobile.route.RouteProfile = RouteManager.current()): RoutingInput = RoutingInput(
+        profile,
         RouteManager.catalog(),
         selectorStore(),
         if (SagerNet.application.isBgProcess) CoreMemberCheck else null,

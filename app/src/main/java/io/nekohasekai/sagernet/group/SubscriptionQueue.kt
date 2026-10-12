@@ -169,7 +169,8 @@ object SubscriptionQueue {
      * change window. Returns the group id, -1 on failure.
      */
     fun subscribeUrl(url: String, name: String, autoUpdate: Boolean): Long {
-        val content = url.trim()
+        val wrapped = ProviderLinks.subscription(url)
+        val content = wrapped?.data ?: url.trim()
         if (content.isEmpty()) return -1L
         val group = try {
             runBlocking {
@@ -178,6 +179,7 @@ object SubscriptionQueue {
                         name = name.trim().ifEmpty { runCatching { Uri.parse(content).host }.getOrNull().orEmpty() },
                         url = content,
                         skipAutoUpdate = !autoUpdate,
+                        subOptions = app.qthrone.mobile.database.SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty()),
                     )
                 )
             }

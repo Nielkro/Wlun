@@ -1872,4 +1872,26 @@
     <string name="exit_ip_summary">Exit IP: %1$s</string>
     <!-- As exit_ip_summary; %2$s the location (exit_ip_location). -->
     <string name="exit_ip_summary_location">Exit IP: %1$s (%2$s)</string>
+    <string name="provider_routing_title">%1$s routing</string>
+    <string name="provider_routing_use">Use %1$s routing</string>
+    <string name="provider_routing_use_summary">When disabled, use the common qThrone routing settings.</string>
+    <string name="provider_routing_profile">Routing profile</string>
+    <string name="provider_routing_global">Proxy by default</string>
+    <string name="provider_routing_fake_dns">FakeDNS</string>
+    <string name="provider_routing_strategy">Domain strategy</string>
+    <string name="provider_routing_remote_type">Remote DNS type</string>
+    <string name="provider_routing_remote_domain">Remote DNS URL</string>
+    <string name="provider_routing_remote_ip">Remote DNS IP</string>
+    <string name="provider_routing_direct_type">Direct DNS type</string>
+    <string name="provider_routing_direct_domain">Direct DNS URL</string>
+    <string name="provider_routing_direct_ip">Direct DNS IP</string>
+    <string name="provider_routing_hosts">DNS hosts (JSON)</string>
+    <string name="provider_routing_geoip">GeoIP URL</string>
+    <string name="provider_routing_geosite">GeoSite URL</string>
+    <string name="provider_routing_direct_sites">Direct domains</string>
+    <string name="provider_routing_direct_ips">Direct IPs</string>
+    <string name="provider_routing_proxy_sites">Proxied domains</string>
+    <string name="provider_routing_proxy_ips">Proxied IPs</string>
+    <string name="provider_routing_block_sites">Blocked domains</string>
+    <string name="provider_routing_block_ips">Blocked IPs</string>
 </resources>

@@ -36,8 +36,22 @@ object CoreConfigs {
      */
     fun buildMain(profile: ProxyEntity, deferRuleSets: Boolean = false): GeneratedConfig {
         val (landing, front) = groupProxies(profile.groupId)
-        val settings = SettingsMapper.generatorSettings().copy(deferRuleSets = deferRuleSets)
-        val generated = generator(SettingsMapper.routingInput(), settings).build(profile.id, landing, front)
+        var settings = SettingsMapper.generatorSettings().copy(deferRuleSets = deferRuleSets)
+        val options = SagerDatabase.groupDao.getById(profile.groupId)?.subOptions
+        val bound = options?.takeIf { it.routingProvider.isNotBlank() && it.providerRoutingEnabled }
+        val route = when {
+            bound?.providerRouting == "off" -> app.qthrone.mobile.route.RouteProfile.defaultProfile()
+            bound != null -> app.qthrone.mobile.route.ProviderRouting.profile(
+                app.qthrone.mobile.outbound.json.JsonInput.parseObjectOrNull(bound.providerRouting) ?: app.qthrone.mobile.outbound.json.JsonObject(), bound.routingProvider)
+            else -> app.qthrone.mobile.database.RouteManager.current().copy()
+        }
+        var routing = SettingsMapper.routingInput(route)
+        app.qthrone.mobile.route.ProviderRouting.stored(route)?.let { (_, document) ->
+            settings = app.qthrone.mobile.route.ProviderRouting.settings(document, settings)
+            val catalog = app.qthrone.mobile.route.ProviderGeoAssets.resolve(route, document, routing.catalog)
+            routing = RoutingInput(route, catalog, routing.selectors, routing.memberCheck)
+        }
+        val generated = generator(routing, settings).build(profile.id, landing, front)
         if (!generated.ok) error(generated.error ?: "config generation failed")
         return generated
     }

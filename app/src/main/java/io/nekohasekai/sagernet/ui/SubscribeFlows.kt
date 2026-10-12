@@ -36,6 +36,12 @@ object SubscribeFlows {
     fun importText(activity: FragmentActivity, text: String, gid: Long = -1L) {
         val content = text.trim()
         if (content.isEmpty()) return
+        if (app.qthrone.mobile.route.ProviderRouting.isLink(content)) { importRoute(activity, content); return }
+        app.qthrone.mobile.group.ProviderLinks.decode(content)?.let {
+            if (app.qthrone.mobile.group.ProviderLinks.subscription(content) != null) addSubscription(activity, content, hostOf(it.data))
+            else importInto(activity, it.data, gid)
+            return
+        }
         if (content.startsWith("throne://")) {
             openDeepLink(activity, content, gid)
             return
@@ -97,6 +103,7 @@ object SubscribeFlows {
     fun subscribeLink(text: String): SubscribeLink? {
         val content = text.trim()
         if (content.contains('\n')) return null
+        app.qthrone.mobile.group.ProviderLinks.subscription(content)?.let { return SubscribeLink(content, hostOf(it.data)) }
         if (content.startsWith("clash://install-config", ignoreCase = true)) {
             val uri = Uri.parse(content)
             return SubscribeLink(uri.getQueryParameter("url").orEmpty(), uri.getQueryParameter("name").orEmpty())
