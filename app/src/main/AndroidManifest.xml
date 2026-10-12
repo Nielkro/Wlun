@@ -55,7 +55,7 @@
 
     <application
         android:name="app.qthrone.mobile.SagerNet"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:autoRevokePermissions="allowed"
         android:banner="@drawable/tv_banner"
         android:dataExtractionRules="@xml/backup_rules"

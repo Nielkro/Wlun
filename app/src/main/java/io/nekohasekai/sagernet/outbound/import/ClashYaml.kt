@@ -4,6 +4,7 @@ import app.qthrone.mobile.outbound.json.JsonArray
 import app.qthrone.mobile.outbound.json.JsonNull
 import app.qthrone.mobile.outbound.json.JsonObject
 import org.yaml.snakeyaml.Yaml
+import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.constructor.SafeConstructor
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -18,7 +19,13 @@ object ClashYaml {
      */
     @JvmStatic
     fun proxies(text: String): List<JsonObject>? {
-        val root = Yaml(SafeConstructor()).load<Any?>(sanitize(text)) as? Map<*, *> ?: return null
+        val options = LoaderOptions().apply {
+            nestingDepthLimit = 50
+            maxAliasesForCollections = 20
+            codePointLimit = 4 * 1024 * 1024
+            setAllowRecursiveKeys(false)
+        }
+        val root = Yaml(SafeConstructor(options)).load<Any?>(sanitize(text)) as? Map<*, *> ?: return null
         val proxies = root["proxies"] as? List<*> ?: return null
         return proxies.map { (convert(it) as? JsonObject) ?: JsonObject() }
     }

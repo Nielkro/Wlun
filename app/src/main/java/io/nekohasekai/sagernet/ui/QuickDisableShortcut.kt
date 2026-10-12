@@ -20,6 +20,7 @@
 
 package app.qthrone.mobile.ui
 
+import app.qthrone.mobile.utils.ShortcutAuthorization
 import android.app.Activity
 import android.content.pm.ShortcutManager
 import android.os.Build
@@ -35,9 +36,11 @@ class QuickDisableShortcut : Activity(), SagerConnection.Callback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        connection.connect(this, this)
-        if (Build.VERSION.SDK_INT >= 25) {
-            getSystemService<ShortcutManager>()!!.reportShortcutUsed("disable")
+        ShortcutAuthorization.run(this, intent) {
+            connection.connect(this, this)
+            if (Build.VERSION.SDK_INT >= 25) {
+                getSystemService<ShortcutManager>()!!.reportShortcutUsed("disable")
+            }
         }
     }
 

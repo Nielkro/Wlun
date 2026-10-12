@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.RemoteViews
 import androidx.preference.PreferenceDataStore
 import app.qthrone.mobile.Key
+import app.qthrone.mobile.utils.ShortcutAuthorization
 import app.qthrone.mobile.QuickToggleShortcut
 import app.qthrone.mobile.R
 import app.qthrone.mobile.bg.BaseService
@@ -207,7 +208,8 @@ object Widgets {
         context, 0,
         Intent(context, QuickToggleShortcut::class.java)
             .setAction(Intent.ACTION_MAIN)
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            .let { ShortcutAuthorization.sign(context, it) },
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 

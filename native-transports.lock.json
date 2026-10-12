@@ -1,0 +1,27 @@
+{
+  "build_commit": "ede80e8c2f935c158df824f64d07d5bdacdb3ff7",
+  "core_commit": "93e4873c56c2285f647d0146a0df9c088f122910",
+  "archives": [
+    {
+      "abi": "armeabi-v7a",
+      "name": "qthrone-transports-armeabi-v7a.tar.gz",
+      "sha256": "7beb27f87df803a1e38ce30b2269402e8bac9165a52f374665b1df986908fb4b",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-armeabi-v7a.tar.gz"
+    },
+    {
+      "abi": "arm64-v8a",
+      "name": "qthrone-transports-arm64-v8a.tar.gz",
+      "sha256": "274b01300381ae15b775084de5e431cf679ab5ec727cd1e1673803d45b1e3f1b",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-arm64-v8a.tar.gz"
+    },
+    {
+      "abi": "x86_64",
+      "name": "qthrone-transports-x86_64.tar.gz",
+      "sha256": "89eba05556ef041ee4d083cfb6b413405d88c0b8a1764f68ded95d99014df2fa",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-x86_64.tar.gz"
+    }
+  ]
+}

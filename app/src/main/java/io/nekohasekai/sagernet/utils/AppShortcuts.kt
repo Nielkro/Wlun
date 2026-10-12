@@ -2,6 +2,9 @@ package app.qthrone.mobile.utils
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.os.Build
 import android.content.pm.PackageManager
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
@@ -35,9 +38,22 @@ object AppShortcuts {
             ).filterNotNull()
             val current = ShortcutManagerCompat.getDynamicShortcuts(context)
             val unchanged = current.size == shortcuts.size && shortcuts.all { wanted ->
-                current.any { it.id == wanted.id && it.shortLabel == wanted.shortLabel }
+                current.any { it.id == wanted.id && it.shortLabel == wanted.shortLabel && ShortcutAuthorization.isAuthorized(context, it.intent) }
             }
             if (!unchanged) ShortcutManagerCompat.setDynamicShortcuts(context, shortcuts)
+            if (Build.VERSION.SDK_INT >= 25) {
+                val manager = context.getSystemService(ShortcutManager::class.java)
+                val targets = setOf(QuickToggleShortcut::class.java.name, QuickEnableShortcut::class.java.name,
+                    QuickDisableShortcut::class.java.name)
+                val updates = manager.pinnedShortcuts.mapNotNull { shortcut ->
+                    val old = shortcut.intent ?: return@mapNotNull null
+                    if (old.component?.className !in targets || old.component?.packageName != context.packageName ||
+                        ShortcutAuthorization.isAuthorized(context, old)) return@mapNotNull null
+                    ShortcutInfo.Builder(context, shortcut.id).setShortLabel(shortcut.shortLabel ?: "VPN")
+                        .setIntent(ShortcutAuthorization.sign(context, Intent(old))).build()
+                }
+                if (updates.isNotEmpty()) manager.updateShortcuts(updates)
+            }
         } catch (e: Exception) {
             Logs.w(e)
         }
@@ -48,6 +64,6 @@ object AppShortcuts {
             .setShortLabel(context.getString(label))
             .setLongLabel(context.getString(label))
             .setIcon(IconCompat.createWithResource(context, icon))
-            .setIntent(Intent(context, target).setAction(Intent.ACTION_MAIN))
+            .setIntent(ShortcutAuthorization.sign(context, Intent(context, target).setAction(Intent.ACTION_MAIN)))
             .build()
 }

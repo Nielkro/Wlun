@@ -16,6 +16,7 @@ val generateRootLicenseAsset by tasks.registering(Copy::class) {
 }
 
 android {
+    defaultConfig { testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
     }
@@ -46,6 +47,7 @@ android {
         assets.srcDir(generatedLicenseAssets)
         jniLibs.srcDir(rootProject.layout.projectDirectory.dir("deployment/carriers"))
     }
+    sourceSets.named("androidTest") { assets.srcDir("schemas") }
 }
 
 tasks.matching { it.name == "preBuild" }.configureEach {
@@ -77,13 +79,15 @@ dependencies {
         exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
     }
 
-    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.3")
-    implementation("org.yaml:snakeyaml:1.30")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("org.yaml:snakeyaml:2.5")
     implementation("com.github.daniel-stoneuk:material-about-library:3.2.0-rc01")
     implementation("com.jakewharton:process-phoenix:2.1.2")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20231013")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 
     implementation("com.simplecityapps:recyclerview-fastscroll:2.0.1") {
         exclude(group = "androidx.recyclerview")

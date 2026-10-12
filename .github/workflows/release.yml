@@ -34,24 +34,8 @@ jobs:
         run: |
           set -euo pipefail
           python3 buildScript/release_tag.py
-      - name: Download verified native transports
-        uses: actions/download-artifact@v8
-        with:
-          pattern: qThrone-carriers-*
-          path: carrier-artifacts
-          run-id: '38171883382'
-          github-token: ${{ github.token }}
       - name: Verify and stage native transports
-        shell: bash
-        run: |
-          set -euo pipefail
-          for abi in arm64-v8a armeabi-v7a x86_64; do
-            source="carrier-artifacts/qThrone-carriers-$abi"
-            (cd "$source"; sha256sum -c SHA256SUMS)
-            mkdir -p "deployment/carriers/$abi" "app/src/main/assets/carrier-licenses/$abi"
-            cp "$source/"*.so "deployment/carriers/$abi/"
-            cp "$source/"*-LICENSE "$source/SOURCES.txt" "app/src/main/assets/carrier-licenses/$abi/"
-          done
+        run: python3 scripts/stage_native_transports.py
       - name: Build
         uses: ./.github/actions/android-build
         with:

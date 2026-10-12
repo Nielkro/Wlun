@@ -29,6 +29,7 @@ import app.qthrone.mobile.widget.AlertDialogFragment
 import app.qthrone.mobile.widget.Empty
 import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.Key
+import app.qthrone.mobile.utils.ShortcutAuthorization
 import app.qthrone.mobile.QuickToggleShortcut
 import app.qthrone.mobile.R
 import app.qthrone.mobile.SagerNet
@@ -378,7 +379,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
                     ).apply {
                         action = Intent.ACTION_MAIN
                         putExtra("profile", ent.id)
-                    }).build()
+                    }.let { ShortcutAuthorization.sign(activity, it) }).build()
                 ShortcutManagerCompat.requestPinShortcut(activity, shortcut, null)
             }
 

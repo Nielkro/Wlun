@@ -1,5 +1,6 @@
 package app.qthrone.mobile.database
 
+import android.content.Context
 import android.util.Log
 import androidx.room.AutoMigration
 import androidx.room.Database
@@ -8,14 +9,13 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import app.qthrone.mobile.Key
 import app.qthrone.mobile.R
 import app.qthrone.mobile.SagerNet
 import app.qthrone.mobile.database.preference.SettingEntry
-import java.io.File
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
 
 @Database(
     entities = [
@@ -36,9 +36,6 @@ abstract class SagerDatabase : RoomDatabase() {
     companion object {
 
         private const val TAG = "SagerDatabase"
-
-        /** The settings database of v11 and older; its rows are not carried over. */
-        private const val LEGACY_SETTINGS_DB = "configuration.db"
 
         /** 9 -> 10: the profile table is rebuilt around (type, outboundJson); groups, rules and settings are untouched. */
         val MIGRATION_9_10: Migration = object : Migration(9, 10) {
@@ -163,53 +160,51 @@ abstract class SagerDatabase : RoomDatabase() {
 
         fun defaultGroupName(): String = SagerNet.application.getString(R.string.qmobile_server_list)
 
-        @OptIn(DelicateCoroutinesApi::class)
-        private fun buildProfileDatabase(): SagerDatabase =
-            Room.databaseBuilder(SagerNet.application, SagerDatabase::class.java, Key.DB_PROFILE)
+        private fun buildProfileDatabase(context: Context, name: String): SagerDatabase =
+            Room.databaseBuilder(context, SagerDatabase::class.java, name)
+                .openHelperFactory { config ->
+                    val delegate = config.callback
+                    val safe = object : SupportSQLiteOpenHelper.Callback(delegate.version) {
+                        override fun onCreate(db: SupportSQLiteDatabase) = delegate.onCreate(db)
+                        override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = delegate.onUpgrade(db, oldVersion, newVersion)
+                        override fun onDowngrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) = delegate.onDowngrade(db, oldVersion, newVersion)
+                        override fun onConfigure(db: SupportSQLiteDatabase) = delegate.onConfigure(db)
+                        override fun onOpen(db: SupportSQLiteDatabase) = delegate.onOpen(db)
+                        override fun onCorruption(db: SupportSQLiteDatabase) {
+                            // The framework's default callback deletes corrupted databases.
+                            throw android.database.sqlite.SQLiteException("Profile database is damaged; file preserved")
+                        }
+                    }
+                    FrameworkSQLiteOpenHelperFactory().create(
+                        SupportSQLiteOpenHelper.Configuration.builder(config.context)
+                            .name(config.name).callback(safe).noBackupDirectory(config.useNoBackupDirectory).build()
+                    )
+                }
                 .addMigrations(MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12)
                 .addCallback(callback)
                 .setJournalMode(JournalMode.TRUNCATE)
                 .allowMainThreadQueries()
                 .enableMultiInstanceInvalidation()
-                .fallbackToDestructiveMigration()
-                .fallbackToDestructiveMigrationOnDowngrade()
-                .setQueryExecutor { GlobalScope.launch { it.run() } }
+                .setQueryExecutor(Executors.newFixedThreadPool(4))
                 .build()
 
         // Failures are logged with android.util.Log: Logs reads the log level from the settings in this database.
-        val instance by lazy {
-            SagerNet.application.getDatabasePath(Key.DB_PROFILE).parentFile?.mkdirs()
-            val db = buildProfileDatabase()
-            // A corrupted file throws on first access: keep a copy, rebuild an empty database, keep the app starting.
+        internal fun openProfileDatabase(context: Context, name: String): SagerDatabase {
+            context.getDatabasePath(name).parentFile?.mkdirs()
+            val db = buildProfileDatabase(context, name)
+            // Missing migrations and damaged files must never turn existing profiles into an empty database.
             val opened = try {
                 db.openHelper.writableDatabase
                 db
             } catch (e: Exception) {
                 Log.e(TAG, "open failed", e)
                 runCatching { db.close() }
-                backupCorruptedDatabase()
-                SagerNet.application.deleteDatabase(Key.DB_PROFILE)
-                buildProfileDatabase()
+                throw IllegalStateException("Cannot open profile database; the original database was preserved", e)
             }
-            SagerNet.application.deleteDatabase(LEGACY_SETTINGS_DB)
-            opened
+            return opened
         }
 
-        /** Copies the database file next to itself with a timestamp before it is deleted and rebuilt. */
-        private fun backupCorruptedDatabase() {
-            runCatching {
-                val dbFile = SagerNet.application.getDatabasePath(Key.DB_PROFILE)
-                if (dbFile.exists()) {
-                    val backupFile = File(
-                        dbFile.parentFile, dbFile.name + ".bak_" + System.currentTimeMillis()
-                    )
-                    dbFile.copyTo(backupFile, overwrite = false)
-                    Log.i(TAG, "Corrupted database backed up as ${backupFile.name}")
-                }
-            }.onFailure {
-                Log.w(TAG, "Failed to backup corrupted database before rebuild", it)
-            }
-        }
+        val instance by lazy { openProfileDatabase(SagerNet.application, Key.DB_PROFILE) }
 
         val groupDao get() = instance.groupDao()
         val proxyDao get() = instance.proxyDao()
