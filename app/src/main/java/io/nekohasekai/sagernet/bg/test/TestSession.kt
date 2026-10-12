@@ -220,8 +220,10 @@ internal class TestSession(
      * turns the failure its profile already reported into a success.
      */
     fun reportUrl(results: List<ProbeResult>) {
-        persist(results) { ProfileManager.saveUrlTestResult(it.profileId, it.latency, it.error, it.connectOnly) }
-        for (result in results) {
+        val selected = spec.profileIds.toSet()
+        val scoped = results.filter { it.profileId in selected }
+        persist(scoped) { ProfileManager.saveUrlTestResult(it.profileId, it.latency, it.error, it.connectOnly) }
+        for (result in scoped) {
             val latency = if (result.measured) latencyCode(result.latency, result.error, result.connectOnly) else 0
             if (result.connectOnly) {
                 failed.decrementAndGet()

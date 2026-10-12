@@ -65,7 +65,15 @@ abstract class ThemedActivity : AppCompatActivity {
 
     override fun onContentChanged() {
         super.onContentChanged()
-        findViewById<AppBarLayout>(R.id.appbar)?.applyTopInset()
+        findViewById<AppBarLayout>(R.id.appbar)?.apply {
+            applyTopInset()
+            setBackgroundColor(MobilePalette.toolbar)
+        }
+        findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar)?.apply {
+            setBackgroundColor(MobilePalette.toolbar)
+            setTitleTextColor(MobilePalette.text)
+            navigationIcon?.setTint(MobilePalette.text)
+        }
     }
 
     override fun setTheme(resId: Int) {

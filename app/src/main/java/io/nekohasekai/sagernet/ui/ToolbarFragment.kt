@@ -24,8 +24,11 @@ open class ToolbarFragment : Fragment {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<AppBarLayout>(R.id.appbar)?.applyTopInset()
         toolbar = view.findViewById(R.id.toolbar)
+        toolbar?.setBackgroundColor(MobilePalette.toolbar)
+        toolbar?.setTitleTextColor(MobilePalette.text)
         toolbar?.setNavigationIcon(R.drawable.baseline_arrow_back_24)
         toolbar?.setNavigationContentDescription(R.string.navigation_back)
+        toolbar?.navigationIcon?.setTint(MobilePalette.text)
         // White theme: the toolbar is white, so the menu, title and navigation icon turn dark
         if (Theme.isWhiteTheme()) {
             toolbar?.apply {
