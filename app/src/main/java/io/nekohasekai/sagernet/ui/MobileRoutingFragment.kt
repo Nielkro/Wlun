@@ -12,7 +12,7 @@ import android.graphics.Color
 import androidx.lifecycle.lifecycleScope
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.R
 import app.qthrone.mobile.database.RouteManager
 import app.qthrone.mobile.database.SagerDatabase

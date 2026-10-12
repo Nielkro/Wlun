@@ -21,8 +21,7 @@ object MobileSettingsStyle {
                     preference.positiveButtonText = fragment.getString(android.R.string.ok)
                     preference.negativeButtonText = fragment.getString(android.R.string.cancel)
                 }
-                if (fragment !is SettingsPreferenceFragment) preference.icon = null
-                else if(preference !is PreferenceCategory) {
+                if(fragment is SettingsPreferenceFragment && preference !is PreferenceCategory) {
                     val icon=when {
                         preference.key=="qmobileTun" -> app.qthrone.mobile.R.drawable.ic_mobile_tun
                         preference.key=="qmobileCore" -> app.qthrone.mobile.R.drawable.ic_mobile_core
@@ -95,7 +94,7 @@ object MobileSettingsStyle {
             }
             if(!category) MobileFeedback.apply(view)
             view.findViewById<android.widget.ImageView>(android.R.id.icon)?.apply {
-                visibility=if(fragment is SettingsPreferenceFragment && preference?.icon!=null) View.VISIBLE else View.GONE
+                visibility=if(preference?.icon!=null) View.VISIBLE else View.GONE
                 imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
             }
             view.findViewById<TextView>(android.R.id.title)?.apply {

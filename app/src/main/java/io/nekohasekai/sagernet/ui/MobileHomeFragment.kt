@@ -15,7 +15,7 @@ import android.widget.*
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.bg.test.TestSpec
 import app.qthrone.mobile.ui.test.TestSessionClient
 import androidx.room.InvalidationTracker
@@ -126,6 +126,8 @@ class MobileHomeFragment : ToolbarFragment() {
         openSwipe=null
         super.onDestroyView()
     }
+    private val profileRows=mutableMapOf<Long,View>()
+    private var serverScrollPosition = 0
     fun refresh() {
         if (content == null || !isAdded) return
         load?.cancel()
@@ -134,7 +136,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 GroupRepo.all().sortedBy { if(it.id in pinnedGroups()) 0 else 1 }.map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
             }
             val column = content ?: return@launch
-            column.removeAllViews(); latencyViews.clear()
+            column.removeAllViews(); latencyViews.clear(); profileRows.clear()
             openSwipe=null
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
             fun headerIcon(icon: Int, description: String, callback: (View) -> Unit) = ImageButton(requireContext()).apply {
@@ -169,8 +171,8 @@ class MobileHomeFragment : ToolbarFragment() {
                     false
                 }
             }
-            centre.addView(power, FrameLayout.LayoutParams(dp(252), dp(252), Gravity.CENTER))
-            column.addView(centre, LinearLayout.LayoutParams(-1, dp(284)))
+            centre.addView(power, FrameLayout.LayoutParams(dp(224), dp(224), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin=dp(8) })
+            column.addView(centre, LinearLayout.LayoutParams(-1, dp(246)))
             updateState()
             val imports = LinearLayout(requireContext())
             fun importButton(label: String, icon: Int, callback: () -> Unit) = LinearLayout(requireContext()).apply {
@@ -198,6 +200,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val serverScroll=ScrollView(requireContext()).apply {
                 isVerticalScrollBarEnabled=false; isHorizontalScrollBarEnabled=false
                 clipToPadding=false; addView(serverColumn,FrameLayout.LayoutParams(-1,-2))
+                setOnScrollChangeListener { _, _, y, _, _ -> serverScrollPosition=y }
             }
             column.addView(serverScroll,LinearLayout.LayoutParams(-1,0,1f))
             var firstGroup = true
@@ -253,12 +256,13 @@ class MobileHomeFragment : ToolbarFragment() {
                         setOnClickListener {
                             DataStore.selectedProxy = profile.id
                             if (DataStore.serviceState.connected) SagerNet.reloadService()
-                            refresh()
+                            profileRows.forEach { (id,view) -> view.background=tile(id==profile.id); MobileFeedback.apply(view) }
                         }
                         setOnLongClickListener {
                             startActivity(profile.profileSettingsIntent(requireContext(),group.isSubscription)); true
                         }
                     }
+                    profileRows[profile.id]=row
                     val displayName=profile.displayName().trim()
                     val first=if(displayName.isNotEmpty()) displayName.codePointAt(0) else 0
                     val firstLength=Character.charCount(first)
@@ -279,9 +283,9 @@ class MobileHomeFragment : ToolbarFragment() {
                         }
                     }
                     badge.background=badgeBackground;badge.clipToOutline=true
-                    row.addView(badge,LinearLayout.LayoutParams(dp(32),dp(32)).apply { marginStart=dp(10) })
-                    val labels = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(12), dp(9), dp(8), dp(9)) }
-                    labels.addView(text(if(hasFlag) displayName.substring(flagLength).trimStart() else displayName, 16f).apply { setTypeface(null,Typeface.BOLD); setPadding(0,0,0,dp(4)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
+                    row.addView(badge,LinearLayout.LayoutParams(dp(28),dp(28)).apply { marginStart=dp(10) })
+                    val labels = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(10), dp(6), dp(6), dp(6)) }
+                    labels.addView(text(if(hasFlag) displayName.substring(flagLength).trimStart() else displayName, 15f).apply { setTypeface(null,Typeface.BOLD); setPadding(0,0,0,dp(2)); maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END })
                     labels.addView(text(profile.displayType(), 12f, muted).apply { setPadding(0,0,0,0); maxLines=1 })
                     row.addView(labels, LinearLayout.LayoutParams(0, -2, 1f))
                     val latency=FrameLayout(requireContext()).apply { tag=profile.latency }
@@ -297,7 +301,7 @@ class MobileHomeFragment : ToolbarFragment() {
                                 if(!result.ok) Toast.makeText(requireContext(),R.string.qmobile_delete_failed,Toast.LENGTH_LONG).show()
                             }
                         }).apply { onOpened={ opened -> openSwipe?.takeIf { it!==opened }?.closeActions(); openSwipe=opened } }
-                    rows.addView(swipe, LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(5),0,dp(5),dp(5)) })
+                    rows.addView(swipe, LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(5),0,dp(5),dp(3)) })
                 }
                 rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
                 box.addView(rows)
@@ -305,6 +309,8 @@ class MobileHomeFragment : ToolbarFragment() {
                 serverColumn.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=if(firstGroup) 0 else dp(16) })
                 firstGroup = false
             }
+            val restoreScroll=serverScrollPosition
+            serverScroll.post { serverScroll.scrollTo(0,restoreScroll) }
             updateLatencies()
             if(groups.all { it.second.isEmpty() && !it.first.isSubscription }) {
                 column.addView(View(requireContext()), LinearLayout.LayoutParams(-1,0,1f))

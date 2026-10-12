@@ -149,6 +149,8 @@ import base64
 class Fixture(BaseHTTPRequestHandler):
     def do_GET(self):
         body=b"socks5://192.0.2.2:1080#Subscription-Finland\nsocks5://192.0.2.3:1080#Subscription-Sweden"
+        if self.path.startswith("/scroll"):
+            body="\n".join(f"socks5://192.0.2.4:1080#ScrollTest-{i:02}" for i in range(24)).encode()
         self.send_response(200)
         self.send_header('Content-Type','text/plain')
         self.send_header('Subscription-Userinfo','upload=524288; download=1048576; total=10485760; expire=2000000000')
@@ -275,5 +277,19 @@ for index,(name,link,slots) in enumerate(native_links):
     assert 'Save' in dialog and 'Discard' in dialog and 'Cancel' in dialog,'Unsaved dialog actions missing'
     capture('35-unsaved-dialog-'+str(slots));tap_text('Discard')
 
+# A long controlled list must retain its position on selection and return from settings.
+shell('am','start','-n',activity,'-a','android.intent.action.SEND','-t','text/plain','--es','android.intent.extra.TEXT','http://127.0.0.1:8866/scroll#Scroll%20fixture')
+time.sleep(4)
+before=scroll_to_text('ScrollTest-16')
+def named_bounds(value,name):
+    node=next(n for n in ET.fromstring(value).iter('node') if n.get('text')==name)
+    return tuple(map(int,re.findall(r'\d+',node.get('bounds'))))
+a,b,c,d=named_bounds(before,'ScrollTest-16')
+shell('input','tap',str((a+c)//2),str((b+d)//2));time.sleep(1)
+assert abs(named_bounds(screen_xml(),'ScrollTest-16')[1]-b)<=3,'Profile selection reset list scroll'
+capture('37-home-compact-scrolled')
+tap_text('Settings');shell('input','keyevent','4');time.sleep(2)
+assert abs(named_bounds(screen_xml(),'ScrollTest-16')[1]-b)<=3,'Return from settings reset list scroll'
+print('PASS: profile selection and settings return retain scrolled list position',flush=True)
 (out/'ui-actions-result.txt').write_text('PASS: named subscription import without group selection; standalone profiles in Server list; URL, QR and JSON sharing; country flags; profile swipe reset in both directions; long press editor; subscription bottom sheet, pin and edit; gray, white, OLED and seasonal preferences.\n')
 server.shutdown()

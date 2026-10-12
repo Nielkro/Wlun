@@ -21,7 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.updatePaddingRelative
 import androidx.core.view.WindowCompat
 import androidx.preference.PreferenceDataStore
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.snackbar.Snackbar
 import app.qthrone.mobile.BuildConfig
@@ -341,6 +341,7 @@ class MainActivity : ThemedActivity(),
         }
         currentMainFragment = fragment
         val transaction=supportFragmentManager.beginTransaction()
+            .setReorderingAllowed(true)
             .setCustomAnimations(R.anim.settings_enter, R.anim.settings_exit, R.anim.settings_pop_enter, R.anim.settings_pop_exit)
             .replace(R.id.fragment_holder, fragment)
         if(fragment !is MobileHomeFragment && supportFragmentManager.findFragmentById(R.id.fragment_holder)!=null) transaction.addToBackStack(null)

@@ -53,7 +53,7 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
         if (childFragmentManager.findFragmentById(R.id.settings) == null) {
             childFragmentManager.beginTransaction()
                 .replace(R.id.settings, SettingsPreferenceFragment())
-                .commitAllowingStateLoss()
+                .commitNowAllowingStateLoss()
             arguments?.getString(ARG_SCREEN)?.let { name ->
                 openScreen(name, arguments?.getCharSequence(ARG_SCREEN_TITLE), Bundle())
             }

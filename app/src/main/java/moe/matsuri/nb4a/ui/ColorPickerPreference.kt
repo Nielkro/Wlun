@@ -20,7 +20,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.setPadding
 import androidx.preference.Preference
 import androidx.preference.PreferenceViewHolder
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.R
 import app.qthrone.mobile.ktx.getColorAttr
 import kotlin.math.roundToInt

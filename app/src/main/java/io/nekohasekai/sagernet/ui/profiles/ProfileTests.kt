@@ -1,6 +1,6 @@
 package app.qthrone.mobile.ui.profiles
 
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.R
 import app.qthrone.mobile.bg.test.TestSpec
 import app.qthrone.mobile.ktx.snackbar

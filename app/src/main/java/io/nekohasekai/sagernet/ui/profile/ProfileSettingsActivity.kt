@@ -27,7 +27,7 @@ import androidx.preference.PreferenceDataStore
 import androidx.preference.PreferenceFragmentCompat
 import app.qthrone.mobile.widget.AlertDialogFragment
 import app.qthrone.mobile.widget.Empty
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.Key
 import app.qthrone.mobile.QuickToggleShortcut
 import app.qthrone.mobile.R
