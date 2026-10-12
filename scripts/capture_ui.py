@@ -91,6 +91,9 @@ for label,name in [('TUN settings','27-tun-settings'),('Core settings','28-core-
     shell('input','keyevent','4');time.sleep(2)
     assert 'General settings' in screen_xml(), 'Settings back navigation returned to home'
 
+tap_text('Backup and restore');capture('32-backup-buttons')
+assert 'qThrone Desktop' in screen_xml(), 'Desktop backup format label missing'
+shell('input','keyevent','4');time.sleep(2)
 tap_text('Routing settings')
 capture('02-routing')
 assert 'AdBlock' in screen_xml(), 'Routing options missing'
@@ -131,6 +134,11 @@ for name in ('core.log', 'core.log.prev'):
 assert 'Finland-demo' in profile_xml, 'Imported demo profile is missing from the home screen'
 assert 'Server list' in profile_xml and 'text="Default"' not in profile_xml,'Standalone profiles did not go to Server list'
 assert 'content-desc="Country flag: FI"' in profile_xml,'The profile country flag is missing'
+header=next(n.get('bounds') for n in ET.fromstring(screen_xml()).iter('node') if n.get('content-desc')=='Settings')
+shell('input','swipe','600','1800','600','1200','300');time.sleep(.5)
+assert next(n.get('bounds') for n in ET.fromstring(screen_xml()).iter('node') if n.get('content-desc')=='Settings')==header, 'Dashboard header moved with subscriptions'
+shell('input','swipe','600','1200','600','2000','300');time.sleep(.5)
+
 
 # Controlled local subscription, including metadata. No external account or server is contacted.
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
