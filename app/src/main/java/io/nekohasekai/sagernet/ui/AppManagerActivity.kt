@@ -268,26 +268,40 @@ class AppManagerActivity : ThemedActivity() {
             setHomeAsUpIndicator(R.drawable.ic_navigation_close)
         }
 
-        if (!DataStore.proxyApps) {
-            DataStore.proxyApps = true
+        binding.bypassGroup.check(if (!DataStore.proxyApps) R.id.appProxyModeDisable else if (DataStore.bypass) R.id.appProxyModeBypass else R.id.appProxyModeOn)
+        fun updateModeDescription() {
+            binding.appModeSummary.setText(when {
+                !DataStore.proxyApps -> R.string.qmobile_apps_all_summary
+                DataStore.bypass -> R.string.qmobile_apps_except_summary
+                else -> R.string.qmobile_apps_only_summary
+            })
         }
-
-        binding.bypassGroup.check(if (DataStore.bypass) R.id.appProxyModeBypass else R.id.appProxyModeOn)
+        updateModeDescription()
         binding.bypassGroup.setOnCheckedChangeListener { _, checkedId ->
             when (checkedId) {
                 R.id.appProxyModeDisable -> {
                     DataStore.proxyApps = false
-                    finish()
                 }
 
-                R.id.appProxyModeOn -> DataStore.bypass = false
-                R.id.appProxyModeBypass -> DataStore.bypass = true
+                R.id.appProxyModeOn -> { DataStore.proxyApps = true; DataStore.bypass = false }
+                R.id.appProxyModeBypass -> { DataStore.proxyApps = true; DataStore.bypass = true }
             }
+            updateModeDescription()
+        }
+        binding.appModeSummary.setTextColor(MobilePalette.muted)
+        binding.appModeCard.setCardBackgroundColor(MobilePalette.surface)
+        binding.appModeCard.radius = 16 * resources.displayMetrics.density
+        listOf(binding.appProxyModeDisable, binding.appProxyModeOn, binding.appProxyModeBypass).forEach {
+            it.setTextColor(MobilePalette.text)
+            it.chipCornerRadius = 12 * resources.displayMetrics.density
+            it.chipBackgroundColor = android.content.res.ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(androidx.core.graphics.ColorUtils.blendARGB(MobilePalette.surface, MobilePalette.accent(this), .25f), MobilePalette.surface))
         }
         binding.autoSelectProxyApps.setOnClickListener { selectProxyApp() }
 
         binding.list.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        binding.list.itemAnimator = DefaultItemAnimator()
+        binding.list.itemAnimator = null
         binding.list.adapter = appsAdapter
 
         // the app bar pads the status bar and the sides itself (applyTopInset); the list pads the navigation bar and the sides

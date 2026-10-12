@@ -204,6 +204,7 @@ internal object SubscriptionRefresh {
         changeText += filtered.report
         disturbed.addAll(filtered.deleted)
 
+        SagerDatabase.proxyDao.clearGroupTestResults(group.id)
         Logs.i("<<<<<<<< " + str(R.string.subs_change_of_log, group.name) + "\n" + changeText)
         SubscriptionQueue.report(
             gid,

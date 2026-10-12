@@ -19,7 +19,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import app.qthrone.mobile.ui.MobileSheetDialog as BottomSheetDialog
 import com.google.android.material.color.MaterialColors
 import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import io.github.rosemoe.sora.event.ContentChangeEvent

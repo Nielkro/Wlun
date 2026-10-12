@@ -50,14 +50,14 @@ object MobileSettingsStyle {
         list.itemAnimator=null
         list.setBackgroundColor(MobilePalette.background)
         val density=list.resources.displayMetrics.density
-        list.setPadding((16*density).toInt(), (12*density).toInt(), (16*density).toInt(), (24*density).toInt())
+        list.setPadding((16*density).toInt(), (4*density).toInt(), (16*density).toInt(), (16*density).toInt())
         list.clipToPadding=false
         list.addItemDecoration(object: RecyclerView.ItemDecoration() {
             override fun getItemOffsets(outRect: android.graphics.Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
                 val position=parent.getChildAdapterPosition(view)
                 val category=position>=0 && (parent.adapter as? PreferenceGroupAdapter)?.getItem(position) is PreferenceCategory
-                outRect.top=if(category && position>0) (8*density).toInt() else 0
-                outRect.bottom=((if(category) 6 else 10)*density).toInt()
+                outRect.top=if(category && position>0) (2*density).toInt() else 0
+                outRect.bottom=((if(category) 2 else 6)*density).toInt()
             }
         })
         fun style(view: View) {
@@ -67,7 +67,7 @@ object MobileSettingsStyle {
             val category=preference is PreferenceCategory
             if(category) {
                 view.minimumHeight=0
-                view.setPadding(view.paddingLeft,(10*density).toInt(),view.paddingRight,(6*density).toInt())
+                view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())
             }
             val oldCopy=view.findViewWithTag<View>("socks-copy")
             (oldCopy?.parent as? android.view.ViewGroup)?.removeView(oldCopy)

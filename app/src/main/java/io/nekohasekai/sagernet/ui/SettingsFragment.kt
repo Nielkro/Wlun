@@ -59,6 +59,7 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
             }
         }
         syncToolbar()
+        view.post { view.requestLayout() }
     }
 
     override fun onDestroyView() {

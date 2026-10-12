@@ -21,6 +21,9 @@ import moe.matsuri.nb4a.ui.EditConfigPreference
  */
 abstract class SettingsScreenFragment(@XmlRes private val preferences: Int) : PreferenceFragmentCompat() {
 
+    override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): android.animation.Animator? =
+        app.qthrone.mobile.ui.MobileScreenMotion.create(this, nextAnim)
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         listView.layoutManager = FixedLinearLayoutManager(listView)
@@ -32,6 +35,15 @@ abstract class SettingsScreenFragment(@XmlRes private val preferences: Int) : Pr
         beforeInflate()
         setPreferencesFromResource(preferences, rootKey)
         bind()
+    }
+
+    override fun onDisplayPreferenceDialog(preference: Preference) {
+        if(preference is androidx.preference.ListPreference && app.qthrone.mobile.ui.MobileSelector.show(requireContext(),preference)) return
+        if (preference is EditTextPreference) {
+            app.qthrone.mobile.ui.MobilePreferenceDialog.show(this, preference)
+            return
+        }
+        super.onDisplayPreferenceDialog(preference)
     }
 
     protected open fun beforeInflate() {}

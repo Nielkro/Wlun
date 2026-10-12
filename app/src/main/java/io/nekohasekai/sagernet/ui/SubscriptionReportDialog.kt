@@ -53,12 +53,23 @@ object SubscriptionReportDialog {
         }
     }
 
+    @Volatile var refreshEpoch = 0L
+        private set
+
     private suspend fun handle(activity: MainActivity, report: SubscriptionClient.Report) {
+        val group = withContext(Dispatchers.IO) { GroupRepo.get(report.gid) }
+        if (!report.error && group != null && report.title == activity.getString(R.string.subs_change_of, group.name)) {
+            val ids = withContext(Dispatchers.IO) { app.qthrone.mobile.database.SagerDatabase.proxyDao.getByGroup(group.id).map { it.id } }
+            app.qthrone.mobile.ui.test.TestSessionClient.clearResults(ids)
+            refreshEpoch++
+            MobileTopNotice.show(activity, activity.getString(R.string.qmobile_subscription_updated, group.displayName()))
+        }
+
         when {
             report.error -> {
                 val message = report.text.ifBlank { report.title }
                 val groupName = withContext(Dispatchers.IO) { GroupRepo.get(report.gid)?.displayName() }
-                activity.snackbar(if (groupName != null) "$groupName: $message" else message).show()
+                MobileTopNotice.show(activity, if (groupName != null) activity.getString(R.string.qmobile_subscription_failed, groupName, message) else message, error = true)
             }
 
             report.popup -> {

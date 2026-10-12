@@ -298,6 +298,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
     }
 
     open fun PreferenceFragmentCompat.displayPreferenceDialog(preference: Preference): Boolean {
+        if(preference is androidx.preference.ListPreference) return app.qthrone.mobile.ui.MobileSelector.show(requireContext(),preference)
         return false
     }
 
@@ -421,6 +422,10 @@ abstract class ProfileSettingsActivity<T : Outbound>(
         override fun onDisplayPreferenceDialog(preference: Preference) {
             activity?.apply {
                 if (displayPreferenceDialog(preference)) return
+            }
+            if (preference is androidx.preference.EditTextPreference) {
+                app.qthrone.mobile.ui.MobilePreferenceDialog.show(this, preference)
+                return
             }
             super.onDisplayPreferenceDialog(preference)
         }

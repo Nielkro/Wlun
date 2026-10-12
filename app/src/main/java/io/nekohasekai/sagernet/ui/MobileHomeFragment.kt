@@ -41,6 +41,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private var currentPing: String? = null
     private var currentPingConnectionAt = 0L
     private var currentTestArmed = false
+    private var lastSubscriptionRefresh = 0L
     private var powerPulse: android.animation.ObjectAnimator?=null
     private var pulseTarget: View?=null
     private var load: Job? = null
@@ -123,11 +124,12 @@ class MobileHomeFragment : ToolbarFragment() {
     override fun onDestroyView() {
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
         observer = null; load?.cancel(); content = null; powerPulse?.cancel();powerPulse=null;pulseTarget=null; power = null
-        openSwipe=null
+        openSwipe=null; renderedStructure=null
         super.onDestroyView()
     }
     private val profileRows=mutableMapOf<Long,View>()
     private var serverScrollPosition = 0
+    private var renderedStructure: String? = null
     fun refresh() {
         if (content == null || !isAdded) return
         load?.cancel()
@@ -136,6 +138,30 @@ class MobileHomeFragment : ToolbarFragment() {
                 GroupRepo.all().sortedBy { if(it.id in pinnedGroups()) 0 else 1 }.map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
             }
             val column = content ?: return@launch
+            val structure = buildString {
+                append(MobilePalette.surface); append(blue)
+                append(SubscriptionClient.states.value.toString())
+                for ((group, profiles) in groups) {
+                    append(group.id); append(group.displayName()); append(group.subLastUpdate)
+                    append(group.subInfo.toString()); append(group.id in collapsed)
+                    for (profile in profiles) {
+                        append(profile.id); append(profile.displayName()); append(profile.displayType())
+                    }
+                }
+            }
+            if (renderedStructure == structure) {
+                groups.forEach { (_, profiles) -> profiles.forEach { profile ->
+                    latencyViews[profile.id]?.tag = profile.latency
+                    profileRows[profile.id]?.let { row ->
+                        row.background = tile(profile.id == DataStore.selectedProxy)
+                        MobileFeedback.apply(row)
+                    }
+                } }
+                updateLatencies()
+                updateState()
+                return@launch
+            }
+            renderedStructure = structure
             column.removeAllViews(); latencyViews.clear(); profileRows.clear()
             openSwipe=null
             val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
@@ -305,7 +331,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 }
                 rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
                 box.addView(rows)
-                box.layoutTransition=android.animation.LayoutTransition().apply { setDuration(180) }
+
                 serverColumn.addView(box, LinearLayout.LayoutParams(-1,-2).apply { topMargin=if(firstGroup) 0 else dp(16) })
                 firstGroup = false
             }
@@ -322,7 +348,8 @@ class MobileHomeFragment : ToolbarFragment() {
     fun updateState() {
         if(!isAdded || power==null) return
         val state = DataStore.serviceState
-        if(!state.connected || currentPingConnectionAt != DataStore.mobileConnectedAt) {
+        if(!state.connected || currentPingConnectionAt != DataStore.mobileConnectedAt || lastSubscriptionRefresh != SubscriptionReportDialog.refreshEpoch) {
+            lastSubscriptionRefresh = SubscriptionReportDialog.refreshEpoch
             currentPing=null; currentTestArmed=false
             currentPingConnectionAt=if(state.connected) DataStore.mobileConnectedAt else 0L
             currentCheck?.text=getString(R.string.qmobile_check_connection)
@@ -409,9 +436,9 @@ class MobileHomeFragment : ToolbarFragment() {
         )
     }
     private fun groupMenu(group: ProxyGroup, anchor: View) {
-        val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val dialog=MobileSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply {
-            orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(24)); setBackgroundColor(MobilePalette.background)
+            orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(24)); setBackgroundColor(MobilePalette.surface)
         }
         body.addView(View(requireContext()).apply { background=GradientDrawable().apply { setColor(MobilePalette.muted); cornerRadius=dp(2).toFloat() } },LinearLayout.LayoutParams(dp(40),dp(4)).apply { gravity=Gravity.CENTER_HORIZONTAL; bottomMargin=dp(20) })
         body.addView(text(group.displayName(),18f).apply { setTypeface(null,Typeface.BOLD) })
@@ -435,8 +462,8 @@ class MobileHomeFragment : ToolbarFragment() {
         dialog.setContentView(body);dialog.show()
     }
     private fun editGroup(group:ProxyGroup,settings:Boolean) {
-        val dialog=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
-        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(24),dp(24),dp(24),dp(32));setBackgroundColor(MobilePalette.background) }
+        val dialog=MobileSheetDialog(requireContext())
+        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(24),dp(24),dp(24),dp(32));setBackgroundColor(MobilePalette.surface) }
         body.addView(text(getString(if(settings) R.string.qmobile_settings else R.string.qmobile_edit),20f))
         val name=EditText(requireContext()).apply { setText(group.name);hint=getString(R.string.qmobile_subscription_name);setTextColor(MobilePalette.text);setHintTextColor(MobilePalette.muted);isSingleLine=true }
         val url=EditText(requireContext()).apply { setText(group.url);hint=getString(R.string.qmobile_subscription_url);setTextColor(MobilePalette.text);setHintTextColor(MobilePalette.muted);inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI }
@@ -469,7 +496,7 @@ class MobileHomeFragment : ToolbarFragment() {
         popup.show()
     }
     private fun addSubscription() {
-        val sheet=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val sheet=MobileSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(20),dp(20),dp(28));setBackgroundColor(surface) }
         body.addView(text(getString(R.string.grp_add_subscription),20f).apply { setTypeface(null,Typeface.BOLD) })
         val name=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_name);setTextColor(MobilePalette.text);setHintTextColor(muted);isSingleLine=true }
@@ -493,7 +520,7 @@ class MobileHomeFragment : ToolbarFragment() {
         sheet.setContentView(body);sheet.show()
     }
     private fun manualProfile() {
-        val sheet=com.google.android.material.bottomsheet.BottomSheetDialog(requireContext())
+        val sheet=MobileSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(24));setBackgroundColor(surface) }
         body.addView(text(getString(R.string.qmobile_manual),20f).apply { setTypeface(null,Typeface.BOLD) })
         for(type in listOf("qwdtt","csqtt","openflux","olcrtc","vless","vmess","trojan","shadowsocks","socks","http","wireguard","hysteria","tuic","custom")) {

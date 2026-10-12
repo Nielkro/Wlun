@@ -150,7 +150,7 @@ class Fixture(BaseHTTPRequestHandler):
     def do_GET(self):
         body=b"socks5://192.0.2.2:1080#Subscription-Finland\nsocks5://192.0.2.3:1080#Subscription-Sweden"
         if self.path.startswith("/scroll"):
-            body="\n".join(f"socks5://192.0.2.4:1080#ScrollTest-{i:02}" for i in range(24)).encode()
+            body="\n".join(f"socks5://192.0.2.4:{1080+i}#ScrollTest-{i:02}" for i in range(24)).encode()
         self.send_response(200)
         self.send_header('Content-Type','text/plain')
         self.send_header('Subscription-Userinfo','upload=524288; download=1048576; total=10485760; expire=2000000000')

@@ -13,7 +13,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.google.android.material.bottomsheet.BottomSheetDialog
+import app.qthrone.mobile.ui.MobileSheetDialog as BottomSheetDialog
 
 /** The captcha remains on its real HTTPS address in a bottom sheet. */
 class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable {

@@ -28,6 +28,7 @@
                 android:paddingTop="56dp">
 
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/appModeCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp">
@@ -44,34 +45,35 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
                             app:selectionRequired="true"
-                            app:singleLine="true"
+                            app:singleLine="false"
                             app:singleSelection="true">
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/appProxyModeDisable"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/off" />
+                                android:text="@string/qmobile_apps_all" />
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/appProxyModeOn"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/route_proxy" />
+                                android:text="@string/qmobile_apps_only" />
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/appProxyModeBypass"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:checked="true"
-                                android:text="@string/bypass_apps" />
+                                android:text="@string/qmobile_apps_except" />
 
                         </com.google.android.material.chip.ChipGroup>
+                        <TextView android:id="@+id/appModeSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="8dp" android:textSize="13sp" />
 
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal">
+                            android:orientation="vertical">
 
                             <com.google.android.material.chip.Chip
                                 android:id="@+id/show_system_apps"

@@ -82,6 +82,9 @@ object TestSessionClient {
     }
     private var publishJob: Job? = null
     private var lastPublish = 0L
+    private val clearedResults = mutableSetOf<Long>()
+    fun clearResults(ids: List<Long>) { synchronized(lock) { clearedResults.addAll(ids); publishLocked() } }
+
 
     /** Starts [spec]; false when another session is running. */
     fun start(spec: TestSpec): Boolean = start(spec, 0L)
@@ -92,6 +95,7 @@ object TestSessionClient {
      */
     fun start(spec: TestSpec, groupId: Long): Boolean {
         synchronized(lock) {
+            clearedResults.removeAll(spec.profileIds.toSet())
             if(model?.running==true && spec.kind==TestSpec.KIND_URL && !spec.testCurrent) {
                 val active=mutableState.value.rows.filterValues { it.phase!=RowPhase.DONE }.keys
                 val waiting=mutableQueuedProfiles.value
@@ -398,7 +402,7 @@ object TestSessionClient {
     private fun publishLocked() {
         val m = model ?: return
         lastPublish = SystemClock.elapsedRealtime()
-        mutableState.value = m.snapshot()
+        mutableState.value = m.snapshot().let { snapshot -> snapshot.copy(rows = snapshot.rows.filterKeys { it !in clearedResults }) }
         val missing = m.takeMissingNames()
         if (missing.isNotEmpty()) resolveNames(m, missing)
     }

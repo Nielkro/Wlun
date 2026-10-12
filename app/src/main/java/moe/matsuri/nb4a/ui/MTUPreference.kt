@@ -16,11 +16,9 @@ class MTUPreference @JvmOverloads constructor(
     override fun onClick() {
         val options=arrayOf("1500", "9000", context.getString(R.string.qmobile_mtu_manual))
         val selected=when(value) { "1500" -> 0; "9000" -> 1; else -> 2 }
-        MaterialAlertDialogBuilder(context).setTitle("MTU")
-            .setSingleChoiceItems(options,selected) { dialog, index ->
-                dialog.dismiss()
-                if(index==2) showCustom() else save(options[index])
-            }.show()
+        app.qthrone.mobile.ui.MobileSelector.show(context,"MTU",options.toList(),selected) { index ->
+            if(index==2) showCustom() else save(options[index])
+        }
     }
 
     private fun save(raw: String) {
@@ -33,7 +31,11 @@ class MTUPreference @JvmOverloads constructor(
             setText(value.orEmpty()); selectAll()
             setPadding(48,24,48,24)
         }
-        val dialog=MaterialAlertDialogBuilder(context).setTitle("MTU").setView(input)
+        input.setTextColor(app.qthrone.mobile.ui.MobilePalette.text)
+        input.backgroundTintList=android.content.res.ColorStateList.valueOf(app.qthrone.mobile.ui.MobilePalette.accent(context))
+        val padding=(24*context.resources.displayMetrics.density).toInt()
+        val body=android.widget.LinearLayout(context).apply { setPadding(padding,0,padding,padding/2);addView(input,android.widget.LinearLayout.LayoutParams(-1,-2)) }
+        val dialog=MaterialAlertDialogBuilder(context).setTitle("MTU").setView(body)
             .setPositiveButton(android.R.string.ok,null)
             .setNegativeButton(android.R.string.cancel,null).create()
         dialog.setOnShowListener {

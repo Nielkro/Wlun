@@ -17,6 +17,9 @@ open class ToolbarFragment : Fragment {
     constructor() : super()
     constructor(contentLayoutId: Int) : super(contentLayoutId)
 
+    override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): android.animation.Animator? =
+        app.qthrone.mobile.ui.MobileScreenMotion.create(this, nextAnim)
+
     // Null when the layout has no toolbar or the view is not created yet
     var toolbar: Toolbar? = null
 
