@@ -14,6 +14,8 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
     var password=""
     var hashes:List<String> = emptyList()
     var mode="raw"
+    var hashSource="manual"
+    var hashSourceChosen=false
     var rawPort=56003
     var workers=9
     var turnTcp=true
@@ -26,6 +28,8 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
     override fun parseFromJson(obj:JsonObject):Boolean {
         if(obj.string("type") !in listOf("qwdtt","wdtt")) return false
         super.parseFromJson(obj)
+        hashSource = if(obj.string("hash_source") == "auto") "auto" else "manual"
+        hashSourceChosen = obj.contains("hash_source")
         if(obj.contains("peer")) {
             val peer=LinkParser.parse("udp://"+obj.string("peer"))
             if(!peer.isValid || peer.host.isEmpty()) return false
@@ -41,7 +45,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         mode=when(val m=obj.string("mode").lowercase()) { "","raw","rawtun" -> "raw"; "wg","vpn","socks" -> "wg"; else -> m }
         rawPort=if(obj.contains("raw_port")) obj.int("raw_port") else 56003
         workers=if(obj.contains("workers")) obj.int("workers") else if(obj.contains("workersPerHash")) obj.int("workersPerHash") else 9
-        workers=workers.coerceIn(9,hashes.size.coerceIn(1,4)*27)/9*9
+        workers=workers.coerceIn(9,(if(hashSource == "auto") 4 else hashes.size.coerceIn(1,4))*27)/9*9
         turnTcp=if(obj.contains("turn_tcp")) obj.bool("turn_tcp") else true
         obfs=obj.string("obfs").ifEmpty { "audio" }
         goDns=obj.string("go_dns").ifEmpty { "yandex" }
@@ -78,10 +82,10 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         return parseFromJson(obj)
     }
     override fun exportToJson()=jsonObjectOf("type" to type,"tag" to name,"server" to server,"server_port" to serverPort,
-        "password" to password,"hashes" to JsonArray.of(*hashes.toTypedArray()),"mode" to mode,"raw_port" to rawPort,
+        "hash_source" to hashSource,"password" to password,"hashes" to JsonArray.of(*hashes.toTypedArray()),"mode" to mode,"raw_port" to rawPort,
         "workers" to workers,"turn_tcp" to turnTcp,"obfs" to obfs,"go_dns" to goDns,"device_id" to deviceId,
         "vk_anon_path" to vkAnonPath,"captcha_mode" to captchaMode)
-    override fun exportIdentity()=exportToJson().also { it.remove("tag");it.remove("device_id") }
+    override fun exportIdentity()=exportToJson().also { it.remove("tag");it.remove("device_id");it.remove("hash_source") }
     override fun exportToLink():String {
         val url=LinkBuilder("qwdtt");url.host="config";url.plusAsEscape=true
         url.addQueryItem("peer",Hosts.displayAddress(server,serverPort))
@@ -95,7 +99,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         require(server.isNotBlank() && serverPort in 1..65535 && rawPort in 1..65535)
         require(password.isNotEmpty() && password.none { it=='|' || it=='\n' || it=='\r' })
         require(deviceId.isNotEmpty() && deviceId.none { it=='|' || it=='\n' || it=='\r' })
-        require(hashes.size in 1..4 && workers in 1..108)
+        require((hashSource == "auto" || hashes.size in 1..4) && workers in 1..108)
         require(mode in listOf("raw","wg") && obfs in listOf("audio","video"))
         require(vkAnonPath in listOf("vkcalls","legacy") && captchaMode in listOf("auto","wv","rjs"))
         return exportToJson().also {

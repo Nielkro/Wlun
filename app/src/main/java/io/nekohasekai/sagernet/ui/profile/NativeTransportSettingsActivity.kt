@@ -23,6 +23,9 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     private val fields = linkedMapOf<String, Any>()
 
     override fun Outbound.init() {
+        if(this is app.qthrone.mobile.outbound.types.Qwdtt && DataStore.editingId == 0L && !hashSourceChosen) {
+            hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
+        }
         document = exportToJson().copy()
         fields.clear()
         if(type == "olcrtc") {
@@ -53,8 +56,8 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         }
         write(document)
         val order = when(type) {
-            "qwdtt" -> listOf("name","server","server_port","mode","password") + (1..4).map { "hash_$it" } + listOf("raw_port","workers","turn_tcp","vk_anon_path","captcha_mode","obfs","go_dns","device_id")
-            "csqtt" -> listOf("name","server","server_port","password") + (1..6).map { "hash_$it" } + listOf("workers","turn_tcp","vk_anon_path","captcha_mode","obfs","device_id")
+            "qwdtt" -> listOf("name","server","server_port","mode","password","hash_source") + (1..4).map { "hash_$it" } + listOf("raw_port","workers","turn_tcp","vk_anon_path","captcha_mode","obfs","go_dns","device_id")
+            "csqtt" -> listOf("name","server","server_port","password","hash_source") + (1..6).map { "hash_$it" } + listOf("workers","turn_tcp","vk_anon_path","captcha_mode","obfs","device_id")
             "openflux" -> listOf("name","secret","transport_yandex","transport_mailru","transport_cupsonline","context")
             else -> listOf("name","provider","transport","room","key","token","channel","dns","device_id") + optionDefaults.keys.map { "options.$it" }
         }
@@ -83,7 +86,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     override fun Outbound.serialize() {
         val result = document.copy()
         for ((path, original) in fields) {
-            if(path.startsWith("transport_") || path.startsWith("hash_")) continue
+            if(path.startsWith("transport_") || (path.startsWith("hash_") && path != "hash_source")) continue
             val parts = path.split('.')
             var obj = result
             for (part in parts.dropLast(1)) obj = obj.obj(part)
@@ -99,7 +102,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             }
         }
         if(type in listOf("qwdtt","csqtt")) {
-            result["hashes"]=JsonArray.of(*fields.keys.filter { it.startsWith("hash_") }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.toTypedArray())
+            result["hashes"]=JsonArray.of(*fields.keys.filter { it.startsWith("hash_") && it != "hash_source" }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.toTypedArray())
         }
         if(type=="olcrtc") {
             val transport=DataStore.profileCacheStore.getString(cache("transport")).orEmpty()
@@ -137,7 +140,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
         val labels = mapOf("tag" to "Название", "name" to "Название", "server" to "Адрес сервера",
             "server_port" to "Порт сервера", "password" to "Пароль", "hashes" to "Хэши VK",
-            "workers" to "Воркеры", "turn_tcp" to "Транспорт TURN", "mode" to "Режим",
+            "hash_source" to "Источник хешей", "workers" to "Воркеры", "turn_tcp" to "Транспорт TURN", "mode" to "Режим",
             "raw_port" to "Порт RAW", "obfs" to "Маскировка", "go_dns" to "DNS VK",
             "device_id" to "Идентификатор устройства", "vk_anon_path" to "Авторизация VK", "captcha_mode" to "Режим капчи",
             "secret" to "Секрет", "context" to "Контекст", "codec" to "Кодек",
@@ -148,21 +151,23 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             "frag" to "SEI: размер фрагмента", "ack-ms" to "SEI: ожидание ACK, мс", "video-w" to "Видео: ширина", "video-h" to "Видео: высота",
             "video-fps" to "Видео: кадров/с", "video-qr-size" to "QR: размер фрагмента (0 — авто)", "video-tile-module" to "Tile: размер модуля",
             "video-tile-rs" to "Tile: восстановление, %", "video-codec" to "Кодек видео", "video-qr-recovery" to "Восстановление QR")
-        val choices = mapOf("mode" to listOf("raw","wg"), "obfs" to listOf("audio","video"),
+        val choices = mapOf("hash_source" to listOf("manual","auto"),"mode" to listOf("raw","wg"), "obfs" to listOf("audio","video"),
             "vk_anon_path" to listOf("vkcalls","legacy"), "captcha_mode" to listOf("auto","wv","rjs"),
             "provider" to listOf("jitsi","telemost","wbstream"),
             "transport" to listOf("datachannel","vp8channel","seichannel","videochannel"),
             "turn_tcp" to listOf("false","true"), "video-codec" to listOf("qrcode","tile"),
             "video-qr-recovery" to listOf("low","medium","high","highest"))
-        val captions=mapOf("mode" to listOf("RAW","WG"),"turn_tcp" to listOf("UDP","TCP"),
+        val captions=mapOf("hash_source" to listOf("Вручную","Авто"),"mode" to listOf("RAW","WG"),"turn_tcp" to listOf("UDP","TCP"),
             "vk_anon_path" to listOf("Звонок VK","Капча"),"captcha_mode" to listOf("Автоматически, с переходом в браузер","Окно браузера","Автоматически"),
             "provider" to listOf("Jitsi","Телемост","WBStream"),"obfs" to listOf("Аудио","Видео"))
         val editors=linkedMapOf<String,Preference>()
         fun refreshEditors() {
+            val automatic = DataStore.profileCacheStore.getString(cache("hash_source")) == "auto"
+            editors.filterKeys { it.startsWith("hash_") && it != "hash_source" }.values.forEach { it.isVisible = !automatic }
             editors["raw_port"]?.isEnabled=DataStore.profileCacheStore.getString(cache("mode"))!="wg"
             if(editingOutbound.type in listOf("qwdtt","csqtt")) {
-                val count=editors.keys.filter { it.startsWith("hash_") }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.distinct().size.coerceAtLeast(1)
-                val max=(count*27).coerceAtMost(if(editingOutbound.type=="csqtt") 126 else 108)
+                val count=editors.keys.filter { it.startsWith("hash_") && it != "hash_source" }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.distinct().size.coerceAtLeast(1)
+                val max=if(automatic) { if(editingOutbound.type=="csqtt") 126 else 108 } else (count*27).coerceAtMost(if(editingOutbound.type=="csqtt") 126 else 108)
                 (editors["workers"] as? ListPreference)?.apply {
                     entries=(9..max step 9).map(Int::toString).toTypedArray();entryValues=entries
                     val selected=(DataStore.profileCacheStore.getString(cache("workers"))?.toIntOrNull() ?: 9).coerceIn(9,max)/9*9
@@ -214,7 +219,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             preference.key = cache(path)
             preference.title = when {
                 path=="transport_direct" -> "Сервер (адрес:порт)"
-                path.startsWith("hash_") -> "Хэш VK " + path.removePrefix("hash_")
+                path.startsWith("hash_") && path != "hash_source" -> "Хэш VK " + path.removePrefix("hash_")
                 path=="transport_yandex" -> "Документ Яндекс"
                 path=="transport_mailru" -> "Документ Mail.ru"
                 path=="transport_cupsonline" -> "Документ Cups.online"

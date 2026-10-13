@@ -119,7 +119,15 @@ object ProfileManager {
     // ------------------------------------------------------------------------------------------------ add
 
     /** ProfilesRepo::AddProfile: appended to group [groupId], the current group when it is not a group id (<= 0). */
+    private fun applyNativeDefaults(outbound: Outbound) {
+        if(outbound is app.qthrone.mobile.outbound.types.Qwdtt && !outbound.hashSourceChosen) {
+            outbound.hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
+            outbound.hashSourceChosen = true
+        }
+    }
+
     suspend fun addProfile(outbound: Outbound, groupId: Long = -1L): ProxyEntity {
+        applyNativeDefaults(outbound)
         val gid = if (groupId <= 0) GroupRepo.currentId() else groupId
         val profile = ProxyEntity(groupId = gid).putOutbound(outbound)
         SagerDatabase.instance.runInTransaction {
@@ -143,7 +151,7 @@ object ProfileManager {
         for (chunk in outbounds.chunked(CHUNK)) {
             val rows = SagerDatabase.instance.runInTransaction(Callable {
                 var order = dao.nextOrder(gid)
-                val rows = chunk.map { ProxyEntity(groupId = gid, userOrder = order++).putOutbound(it) }
+                val rows = chunk.map { applyNativeDefaults(it); ProxyEntity(groupId = gid, userOrder = order++).putOutbound(it) }
                 dao.insert(rows).forEachIndexed { index, id -> rows[index].id = id }
                 rows
             })

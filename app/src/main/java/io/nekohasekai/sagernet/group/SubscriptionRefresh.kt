@@ -1,5 +1,6 @@
 package app.qthrone.mobile.group
 
+import app.qthrone.mobile.bg.carrier.NativeHashPolicy
 import app.qthrone.mobile.R
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
@@ -139,7 +140,11 @@ internal object SubscriptionRefresh {
         val sink = ImportSink(gid, if (cleared) null else index)
 
         Logs.i(">>>>>>>> " + str(R.string.subs_processing))
-        for (outbound in servers) sink.add(outbound)
+        val previousNative = members().map { it.outbound }.filterIsInstance<app.qthrone.mobile.outbound.types.Qwdtt>()
+        for (outbound in servers) {
+            if(outbound is app.qthrone.mobile.outbound.types.Qwdtt) NativeHashPolicy.preserve(outbound,previousNative)
+            sink.add(outbound)
+        }
         sink.flush()
         Logs.i(">>>>>>>> " + str(R.string.subs_process_complete))
 
@@ -160,6 +165,7 @@ internal object SubscriptionRefresh {
                     val previous=ProfileManager.getProfile(oldId)?.outbound
                     if(incoming is app.qthrone.mobile.outbound.types.Qwdtt && previous is app.qthrone.mobile.outbound.types.Qwdtt) {
                         incoming.deviceId=previous.deviceId
+                        incoming.hashSource=previous.hashSource
                         SagerDatabase.proxyDao.updateOutbound(oldId,newEnt.type,newEnt.name,incoming.exportToJson().toCompact())
                     } else if(incoming is app.qthrone.mobile.outbound.types.OlcRtc && previous is app.qthrone.mobile.outbound.types.OlcRtc) {
                         incoming.deviceId=previous.deviceId

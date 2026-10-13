@@ -6,11 +6,12 @@
         android:alphabeticShortcut="d"
         android:icon="@drawable/ic_action_delete"
         android:title="@string/delete"
+        android:visible="false"
         app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_apply"
         android:alphabeticShortcut="s"
-        android:icon="@drawable/ic_action_done"
+        android:icon="@drawable/ic_mobile_apply"
         android:title="@string/apply"
         app:showAsAction="always" />
     <item

@@ -10,18 +10,15 @@ import app.qthrone.mobile.R
 
 class MTUPreference @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyle: Int = R.attr.dropdownPreferenceStyle
-) : ListPreference(context, attrs, defStyle, 0) {
+) : SimpleMenuPreference(context, attrs, defStyle, 0) {
     init { setSummaryProvider { value.orEmpty() } }
 
     override fun onClick() {
         val options=arrayOf("1500", "9000", context.getString(R.string.qmobile_mtu_manual))
         val selected=when(value) { "1500" -> 0; "9000" -> 1; else -> 2 }
-        MaterialAlertDialogBuilder(context).setTitle("MTU")
-            .setSingleChoiceItems(options, selected) { dialog, index ->
-                dialog.dismiss()
-                if (index == 2) showCustom() else save(options[index])
-            }
-            .setNegativeButton(android.R.string.cancel, null).show()
+        app.qthrone.mobile.ui.MobileSelector.showAt(anchor ?: return,options.toList(),selected) { index ->
+            if(index == 2) showCustom() else save(options[index])
+        }
     }
 
     private fun save(raw: String) {

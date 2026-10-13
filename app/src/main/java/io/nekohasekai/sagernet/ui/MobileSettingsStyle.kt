@@ -66,6 +66,7 @@ object MobileSettingsStyle {
             val position=list.getChildAdapterPosition(view)
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
+            if(preference is androidx.preference.ListPreference) MobileSelector.bind(preference,view)
             val category=preference is PreferenceCategory
             val warning=preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
             if(category) {

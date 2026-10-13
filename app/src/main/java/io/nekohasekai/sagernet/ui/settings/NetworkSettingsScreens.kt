@@ -143,6 +143,9 @@ class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined)
 
     override fun bind() {
         super.bind()
+        findPreference<Preference>("vkRelaySettings")?.setOnPreferenceClickListener {
+            startActivity(Intent(requireContext(),app.qthrone.mobile.ui.VkRelayActivity::class.java)); true
+        }
         reloadOn(
             SettingsRegistry.VPN_MTU.key, SettingsRegistry.VPN_IPV6.key,
             SettingsRegistry.ENABLE_TUN_ROUTING.key,

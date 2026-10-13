@@ -60,4 +60,8 @@ jobs:
           RELEASE_NAME: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
-          gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
+          if [[ "$TAG" == *-beta.* || "$TAG" == *-rc.* ]]; then
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --prerelease --latest=false --notes-file RELEASE_NOTES.md
+          else
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
+          fi

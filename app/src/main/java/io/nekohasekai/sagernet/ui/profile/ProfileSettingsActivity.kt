@@ -118,9 +118,25 @@ abstract class ProfileSettingsActivity<T : Outbound>(
     /** Set when the preference screen is rebuilt from edited JSON, so the rebuilt screen starts dirty. */
     private var dirtyAfterRebuild = false
     private var rawJsonSynced: String? = null
+    private var initialCache: Map<String,String>? = null
+    private fun cacheSnapshot() = moe.matsuri.nb4a.TempDatabase.profileCacheDao.all()
+        .filter { it.key !in setOf(Key.PROFILE_DIRTY,KEY_RAW_JSON,Key.PROFILE_ID,Key.PROFILE_GROUP) }
+        .associate { it.key to "${it.valueType}:${android.util.Base64.encodeToString(it.value,android.util.Base64.NO_WRAP)}" }
+    private fun updateDirtyState() {
+        DataStore.dirty = initialCache?.let { cacheSnapshot() != it } ?: false
+        runOnMainDispatcher { invalidateOptionsMenu() }
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        initialCache?.let { outState.putString("initialProfileCache",org.json.JSONObject(it).toString()) }
+        super.onSaveInstanceState(outState)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        savedInstanceState?.getString("initialProfileCache")?.let { value ->
+            val json = org.json.JSONObject(value)
+            initialCache = json.keys().asSequence().associateWith { json.getString(it) }
+        }
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.apply {
             setTitle(R.string.profile_config)
@@ -245,8 +261,8 @@ abstract class ProfileSettingsActivity<T : Outbound>(
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.profile_config_menu, menu)
         // Like the list: the started profile can be edited, not deleted.
-        menu.findItem(R.id.action_delete)?.isVisible =
-            DataStore.editingId == 0L || ProfileManager.runningProfileId() != DataStore.editingId
+        menu.findItem(R.id.action_delete)?.isVisible = false
+        menu.findItem(R.id.action_apply)?.apply { isVisible = DataStore.dirty; icon?.setTint(app.qthrone.mobile.ui.MobilePalette.accent(this@ProfileSettingsActivity)) }
         menu.findItem(R.id.action_move)?.apply {
             if (DataStore.editingId != 0L // not new profile
                 && SagerDatabase.groupDao.getById(DataStore.editingGroup)?.isSubscription == false
@@ -262,6 +278,11 @@ abstract class ProfileSettingsActivity<T : Outbound>(
         return true
     }
 
+    override fun onPrepareOptionsMenu(menu: Menu): Boolean {
+        menu.findItem(R.id.action_apply)?.isVisible = DataStore.dirty
+        menu.findItem(R.id.action_delete)?.isVisible = false
+        return super.onPrepareOptionsMenu(menu)
+    }
     override fun onOptionsItemSelected(item: MenuItem) = child.onOptionsItemSelected(item)
 
     private val unsavedChangesCallback = object : OnBackPressedCallback(true) {
@@ -286,7 +307,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
 
     override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String) {
         if (key != Key.PROFILE_DIRTY) {
-            DataStore.dirty = true
+            updateDirtyState()
         }
     }
 
@@ -331,7 +352,8 @@ abstract class ProfileSettingsActivity<T : Outbound>(
 
             activity?.apply {
                 viewCreated(view, savedInstanceState)
-                DataStore.dirty = dirtyAfterRebuild
+                if(initialCache == null) initialCache = cacheSnapshot()
+                updateDirtyState()
                 dirtyAfterRebuild = false
                 DataStore.profileCacheStore.registerChangeListener(this)
             }

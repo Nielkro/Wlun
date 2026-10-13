@@ -15,7 +15,7 @@ class Csqtt:Qwdtt() {
         if(!copy.contains("turn_tcp")) copy["turn_tcp"]=false
         if(!super.parseFromJson(copy)) return false
         hashes=obj.array("hashes").strings().take(6).map { it.trim().replace(Regex("^(?:https?://)?(?:m\\.)?vk\\.(?:com|ru)/call/join/",RegexOption.IGNORE_CASE),"").substringBefore('?').substringBefore('#').trimEnd('/') }.filter { it.isNotEmpty() }
-        workers=(if(obj.contains("workers")) obj.int("workers") else 18).coerceIn(9,(hashes.size.coerceIn(1,6)*27).coerceAtMost(126))/9*9
+        workers=(if(obj.contains("workers")) obj.int("workers") else 18).coerceIn(9,((if(hashSource == "auto") 6 else hashes.size.coerceIn(1,6))*27).coerceAtMost(126))/9*9
         return obfs in listOf("audio","video") && vkAnonPath in listOf("vkcalls","legacy") && captchaMode in listOf("auto","wv","rjs")
     }
     override fun parseFromLink(link:String):Boolean {
@@ -52,7 +52,7 @@ class Csqtt:Qwdtt() {
     override fun privateConfig(port:Int,udpPort:Int,credentials:CarrierBridgeCredentials):JsonObject {
         require(server.isNotBlank() && serverPort in 1..65535)
         require(password.isNotEmpty() && (password+deviceId).none { it=='|' || it=='\n' || it=='\r' })
-        require(deviceId.isNotEmpty() && hashes.size in 1..6 && hashes.distinct().size==hashes.size)
+        require(deviceId.isNotEmpty() && (hashSource == "auto" || hashes.size in 1..6) && hashes.distinct().size==hashes.size)
         require(hashes.all { h -> h.length>=16 && h.none { it==',' || it=='|' || it.isWhitespace() } })
         require(workers in 9..126 && obfs in listOf("audio","video"))
         return exportToJson().also {
