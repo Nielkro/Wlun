@@ -112,7 +112,7 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
                 node.setTextColor(android.content.res.ColorStateList(
                     arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
                     intArrayOf(MobilePalette.muted,MobilePalette.accent(requireContext()))))
-            } else if(node is android.widget.TextView) node.setTextColor(MobilePalette.text)
+            } else if(node is android.widget.TextView) node.setTextColor(if(node.tag == "backup_section") MobilePalette.accent(requireContext()) else MobilePalette.text)
             if(node is android.view.ViewGroup) for(i in 0 until node.childCount) style(node.getChildAt(i))
         }
         style(view)
@@ -123,7 +123,7 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
             binding.backupLocalPage.isVisible = page == 1
             binding.backupWebdavPage.isVisible = page == 2
             (parentFragment as? ToolsFragment)?.toolbar?.apply {
-                title=when(page) { 1 -> "Локальная копия";2 -> "WebDAV";else -> "Резервное копирование" }
+                title=when(page) { 1 -> "Локально";2 -> "WebDAV";else -> "Резервное копирование" }
                 setNavigationOnClickListener {
                     if(backupPage != 0) showPage(0) else requireActivity().onBackPressedDispatcher.onBackPressed()
                 }
