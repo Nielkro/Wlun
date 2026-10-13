@@ -168,7 +168,7 @@ class DeployActivity : ThemedActivity() {
             switch(options,"manualPorts","Ручное управление портами") { build() }
             if(server["manualPorts"]=="true") {
                 field(options,"peerPort","Порт туннеля",numeric=true)
-                if(host.kind=="qwdtt") { field(options,"wgPort","Порт WG",numeric=true);field(options,"rawPort","Порт RAW",numeric=true);field(options,"adminPort","Порт админ-панели",numeric=true) }
+                if(host.kind=="qwdtt") { field(options,"wgPort","Порт WG",numeric=true);field(options,"rawPort","Порт RAW",numeric=true);field(options,"directPort","Порт прямого подключения",numeric=true);field(options,"adminPort","Порт админ-панели",numeric=true) }
                 else field(options,"webPort","Порт веб-панели",numeric=true)
             }
             if(host.kind=="csqtt") switch(options,"docker","Установить в Docker")

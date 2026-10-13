@@ -24,7 +24,7 @@ class DeployServer(val json: JSONObject) {
         require(get("host").matches(Regex("[A-Za-z0-9.:_-]+"))) { "Укажите IP или домен без схемы и порта" }
         require(get("user").matches(Regex("[A-Za-z0-9_.-]+"))) { "Укажите логин SSH" }
         for(key in listOf("sshPort","peerPort")) port(key)
-        if(kind == "qwdtt") { port("wgPort"); port("rawPort"); port("adminPort") } else port("webPort")
+        if(kind == "qwdtt") { port("wgPort"); port("rawPort"); port("adminPort"); port("directPort") } else port("webPort")
         if(get("auth") == "key") require(get("key").isNotBlank()) { "Загрузите SSH-ключ" }
         else require(get("sshPassword").isNotBlank()) { "Введите пароль SSH" }
         if(!install) return
@@ -40,7 +40,7 @@ class DeployServer(val json: JSONObject) {
         fun create(kind: String) = DeployServer(JSONObject().put("id",java.util.UUID.randomUUID().toString()).put("kind",kind)).apply {
             set("name","Новый сервер");set("user","root");set("auth","password");set("sshPort","22")
             set("peerPort",if(kind == "qwdtt") "56000" else "46000")
-            set("wgPort","56001");set("rawPort","56003");set("adminPort","56002");set("webPort","46002")
+            set("wgPort","56001");set("directPort","56002");set("rawPort","56003");set("adminPort","56002");set("webPort","46002")
             set("dns1","1.1.1.1");set("dns2","1.0.0.1");set("deviceId",java.util.UUID.randomUUID().toString())
             set("adminToken",java.util.UUID.randomUUID().toString()+java.util.UUID.randomUUID().toString())
         }

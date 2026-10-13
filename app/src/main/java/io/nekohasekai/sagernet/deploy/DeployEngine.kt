@@ -27,7 +27,7 @@ object DeployEngine {
         val copy = DeployServer(JSONObject(server.json.toString()))
         if(copy["manualPorts"] != "true") {
             copy["peerPort"]=if(copy.kind=="qwdtt") "56000" else "46000"
-            copy["wgPort"]="56001";copy["rawPort"]="56003";copy["adminPort"]="56002";copy["webPort"]="46002"
+            copy["wgPort"]="56001";copy["directPort"]="56002";copy["rawPort"]="56003";copy["adminPort"]="56002";copy["webPort"]="46002"
         }
         state.value = DeployState(server.id,true,0,"Подключение")
         job = scope.launch {
@@ -120,13 +120,12 @@ object DeployEngine {
                 }
             }
         } finally { sftp.disconnect() }
-        val env = if(server.kind == "qwdtt") "WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_RAW_PORT=${server.port("rawPort")} WDTT_ADMIN_PORT=${server.port("adminPort")} WDTT_SSH_PORT=${server.port("sshPort")} WDTT_ADMIN_ID=${quote(server["adminId"])} WDTT_DNS_SERVERS=${quote(server["dns1"]+","+server["dns2"])}"
+        val env = if(server.kind == "qwdtt") "WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_RAW_PORT=${server.port("rawPort")} WDTT_DIRECT_PORT=${server.port("directPort")} WDTT_ADMIN_PORT=${server.port("adminPort")} WDTT_SSH_PORT=${server.port("sshPort")} WDTT_ADMIN_ID=${quote(server["adminId"])} WDTT_DNS_SERVERS=${quote(server["dns1"]+","+server["dns2"])}"
             else "CSQTT_PEER_PORT=${server.port("peerPort")} CSQTT_WEB_PORT=${server.port("webPort")} CSQTT_SSH_PORT=${server.port("sshPort")} CSQTT_DEPLOY_MODE=${if(server["docker"] == "true") "docker" else "systemd"}"
         update(45,if(uninstall) "Удаление" else "Установка и запуск сервиса")
         val result = exec(ssh,server,root("env $env bash /tmp/deploy.sh ${if(uninstall) "uninstall" else "install"}"),30*60_000L)
         require(result.first == 0) { "Установщик завершился с кодом ${result.first}" }
         if(!uninstall) {
-            val marker = if(server.kind == "qwdtt") "WDTT_DEPLOY_OK" else "CSQTT_DEPLOY_OK"
             require(DeployProtocol.successful(server.kind,result.first,result.second)) { "Установщик не подтвердил запуск сервиса" }
             if(server.kind == "qwdtt") {
                 val pin = Regex("WDTT_ADMIN_PIN\\|(sha256/[A-Za-z0-9+/=]+)").find(result.second)?.groupValues?.get(1).orEmpty()
