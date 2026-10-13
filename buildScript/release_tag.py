@@ -7,7 +7,7 @@ from pathlib import Path
 
 
 def version_key(value):
-    match = re.fullmatch(r"v?(\d+)\.(\d+)(?:\.(\d+))?(?:-(beta|rc)\.(\d+))?", value)
+    match = re.fullmatch(r"v?(\d+)\.(\d+)(?:\.(\d+))?(?:-(beta|rc)\.?(\d+))?", value)
     if not match:
         raise ValueError("Unsupported release version: " + value)
     major, minor, patch, stage, number = match.groups()
@@ -17,7 +17,10 @@ def version_key(value):
 if __name__ == "__main__":
     version = next(line.split("=", 1)[1].strip() for line in Path("nb4a.properties").read_text().splitlines() if line.startswith("VERSION_NAME="))
     key = version_key(version)
-    tag = f"v{key[0]}.{key[1]}.{key[2]}" + ("-" + version.split("-", 1)[1] if "-" in version else "")
+    stage = {0: "beta", 1: "rc"}.get(key[3])
+    # GitHub orders same-day beta.10 below beta.9. The release title and APK
+    # retain the dotted version; compact multi-digit tags sort above legacy tags.
+    tag = f"v{key[0]}.{key[1]}.{key[2]}" + (f"-{stage}{'.' if key[4] < 10 else ''}{key[4]}" if stage else "")
     if os.environ.get("PUBLISH") == "true":
         req = urllib.request.Request("https://api.github.com/repos/" + os.environ["GITHUB_REPOSITORY"] + "/releases?per_page=100", headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "User-Agent": "qThrone-release"})
         with urllib.request.urlopen(req, timeout=30) as response:
