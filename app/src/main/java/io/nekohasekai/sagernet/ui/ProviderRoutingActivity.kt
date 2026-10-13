@@ -187,9 +187,23 @@ class ProviderRoutingActivity : ThemedActivity() {
                             (this as? android.widget.ImageButton)?.imageTintList = android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
                             setOnClickListener {
                                 isEnabled = false
+                                val refreshButton = this
+                                startAnimation(android.view.animation.RotateAnimation(
+                                    0f,360f,android.view.animation.Animation.RELATIVE_TO_SELF,0.5f,
+                                    android.view.animation.Animation.RELATIVE_TO_SELF,0.5f
+                                ).apply {
+                                    duration = 900
+                                    repeatCount = android.view.animation.Animation.INFINITE
+                                    interpolator = android.view.animation.LinearInterpolator()
+                                })
                                 val snapshot = document.copy()
                                 lifecycleScope.launch {
-                                    val error = withContext(Dispatchers.IO) { runCatching { ProviderGeoAssets.refresh(group!!.id,snapshot,kind) }.exceptionOrNull() }
+                                    val error = try {
+                                        withContext(Dispatchers.IO) { runCatching { ProviderGeoAssets.refresh(group!!.id,snapshot,kind) }.exceptionOrNull() }
+                                    } finally {
+                                        refreshButton.clearAnimation()
+                                        refreshButton.isEnabled = true
+                                    }
                                     if (error != null) android.widget.Toast.makeText(requireContext(),error.readableMessage,android.widget.Toast.LENGTH_LONG).show()
                                     build()
                                 }
