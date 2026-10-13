@@ -38,7 +38,7 @@ object MobileSettingsStyle {
                     }
                     preference.setIcon(icon)
                 }
-                preference.isIconSpaceReserved = preference.icon != null
+                preference.isIconSpaceReserved = preference !is PreferenceCategory && preference.icon != null
                 if (preference is androidx.preference.PreferenceGroup) compact(preference)
             }
         }
@@ -71,7 +71,8 @@ object MobileSettingsStyle {
             val category=preference is PreferenceCategory
             val iconFrame=view.findViewById<View>(androidx.preference.R.id.icon_frame)
             iconFrame?.visibility=if(!category && preference?.icon!=null) View.VISIBLE else View.GONE
-            if(category) preference?.isIconSpaceReserved=false
+            // Only change the view here: preference setters notify the adapter while
+            // onChildViewAttachedToWindow can still be inside RecyclerView layout.
             val warning=preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
             if(category) {
                 view.minimumHeight=0

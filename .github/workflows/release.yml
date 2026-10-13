@@ -1,10 +1,11 @@
 name: qThroneMobile release
 run-name: qThroneMobile release
 on:
-  # One authorized fallback release when the local GitHub API is unavailable.
+  # Explicitly authorized fallback releases when the local GitHub API is unavailable.
   push:
     tags:
       - 'v1.3.8-beta.6'
+      - 'v1.3.8-beta.7'
   workflow_dispatch:
     inputs:
       publish:

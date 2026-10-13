@@ -253,10 +253,12 @@ class MobileHomeFragment : ToolbarFragment() {
                 }
                 centre.addView(power, FrameLayout.LayoutParams(dp(224), dp(224), Gravity.TOP or Gravity.CENTER_HORIZONTAL).apply { topMargin=dp(8) })
                 column.addView(centre, LinearLayout.LayoutParams(-1, dp(246)))
+                if (!hasServers) {
                 val identity=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL or Gravity.CENTER_HORIZONTAL }
                 identity.addView(text("HWID: $hwid",12f,muted).apply { setPadding(dp(4),dp(4),dp(4),dp(4));maxLines=1;maxWidth=(resources.displayMetrics.widthPixels-dp(96)).coerceAtLeast(dp(120));ellipsize=android.text.TextUtils.TruncateAt.MIDDLE;contentDescription="HWID: $hwid" },LinearLayout.LayoutParams(-2,-2))
                 identity.addView(iconAction(R.drawable.ic_mobile_clipboard,"Скопировать HWID") { SagerNet.trySetPrimaryClip(hwid) },LinearLayout.LayoutParams(dp(40),dp(40)))
                 column.addView(identity,LinearLayout.LayoutParams(-1,-2))
+                }
                 updateState()
                 val imports = LinearLayout(requireContext())
                 fun importButton(label: String, icon: Int, callback: () -> Unit) = LinearLayout(requireContext()).apply {
