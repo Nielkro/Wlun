@@ -145,9 +145,9 @@ open class DeployEditorFragment : Fragment() {
                 if(android.os.Build.VERSION.SDK_INT>=29) {
                     val accent=MobilePalette.accent(requireContext())
                     textCursorDrawable=android.graphics.drawable.GradientDrawable().apply { setColor(accent);setTint(accent);setSize(dp(2),dp(22)) }
-                    textSelectHandle=textSelectHandle?.mutate()?.apply { setTint(accent) }
-                    textSelectHandleLeft=textSelectHandleLeft?.mutate()?.apply { setTint(accent) }
-                    textSelectHandleRight=textSelectHandleRight?.mutate()?.apply { setTint(accent) }
+                    textSelectHandle?.mutate()?.apply { setTint(accent) }?.let { setTextSelectHandle(it) }
+                    textSelectHandleLeft?.mutate()?.apply { setTint(accent) }?.let { setTextSelectHandleLeft(it) }
+                    textSelectHandleRight?.mutate()?.apply { setTint(accent) }?.let { setTextSelectHandleRight(it) }
                 }
             }
             tintCursor()
