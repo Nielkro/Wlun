@@ -106,7 +106,7 @@ fun Fragment.snackbar(textId: Int) = snackbar(getString(textId))
 
 fun Fragment.snackbar(text: CharSequence): Snackbar {
     // 1. the fragment's activity
-    (activity as? MainActivity)?.takeIf { it.window != null }?.let { host ->
+    (activity as? ThemedActivity)?.takeIf { it.window != null }?.let { host ->
         try {
             return host.snackbar(text)
         } catch (e: Exception) {
