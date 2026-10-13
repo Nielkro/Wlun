@@ -28,6 +28,7 @@ class MobilePreferenceDialog : EditTextPreferenceDialogFragmentCompat() {
     companion object {
         fun show(fragment: androidx.preference.PreferenceFragmentCompat, preference: androidx.preference.EditTextPreference) {
             if (fragment.parentFragmentManager.findFragmentByTag("androidx.preference.PreferenceFragment.DIALOG") != null) return
+            if(preference.dialogTitle.isNullOrBlank()) preference.dialogTitle = preference.title
             MobilePreferenceDialog().apply {
                 arguments = Bundle().apply { putString("key", preference.key) }
                 @Suppress("DEPRECATION")

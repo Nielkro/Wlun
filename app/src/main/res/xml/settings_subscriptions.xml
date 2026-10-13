@@ -25,6 +25,7 @@
         <SwitchPreference
             app:icon="@drawable/ic_baseline_fingerprint_24"
             app:key="sub_send_hwid"
+            app:defaultValue="true"
             app:title="@string/grp_sub_send_hwid" />
         <EditTextPreference
             app:dialogMessage="@string/grp_sub_custom_hwid_params_tip"

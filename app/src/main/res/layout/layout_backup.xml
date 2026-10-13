@@ -1,10 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingLeft="16dp" android:paddingRight="16dp">
-    <com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/backup_tabs" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="12dp" app:singleSelection="true" app:selectionRequired="true" app:checkedButton="@id/backup_tab_local">
-        <com.google.android.material.button.MaterialButton android:id="@+id/backup_tab_local" style="@style/Widget.SagerNet.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Локально" app:cornerRadius="20dp" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/backup_tab_webdav" style="@style/Widget.SagerNet.Button.OutlinedButton" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="WebDAV" app:cornerRadius="20dp" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
+    <LinearLayout android:id="@+id/backup_menu" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp">
+        <com.google.android.material.button.MaterialButton android:id="@+id/backup_tab_local" style="@style/Widget.SagerNet.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:layout_marginBottom="8dp" android:gravity="start|center_vertical" android:paddingStart="20dp" android:text="Локально" android:maxLines="3" app:cornerRadius="20dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/backup_tab_webdav" style="@style/Widget.SagerNet.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:layout_marginBottom="8dp" android:gravity="start|center_vertical" android:paddingStart="20dp" android:text="WebDAV" android:maxLines="3" app:cornerRadius="20dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/reset_settings" style="@style/Widget.SagerNet.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:layout_marginBottom="8dp" android:gravity="start|center_vertical" android:paddingStart="20dp" android:text="@string/reset_settings" android:maxLines="3" app:cornerRadius="20dp" />
+    </LinearLayout>
+    <com.google.android.material.button.MaterialButton android:id="@+id/backup_back" style="@style/Widget.SagerNet.Button.TextButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone" android:gravity="start|center_vertical" android:text="Назад к резервному копированию" app:icon="@drawable/baseline_arrow_back_24" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true" android:id="@+id/backup_content" android:visibility="gone">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
             <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="0dp" app:cardCornerRadius="20dp" app:cardElevation="0dp" android:id="@+id/backup_local_page" android:layout_marginTop="12dp">
                 <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp">
@@ -31,5 +33,4 @@
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </ScrollView>
-    <Button android:id="@+id/reset_settings" style="@style/Widget.SagerNet.Button.OutlinedButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:text="@string/reset_settings" app:cornerRadius="24dp" android:layout_marginBottom="8dp" android:textSize="14sp" android:maxLines="3" />
 </LinearLayout>

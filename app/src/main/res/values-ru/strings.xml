@@ -80,7 +80,7 @@
 <string name="extra_headers">Дополнительные заголовки</string>
 <string name="fakedns_message">Может вызвать необходимость перезапуска других приложений для повторного подключения к сети после остановки прокси</string>
 <string name="file_manager_missing">На вашем устройстве отсутствует стандартный селектор файлов Android, установите его, например Material Files.</string>
-<string name="follow_system">Использовать системную тему</string>
+<string name="follow_system">Использовать системный язык</string>
 <string name="forward_success">Прокси запустился.</string>
 <string name="generating">Создание…</string>
 <string name="github">Исходный код</string>

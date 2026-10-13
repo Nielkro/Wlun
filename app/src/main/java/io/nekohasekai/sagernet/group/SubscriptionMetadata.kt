@@ -96,6 +96,23 @@ internal object SubscriptionMetadata {
             }
             true
         }
+        val native = app.qthrone.mobile.outbound.json.JsonInput.parseObjectOrNull(body)
+        if(native != null && native.isArray("profiles") && native.array("profiles").any { item ->
+            item is app.qthrone.mobile.outbound.json.JsonObject && (item.contains("peer") || item.string("type") in listOf("qwdtt","wdtt","csqtt"))
+        }) {
+            if(info.title.isBlank()) info.title = native.string("subscriptionName").ifEmpty { native.string("groupName") }
+            if(info.announce.isBlank()) info.announce = native.string("description").ifEmpty { native.string("info") }
+            if(!info.hasQuota) {
+                val used = native.double(if(native.contains("trafficUsedMb")) "trafficUsedMb" else "trafficMb")
+                val limit = native.double(if(native.contains("trafficLimitMb")) "trafficLimitMb" else "trafficLimit")
+                if(used.isFinite() && limit.isFinite() && used in 0.0..8.0e12 && limit > 0 && limit <= 8.0e12) {
+                    info.download = (used * 1024 * 1024).toLong()
+                    info.total = (limit * 1024 * 1024).toLong()
+                    info.hasQuota = true
+                }
+            }
+            if(info.title.isNotBlank() || info.announce.isNotBlank() || info.hasQuota) info.valid = true
+        }
         return info
     }
 

@@ -10,10 +10,10 @@ object MobileSelector {
     fun bind(preference: androidx.preference.Preference, view: android.view.View) { anchors[preference] = java.lang.ref.WeakReference(view) }
     fun show(preference: androidx.preference.Preference, labels: List<CharSequence>, selected: Int, onSelect: (Int) -> Unit) {
         val anchor = anchors[preference]?.get()?.takeIf { it.isAttachedToWindow }
-        if(anchor != null) showAt(anchor,labels,selected,onSelect)
+        if(anchor != null) showAt(anchor,labels,selected,onSelect=onSelect)
         else show(preference.context,preference.title ?: "",labels,selected,onSelect)
     }
-    fun showAt(anchor: android.view.View, labels: List<CharSequence>, selected: Int, onSelect: (Int) -> Unit) {
+    fun showAt(anchor: android.view.View, labels: List<CharSequence>, selected: Int, enabled: (Int) -> Boolean = { true }, onSelect: (Int) -> Unit) {
         val context = anchor.context
         fun dp(n: Int) = (n * context.resources.displayMetrics.density).toInt()
         val list = ListView(context).apply {
@@ -24,10 +24,14 @@ object MobileSelector {
             setPadding(0,dp(10),dp(8),dp(10))
             clipToPadding = true
             adapter = object : ArrayAdapter<CharSequence>(context, android.R.layout.simple_list_item_1, labels) {
+                override fun isEnabled(position: Int) = enabled(position)
+                override fun areAllItemsEnabled() = false
                 override fun getView(position: Int, convertView: android.view.View?, parent: android.view.ViewGroup): android.view.View =
                     (super.getView(position, convertView, parent) as TextView).apply {
                         text = if(position == selected) "✓  ${labels[position]}" else labels[position]
-                        setTextColor(if(position == selected) MobilePalette.accent(context) else MobilePalette.text)
+                        setTextColor(if(!enabled(position)) MobilePalette.muted else if(position == selected) MobilePalette.accent(context) else MobilePalette.text)
+                        isEnabled = enabled(position)
+                        alpha = if(enabled(position)) 1f else .5f
                         minimumHeight = dp(48)
                         maxLines = 3
                         setPadding(dp(16),dp(8),dp(12),dp(8))
@@ -46,7 +50,7 @@ object MobileSelector {
             elevation = dp(8).toFloat()
             isOutsideTouchable = true
         }
-        list.setOnItemClickListener { _, _, index, _ -> popup.dismiss(); onSelect(index) }
+        list.setOnItemClickListener { _, _, index, _ -> if(enabled(index)) { popup.dismiss(); onSelect(index) } }
         popup.showAsDropDown(anchor, dp(12), 0)
     }
     fun show(context: Context, preference: ListPreference): Boolean {
@@ -57,7 +61,7 @@ object MobileSelector {
             if(preference.callChangeListener(value)) preference.value=value
         }
         val anchor = anchors[preference]?.get()?.takeIf { it.isAttachedToWindow }
-        if(anchor != null) showAt(anchor,labels.toList(),preference.findIndexOfValue(preference.value),select)
+        if(anchor != null) showAt(anchor,labels.toList(),preference.findIndexOfValue(preference.value),onSelect=select)
         else show(context,preference.title ?: "",labels.toList(),preference.findIndexOfValue(preference.value),select)
         return true
     }

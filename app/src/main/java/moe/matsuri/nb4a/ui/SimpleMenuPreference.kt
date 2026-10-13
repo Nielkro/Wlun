@@ -29,6 +29,7 @@ open class SimpleMenuPreference @JvmOverloads constructor(
     defStyleAttr: Int = androidx.preference.R.attr.dropdownPreferenceStyle,
     defStyleRes: Int = 0
 ) : ListPreference(context!!,attrs,defStyleAttr,defStyleRes) {
+    var optionEnabled: (Int) -> Boolean = { true }
     protected var anchor: View? = null
     init { widgetLayoutResource = 0 }
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
@@ -41,7 +42,7 @@ open class SimpleMenuPreference @JvmOverloads constructor(
         val row = anchor ?: return
         val labels = entries ?: return
         val values = entryValues ?: return
-        MobileSelector.showAt(row,labels.toList(),findIndexOfValue(value)) { index ->
+        MobileSelector.showAt(row,labels.toList(),findIndexOfValue(value),optionEnabled) { index ->
             val next = values[index].toString()
             if(callChangeListener(next)) value = next
         }

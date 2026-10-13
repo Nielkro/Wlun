@@ -70,6 +70,7 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
     }
 
     private var binding: LayoutBackupBinding? = null
+    private var backupPage = 0
     private var busy = false
     private var progress: AlertDialog? = null
     private var restoreDialog: AlertDialog? = null
@@ -87,7 +88,7 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean("backupWebdavPage",binding?.backupTabs?.checkedButtonId == R.id.backup_tab_webdav)
+        outState.putInt("backupPage",backupPage)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -109,15 +110,27 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
             if(node is android.view.ViewGroup) for(i in 0 until node.childCount) style(node.getChildAt(i))
         }
         style(view)
-        fun showPage(webdav: Boolean) {
-            binding.backupLocalPage.isVisible = !webdav
-            binding.backupWebdavPage.isVisible = webdav
+        fun showPage(page: Int) {
+            backupPage = page
+            binding.backupMenu.isVisible = page == 0
+            binding.backupBack.isVisible = page != 0
+            binding.backupContent.isVisible = page != 0
+            binding.backupLocalPage.isVisible = page == 1
+            binding.backupWebdavPage.isVisible = page == 2
         }
-        binding.backupTabs.addOnButtonCheckedListener { _, id, checked ->
-            if(checked) showPage(id == R.id.backup_tab_webdav)
-        }
-        binding.backupTabs.check(if(savedInstanceState?.getBoolean("backupWebdavPage") == true) R.id.backup_tab_webdav else R.id.backup_tab_local)
-        showPage(binding.backupTabs.checkedButtonId == R.id.backup_tab_webdav)
+        binding.backupTabLocal.setOnClickListener { showPage(1) }
+        binding.backupTabWebdav.setOnClickListener { showPage(2) }
+        binding.backupBack.setOnClickListener { showPage(0) }
+        showPage(savedInstanceState?.getInt("backupPage") ?: 0)
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner,object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if(backupPage != 0) showPage(0) else {
+                    isEnabled = false
+                    requireActivity().onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
+        })
 
         binding.resetSettings.setOnClickListener {
             requireContext().confirmAction(

@@ -84,7 +84,8 @@ class AppManagerActivity : ThemedActivity() {
         init {
             binding.root.setOnClickListener(this)
             binding.root.setCardBackgroundColor(MobilePalette.surface)
-            binding.root.radius = 16 * resources.displayMetrics.density
+            binding.root.strokeWidth = 0
+            binding.root.radius = 20 * resources.displayMetrics.density
             binding.title.setTextColor(MobilePalette.text)
             binding.title.setTypeface(null, android.graphics.Typeface.BOLD)
             binding.title.textSize = 16f
@@ -290,15 +291,18 @@ class AppManagerActivity : ThemedActivity() {
         }
         binding.appModeSummary.setTextColor(MobilePalette.muted)
         binding.appModeCard.setCardBackgroundColor(MobilePalette.surface)
-        binding.appModeCard.radius = 16 * resources.displayMetrics.density
+        binding.appModeCard.strokeWidth = 0
+        binding.appModeCard.radius = 20 * resources.displayMetrics.density
         listOf(binding.appProxyModeDisable, binding.appProxyModeOn, binding.appProxyModeBypass).forEach {
             it.setTextColor(MobilePalette.text)
+            it.isCheckedIconVisible = false
+            it.chipStrokeWidth = 0f
             it.chipCornerRadius = 12 * resources.displayMetrics.density
             it.chipBackgroundColor = android.content.res.ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                 intArrayOf(androidx.core.graphics.ColorUtils.blendARGB(MobilePalette.surface, MobilePalette.accent(this), .25f), MobilePalette.surface))
         }
-        binding.autoSelectProxyApps.setOnClickListener { selectProxyApp() }
+
 
         binding.list.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
         binding.list.itemAnimator = null

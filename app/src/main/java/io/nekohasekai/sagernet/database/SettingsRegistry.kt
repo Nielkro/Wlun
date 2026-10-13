@@ -267,7 +267,7 @@ object SettingsRegistry {
     @JvmField val SUB_AUTO_UPDATE_LAST = long("sub_auto_update_last", 0L) { it >= 0 }
     @JvmField val SUB_CLEAR = bool("sub_clear", false)
     @JvmField val SUB_SHOW_CHANGE_POPUP = bool("sub_show_change_popup", true)
-    @JvmField val SUB_SEND_HWID = bool("sub_send_hwid", false)
+    @JvmField val SUB_SEND_HWID = bool("sub_send_hwid", true)
     /** `key=value` pairs separated by commas. */
     @JvmField val SUB_CUSTOM_HWID_PARAMS = string("sub_custom_hwid_params", "")
     @JvmField val ALLOW_STOPPING_ACTIVE_PROFILE = bool("allow_stopping_active_profile", false)

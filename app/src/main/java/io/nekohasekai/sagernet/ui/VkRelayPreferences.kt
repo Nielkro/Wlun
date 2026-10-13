@@ -72,13 +72,14 @@ object VkRelayPreferences {
         group.addPreference(account)
         val hashesPreference = SimpleMenuPreference(context).apply {
             key = "vkRelayDefaultHashes"
+            optionEnabled = { index -> index != 1 || (VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) }
             title = "Хеши по умолчанию для новых профилей"
             setIcon(R.drawable.ic_mobile_hash)
             isSingleLineTitle = false; isPersistent = false
             entries = arrayOf("Вручную","Авто"); entryValues = arrayOf("manual","auto")
             setDefaultValue("manual")
             summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-            setOnPreferenceChangeListener { _,next -> DataStore.configurationStore.putString(VkRelayAccount.DEFAULT_SOURCE,next as String); true }
+            setOnPreferenceChangeListener { _,next -> if(next == "auto" && (!VkRelayAccount.linked() || VkRelayAccount.needsRelink())) false else { DataStore.configurationStore.putString(VkRelayAccount.DEFAULT_SOURCE,next as String); true } }
         }
         group.addPreference(hashesPreference)
         hashesPreference.value = DataStore.configurationStore.getString(VkRelayAccount.DEFAULT_SOURCE,"manual").takeIf { it == "auto" } ?: "manual"

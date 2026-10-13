@@ -190,6 +190,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     setOnPreferenceChangeListener { _, next -> DataStore.profileCacheStore.putString(cache(path), next.toString()); true }
                 }
                 choices.containsKey(key) || key=="workers" -> SimpleMenuPreference(requireContext()).apply {
+                    if(key == "hash_source") optionEnabled = { index -> index != 1 || (app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() && !app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink()) }
                     entryValues = (choices[key] ?: listOf("9")).toTypedArray()
                     entries = (captions[key] ?: choices[key] ?: listOf("9")).toTypedArray()
                     this.value=DataStore.profileCacheStore.getString(cache(path))
@@ -225,8 +226,10 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 path=="transport_cupsonline" -> "Документ Cups.online"
                 else -> labels[key] ?: path.removePrefix("options.")
             }
+            if(preference is EditTextPreference) preference.dialogTitle = preference.title
             preference.setOnPreferenceChangeListener { _, next ->
                 val text=next.toString()
+                if(key == "hash_source" && text == "auto" && (!app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() || app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink())) return@setOnPreferenceChangeListener false
                 val range=optionLimits[path.removePrefix("options.")]
                 if(value is Number && text.toLongOrNull()==null) return@setOnPreferenceChangeListener false
                 if(range!=null && text.toIntOrNull()?.let { it in range }!=true) return@setOnPreferenceChangeListener false

@@ -140,6 +140,27 @@ object ProfileImport {
 
         /** Parser::json (SubscriptionParser.cpp:340-370): Xray first, its configs share the `outbounds` wrapper with sing-box. */
         private fun json(doc: Any, text: String) {
+            val nativeItems = when(doc) {
+                is JsonArray -> doc
+                is JsonObject -> when {
+                    doc.isArray("profiles") -> doc.array("profiles")
+                    doc.isArray("servers") -> doc.array("servers")
+                    else -> JsonArray.of(doc)
+                }
+                else -> JsonArray()
+            }
+            var nativeFound = false
+            for(item in nativeItems) {
+                val obj = item as? JsonObject ?: continue
+                val type = obj.string("type").lowercase().ifEmpty { if(obj.contains("peer")) "qwdtt" else "" }
+                if(type !in listOf("qwdtt","wdtt","csqtt")) continue
+                nativeFound = true
+                val copy = JsonInput.parseObjectOrNull(obj.toCompact()) ?: continue
+                copy["type"] = if(type == "wdtt") "qwdtt" else type
+                val outbound = OutboundFactory.newByType(copy.string("type"))
+                if(outbound.parseFromJson(copy)) produce(outbound)
+            }
+            if(nativeFound) return
             val xrayType = xraySubType(doc)
             if (xrayType == XraySubType.OutboundObject) {
                 produce(Custom.fromXrayOutbound(doc as JsonObject))
