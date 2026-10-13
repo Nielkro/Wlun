@@ -4,6 +4,10 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.AtomicFile
 import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.outbound.types.Qwdtt
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -63,20 +67,20 @@ object VkRelayAccount {
     suspend fun unlinkWithManualHashes() {
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             val groups = mutableSetOf<Long>()
-            val db = app.qthrone.mobile.database.SagerDatabase.instance
+            val db = SagerDatabase.instance
             db.runInTransaction {
-                for(profile in app.qthrone.mobile.database.SagerDatabase.proxyDao.getAll()) {
-                    val outbound = profile.outbound as? app.qthrone.mobile.outbound.types.Qwdtt ?: continue
+                for(profile in SagerDatabase.proxyDao.getAll()) {
+                    val outbound = profile.outbound as? Qwdtt ?: continue
                     outbound.hashSource = "manual"
                     outbound.hashSourceChosen = true
                     profile.putOutbound(outbound)
-                    app.qthrone.mobile.database.SagerDatabase.proxyDao.updateOutbound(profile.id,profile.type,profile.name,profile.outboundJson)
+                    SagerDatabase.proxyDao.updateOutbound(profile.id,profile.type,profile.name,profile.outboundJson)
                     groups.add(profile.groupId)
                 }
             }
-            app.qthrone.mobile.database.DataStore.configurationStore.putString(DEFAULT_SOURCE,"manual")
+            DataStore.configurationStore.putString(DEFAULT_SOURCE,"manual")
             unlink()
-            for(group in groups) app.qthrone.mobile.database.GroupRepo.postReload(group)
+            for(group in groups) GroupRepo.postReload(group)
         }
     }
     fun link(token: String,user: String,expiresIn: Long) {
