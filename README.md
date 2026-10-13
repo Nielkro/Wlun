@@ -8,6 +8,8 @@ Android-клиент для управления прокси с ядрами [s
 
 - qWDTT
 - CSQTT
+- olcRTC
+- OpenFlux
 - SOCKS
 - HTTP(S)
 - Shadowsocks
