@@ -102,7 +102,13 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
         fun style(node: View) {
             node.isVerticalScrollBarEnabled=false
             if(node is com.google.android.material.card.MaterialCardView) node.setCardBackgroundColor(MobilePalette.surface)
-            if(node is android.widget.Button) {
+            if(node is com.google.android.material.switchmaterial.SwitchMaterial) {
+                node.setTextColor(MobilePalette.text)
+            } else if(node is com.google.android.material.button.MaterialButton) {
+                node.backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.surface)
+                node.iconTint=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
+                node.setTextColor(MobilePalette.text)
+            } else if(node is android.widget.Button) {
                 node.setTextColor(android.content.res.ColorStateList(
                     arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),
                     intArrayOf(MobilePalette.muted,MobilePalette.accent(requireContext()))))
@@ -113,14 +119,18 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
         fun showPage(page: Int) {
             backupPage = page
             binding.backupMenu.isVisible = page == 0
-            binding.backupBack.isVisible = page != 0
             binding.backupContent.isVisible = page != 0
             binding.backupLocalPage.isVisible = page == 1
             binding.backupWebdavPage.isVisible = page == 2
+            (parentFragment as? ToolsFragment)?.toolbar?.apply {
+                title=when(page) { 1 -> "Локальная копия";2 -> "WebDAV";else -> "Резервное копирование" }
+                setNavigationOnClickListener {
+                    if(backupPage != 0) showPage(0) else requireActivity().onBackPressedDispatcher.onBackPressed()
+                }
+            }
         }
         binding.backupTabLocal.setOnClickListener { showPage(1) }
         binding.backupTabWebdav.setOnClickListener { showPage(2) }
-        binding.backupBack.setOnClickListener { showPage(0) }
         showPage(savedInstanceState?.getInt("backupPage") ?: 0)
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner,object : androidx.activity.OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
