@@ -24,7 +24,11 @@ import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 class DeployActivity : ThemedActivity() {
     lateinit var toolbar: Toolbar
-    var server: DeployServer? = null
+    class EditorState : androidx.lifecycle.ViewModel() { var server: DeployServer? = null }
+    private val editorState by lazy { androidx.lifecycle.ViewModelProvider(this)[EditorState::class.java] }
+    var server: DeployServer?
+        get() = editorState.server
+        set(value) { editorState.server=value }
     private var shownTrust = ""
     private var shownConfig = ""
     private var wasRunning = false
@@ -37,7 +41,7 @@ class DeployActivity : ThemedActivity() {
                     while(true) { val count=stream.read(buffer);if(count<0) break;require(output.size()+count<=65536);output.write(buffer,0,count) };String(output.toByteArray(),Charsets.UTF_8)
                 } ?: error("Нет доступа к файлу")
             } }
-            text.onSuccess { key -> server?.let { it["key"]=key;it["keyName"]=uri.lastPathSegment.orEmpty();DeployStore.save(it);screen()?.build() } }
+            text.onSuccess { key -> server?.let { it["key"]=key;it["keyName"]=uri.lastPathSegment.orEmpty();screen()?.build() } }
                 .onFailure { Toast.makeText(this@DeployActivity,"Не удалось прочитать SSH-ключ",Toast.LENGTH_LONG).show() }
         }
     }
@@ -50,7 +54,7 @@ class DeployActivity : ThemedActivity() {
         root.addView(toolbar);root.addView(content,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view,insets -> val b=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(b.left,b.top,b.right,b.bottom);insets }
         val id=savedInstanceState?.getString("server")
-        server=DeployStore.all().firstOrNull { it.id==id }
+        if(server==null) server=DeployStore.all().firstOrNull { it.id==id }
         onBackPressedDispatcher.addCallback(this,object : androidx.activity.OnBackPressedCallback(true) { override fun handleOnBackPressed() { back() } })
         if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commit()
         lifecycleScope.launch {
@@ -80,10 +84,14 @@ class DeployActivity : ThemedActivity() {
     fun pickKey() { keyPicker.launch("*/*") }
     fun start(uninstall: Boolean) {
         val target=server ?: return
+        if(DeployStore.all().none { it.id==target.id }) {
+            MobileAlertDialogBuilder(this).setMessage("Сначала сохраните VPS кнопкой в верхнем меню.").setPositiveButton(android.R.string.ok,null).show()
+            return
+        }
         if(DeployEngine.state.value.running) { Toast.makeText(this,"Дождитесь завершения текущей операции",Toast.LENGTH_SHORT).show();return }
         val valid=runCatching { target.validate(!uninstall) }
         if(valid.isFailure) { MobileAlertDialogBuilder(this).setMessage(valid.exceptionOrNull()?.message).setPositiveButton(android.R.string.ok,null).show();return }
-        fun run() { DeployStore.save(target);DeployEngine.start(target,uninstall);shownConfig="";shownTrust="";showConsole() }
+        fun run() { DeployEngine.start(target,uninstall);shownConfig="";shownTrust="";showConsole() }
         if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${if(kind=="qwdtt") "qWDTT" else "CSQTT"} на ${target["host"]}.")
             .setPositiveButton("Удалить") { _,_ -> run() }.setNegativeButton(android.R.string.cancel,null).show()
         else run()

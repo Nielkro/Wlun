@@ -4,6 +4,19 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class DeployDraftTest {
+    @Test fun savingDoesNotRequireDeploymentSecrets() {
+        for(kind in listOf("qwdtt","csqtt")) {
+            val server=DeployServer.create(kind)
+            server["host"]="vps.example.org"
+            server.validateAddress()
+            assertFalse(server.isEmptyDraft())
+        }
+    }
+
+    @Test(expected=IllegalArgumentException::class)
+    fun blankServerCannotBeExplicitlySaved() {
+        DeployServer.create("qwdtt").validateAddress()
+    }
     @Test fun untouchedRecordsCanBeReusedForBothDeployers() {
         for(kind in listOf("qwdtt","csqtt")) {
             assertTrue(DeployServer.create(kind).isEmptyDraft())

@@ -25,10 +25,13 @@ class DeployServer(val json: JSONObject) {
         return keys.all { json.optString(it)==defaults.optString(it) }
     }
     fun port(key: String) = get(key).toInt().also { require(it in 1..65535) }
-    fun validate(install: Boolean) {
-        require(kind in listOf("qwdtt","csqtt"))
+    fun validateAddress() {
         require(get("host").matches(Regex("[A-Za-z0-9.:_-]+"))) { "Укажите IP или домен без схемы и порта" }
         require(get("user").matches(Regex("[A-Za-z0-9_.-]+"))) { "Укажите логин SSH" }
+    }
+    fun validate(install: Boolean) {
+        require(kind in listOf("qwdtt","csqtt"))
+        validateAddress()
         for(key in listOf("sshPort","peerPort")) port(key)
         if(kind == "qwdtt") { port("wgPort"); port("rawPort"); port("adminPort"); port("directPort") } else port("webPort")
         if(get("auth") == "key") require(get("key").isNotBlank()) { "Загрузите SSH-ключ" }
@@ -77,6 +80,11 @@ object DeployStore {
         write(items)
     }
     @Synchronized fun remove(id: String) { write(all().filter { it.id != id }) }
+    @Synchronized fun removeEmptyDrafts() {
+        val stored=all()
+        val kept=stored.filterNot { it.isEmptyDraft() }
+        if(kept.size!=stored.size) write(kept)
+    }
     private fun write(items: List<DeployServer>) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE,key()) }
         val data = cipher.iv+cipher.doFinal(JSONArray(items.map { it.json }).toString().toByteArray(Charsets.UTF_8))

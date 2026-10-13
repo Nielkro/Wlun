@@ -100,7 +100,6 @@ open class DeployEditorFragment : Fragment() {
                 override fun onTextChanged(value: CharSequence?,start: Int,before: Int,count: Int) {
                     if(s[key]==value.toString()) return
                     s[key]=value?.toString().orEmpty();if(key in listOf("host","sshPort")) s["hostKey"]=""
-                    DeployStore.save(s)
                 }
             })
         }
@@ -110,7 +109,7 @@ open class DeployEditorFragment : Fragment() {
     private fun switch(parent: LinearLayout,s: DeployServer,key: String,label: String,rebuild: Boolean=false) {
         parent.addView(SwitchMaterial(requireContext()).apply {
             text=label;textSize=15f;setTextColor(MobilePalette.text);minHeight=dp(48);isChecked=s[key]=="true"
-            setOnCheckedChangeListener { _,checked -> s[key]=checked.toString();DeployStore.save(s);if(rebuild) build() }
+            setOnCheckedChangeListener { _,checked -> s[key]=checked.toString();if(rebuild) build() }
         },LinearLayout.LayoutParams(-1,-2))
     }
     private fun secrets(s: DeployServer) {
@@ -134,26 +133,26 @@ open class DeployEditorFragment : Fragment() {
         val s=host.server
         host.toolbar.title=if(s==null) "Деплой "+(if(host.kind=="qwdtt") "qWDTT" else "CSQTT") else "Управление сервером"
         if(s==null) {
+            DeployStore.removeEmptyDrafts()
             val servers=DeployStore.all().filter { it.kind==host.kind }
-            // Failed openings in older versions persisted identical, untouched drafts.
-            // Show one reusable draft without deleting any stored record or credentials.
-            var draft: DeployServer?=null
             for(item in servers) {
-                if(item.isEmptyDraft()) {
-                    if(draft!=null) continue
-                    draft=item
-                }
                 serverTile(item["name"],item["host"].ifBlank { "Укажите адрес VPS" },R.drawable.ic_mobile_core) { host.server=item;build() }
             }
             serverTile("Добавить VPS для деплоя",null,R.drawable.ic_mobile_add) {
-                host.server=draft ?: DeployServer.create(host.kind)
-                // Persist only after the form has been constructed successfully.
+                host.server=DeployServer.create(host.kind)
                 build()
-                host.server?.let { DeployStore.save(it) }
             }
             return
         }
-        host.toolbar.menu.add("Сохранить").apply { setIcon(R.drawable.ic_mobile_apply);setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS);setOnMenuItemClickListener { DeployStore.save(s);Toast.makeText(context,"Сервер сохранён",Toast.LENGTH_SHORT).show();true } }
+        host.toolbar.menu.add("Сохранить").apply {
+            setIcon(R.drawable.ic_mobile_apply);setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
+            setOnMenuItemClickListener {
+                runCatching { s.validateAddress();DeployStore.save(s) }
+                    .onSuccess { host.server=null;build();Toast.makeText(context,"Сервер сохранён",Toast.LENGTH_SHORT).show() }
+                    .onFailure { MobileAlertDialogBuilder(requireContext()).setMessage(it.message).setPositiveButton(android.R.string.ok,null).show() }
+                true
+            }
+        }
         host.toolbar.menu.add("Удалить из списка").setOnMenuItemClickListener {
             MobileAlertDialogBuilder(requireContext()).setMessage("Удалить сохранённые данные? Сервис на VPS останется.")
                 .setPositiveButton("Удалить") { _,_ -> DeployStore.remove(s.id);host.server=null;build() }.setNegativeButton(android.R.string.cancel,null).show();true
@@ -161,21 +160,21 @@ open class DeployEditorFragment : Fragment() {
         button(body,if(s.kind=="qwdtt") "Секреты (бот, пароли)" else "Авторизация",R.drawable.ic_baseline_vpn_key_24) { secrets(s) }
         row(body) { r ->
             operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
-            operations+=button(r,"Удалить",R.drawable.ic_mobile_delete,true) { host.start(true) }
+            operations+=button(r,"Удалить сервис с VPS",R.drawable.ic_mobile_delete,true) { host.start(true) }
         }
         val access=card()
         field(access,s,"name","Название сервера")
         row(access) { r -> field(r,s,"host","IP / домен",pair=true);field(r,s,"user","Логин SSH",pair=true) }
         heading(access,"Вход на сервер")
         row(access) { r ->
-            for((value,label) in listOf("password" to "Пароль","key" to "SSH-ключ")) button(r,label,pair=true) { s["auth"]=value;DeployStore.save(s);build() }.apply {
+            for((value,label) in listOf("password" to "Пароль","key" to "SSH-ключ")) button(r,label,pair=true) { s["auth"]=value;build() }.apply {
                 strokeWidth=dp(1);strokeColor=android.content.res.ColorStateList.valueOf(if(s["auth"]==value) MobilePalette.accent(requireContext()) else MobilePalette.muted)
             }
         }
         if(s["auth"]=="key") {
             row(access) { r ->
                 button(r,if(s["key"].isBlank()) "Загрузить ключ" else "Сменить ключ",pair=true) { host.pickKey() }
-                if(s["key"].isNotBlank()) button(r,"Удалить",R.drawable.ic_mobile_delete,true) { s["key"]="";s["keyName"]="";DeployStore.save(s);build() }
+                if(s["key"].isNotBlank()) button(r,"Удалить",R.drawable.ic_mobile_delete,true) { s["key"]="";s["keyName"]="";build() }
             }
             if(s["key"].isNotBlank()) heading(access,"Ключ загружен: "+s["keyName"])
             field(access,s,"keyPassword","Пароль SSH-ключа",secret=true);field(access,s,"sudoPassword","Пароль sudo (если требуется)",secret=true)
