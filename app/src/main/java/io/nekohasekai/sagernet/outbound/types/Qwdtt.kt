@@ -68,7 +68,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         val q=url.query
         if(!q.has("peer")) return false
         val obj=jsonObjectOf("type" to "qwdtt")
-        for(key in listOf("peer","name","pass","password","hashes","mode","obfs","go_dns","device_id","vk_anon_path","captcha_mode"))
+        for(key in listOf("peer","name","pass","password","hashes","hash_source","mode","obfs","go_dns","device_id","vk_anon_path","captcha_mode"))
             if(q.has(key)) obj[key]=q.valueFormDecoded(key)
         for(key in listOf("raw_port","workers")) if(q.has(key)) obj[key]=q.value(key).toIntOrNull() ?: return false
         if(q.has("turn_tcp")) obj["turn_tcp"]=q.value(key="turn_tcp") in listOf("1","true")

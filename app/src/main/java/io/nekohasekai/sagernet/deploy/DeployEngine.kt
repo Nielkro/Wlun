@@ -137,7 +137,7 @@ object DeployEngine {
                 .put("password",server["password"]).put("device_id",server["deviceId"]).put("hashes",org.json.JSONArray())
                 .put("hash_source",if(server.kind == "qwdtt" && VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) "auto" else "manual")
             if(server.kind == "qwdtt") json.put("mode","raw").put("raw_port",server.port("rawPort"))
-            val config=json.toString(2)
+            val config=DeployConfig.link(json)
             server.recordInstallation(config);DeployStore.save(server)
             state.value = state.value.copy(config=config)
         } else {

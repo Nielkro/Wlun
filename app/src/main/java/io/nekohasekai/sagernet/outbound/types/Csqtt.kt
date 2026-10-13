@@ -29,6 +29,7 @@ class Csqtt:Qwdtt() {
             obj["server"]=q.valueFully("host");obj["server_port"]=q.valueFully("peer").toIntOrNull() ?: return false
             obj["password"]=q.valueFully("password")
             if(q.has("name")) obj["tag"]=q.valueFully("name") else if(q.has("remark")) obj["tag"]=q.valueFully("remark")
+            if(q.has("device_id")) obj["device_id"]=q.valueFully("device_id")
             if(q.has("hashes")) {
                 val hashes=q.value("hashes").split('+').map { LinkCodec.decodeFully(it) }.filter { it.isNotBlank() }.distinct().take(6)
                 if(hashes.size !in 1..6 || hashes.any { it.length<16 || it.any(Char::isWhitespace) } || hashes.distinct().size!=hashes.size) return false

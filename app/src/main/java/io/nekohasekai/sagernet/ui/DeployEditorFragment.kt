@@ -36,6 +36,8 @@ open class DeployEditorFragment : Fragment() {
     private var openSwipe: MobileSwipeTile?=null
     private var output: TextView?=null
     private var logScroll: ScrollView?=null
+    private var followLogs=true
+    private var touchingLogs=false
     private var status: TextView?=null
     private var progress: ProgressBar?=null
     private var stop: MaterialButton?=null
@@ -253,9 +255,28 @@ open class DeployEditorFragment : Fragment() {
         status=TextView(requireContext()).apply { setTextColor(MobilePalette.text);textSize=14f };content.addView(status)
         progress=ProgressBar(requireContext(),null,android.R.attr.progressBarStyleHorizontal);content.addView(progress,LinearLayout.LayoutParams(-1,dp(16)))
         output=TextView(requireContext()).apply { setTextColor(android.graphics.Color.rgb(134,235,149));typeface=android.graphics.Typeface.MONOSPACE;textSize=12f;setTextIsSelectable(true);setPadding(dp(12),dp(12),dp(12),dp(12)) }
-        logScroll=ScrollView(requireContext()).apply {
+        logScroll=object: ScrollView(requireContext()) {
+            override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+                if(event.actionMasked==android.view.MotionEvent.ACTION_DOWN) {
+                    touchingLogs=true;followLogs=false;parent.requestDisallowInterceptTouchEvent(true)
+                }
+                val handled=super.dispatchTouchEvent(event)
+                if(event.actionMasked==android.view.MotionEvent.ACTION_UP || event.actionMasked==android.view.MotionEvent.ACTION_CANCEL) {
+                    touchingLogs=false;followLogs=!canScrollVertically(1);parent.requestDisallowInterceptTouchEvent(false)
+                }
+                return handled
+            }
+        }.apply {
             background=android.graphics.drawable.GradientDrawable().apply { setColor(android.graphics.Color.rgb(8,12,9));cornerRadius=dp(12).toFloat() };clipToOutline=true
+            isVerticalScrollBarEnabled=false;isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER
+            setOnScrollChangeListener { _: View, _: Int, _: Int, _: Int, _: Int ->
+                if(touchingLogs) followLogs=!canScrollVertically(1)
+                else if(!canScrollVertically(1)) followLogs=true
+            }
             addView(output)
+        }
+        output?.addOnLayoutChangeListener { _,_,_,_,_,_,_,_,_ ->
+            if(followLogs && !touchingLogs) logScroll?.scrollTo(0,output?.height ?: 0)
         }
         content.addView(logScroll,LinearLayout.LayoutParams(-1,dp(220)))
         stop=button(content,"Остановить") { DeployEngine.cancel() }
@@ -274,11 +295,15 @@ open class DeployEditorFragment : Fragment() {
             MobileFeedback.apply(this,circle=true)
             setOnClickListener { if(displayedConfig.isNotBlank()) app.qthrone.mobile.SagerNet.trySetPrimaryClip(displayedConfig) }
         }
-        val copyRow=LinearLayout(requireContext()).apply { gravity=android.view.Gravity.END }
-        copyRow.addView(configCopy,LinearLayout.LayoutParams(dp(44),dp(44)));well.addView(copyRow)
         configText=TextView(requireContext()).apply { setTextColor(MobilePalette.text);typeface=android.graphics.Typeface.MONOSPACE;textSize=12f;setTextIsSelectable(true) }
-        well.addView(ScrollView(requireContext()).apply { addView(configText) },LinearLayout.LayoutParams(-1,dp(180)))
-        configBody.addView(well)
+        val configRow=LinearLayout(requireContext()).apply { gravity=android.view.Gravity.CENTER_VERTICAL }
+        well.addView(ScrollView(requireContext()).apply {
+            isVerticalScrollBarEnabled=false;isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER
+            addView(configText)
+        },LinearLayout.LayoutParams(-1,dp(60)))
+        configRow.addView(well,LinearLayout.LayoutParams(0,-2,1f))
+        configRow.addView(configCopy,LinearLayout.LayoutParams(dp(44),dp(44)))
+        configBody.addView(configRow)
         expand();render(DeployEngine.state.value)
     }
     private fun expand() {
@@ -290,7 +315,7 @@ open class DeployEditorFragment : Fragment() {
         (configArrow?.parent as? View)?.contentDescription=if(configExpanded) "Конфиг, раскрыт" else "Конфиг, свёрнут"
     }
     fun revealConsole() {
-        expanded=true;expand()
+        expanded=true;followLogs=true;expand()
         (requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(scroll.windowToken,0)
         scroll.post { consoleCard?.let { scroll.smoothScrollTo(0,it.top) } }
     }
@@ -301,16 +326,15 @@ open class DeployEditorFragment : Fragment() {
             if(state.configCleared) s.recordUninstall()
             else if(state.config.isNotBlank()) s["config"]=state.config
         }
-        displayedConfig=s?.get("config").orEmpty()
+        displayedConfig=DeployConfig.display(s?.get("config").orEmpty())
         val configLabel=displayedConfig.ifBlank { "Конфиг появится после успешной установки" }
         if(configText?.text?.toString()!=configLabel) configText?.text=configLabel
         configCopy?.visibility=if(displayedConfig.isBlank()) View.GONE else View.VISIBLE
         status?.text=if(relevant) state.step+(if(state.running && !state.installerProgress && state.percent in 45..99) "" else " · "+state.percent+"%") else "Готово к подключению"
         val logs="$ "+(s?.kind ?: "deploy")+" deploy\n"+(if(relevant) state.logs.ifBlank { "Ожидание подключения к VPS…" } else "Ожидание подключения к VPS…")
         if(output?.text?.toString()!=logs) {
-            val follow=logScroll?.let { !it.canScrollVertically(1) } ?: false
             output?.text=logs
-            if(follow) logScroll?.post { logScroll?.smoothScrollTo(0,output?.height ?: 0) }
+            if(followLogs) logScroll?.post { if(followLogs && !touchingLogs) logScroll?.scrollTo(0,output?.height ?: 0) }
         }
         progress?.progress=if(relevant) state.percent else 0
         progress?.isIndeterminate=relevant && state.running && !state.installerProgress && state.percent in 45..99
