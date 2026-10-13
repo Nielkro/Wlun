@@ -8,10 +8,23 @@ import app.qthrone.mobile.outbound.config.GeneratorSettings
 object ProviderRouting {
     data class Command(val provider: String, val activate: Boolean, val off: Boolean, val document: JsonObject?)
     private val link = Regex("^(happ|incy)?://routing/(add|onadd|off)(?:/([^?#]*))?(?:\\?data=([^#]*))?(?:#.*)?$", RegexOption.IGNORE_CASE)
-    fun isLink(text: String) = link.matches(text.trim())
+    // Browser launcher links carry the actual routing document in their url query.
+    // Decode locally so the launcher HTML is never mistaken for a server subscription.
+    private fun unwrap(text: String): String {
+        val raw=text.trim()
+        if(raw.length>2*1024*1024) return raw
+        return runCatching {
+            val uri=java.net.URI(raw)
+            if(uri.scheme?.lowercase() !in listOf("http","https") || uri.host.isNullOrBlank()) return@runCatching raw
+            val parameter=uri.rawQuery.orEmpty().split('&').firstOrNull { it.substringBefore('=')=="url" } ?: return@runCatching raw
+            val value=java.net.URLDecoder.decode(parameter.substringAfter('=',"").replace("+","%2B"),"UTF-8")
+            if(link.matches(value)) value else raw
+        }.getOrDefault(raw)
+    }
+    fun isLink(text: String) = link.matches(unwrap(text))
     fun parse(text: String, provider: String = "Happ"): Command {
         require(text.length <= 2 * 1024 * 1024) { "Routing profile is too large" }
-        val raw = text.trim()
+        val raw = unwrap(text)
         val input = if (raw.contains("://routing/") && !isLink(raw)) provider.lowercase() + raw.substring(raw.indexOf("://routing/")) else raw
         val match = link.matchEntire(input)
         val source = match?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.replaceFirstChar { it.uppercase() } ?: provider
@@ -19,7 +32,7 @@ object ProviderRouting {
             return Command(source, false, true, null)
         val payload = match?.let { java.net.URLDecoder.decode(it.groupValues[3].ifEmpty { it.groupValues[4] }.replace("+", "%2B"), "UTF-8") } ?: input
         val json = JsonInput.parseObjectOrNull(payload) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload)) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload,true))
-            ?: error("Invalid $source routing profile")
+            ?: error("Профиль маршрутизации $source неполный или повреждён. Скопируйте ссылку целиком.")
         require(json.contains("GlobalProxy") || json.contains("DirectSites") || json.contains("Name")) { "Not a $source routing profile" }
         for (key in listOf("DirectSites", "DirectIp", "ProxySites", "ProxyIp", "BlockSites", "BlockIp")) {
             require(!json.contains(key) || json.isArray(key)) { "$key must be a list" }

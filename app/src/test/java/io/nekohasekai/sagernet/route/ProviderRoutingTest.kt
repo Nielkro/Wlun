@@ -7,6 +7,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProviderRoutingTest {
+    @Test fun browserLauncherImportsTheEmbeddedRouteInsteadOfItsHtml() {
+        val direct="happ://routing/onadd/"+Base64Strict.encode(jsonObjectOf("Name" to "DigneZzz (lite)","GlobalProxy" to "true","DirectSites" to JsonArray.of("geosite:private")).toCompact())
+        val wrapped="https://r.far.ovh/?url="+java.net.URLEncoder.encode(direct,"UTF-8")
+        assertTrue(ProviderRouting.isLink(wrapped))
+        val command=ProviderRouting.parse(wrapped)
+        assertEquals("DigneZzz (lite)",command.document!!.string("Name"))
+        assertTrue(command.activate)
+        assertTrue(ProviderRouting.subscription("vless://id@example.org:443\n$wrapped").commands.single().activate)
+        assertFalse(ProviderRouting.isLink("https://example.org/?url=https%3A%2F%2Fexample.org%2Fsubscription"))
+    }
+
+    @Test fun truncatedUserLinkFailsWithCopyWholeLinkMessage() {
+        val incomplete="https://r.far.ovh/?url=happ%3A%2F%2Frouting%2Fonadd%2FeyJOYW1lIjoiRGlnbmVaelogKGxpdGUpIiwiR2xvYmFsUHJveHkiOiJ0cnVlIiwiVXNlQ2h1bmtGaWxlcyI6ImZhbHNlIiwiUmVtb3RlRG5zI"
+        assertTrue(ProviderRouting.isLink(incomplete))
+        val result=runCatching { ProviderRouting.parse(incomplete) }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()!!.message!!.contains("Скопируйте ссылку целиком"))
+    }
     @Test fun ignoreImportDoesNotDiscardServersOnMalformedRoute() {
         val payload = ProviderRouting.subscription("vless://id@example.org:443\nhapp://routing/onadd/broken","not-valid-json",ignoreRouting = true)
         assertEquals("vless://id@example.org:443",payload.body)
