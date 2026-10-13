@@ -6,8 +6,13 @@ import android.widget.*
 import androidx.preference.ListPreference
 
 object MobileSelector {
-    private val anchors = java.util.WeakHashMap<ListPreference,java.lang.ref.WeakReference<android.view.View>>()
-    fun bind(preference: ListPreference, view: android.view.View) { anchors[preference] = java.lang.ref.WeakReference(view) }
+    private val anchors = java.util.WeakHashMap<androidx.preference.Preference,java.lang.ref.WeakReference<android.view.View>>()
+    fun bind(preference: androidx.preference.Preference, view: android.view.View) { anchors[preference] = java.lang.ref.WeakReference(view) }
+    fun show(preference: androidx.preference.Preference, labels: List<CharSequence>, selected: Int, onSelect: (Int) -> Unit) {
+        val anchor = anchors[preference]?.get()?.takeIf { it.isAttachedToWindow }
+        if(anchor != null) showAt(anchor,labels,selected,onSelect)
+        else show(preference.context,preference.title ?: "",labels,selected,onSelect)
+    }
     fun showAt(anchor: android.view.View, labels: List<CharSequence>, selected: Int, onSelect: (Int) -> Unit) {
         val context = anchor.context
         fun dp(n: Int) = (n * context.resources.displayMetrics.density).toInt()

@@ -513,17 +513,9 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                 val items = arrayListOf<CharSequence>(getString(R.string.grp_none))
                 if (current > 0) items.add(proxyText(current))
                 items.add(getString(R.string.route_profile))
-                MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(preference.title)
-                    .setSingleChoiceItems(items.toTypedArray(), if (current > 0) 1 else 0) { dialog, which ->
-                        dialog.dismiss()
-                        when (which) {
-                            0 -> setProxy(key, -1L)
-                            items.lastIndex -> host.pickProfile(key)
-                        }
-                    }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .show()
+                app.qthrone.mobile.ui.MobileSelector.show(preference,items,if(current > 0) 1 else 0) { which ->
+                    when(which) { 0 -> setProxy(key,-1L); items.lastIndex -> host.pickProfile(key) }
+                }
                 true
             }
         }

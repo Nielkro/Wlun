@@ -108,6 +108,7 @@ internal object SubscriptionRefresh {
             .map { it.index to it.value.id }
         val stickyIds = sticky.mapTo(HashSet()) { it.second }
         fun members(): List<ProxyEntity> = ProfileManager.members(gid).filter { it.id !in stickyIds }
+        val previousNative = members().map { it.outbound }.filterIsInstance<app.qthrone.mobile.outbound.types.Qwdtt>()
 
         // Ids a running auto selector can no longer trust: deleted, or same id with new settings.
         val disturbed = ArrayList<Long>()
@@ -140,7 +141,6 @@ internal object SubscriptionRefresh {
         val sink = ImportSink(gid, if (cleared) null else index)
 
         Logs.i(">>>>>>>> " + str(R.string.subs_processing))
-        val previousNative = members().map { it.outbound }.filterIsInstance<app.qthrone.mobile.outbound.types.Qwdtt>()
         for (outbound in servers) {
             if(outbound is app.qthrone.mobile.outbound.types.Qwdtt) NativeHashPolicy.preserve(outbound,previousNative)
             sink.add(outbound)
