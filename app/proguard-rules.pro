@@ -26,7 +26,18 @@
 
 # JSch's algorithm registry instantiates implementations by class name.
 # This includes jce.Random before the first SSH connection is opened.
--keep class !com.jcraft.jsch.PageantConnector,!com.jcraft.jsch.JUnixSocketFactory,!com.jcraft.jsch.Log4j2Logger,!com.jcraft.jsch.Slf4jLogger,!com.jcraft.jsch.jgss.**,com.jcraft.jsch.** { *; }
+-keep class com.jcraft.jsch.jce.** { *; }
+-keep class com.jcraft.jsch.bc.** { *; }
+-keep class com.jcraft.jsch.jzlib.** { *; }
+-keep class com.jcraft.jsch.jbcrypt.** { *; }
+-keep class com.jcraft.jsch.CipherNone { *; }
+-keep class com.jcraft.jsch.DH* { *; }
+-keep class com.jcraft.jsch.UserAuthNone { *; }
+-keep class com.jcraft.jsch.UserAuthPassword { *; }
+-keep class com.jcraft.jsch.UserAuthKeyboardInteractive { *; }
+-keep class com.jcraft.jsch.UserAuthPublicKey { *; }
+-keep class com.jcraft.jsch.JSch
+-keep class com.jcraft.jsch.Session
 # Optional desktop agents, logging adapters and Kerberos are not used by VPS
 # password/key authentication over TCP. Do not retain their implementations.
 -dontwarn com.sun.jna.**

@@ -5,6 +5,10 @@ import sys
 import zipfile
 
 REQUIRED = {"Lcom/jcraft/jsch/jce/Random;", "Lcom/jcraft/jsch/JSch;", "Lcom/jcraft/jsch/Session;"}
+REQUIRED.update("Lcom/jcraft/jsch/" + name + ";" for name in (
+    "jce/AES128CTR", "jce/SHA256", "jce/HMACSHA256", "jce/SignatureRSASHA256",
+    "jbcrypt/JBCrypt", "DHG14256", "UserAuthNone", "UserAuthPassword",
+    "UserAuthKeyboardInteractive", "UserAuthPublicKey"))
 DESKTOP_ONLY = {"Lcom/jcraft/jsch/PageantConnector;", "Lcom/jcraft/jsch/JUnixSocketFactory;",
                 "Lcom/jcraft/jsch/Log4j2Logger;", "Lcom/jcraft/jsch/Slf4jLogger;",
                 "Lcom/jcraft/jsch/jgss/GSSContextKrb5;"}
@@ -37,7 +41,7 @@ def verify(directory):
                     found.update(classes(archive.read(name)))
         missing = REQUIRED - found
         assert not missing, f"{apk.name}: missing SSH implementations: {sorted(missing)}"
-        assert not (DESKTOP_ONLY & found), f"{apk.name}: unused desktop SSH adapters retained"
+        assert not (DESKTOP_ONLY & found), f"{apk.name}: unused desktop SSH adapters retained: {sorted(DESKTOP_ONLY & found)}"
         print(f"{apk.name}: required SSH implementations retained")
 
 if __name__ == "__main__":
