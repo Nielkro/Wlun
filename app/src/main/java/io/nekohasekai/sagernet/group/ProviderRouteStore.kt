@@ -7,12 +7,14 @@ import app.qthrone.mobile.outbound.json.*
 object ProviderRouteStore {
     fun apply(gid: Long, commands: List<ProviderRouting.Command>, fullJson: Boolean = false) {
         if (commands.isEmpty()) return
+        if (GroupRepo.get(gid)?.subOptions?.providerIgnoreImport == true) return
         for (command in commands) command.document?.let {
             app.qthrone.mobile.route.ProviderGeoAssets.prepare(gid,it)
         }
         SagerDatabase.instance.runInTransaction {
             val group = GroupRepo.get(gid) ?: return@runInTransaction
             val options = group.subOptions
+            if (options.providerIgnoreImport) return@runInTransaction
             val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.toList()?.filterIsInstance<JsonObject>()?.toMutableList() ?: mutableListOf()
             for (command in commands) {
                 options.routingProvider = command.provider

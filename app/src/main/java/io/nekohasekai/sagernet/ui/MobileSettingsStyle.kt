@@ -67,7 +67,7 @@ object MobileSettingsStyle {
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
             val category=preference is PreferenceCategory
-            val warning=preference?.key == "providerJsonWarning"
+            val warning=preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
             if(category) {
                 view.minimumHeight=0
                 view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())

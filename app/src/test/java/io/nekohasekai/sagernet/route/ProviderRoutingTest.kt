@@ -7,6 +7,18 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProviderRoutingTest {
+    @Test fun ignoreImportDoesNotDiscardServersOnMalformedRoute() {
+        val payload = ProviderRouting.subscription("vless://id@example.org:443\nhapp://routing/onadd/broken","not-valid-json",ignoreRouting = true)
+        assertEquals("vless://id@example.org:443",payload.body)
+        assertTrue(payload.commands.isEmpty())
+    }
+    @Test fun routingOrderChangesRulePriority() {
+        val doc = jsonObjectOf("Name" to "Ordering","RouteOrder" to "direct-proxy-block", "DirectSites" to JsonArray.of("full:example.org"),"ProxySites" to JsonArray.of("full:example.org"),"BlockSites" to JsonArray.of("full:example.org"))
+        val rules = ProviderRouting.profile(doc,"Happ").rules.drop(1)
+        assertEquals(listOf(OutboundIds.DIRECT,OutboundIds.PROXY,OutboundIds.BLOCK),rules.map { it.outbound_id })
+        doc["RouteOrder"] = "invalid"
+        assertEquals(OutboundIds.BLOCK,ProviderRouting.profile(doc,"Happ").rules[1].outbound_id)
+    }
     @Test fun incyLegacyAndHeaderLinksKeepProvider() {
         val encoded = Base64Strict.encode(jsonObjectOf("Name" to "RU", "GlobalProxy" to "false").toCompact())
         assertTrue(ProviderRouting.isLink("://routing/onadd/$encoded"))

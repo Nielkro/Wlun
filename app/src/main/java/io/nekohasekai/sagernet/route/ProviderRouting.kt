@@ -28,16 +28,16 @@ object ProviderRouting {
         return Command(source, match?.groupValues?.get(2)?.equals("onadd", true) == true, false, json)
     }
     data class Payload(val body: String, val commands: List<Command>)
-    fun subscription(body: String, header: String = "", provider: String = "Happ"): Payload {
+    fun subscription(body: String, header: String = "", provider: String = "Happ", ignoreRouting: Boolean = false): Payload {
         var text = body.trim()
         if (!text.contains("://") && !text.startsWith("{") && !text.startsWith("[")) {
             val decoded = Base64Strict.decodeToString(text.filterNot { it.isWhitespace() })
             if (decoded.contains("://")) text = decoded
         }
         val commands = mutableListOf<Command>()
-        if (header.isNotBlank()) commands.add(parse(header, provider))
+        if (header.isNotBlank() && !ignoreRouting) commands.add(parse(header, provider))
         val cleaned = text.lineSequence().filter { line ->
-            if (isLink(line.trim())) { commands.add(parse(line.trim(), provider)); false } else true
+            if (isLink(line.trim())) { if (!ignoreRouting) commands.add(parse(line.trim(), provider)); false } else true
         }.joinToString("\n")
         return Payload(cleaned, commands)
     }
@@ -51,7 +51,11 @@ object ProviderRouting {
         default_outbound_id = if (truth(json, "GlobalProxy", true)) OutboundIds.PROXY else OutboundIds.DIRECT
         raw_route = jsonObjectOf("provider" to provider, "profile" to json).toCompact()
         prevent_modifications = true
-        for ((prefix, outbound) in listOf("Block" to OutboundIds.BLOCK, "Proxy" to OutboundIds.PROXY, "Direct" to OutboundIds.DIRECT)) {
+        val order = json.string("RouteOrder").lowercase().split('-')
+        val names = if (order.size == 3 && order.toSet() == setOf("block","proxy","direct")) order else listOf("block","proxy","direct")
+        for (item in names) {
+            val prefix = item.replaceFirstChar { it.uppercase() }
+            val outbound = when (item) { "block" -> OutboundIds.BLOCK; "direct" -> OutboundIds.DIRECT; else -> OutboundIds.PROXY }
             for ((key, ip) in listOf("${prefix}Sites" to false, "${prefix}Ip" to true)) {
                 val rule = RouteRule().apply { name = key; outbound_id = outbound }
                 for (entry in json.array(key).strings().filter { it.isNotBlank() }) {

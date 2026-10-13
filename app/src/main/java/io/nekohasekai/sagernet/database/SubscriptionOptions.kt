@@ -88,6 +88,7 @@ data class SubscriptionOptions(
     var providerRoutingEnabled: Boolean = true,
     var providerRouting: String = "",
     var providerRoutingProfiles: String = "[]",
+    var providerIgnoreImport: Boolean = false,
 ) : Parcelable {
 
     fun toJson(): JsonObject {
@@ -113,6 +114,7 @@ data class SubscriptionOptions(
             json["provider_routing_enabled"] = providerRoutingEnabled
             json["provider_routing"] = providerRouting
             json["provider_routing_profiles"] = providerRoutingProfiles
+            if (providerIgnoreImport) json["provider_ignore_import"] = true
         }
         return json
     }
@@ -147,6 +149,7 @@ data class SubscriptionOptions(
                 providerRoutingEnabled = !json.isBool("provider_routing_enabled") || json.bool("provider_routing_enabled"),
                 providerRouting = json.string("provider_routing"),
                 providerRoutingProfiles = json.string("provider_routing_profiles").ifBlank { "[]" },
+                providerIgnoreImport = json.bool("provider_ignore_import"),
             )
         }
 

@@ -5,11 +5,19 @@ import app.qthrone.mobile.outbound.json.JsonObject
 import app.qthrone.core.mobile.Mobile
 import java.io.File
 import java.security.MessageDigest
+import kotlinx.coroutines.*
 
 object ProviderGeoAssets {
     data class Status(val file: String = "", val bytes: Long = 0, val total: Long = 0, val error: String = "", val complete: Boolean = false)
     val states = kotlinx.coroutines.flow.MutableStateFlow<Map<Long, Status>>(emptyMap())
-    private fun status(gid: Long, value: Status) { synchronized(states) { states.value = states.value + (gid to value) } }
+    private val expiryScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private fun status(gid: Long, value: Status) {
+        synchronized(states) { states.value = states.value + (gid to value) }
+        if (value.complete) expiryScope.launch {
+            delay(5000)
+            synchronized(states) { if (states.value[gid] === value) states.value = states.value - gid }
+        }
+    }
     fun url(document: JsonObject, kind: String) = document.string(if (kind == "geoip") "Geoipurl" else "Geositeurl").ifBlank {
         "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/$kind.dat"
     }
@@ -20,6 +28,14 @@ object ProviderGeoAssets {
             for (kind in listOf("geosite", "geoip")) download(gid, document, kind, force)
             status(gid, Status(complete = true))
         } catch (error: Exception) { status(gid, Status(error = error.readableMessage)); throw error }
+    }
+    @Synchronized
+    fun refresh(gid: Long, document: JsonObject, kind: String) {
+        require(kind in listOf("geosite","geoip"))
+        try {
+            download(gid,document,kind,true)
+            status(gid,Status(complete = true))
+        } catch (error: Exception) { status(gid,Status(error = error.readableMessage)); throw error }
     }
     @Synchronized
     fun installXray(document: JsonObject, needed: Collection<String>) {

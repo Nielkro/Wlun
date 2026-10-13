@@ -20,6 +20,7 @@ import app.qthrone.mobile.bg.test.TestSpec
 import app.qthrone.mobile.ui.test.TestSessionClient
 import androidx.room.InvalidationTracker
 import app.qthrone.mobile.R
+import app.qthrone.mobile.TrafficFormat
 import app.qthrone.mobile.SagerNet
 import app.qthrone.mobile.database.*
 import app.qthrone.mobile.group.SubscriptionClient
@@ -38,12 +39,17 @@ class MobileHomeFragment : ToolbarFragment() {
     private var content: LinearLayout? = null
     private var power: TextView? = null
     private var currentCheck: TextView? = null
+    private var geoBanner: LinearLayout? = null
     private var geoStatus: TextView? = null
+    private var geoProgress: ProgressBar? = null
+    private var geoCheck: ImageView? = null
     private fun updateGeoStatus() {
         val states = app.qthrone.mobile.route.ProviderGeoAssets.states.value.values
         val active = states.firstOrNull { !it.complete } ?: states.lastOrNull()
+        geoBanner?.visibility = if (active == null) View.GONE else View.VISIBLE
+        geoProgress?.visibility = if (active != null && !active.complete && active.error.isBlank()) View.VISIBLE else View.GONE
+        geoCheck?.visibility = if (active?.complete == true) View.VISIBLE else View.GONE
         geoStatus?.apply {
-            visibility = if (active == null) View.GONE else View.VISIBLE
             text = when {
                 active == null -> ""
                 active.error.isNotBlank() -> active.error
@@ -162,6 +168,7 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     override fun onResume() { super.onResume(); refresh() }
     override fun onDestroyView() {
+        geoBanner = null; geoStatus = null; geoProgress = null; geoCheck = null
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
         observer = null; load?.cancel(); content = null; powerPulse?.cancel();powerPulse=null;pulseTarget=null; power = null
         currentResultJob?.cancel(); currentResultJob=null
@@ -269,8 +276,18 @@ class MobileHomeFragment : ToolbarFragment() {
                     column.addView(above,LinearLayout.LayoutParams(-1,dp(64)))
                     updateState()
                 } else currentCheck=null
-                geoStatus = text("",14f).apply { background = GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }; visibility=View.GONE }
-                column.addView(geoStatus,LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
+                geoBanner = LinearLayout(requireContext()).apply {
+                    gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(12))
+                    background = GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }
+                    visibility = View.GONE
+                }
+                geoStatus = text("",14f).apply { setPadding(0,0,dp(12),0) }
+                geoProgress = ProgressBar(requireContext()).apply { isIndeterminate = true; indeterminateTintList = android.content.res.ColorStateList.valueOf(blue); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+                geoCheck = ImageView(requireContext()).apply { setImageResource(R.drawable.ic_baseline_check_circle_24); imageTintList = android.content.res.ColorStateList.valueOf(Color.rgb(76,175,80)); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+                geoBanner!!.addView(geoStatus,LinearLayout.LayoutParams(0,-2,1f))
+                geoBanner!!.addView(geoProgress,LinearLayout.LayoutParams(dp(28),dp(28)))
+                geoBanner!!.addView(geoCheck,LinearLayout.LayoutParams(dp(28),dp(28)))
+                column.addView(geoBanner,LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
                 updateGeoStatus()
                 val serverColumn=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
                 val serverScroll=ScrollView(requireContext()).apply {
@@ -350,8 +367,8 @@ class MobileHomeFragment : ToolbarFragment() {
                     if (quota.valid && quota.hasQuota) {
                         val upload=quota.upload.coerceAtLeast(0); val download=quota.download.coerceAtLeast(0)
                         val bytes=if(download>Long.MAX_VALUE-upload) Long.MAX_VALUE else upload+download
-                        val used=android.text.format.Formatter.formatShortFileSize(requireContext(),bytes)
-                        val total=if(quota.total>0) android.text.format.Formatter.formatShortFileSize(requireContext(),quota.total) else "\u221e"
+                        val used=TrafficFormat.format(bytes)
+                        val total=if(quota.total>0) TrafficFormat.format(quota.total) else "\u221e"
                         usage="$used / $total"
                     }
                     bar.addView(text(usage,11f).apply { gravity=Gravity.CENTER; setPadding(dp(4),0,dp(4),0) },FrameLayout.LayoutParams(-1,-1))

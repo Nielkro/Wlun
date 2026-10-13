@@ -51,7 +51,7 @@ internal object SubscriptionRefresh {
         }
         // A body without a single profile is far likelier a broken or blocked response than an emptied subscription:
         // abort before the first write (no deletion, no update time). Parsing writes nothing, so it runs first.
-        val payload = ProviderRouting.subscription(fetched.body, fetched.routing, options.routingProvider.ifBlank { "Happ" })
+        val payload = ProviderRouting.subscription(fetched.body, fetched.routing, options.routingProvider.ifBlank { "Happ" }, options.providerIgnoreImport)
         val parsed = parse(payload.body)
         if (parsed.isEmpty()) {
             // GroupUpdater.cpp:746-752: panels answer a device or quota limit with an empty list and an announcement
@@ -248,7 +248,7 @@ internal object SubscriptionRefresh {
         val sink = ImportSink(target, null)
         Logs.i(">>>>>>>> " + str(R.string.subs_processing))
         for (document in documents) {
-            val payload = ProviderRouting.subscription(document)
+            val payload = ProviderRouting.subscription(document,ignoreRouting = GroupRepo.get(target)?.subOptions?.providerIgnoreImport == true)
             for (outbound in parse(payload.body)) sink.add(outbound)
             ProviderRouteStore.apply(target, payload.commands)
         }
