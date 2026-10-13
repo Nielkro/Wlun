@@ -831,7 +831,7 @@
     <string name="listen_port">Порт прослушивания</string>
     <string name="location_settings">Настройки местоположения</string>
     <string name="log_buffer_size">Размер буфера журнала (КБ)</string>
-    <string name="log_crash_title">Throne аварийно завершился</string>
+    <string name="log_crash_title">qThrone аварийно завершился</string>
     <string name="log_export_failed">Не удалось экспортировать журнал: %s</string>
     <string name="log_hide_destinations">Скрывать назначения</string>
     <string name="log_hide_sensitive">Скрывать конфиденциальные данные</string>

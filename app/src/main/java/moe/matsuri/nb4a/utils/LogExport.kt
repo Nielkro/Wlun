@@ -38,7 +38,7 @@ object LogExport {
         SettingsRegistry.CURRENT_ROUTE_ID,
     ).map { it.key } + listOf(Key.PROXY_APPS, Key.BYPASS_MODE, Key.METERED_NETWORK)
 
-    fun fileName(): String = "throne-log-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())}.txt"
+    fun fileName(): String = "qThrone-log-${SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())}.txt"
 
     /** Writes cacheDir/log/<[fileName]> (shared through the FileProvider). Blocking: call it off the main thread. */
     fun build(context: Context, redact: Boolean, hideDestinations: Boolean): File {
@@ -80,7 +80,7 @@ object LogExport {
             else -> "on (best effort: review before sharing)"
         }
         return buildString {
-            appendLine("===== Throne for Android log export =====")
+            appendLine("===== qThrone log export =====")
             appendLine("exported  : ${utc.format(Date())}")
             appendLine(
                 "app       : ${SagerNet.appVersionNameForDisplay} (versionCode ${BuildConfig.VERSION_CODE}), " +
