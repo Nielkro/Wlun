@@ -149,8 +149,9 @@ class VkRelayActivity : ThemedActivity() {
     }
     override fun onDestroy() { web?.apply { stopLoading(); (parent as? android.view.ViewGroup)?.removeView(this); destroy() }; web = null; super.onDestroy() }
     class Screen : PreferenceFragmentCompat() {
+        private var firstResume=true
         override fun onCreatePreferences(state: Bundle?,rootKey: String?) { preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()); build() }
-        override fun onResume() { super.onResume(); build() }
+        override fun onResume() { super.onResume();if(firstResume) firstResume=false else build() }
         override fun onViewCreated(view: android.view.View,state: Bundle?) {
             super.onViewCreated(view,state);MobileSettingsStyle.apply(this,view)
         }

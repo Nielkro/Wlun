@@ -8,6 +8,7 @@ on:
       - 'v1.3.8-beta.7'
       - 'v1.3.8-beta.8'
       - 'v1.3.8-beta.9'
+      - 'v1.3.8-beta.10'
   workflow_dispatch:
     inputs:
       publish:
@@ -48,6 +49,8 @@ jobs:
           channel: stable
           build-number: '999'
           sign: 'true'
+      - name: Verify release SSH classes
+        run: python3 buildScript/check_release_ssh.py app/build/outputs/apk/oss/release
       - name: Release assets
         run: python3 buildScript/release_assets.py app/build/outputs/apk/oss/release dist stable
       - name: Upload artifact

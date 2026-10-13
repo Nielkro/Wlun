@@ -13,7 +13,7 @@ import android.widget.LinearLayout
 import kotlin.math.abs
 
 /** Horizontal swipe reveals actions; vertical drags continue scrolling the subscription list. */
-class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View):FrameLayout(context) {
+class MobileSwipeTile(context:Context, private val row:View, test:View, share:View, delete:View, private val deleteOnly:Boolean=false):FrameLayout(context) {
     private var settling: ValueAnimator? = null
     var onOpened: ((MobileSwipeTile) -> Unit)? = null
     private val primaryActions=listOf(test,share)
@@ -124,7 +124,7 @@ class MobileSwipeTile(context:Context, private val row:View, test:View, share:Vi
         when(e.actionMasked) {
             MotionEvent.ACTION_MOVE -> {
                 if(abs(e.x-downX)>slop && abs(e.x-downX)>abs(e.y-downY)) dragging=true
-                val offset=(initial+(e.x-downX)*direction).coerceIn(-actionWidth,widthPx)
+                val offset=(initial+(e.x-downX)*direction).coerceIn(-actionWidth,if(deleteOnly) 0f else widthPx)
                 left.visibility=if(offset>0) View.VISIBLE else View.INVISIBLE
                 right.visibility=if(offset<0) View.VISIBLE else View.INVISIBLE
                 row.translationX=offset*direction

@@ -24,11 +24,12 @@ import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 class DeployActivity : ThemedActivity() {
     lateinit var toolbar: Toolbar
-    class EditorState : androidx.lifecycle.ViewModel() { var server: DeployServer? = null }
+    class EditorState : androidx.lifecycle.ViewModel() { var server: DeployServer? = null;var baseline: String? = null }
     private val editorState by lazy { androidx.lifecycle.ViewModelProvider(this)[EditorState::class.java] }
     var server: DeployServer?
         get() = editorState.server
-        set(value) { editorState.server=value }
+        set(value) { editorState.server=value;editorState.baseline=value?.editSignature() }
+    fun hasChanges() = server?.editSignature()!=editorState.baseline
     private var shownTrust = ""
     private var shownConfig = ""
     private var wasRunning = false
@@ -71,9 +72,6 @@ class DeployActivity : ThemedActivity() {
                             .setNegativeButton(android.R.string.cancel) { _,_ -> DeployEngine.approveHost(false) }
                             .setOnCancelListener { DeployEngine.approveHost(false) }.show()
                     }
-                    if(!state.running && state.config.isNotBlank() && state.config!=shownConfig) {
-                        shownConfig=state.config;showConfig(state.config)
-                    }
                 }
             }
         }
@@ -97,13 +95,5 @@ class DeployActivity : ThemedActivity() {
         else run()
     }
     private fun showConsole() { screen()?.revealConsole() }
-    private fun showConfig(config: String) {
-        val text=TextView(this).apply { setTextColor(MobilePalette.text);typeface=android.graphics.Typeface.MONOSPACE;textSize=13f;text=config;setPadding(24,20,24,20);setTextIsSelectable(true) }
-        MobileAlertDialogBuilder(this).setTitle("Установка завершена")
-            .setView(ScrollView(this).apply { addView(text) })
-            .setMessage("Хеши звонков задайте в профиле. Для qWDTT доступно получение через привязанный VK.")
-            .setPositiveButton("Скопировать") { _,_ -> (getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("qThrone config",config)) }
-            .setNegativeButton("Закрыть",null).show()
-    }
     class Screen : DeployEditorFragment()
 }

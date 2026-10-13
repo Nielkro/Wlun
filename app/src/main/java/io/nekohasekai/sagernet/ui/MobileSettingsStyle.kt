@@ -14,6 +14,12 @@ object MobileSettingsStyle {
     private val styledRoots=java.util.WeakHashMap<View,Boolean>()
     fun apply(fragment: PreferenceFragmentCompat, root: View) {
         if(styledRoots.put(root,true)==true) return
+        // Keep the old screen consistent until theme recreation replaces every row.
+        val background=MobilePalette.background
+        val surface=MobilePalette.surface
+        val textColor=MobilePalette.text
+        val muted=MobilePalette.muted
+        val accent=MobilePalette.accent(root.context)
         fun compact(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val preference = group.getPreference(i)
@@ -43,13 +49,13 @@ object MobileSettingsStyle {
             }
         }
         compact(fragment.preferenceScreen)
-        root.setBackgroundColor(MobilePalette.background)
+        root.setBackgroundColor(background)
         val list=fragment.listView
         fragment.setDivider(null)
         fragment.setDividerHeight(0)
         list.isVerticalScrollBarEnabled=false
         list.itemAnimator=null
-        list.setBackgroundColor(MobilePalette.background)
+        list.setBackgroundColor(background)
         val density=list.resources.displayMetrics.density
         list.setPadding((16*density).toInt(), (4*density).toInt(), (16*density).toInt(), (16*density).toInt())
         list.clipToPadding=false
@@ -88,7 +94,7 @@ object MobileSettingsStyle {
                     widget?.addView(android.widget.ImageButton(list.context).apply {
                         tag="socks-copy";contentDescription=list.context.getString(app.qthrone.mobile.R.string.action_copy)
                         setImageResource(app.qthrone.mobile.R.drawable.ic_mobile_clipboard)
-                        imageTintList=if(preference?.key == "vkRelayAccount" && preference.icon is androidx.core.graphics.drawable.RoundedBitmapDrawable) null else android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+                        imageTintList=if(preference?.key == "vkRelayAccount" && preference.icon is androidx.core.graphics.drawable.RoundedBitmapDrawable) null else android.content.res.ColorStateList.valueOf(accent)
                         setBackgroundColor(Color.TRANSPARENT)
                         setOnClickListener {
                             val value=if(preference?.key=="inbound_user") app.qthrone.mobile.database.DataStore.inboundUser else app.qthrone.mobile.database.DataStore.inboundPass
@@ -98,21 +104,21 @@ object MobileSettingsStyle {
                 }
             }
             view.background=android.graphics.drawable.GradientDrawable().apply {
-                setColor(if(category || warning) MobilePalette.background else MobilePalette.surface)
+                setColor(if(category || warning) background else surface)
                 cornerRadius=16*density
             }
             if(!category && !warning) MobileFeedback.apply(view)
             styledBackgrounds[view] = view.background
             view.findViewById<android.widget.ImageView>(android.R.id.icon)?.apply {
                 visibility=if(preference?.icon!=null) View.VISIBLE else View.GONE
-                imageTintList=if(preference?.key == "vkRelayAccount" && preference.icon is androidx.core.graphics.drawable.RoundedBitmapDrawable) null else android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+                imageTintList=if(preference?.key == "vkRelayAccount" && preference.icon is androidx.core.graphics.drawable.RoundedBitmapDrawable) null else android.content.res.ColorStateList.valueOf(accent)
             }
             view.findViewById<TextView>(android.R.id.title)?.apply {
-                setTextColor(if(category) MobilePalette.accent(list.context) else MobilePalette.text)
+                setTextColor(if(category) accent else textColor)
                 textSize=if(category) 16f else 16f
                 setTypeface(null,if(category) Typeface.BOLD else Typeface.NORMAL)
             }
-            view.findViewById<TextView>(android.R.id.summary)?.setTextColor(MobilePalette.muted)
+            view.findViewById<TextView>(android.R.id.summary)?.setTextColor(muted)
         }
         list.addOnChildAttachStateChangeListener(object: RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view:View) { style(view) }

@@ -20,9 +20,15 @@ import java.util.concurrent.TimeUnit
 
 object VkRelayPreferences {
     fun bind(fragment: PreferenceFragmentCompat, group: PreferenceGroup) {
+        fragment.lifecycleScope.launch {
+            val info=withContext(Dispatchers.IO) { VkRelayAccount.uiInfo() }
+            if(fragment.isAdded && group.parent===fragment.preferenceScreen) bindLoaded(fragment,group,info)
+        }
+    }
+    private fun bindLoaded(fragment: PreferenceFragmentCompat,group: PreferenceGroup,info: VkRelayAccount.UiInfo) {
         val context = fragment.requireContext()
         group.removeAll()
-        val linked = VkRelayAccount.linked()
+        val linked = info.linked
         val account = object : Preference(context) {
             override fun onBindViewHolder(holder: PreferenceViewHolder) {
                 super.onBindViewHolder(holder)
@@ -52,15 +58,15 @@ object VkRelayPreferences {
             isSingleLineTitle = false
             setIcon(R.drawable.ic_mobile_vk)
             if(linked) {
-                summary = VkRelayAccount.displayName()
+                summary = info.displayName
                 widgetLayoutResource = R.layout.vk_relay_unlink
                 isSelectable = true
                 setOnPreferenceClickListener {
                     fragment.startActivity(Intent(context,VkRelayActivity::class.java).putExtra("login",true)); true
                 }
-                if(VkRelayAccount.needsRelink()) {
+                if(info.needsRelink) {
                     title = "Подтвердить привязку VK"
-                    summary = "${VkRelayAccount.displayName()}\nПерейти на авторизацию qWDTT"
+                    summary = "${info.displayName}\nПерейти на авторизацию qWDTT"
                     setOnPreferenceClickListener {
                         fragment.startActivity(Intent(context,VkRelayActivity::class.java).putExtra("login",true)); true
                     }
@@ -72,14 +78,14 @@ object VkRelayPreferences {
         group.addPreference(account)
         val hashesPreference = SimpleMenuPreference(context).apply {
             key = "vkRelayDefaultHashes"
-            optionEnabled = { index -> index != 1 || (VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) }
+            optionEnabled = { index -> index != 1 || (info.linked && !info.needsRelink) }
             title = "Хеши по умолчанию для новых профилей qWDTT"
             setIcon(R.drawable.ic_mobile_hash)
             isSingleLineTitle = false; isPersistent = false
             entries = arrayOf("Вручную","Авто"); entryValues = arrayOf("manual","auto")
             setDefaultValue("manual")
             summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-            setOnPreferenceChangeListener { _,next -> if(next == "auto" && (!VkRelayAccount.linked() || VkRelayAccount.needsRelink())) false else { DataStore.configurationStore.putString(VkRelayAccount.DEFAULT_SOURCE,next as String); true } }
+            setOnPreferenceChangeListener { _,next -> if(next == "auto" && (!info.linked || info.needsRelink)) false else { DataStore.configurationStore.putString(VkRelayAccount.DEFAULT_SOURCE,next as String); true } }
         }
         group.addPreference(hashesPreference)
         hashesPreference.value = DataStore.configurationStore.getString(VkRelayAccount.DEFAULT_SOURCE,"manual").takeIf { it == "auto" } ?: "manual"
@@ -103,8 +109,9 @@ object VkRelayPreferences {
                     }
                 }.getOrNull()
             }
-            if(fragment.isAdded && group.findPreference<Preference>("vkRelayAccount") === account && VkRelayAccount.linked()) {
-                if(!VkRelayAccount.needsRelink()) account.summary = VkRelayAccount.displayName()
+            val latest=withContext(Dispatchers.IO) { VkRelayAccount.uiInfo() }
+            if(fragment.isAdded && group.findPreference<Preference>("vkRelayAccount") === account && latest.linked) {
+                if(!latest.needsRelink) account.summary = latest.displayName
                 if(avatar != null) account.icon = RoundedBitmapDrawableFactory.create(context.resources,avatar).apply { isCircular = true }
             }
         }

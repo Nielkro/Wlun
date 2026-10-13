@@ -133,7 +133,8 @@ class AppearanceSettingsFragment : SettingsScreenFragment(R.xml.settings_appeara
                 DataStore.amoledTheme = selected == "oled"
                 DataStore.nightTheme = when (selected) { "system" -> 0; "light" -> 2; else -> 1 }
                 Theme.currentNightMode = DataStore.nightTheme
-                Theme.applyNightTheme()
+                // The recreated host applies night mode. Applying it here as well
+                // causes a second recreation while the old preference row is rebinding.
                 applyThemeInstantly()
                 true
             }

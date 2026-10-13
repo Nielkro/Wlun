@@ -12,7 +12,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 
-data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false)
+data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false,val configCleared: Boolean = false)
 
 object DeployEngine {
     val state = MutableStateFlow(DeployState())
@@ -29,7 +29,7 @@ object DeployEngine {
             copy["peerPort"]=if(copy.kind=="qwdtt") "56000" else "46000"
             copy["wgPort"]="56001";copy["directPort"]="56002";copy["rawPort"]="56003";copy["adminPort"]="56002";copy["webPort"]="46002"
         }
-        state.value = DeployState(server.id,true,0,"Подключение")
+        state.value = DeployState(server.id,true,0,"Подключение",config=server["config"])
         job = scope.launch {
             try { run(copy,uninstall) }
             catch(e: CancellationException) { update(0,"Операция остановлена");throw e }
@@ -133,13 +133,17 @@ object DeployEngine {
                 val pin = Regex("WDTT_ADMIN_PIN\\|(sha256/[A-Za-z0-9+/=]+)").find(result.second)?.groupValues?.get(1).orEmpty()
                 require(pin.isNotBlank()) { "Не получен TLS-отпечаток панели" };server["adminPin"] = pin
             }
-            server["installed"] = "true";DeployStore.save(server)
             val json = JSONObject().put("type",server.kind).put("name",server["name"]).put("server",server["host"]).put("server_port",server.port("peerPort"))
                 .put("password",server["password"]).put("device_id",server["deviceId"]).put("hashes",org.json.JSONArray())
                 .put("hash_source",if(server.kind == "qwdtt" && VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) "auto" else "manual")
             if(server.kind == "qwdtt") json.put("mode","raw").put("raw_port",server.port("rawPort"))
-            state.value = state.value.copy(config=json.toString(2))
-        } else { server["installed"] = "false";DeployStore.save(server) }
+            val config=json.toString(2)
+            server.recordInstallation(config);DeployStore.save(server)
+            state.value = state.value.copy(config=config)
+        } else {
+            server.recordUninstall();DeployStore.save(server)
+            state.value=state.value.copy(config="",configCleared=true)
+        }
         update(100,if(uninstall) "Удаление завершено" else "Установка завершена")
     }
     private suspend fun artifact(url: String,sha: String): File {

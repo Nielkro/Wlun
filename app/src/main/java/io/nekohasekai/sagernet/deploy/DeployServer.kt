@@ -25,6 +25,11 @@ class DeployServer(val json: JSONObject) {
         return keys.all { json.optString(it)==defaults.optString(it) }
     }
     fun port(key: String) = get(key).toInt().also { require(it in 1..65535) }
+    fun recordInstallation(config: String) { set("installed","true");set("config",config) }
+    fun recordUninstall() { set("installed","false");set("config","") }
+    fun editSignature(): String = json.keys().asSequence()
+        .filterNot { it in setOf("config","installed","hostKey","adminPin") }.sorted()
+        .joinToString(";") { key -> val value=json.optString(key);"${key.length}:$key${value.length}:$value" }
     fun validateAddress() {
         require(get("host").matches(Regex("[A-Za-z0-9.:_-]+"))) { "Укажите IP или домен без схемы и порта" }
         require(get("user").matches(Regex("[A-Za-z0-9_.-]+"))) { "Укажите логин SSH" }

@@ -50,7 +50,12 @@ object VkRelayAccount {
     fun userId() = read().optString("user")
     fun displayName() = read().optString("name").ifBlank { "VK ID: ${userId()}" }
     fun avatarUrl() = read().optString("avatar")
-    @Synchronized fun refreshIdentity() {
+    data class UiInfo(val linked: Boolean,val needsRelink: Boolean,val displayName: String)
+    fun uiInfo(): UiInfo {
+        val session=read()
+        return UiInfo(session.optString("token").isNotBlank(),session.optString("authClient")!="6287487",session.optString("name").ifBlank { "VK ID: ${session.optString("user")}" })
+    }
+    fun refreshIdentity() {
         val session = read()
         if(session.optString("token").isBlank() || session.optString("name").isNotBlank()) return
         runCatching {
@@ -60,9 +65,15 @@ object VkRelayAccount {
                 check(response.isSuccessful)
                 JSONObject(response.body?.string().orEmpty()).getJSONArray("response").getJSONObject(0)
             }
-            session.put("name",listOf(person.optString("first_name"),person.optString("last_name")).filter { it.isNotBlank() }.joinToString(" "))
-            session.put("avatar",person.optString("photo_100"))
-            write(session)
+            synchronized(this) {
+                val latest=read()
+                // Never resurrect credentials if the account was unlinked during the request.
+                if(latest.optString("token")==session.optString("token")) {
+                    latest.put("name",listOf(person.optString("first_name"),person.optString("last_name")).filter { it.isNotBlank() }.joinToString(" "))
+                    latest.put("avatar",person.optString("photo_100"))
+                    write(latest)
+                }
+            }
         }
     }
     suspend fun unlinkWithManualHashes() {

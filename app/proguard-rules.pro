@@ -24,6 +24,10 @@
 # SnakeYaml
 -keep class org.yaml.snakeyaml.** { *; }
 
+# JSch's algorithm registry instantiates implementations by class name.
+# This includes jce.Random before the first SSH connection is opened.
+-keep class com.jcraft.jsch.** { *; }
+
 -dontobfuscate
 -keepattributes SourceFile
 
