@@ -12,7 +12,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 
-data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "")
+data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false)
 
 object DeployEngine {
     val state = MutableStateFlow(DeployState())
@@ -108,7 +108,9 @@ object DeployEngine {
                 upload("/tmp/deploy.sh",entry("assets/deploy.sh"))
                 if(!uninstall) {
                     update(30,"Передача файлов на VPS")
-                    upload(if(server.kind == "qwdtt") "/tmp/wdtt-server" else "/tmp/.csqtt-upload-server",entry(binaryName))
+                    val binary=entry(binaryName)
+                    if(server.kind == "qwdtt") require(DeployProtocol.safeQwdttServer(binary)) { "Устаревший сервер qWDTT: требуется сборка для wdtt0 и /etc/wdtt" }
+                    upload(if(server.kind == "qwdtt") "/tmp/wdtt-server" else "/tmp/.csqtt-upload-server",binary)
                     if(server.kind == "qwdtt") {
                         upload("/tmp/wdtt-main.password",server["password"].toByteArray())
                         upload("/tmp/wdtt-admin.token",server["adminToken"].toByteArray())
@@ -134,7 +136,7 @@ object DeployEngine {
             server["installed"] = "true";DeployStore.save(server)
             val json = JSONObject().put("type",server.kind).put("name",server["name"]).put("server",server["host"]).put("server_port",server.port("peerPort"))
                 .put("password",server["password"]).put("device_id",server["deviceId"]).put("hashes",org.json.JSONArray())
-                .put("hash_source",if(VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) "auto" else "manual")
+                .put("hash_source",if(server.kind == "qwdtt" && VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) "auto" else "manual")
             if(server.kind == "qwdtt") json.put("mode","raw").put("raw_port",server.port("rawPort"))
             state.value = state.value.copy(config=json.toString(2))
         } else { server["installed"] = "false";DeployStore.save(server) }
@@ -179,7 +181,12 @@ object DeployEngine {
                 while(input.available()>0) {
                     val count=input.read(buffer);if(count<0) break
                     val part=String(buffer,0,count,Charsets.UTF_8);output.append(part);pending+=part
-                    while(pending.contains('\n')) { log(redact(server,pending.substringBefore('\n')));pending=pending.substringAfter('\n') }
+                    while(pending.contains('\n')) {
+                        val line=redact(server,pending.substringBefore('\n'));pending=pending.substringAfter('\n')
+                        val stage=DeployProtocol.progress(server.kind,line)
+                        if(stage!=null) state.value=state.value.copy(percent=stage.first,step=stage.second,installerProgress=true)
+                        else log(line)
+                    }
                     if(output.length>1_000_000) output.delete(0,output.length-1_000_000)
                 }
                 if(channel.isClosed && input.available()==0) break

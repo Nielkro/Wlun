@@ -12,6 +12,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.preference.*
 import app.qthrone.mobile.R
 import app.qthrone.mobile.bg.carrier.VkRelayAccount
+import app.qthrone.mobile.bg.carrier.VkRelayLogin
 import app.qthrone.mobile.database.DataStore
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 import androidx.lifecycle.lifecycleScope
@@ -36,18 +37,82 @@ class VkRelayActivity : ThemedActivity() {
             val cookieDomains = listOf("vk.com","vk.ru","m.vk.com","m.vk.ru","login.vk.com","login.vk.ru","oauth.vk.com","oauth.vk.ru","id.vk.com","id.vk.ru")
             fun cookies(): Map<String,String> = cookieDomains.associate { host -> "https://$host" to CookieManager.getInstance().getCookie("https://$host").orEmpty() }
             var authorizing = false
+            var loginAttempt = 0
+            var completedLogin = false
+            var lastRetry = -1
+            fun applySettings(view: WebView) {
+                view.settings.apply {
+                    javaScriptEnabled = true;domStorageEnabled = true;databaseEnabled = true
+                    mediaPlaybackRequiresUserGesture = false;loadWithOverviewMode = true;useWideViewPort = true
+                    cacheMode = WebSettings.LOAD_DEFAULT;javaScriptCanOpenWindowsAutomatically = true
+                    setSupportMultipleWindows(true)
+                    userAgentString = VkRelayLogin.userAgent(WebSettings.getDefaultUserAgent(this@VkRelayActivity),loginAttempt)
+                }
+                CookieManager.getInstance().setAcceptThirdPartyCookies(view,true)
+            }
+            fun retryLogin() {
+                val view = web ?: return
+                if(completedLogin || lastRetry == loginAttempt) return
+                lastRetry = loginAttempt
+                if(loginAttempt >= 2) {
+                    MobileAlertDialogBuilder(this).setTitle("Вход VK")
+                        .setMessage("VK отклонил все три варианта входа qWDTT. Попробуйте привязать аккаунт позже.")
+                        .setPositiveButton(android.R.string.ok,null).show()
+                    return
+                }
+                loginAttempt++;authorizing=false
+                val manager=CookieManager.getInstance()
+                manager.removeAllCookies {
+                    if(isFinishing || isDestroyed) return@removeAllCookies
+                    manager.flush();applySettings(view)
+                    view.loadUrl(VkRelayLogin.startUrl(loginAttempt),VkRelayLogin.headers)
+                }
+            }
             web = WebView(this).apply {
                 settings.javaScriptEnabled = true; settings.domStorageEnabled = true
                 settings.allowFileAccess = false; settings.allowContentAccess = false
                 settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
                 CookieManager.getInstance().setAcceptCookie(true)
+                applySettings(this)
+                addJavascriptInterface(object {
+                    @JavascriptInterface fun onLoginError() {
+                        runOnUiThread {
+                            val current=web?.url
+                            if(current != null && runCatching { app.qthrone.mobile.bg.carrier.VkRelayOAuth.trustedHttps(java.net.URI(current)) }.getOrDefault(false))
+                                retryLogin()
+                        }
+                    }
+                },"QThroneVkLogin")
+                webChromeClient = object : WebChromeClient() {
+                    override fun onJsAlert(view: WebView?,url: String?,message: String?,result: JsResult?): Boolean {
+                        if(message.orEmpty().contains("Unknown method",ignoreCase=true)) {
+                            result?.cancel();retryLogin();return true
+                        }
+                        return false
+                    }
+                    override fun onCreateWindow(view: WebView,isDialog: Boolean,isUserGesture: Boolean,resultMsg: android.os.Message): Boolean {
+                        val popup=WebView(this@VkRelayActivity)
+                        popup.webViewClient=object : WebViewClient() {
+                            override fun shouldOverrideUrlLoading(child: WebView,request: WebResourceRequest): Boolean {
+                                val target=request.url.toString()
+                                if(runCatching { app.qthrone.mobile.bg.carrier.VkRelayOAuth.trustedHttps(java.net.URI(target)) }.getOrDefault(false))
+                                    view.loadUrl(target,VkRelayLogin.headers)
+                                child.destroy();return true
+                            }
+                        }
+                        (resultMsg.obj as WebView.WebViewTransport).webView=popup;resultMsg.sendToTarget()
+                        return true
+                    }
+                }
                 webViewClient = object : WebViewClient() {
                     private var completed = false
                     override fun onPageFinished(view: WebView,url: String?) {
+                        if(url != null && runCatching { app.qthrone.mobile.bg.carrier.VkRelayOAuth.trustedHttps(java.net.URI(url)) }.getOrDefault(false))
+                            view.evaluateJavascript(VkRelayLogin.errorWatcher,null)
                         if(!authorizing && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').isNotBlank() } }) {
                             authorizing = true
                             CookieManager.getInstance().flush()
-                            view.loadUrl(VkRelayAccount.authorizeUrl(oauthState))
+                            view.loadUrl(VkRelayAccount.authorizeUrl(oauthState),VkRelayLogin.headers)
                         }
                     }
                     override fun shouldOverrideUrlLoading(view: WebView,request: WebResourceRequest): Boolean {
@@ -58,6 +123,7 @@ class VkRelayActivity : ThemedActivity() {
                             val token = fields.getQueryParameter("access_token")
                             if(!completed && !token.isNullOrBlank() && fields.getQueryParameter("state") == oauthState) {
                                 completed = true
+                                completedLogin = true
                                 val sessionCookies = cookies()
                                 val userAgent = view.settings.userAgentString
                                 lifecycleScope.launch {
@@ -74,7 +140,7 @@ class VkRelayActivity : ThemedActivity() {
                         return !(host == "vk.ru" || host.endsWith(".vk.ru") || host == "vk.com" || host.endsWith(".vk.com"))
                     }
                 }
-                loadUrl("https://m.vk.ru/login")
+                loadUrl(VkRelayLogin.startUrl(loginAttempt),VkRelayLogin.headers)
             }
             content.addView(web,FrameLayout.LayoutParams(-1,-1))
         } else if(state == null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commit()

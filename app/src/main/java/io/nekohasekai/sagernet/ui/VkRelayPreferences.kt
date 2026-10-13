@@ -73,7 +73,7 @@ object VkRelayPreferences {
         val hashesPreference = SimpleMenuPreference(context).apply {
             key = "vkRelayDefaultHashes"
             optionEnabled = { index -> index != 1 || (VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) }
-            title = "Хеши по умолчанию для новых профилей"
+            title = "Хеши по умолчанию для новых профилей qWDTT"
             setIcon(R.drawable.ic_mobile_hash)
             isSingleLineTitle = false; isPersistent = false
             entries = arrayOf("Вручную","Авто"); entryValues = arrayOf("manual","auto")

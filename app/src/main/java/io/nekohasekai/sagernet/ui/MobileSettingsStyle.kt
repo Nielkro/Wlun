@@ -69,6 +69,9 @@ object MobileSettingsStyle {
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
             if(preference != null) MobileSelector.bind(preference,view)
             val category=preference is PreferenceCategory
+            val iconFrame=view.findViewById<View>(androidx.preference.R.id.icon_frame)
+            iconFrame?.visibility=if(!category && preference?.icon!=null) View.VISIBLE else View.GONE
+            if(category) preference?.isIconSpaceReserved=false
             val warning=preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
             if(category) {
                 view.minimumHeight=0

@@ -21,6 +21,10 @@ The Settings root opens VK relay between subscriptions and appearance. Account b
 
 ## Storage and UI
 
+Beta 6 uses paired host/login and DNS fields, a password/key selector, a separate compact secrets dialog, and an always-present collapsible console in the server editor. Starting an operation scrolls to the console once. The console does not force repeated scrolling during logging. Both installers' progress records are parsed from WDTT_PROGRESS/CSQTT_PROGRESS fractional stages. Completion requires the same markers/pin/exit checks; the configuration copy dialog and a completion toast appear after success.
+
+The qWDTT legacy-server guard is preserved: reject /etc/wireguard or wg0 without wdtt0 in the official server asset. Runtime scripts/binaries remain the pinned official assets described above. Login now mirrors upstream mobile-login/mobile-home/desktop-login fallback, including desktop UA, language headers, third-party cookies and Unknown method error detection. TLS verification remains enabled. Auto hashes are scoped to qWDTT; CSQTT's distinct ok_join_link and call_id/forceFinish lifecycle is not substituted with the qWDTT generator. Stored manual hash fields remain intact.
+
 Server records and SSH secrets: Android Keystore AES-GCM in noBackupFilesDir; not included in .thrbackup or subscription/profile exports. Host and key modifications require renewed trust. Operation state survives activity recreation in process, with bounded logs, last result and configuration. UI shows known stages; installer stage is indeterminate, not an invented completion percentage.
 
 ## Validation limits

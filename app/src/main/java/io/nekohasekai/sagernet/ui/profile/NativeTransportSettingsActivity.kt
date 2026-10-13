@@ -23,7 +23,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     private val fields = linkedMapOf<String, Any>()
 
     override fun Outbound.init() {
-        if(this is app.qthrone.mobile.outbound.types.Qwdtt && DataStore.editingId == 0L && !hashSourceChosen) {
+        if(this is app.qthrone.mobile.outbound.types.Qwdtt && type == "qwdtt" && DataStore.editingId == 0L && !hashSourceChosen) {
             hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
         }
         document = exportToJson().copy()
@@ -190,7 +190,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     setOnPreferenceChangeListener { _, next -> DataStore.profileCacheStore.putString(cache(path), next.toString()); true }
                 }
                 choices.containsKey(key) || key=="workers" -> SimpleMenuPreference(requireContext()).apply {
-                    if(key == "hash_source") optionEnabled = { index -> index != 1 || (app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() && !app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink()) }
+                    if(key == "hash_source") optionEnabled = { index -> index != 1 || (type == "qwdtt" && app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() && !app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink()) }
                     entryValues = (choices[key] ?: listOf("9")).toTypedArray()
                     entries = (captions[key] ?: choices[key] ?: listOf("9")).toTypedArray()
                     this.value=DataStore.profileCacheStore.getString(cache(path))
@@ -229,7 +229,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             if(preference is EditTextPreference) preference.dialogTitle = preference.title
             preference.setOnPreferenceChangeListener { _, next ->
                 val text=next.toString()
-                if(key == "hash_source" && text == "auto" && (!app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() || app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink())) return@setOnPreferenceChangeListener false
+                if(key == "hash_source" && text == "auto" && (type != "qwdtt" || !app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() || app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink())) return@setOnPreferenceChangeListener false
                 val range=optionLimits[path.removePrefix("options.")]
                 if(value is Number && text.toLongOrNull()==null) return@setOnPreferenceChangeListener false
                 if(range!=null && text.toIntOrNull()?.let { it in range }!=true) return@setOnPreferenceChangeListener false
