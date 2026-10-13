@@ -83,6 +83,20 @@ class VkRelayActivity : ThemedActivity() {
     class Screen : PreferenceFragmentCompat() {
         override fun onCreatePreferences(state: Bundle?,rootKey: String?) { preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()); build() }
         override fun onResume() { super.onResume(); build() }
-        private fun build() { VkRelayPreferences.bind(this,preferenceScreen) }
+        override fun onViewCreated(view: android.view.View,state: Bundle?) {
+            super.onViewCreated(view,state);MobileSettingsStyle.apply(this,view)
+        }
+        private fun build() {
+            preferenceScreen.removeAll()
+            val account = PreferenceCategory(requireContext()).apply { title = "Аккаунт и хеши" }
+            preferenceScreen.addPreference(account);VkRelayPreferences.bind(this,account)
+            val deploy = PreferenceCategory(requireContext()).apply { title = "Управление серверами" }
+            preferenceScreen.addPreference(deploy)
+            for(kind in listOf("qwdtt","csqtt")) deploy.addPreference(Preference(requireContext()).apply {
+                title = "Деплой " + if(kind == "qwdtt") "qWDTT" else "CSQTT"
+                setIcon(R.drawable.ic_mobile_core);widgetLayoutResource=R.layout.qmobile_preference_arrow
+                setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),DeployActivity::class.java).putExtra("kind",kind));true }
+            })
+        }
     }
 }

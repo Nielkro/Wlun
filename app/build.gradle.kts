@@ -80,6 +80,7 @@ dependencies {
     }
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.github.mwiede:jsch:0.2.16")
     implementation("org.yaml:snakeyaml:2.5")
     implementation("com.github.daniel-stoneuk:material-about-library:3.2.0-rc01")
     implementation("com.jakewharton:process-phoenix:2.1.2")

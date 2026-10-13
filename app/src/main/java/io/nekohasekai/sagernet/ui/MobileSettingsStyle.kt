@@ -23,6 +23,7 @@ object MobileSettingsStyle {
                 }
                 if(fragment is SettingsPreferenceFragment && preference !is PreferenceCategory) {
                     val icon=when {
+                        preference.key=="qmobileVkRelay" -> app.qthrone.mobile.R.drawable.ic_mobile_vk
                         preference.key=="qmobileTun" -> app.qthrone.mobile.R.drawable.ic_mobile_tun
                         preference.key=="qmobileCore" -> app.qthrone.mobile.R.drawable.ic_mobile_core
                         preference.key=="settingsBackup" -> app.qthrone.mobile.R.drawable.ic_mobile_backup

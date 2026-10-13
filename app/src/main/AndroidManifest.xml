@@ -70,6 +70,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/Theme.Start">
+        <activity android:name=".ui.DeployActivity" android:exported="false" />
         <activity android:name=".ui.VkRelayActivity" android:exported="false" />
         <activity android:name=".ui.ProviderRoutingActivity" android:exported="false" />
         <activity

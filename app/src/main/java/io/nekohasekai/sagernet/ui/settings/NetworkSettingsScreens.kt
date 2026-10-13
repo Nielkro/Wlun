@@ -139,15 +139,8 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
 
 /** Tun Settings: stack, MTU, IPv6, tun routing, private range bypass, per-app proxy and the tun addresses. */
 class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined) {
-    override fun onResume() {
-        super.onResume()
-        findPreference<androidx.preference.PreferenceCategory>("vkRelaySettings")?.let { app.qthrone.mobile.ui.VkRelayPreferences.bind(this, it) }
-    }
-
-
     override fun bind() {
         super.bind()
-        app.qthrone.mobile.ui.VkRelayPreferences.bind(this, findPreference<androidx.preference.PreferenceCategory>("vkRelaySettings")!!)
         reloadOn(
             SettingsRegistry.VPN_MTU.key, SettingsRegistry.VPN_IPV6.key,
             SettingsRegistry.ENABLE_TUN_ROUTING.key,
