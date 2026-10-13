@@ -25,6 +25,11 @@ import kotlinx.coroutines.sync.withLock
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 class ProviderRoutingActivity : ThemedActivity() {
+    private lateinit var messageHost: androidx.coordinatorlayout.widget.CoordinatorLayout
+
+    override fun snackbarInternal(text: CharSequence): com.google.android.material.snackbar.Snackbar =
+        com.google.android.material.snackbar.Snackbar.make(messageHost,text,com.google.android.material.snackbar.Snackbar.LENGTH_LONG)
+
     override fun onCreate(state: Bundle?) {
         super.onCreate(state)
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(MobilePalette.background) }
@@ -34,8 +39,12 @@ class ProviderRoutingActivity : ThemedActivity() {
         }
         val content = FrameLayout(this).apply { id = android.R.id.content + 1 }
         root.addView(toolbar); root.addView(content, LinearLayout.LayoutParams(-1, 0, 1f))
-        setContentView(root)
-        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+        messageHost = androidx.coordinatorlayout.widget.CoordinatorLayout(this).apply {
+            setBackgroundColor(MobilePalette.background)
+            addView(root,androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(-1,-1))
+        }
+        setContentView(messageHost)
+        ViewCompat.setOnApplyWindowInsetsListener(messageHost) { view, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()); view.setPadding(bars.left,bars.top,bars.right,bars.bottom); insets
         }
         lifecycleScope.launch {
@@ -278,7 +287,7 @@ class ProviderRoutingActivity : ThemedActivity() {
                         SagerDatabase.groupDao.update(latest)
                     }
                 }
-                needReload()
+                (activity as? ProviderRoutingActivity)?.needReload()
                 }
             }
         }
