@@ -51,6 +51,28 @@ open class DeployEditorFragment : Fragment() {
     private fun row(parent: LinearLayout,block: (LinearLayout)->Unit) {
         val r=LinearLayout(requireContext()).apply { orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL };parent.addView(r);block(r)
     }
+    private fun serverTile(title: String,subtitle: String?,icon: Int,click: ()->Unit) {
+        val tile=LinearLayout(requireContext()).apply {
+            orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(18),dp(16),dp(18),dp(16));minimumHeight=dp(64)
+            background=android.graphics.drawable.GradientDrawable().apply {
+                setColor(MobilePalette.surface);cornerRadius=dp(20).toFloat()
+            }
+            isFocusable=true;contentDescription=listOfNotNull(title,subtitle).joinToString(". ")
+            setOnClickListener { click() };MobileFeedback.apply(this)
+        }
+        tile.addView(ImageView(requireContext()).apply {
+            setImageResource(icon);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
+            importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginEnd=dp(20) })
+        val labels=column()
+        labels.addView(TextView(requireContext()).apply { text=title;textSize=16f;setTextColor(MobilePalette.text) })
+        if(subtitle!=null) labels.addView(TextView(requireContext()).apply {
+            text=subtitle;textSize=14f;setTextColor(MobilePalette.muted);setPadding(0,dp(3),0,0)
+        })
+        tile.addView(labels,LinearLayout.LayoutParams(0,-2,1f))
+        body.addView(tile,LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(8) })
+    }
     private fun button(parent: LinearLayout,title: String,icon: Int=0,pair: Boolean=false,click: ()->Unit): MaterialButton {
         val b=MaterialButton(requireContext()).apply {
             text=title;textSize=14f;isAllCaps=false;maxLines=3;minimumHeight=dp(48);cornerRadius=dp(16)
@@ -82,7 +104,7 @@ open class DeployEditorFragment : Fragment() {
                 }
             })
         }
-        box.addView(editor,ViewGroup.LayoutParams(-1,-2))
+        box.addView(editor,LinearLayout.LayoutParams(-1,-2))
         parent.addView(box,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply { topMargin=dp(6);bottomMargin=dp(6);if(pair) marginEnd=dp(4) })
     }
     private fun switch(parent: LinearLayout,s: DeployServer,key: String,label: String,rebuild: Boolean=false) {
@@ -112,12 +134,23 @@ open class DeployEditorFragment : Fragment() {
         val s=host.server
         host.toolbar.title=if(s==null) "Деплой "+(if(host.kind=="qwdtt") "qWDTT" else "CSQTT") else "Управление сервером"
         if(s==null) {
-            host.toolbar.menu.add("Добавить сервер").apply {
-                setIcon(R.drawable.ic_mobile_add);setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
-                setOnMenuItemClickListener { host.server=DeployServer.create(host.kind);DeployStore.save(host.server!!);build();true }
+            val servers=DeployStore.all().filter { it.kind==host.kind }
+            // Failed openings in older versions persisted identical, untouched drafts.
+            // Show one reusable draft without deleting any stored record or credentials.
+            var draft: DeployServer?=null
+            for(item in servers) {
+                if(item.isEmptyDraft()) {
+                    if(draft!=null) continue
+                    draft=item
+                }
+                serverTile(item["name"],item["host"].ifBlank { "Укажите адрес VPS" },R.drawable.ic_mobile_core) { host.server=item;build() }
             }
-            for(item in DeployStore.all().filter { it.kind==host.kind }) button(card(),item["name"]+"\n"+item["host"].ifBlank { "Укажите адрес VPS" },R.drawable.ic_mobile_core) { host.server=item;build() }
-            if(body.childCount==0) heading(body,"Добавьте VPS кнопкой +")
+            serverTile("Добавить VPS для деплоя",null,R.drawable.ic_mobile_add) {
+                host.server=draft ?: DeployServer.create(host.kind)
+                // Persist only after the form has been constructed successfully.
+                build()
+                host.server?.let { DeployStore.save(it) }
+            }
             return
         }
         host.toolbar.menu.add("Сохранить").apply { setIcon(R.drawable.ic_mobile_apply);setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS);setOnMenuItemClickListener { DeployStore.save(s);Toast.makeText(context,"Сервер сохранён",Toast.LENGTH_SHORT).show();true } }

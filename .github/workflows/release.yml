@@ -6,6 +6,7 @@ on:
     tags:
       - 'v1.3.8-beta.6'
       - 'v1.3.8-beta.7'
+      - 'v1.3.8-beta.8'
   workflow_dispatch:
     inputs:
       publish:

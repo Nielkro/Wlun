@@ -18,6 +18,12 @@ class DeployServer(val json: JSONObject) {
     val kind: String get() = json.getString("kind")
     operator fun get(key: String): String = json.optString(key)
     operator fun set(key: String,value: String) { json.put(key,value) }
+    fun isEmptyDraft(): Boolean {
+        val defaults=create(kind).json
+        val generated=setOf("id","deviceId","adminToken")
+        val keys=(json.keys().asSequence().toSet()+defaults.keys().asSequence().toSet())-generated
+        return keys.all { json.optString(it)==defaults.optString(it) }
+    }
     fun port(key: String) = get(key).toInt().also { require(it in 1..65535) }
     fun validate(install: Boolean) {
         require(kind in listOf("qwdtt","csqtt"))
