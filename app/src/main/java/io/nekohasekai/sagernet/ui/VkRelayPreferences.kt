@@ -83,6 +83,11 @@ object VkRelayPreferences {
         }
         group.addPreference(hashesPreference)
         hashesPreference.value = DataStore.configurationStore.getString(VkRelayAccount.DEFAULT_SOURCE,"manual").takeIf { it == "auto" } ?: "manual"
+        group.addPreference(Preference(context).apply {
+            key="vkRelayAutoWarning"
+            summary="В режиме Авто повышенные риски бана аккаунта ВК, используйте на свой страх и риск."
+            isSelectable=false;isPersistent=false;isIconSpaceReserved=false
+        })
         if(linked) fragment.lifecycleScope.launch {
             val avatar = withContext(Dispatchers.IO) {
                 VkRelayAccount.refreshIdentity()
