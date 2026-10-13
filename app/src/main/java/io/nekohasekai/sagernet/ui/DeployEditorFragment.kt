@@ -127,7 +127,7 @@ open class DeployEditorFragment : Fragment() {
         return b
     }
     private fun field(parent: LinearLayout,s: DeployServer,key: String,label: String,secret: Boolean=false,number: Boolean=false,pair: Boolean=false) {
-        val box=TextInputLayout(requireContext()).apply {
+        val box=TextInputLayout(androidx.appcompat.view.ContextThemeWrapper(requireContext(),R.style.MobileDeployInputOverlay)).apply {
             hint=label;boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE
             setBoxCornerRadii(dp(14).toFloat(),dp(14).toFloat(),dp(14).toFloat(),dp(14).toFloat())
             defaultHintTextColor=android.content.res.ColorStateList.valueOf(MobilePalette.muted)
@@ -139,11 +139,19 @@ open class DeployEditorFragment : Fragment() {
         val editor=TextInputEditText(box.context).apply {
             textSize=16f;setTextColor(MobilePalette.text);setSingleLine(true)
             highlightColor=androidx.core.graphics.ColorUtils.setAlphaComponent(MobilePalette.accent(requireContext()),80)
-            if(android.os.Build.VERSION.SDK_INT>=29) {
-                textCursorDrawable=android.graphics.drawable.GradientDrawable().apply { setColor(MobilePalette.accent(requireContext()));setSize(dp(2),dp(22)) }
-            }
             inputType=if(secret) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD else if(number) InputType.TYPE_CLASS_NUMBER else InputType.TYPE_CLASS_TEXT
             setText(s[key]);setPadding(dp(12),dp(16),dp(12),dp(16))
+            fun tintCursor() {
+                if(android.os.Build.VERSION.SDK_INT>=29) {
+                    val accent=MobilePalette.accent(requireContext())
+                    textCursorDrawable=android.graphics.drawable.GradientDrawable().apply { setColor(accent);setTint(accent);setSize(dp(2),dp(22)) }
+                    textSelectHandle=textSelectHandle?.mutate()?.apply { setTint(accent) }
+                    textSelectHandleLeft=textSelectHandleLeft?.mutate()?.apply { setTint(accent) }
+                    textSelectHandleRight=textSelectHandleRight?.mutate()?.apply { setTint(accent) }
+                }
+            }
+            tintCursor()
+            setOnFocusChangeListener { _,focused -> if(focused) post { tintCursor() } }
             addTextChangedListener(object: TextWatcher {
                 override fun beforeTextChanged(value: CharSequence?,start: Int,count: Int,after: Int) {}
                 override fun afterTextChanged(value: Editable?) {}
