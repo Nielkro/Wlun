@@ -1,6 +1,10 @@
 name: qThroneMobile release
 run-name: qThroneMobile release
 on:
+  # One authorized fallback release when the local GitHub API is unavailable.
+  push:
+    tags:
+      - 'v1.3.8-beta.6'
   workflow_dispatch:
     inputs:
       publish:
@@ -29,7 +33,7 @@ jobs:
       - name: Version
         id: version
         env:
-          PUBLISH: ${{ inputs.publish }}
+          PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -44,7 +48,7 @@ jobs:
       - name: Release assets
         run: python3 buildScript/release_assets.py app/build/outputs/apk/oss/release dist stable
       - name: Upload artifact
-        if: ${{ !inputs.publish }}
+        if: ${{ github.event_name != 'push' && !inputs.publish }}
         uses: actions/upload-artifact@v7
         with:
           name: qThroneMobile-${{ steps.version.outputs.tag }}
@@ -52,7 +56,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Publish release
-        if: ${{ inputs.publish }}
+        if: ${{ github.event_name == 'push' || inputs.publish }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
