@@ -56,7 +56,7 @@ internal object SubscriptionRefresh {
         if(payload.warnings.isNotEmpty()) {
             val warning="Повреждённая маршрутизация пропущена; сохранённая маршрутизация не изменена. "+payload.warnings.distinct().joinToString("\n")
             Logs.w("${group.name}: $warning")
-            if(notifyErrors) SubscriptionQueue.error(gid,warning)
+            if(notifyErrors) SubscriptionQueue.report(gid,"",warning,false)
         }
         val parsed = parse(payload.body)
         if (parsed.isEmpty()) {
