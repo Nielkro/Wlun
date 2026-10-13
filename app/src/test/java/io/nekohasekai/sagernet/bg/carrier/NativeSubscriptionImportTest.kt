@@ -7,6 +7,12 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeSubscriptionImportTest {
+    @Test fun csqttKeepsManualHashesWithoutQwdttAccountAutomation() {
+        val result=ProfileImport.parse("""{"type":"csqtt","server":"203.0.113.6","server_port":46000,"password":"example","hash_source":"auto","hashes":["exampleHash123456789"]}""")
+        val profile=result.outbounds.single() as Csqtt
+        assertEquals("manual",profile.hashSource)
+        assertEquals(listOf("exampleHash123456789"),profile.hashes)
+    }
     @Test fun importsAndroidWrapperWithoutType() {
         val result = ProfileImport.parse("""{"subscriptionName":"Demo","profiles":[{"name":"Demo node","peer":"203.0.113.5:56000","password":"example","hashes":["exampleHash123456789"],"workersPerHash":18,"listenPort":9999}]}""")
         assertEquals(1,result.outbounds.size)

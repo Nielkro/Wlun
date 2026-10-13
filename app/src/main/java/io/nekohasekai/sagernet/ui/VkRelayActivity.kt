@@ -109,7 +109,7 @@ class VkRelayActivity : ThemedActivity() {
                     override fun onPageFinished(view: WebView,url: String?) {
                         if(url != null && runCatching { app.qthrone.mobile.bg.carrier.VkRelayOAuth.trustedHttps(java.net.URI(url)) }.getOrDefault(false))
                             view.evaluateJavascript(VkRelayLogin.errorWatcher,null)
-                        if(!authorizing && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').isNotBlank() } }) {
+                        if(!authorizing && !VkRelayLogin.awaitingLogin(url.orEmpty()) && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').trim().length >= 8 } }) {
                             authorizing = true
                             CookieManager.getInstance().flush()
                             view.loadUrl(VkRelayAccount.authorizeUrl(oauthState),VkRelayLogin.headers)

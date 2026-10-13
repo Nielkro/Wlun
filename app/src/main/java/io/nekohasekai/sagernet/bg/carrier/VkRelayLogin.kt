@@ -2,6 +2,11 @@ package app.qthrone.mobile.bg.carrier
 
 /** qWDTT's three login routes; VK ID's WebView error must advance the route once. */
 internal object VkRelayLogin {
+    fun awaitingLogin(url: String): Boolean = runCatching {
+        val uri=java.net.URI(url)
+        uri.host in listOf("id.vk.com","id.vk.ru") &&
+            listOf("authorize","login","auth").any { url.contains(it,ignoreCase=true) }
+    }.getOrDefault(false)
     fun startUrl(attempt: Int) = when(attempt) {
         0 -> "https://m.vk.ru/login"
         1 -> "https://m.vk.ru/"

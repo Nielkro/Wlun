@@ -25,6 +25,7 @@ open class DeployEditorFragment : Fragment() {
     private var details: View?=null
     private var toggle: MaterialButton?=null
     private var output: TextView?=null
+    private var logScroll: ScrollView?=null
     private var status: TextView?=null
     private var progress: ProgressBar?=null
     private var stop: MaterialButton?=null
@@ -107,7 +108,7 @@ open class DeployEditorFragment : Fragment() {
     fun build() {
         if(!this::body.isInitialized) return
         body.removeAllViews();host.toolbar.menu.clear();operations.clear()
-        output=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null
+        output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null
         val s=host.server
         host.toolbar.title=if(s==null) "Деплой "+(if(host.kind=="qwdtt") "qWDTT" else "CSQTT") else "Управление сервером"
         if(s==null) {
@@ -170,7 +171,8 @@ open class DeployEditorFragment : Fragment() {
         status=TextView(requireContext()).apply { setTextColor(MobilePalette.text);textSize=14f };content.addView(status)
         progress=ProgressBar(requireContext(),null,android.R.attr.progressBarStyleHorizontal);content.addView(progress,LinearLayout.LayoutParams(-1,dp(16)))
         output=TextView(requireContext()).apply { setTextColor(MobilePalette.text);typeface=android.graphics.Typeface.MONOSPACE;textSize=12f;setTextIsSelectable(true);setPadding(0,dp(8),0,dp(8)) }
-        content.addView(ScrollView(requireContext()).apply { addView(output) },LinearLayout.LayoutParams(-1,dp(220)))
+        logScroll=ScrollView(requireContext()).apply { addView(output) }
+        content.addView(logScroll,LinearLayout.LayoutParams(-1,dp(220)))
         stop=button(content,"Остановить") { DeployEngine.cancel() }
         expand();render(DeployEngine.state.value)
     }
@@ -179,12 +181,17 @@ open class DeployEditorFragment : Fragment() {
     fun render(state: DeployState) {
         val relevant=state.serverId==host.server?.id
         status?.text=if(relevant) state.step+(if(state.running && !state.installerProgress && state.percent in 45..99) "" else " · "+state.percent+"%") else "Готово к подключению"
-        output?.text=if(relevant) state.logs.ifBlank { "Здесь появятся логи VPS" } else "Здесь появятся логи VPS"
+        val logs=if(relevant) state.logs.ifBlank { "Здесь появятся логи VPS" } else "Здесь появятся логи VPS"
+        if(output?.text?.toString()!=logs) {
+            val follow=logScroll?.let { !it.canScrollVertically(1) } ?: false
+            output?.text=logs
+            if(follow) logScroll?.post { logScroll?.smoothScrollTo(0,output?.height ?: 0) }
+        }
         progress?.progress=if(relevant) state.percent else 0
         progress?.isIndeterminate=relevant && state.running && !state.installerProgress && state.percent in 45..99
         stop?.visibility=if(relevant && state.running) View.VISIBLE else View.GONE
         operations.forEach { it.isEnabled=!state.running }
     }
-    override fun onDestroyView() { output=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;operations.clear();super.onDestroyView() }
+    override fun onDestroyView() { output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;operations.clear();super.onDestroyView() }
 }
 
