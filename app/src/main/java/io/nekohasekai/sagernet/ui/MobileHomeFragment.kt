@@ -673,8 +673,37 @@ class MobileHomeFragment : ToolbarFragment() {
         val sheet=MobileSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(24));setBackgroundColor(surface) }
         body.addView(text(getString(R.string.qmobile_manual),20f).apply { setTypeface(null,Typeface.BOLD) })
-        for(type in listOf("qwdtt","csqtt","openflux","olcrtc","vless","vmess","trojan","shadowsocks","socks","http","wireguard","hysteria","tuic","custom")) {
-            body.addView(action(type.uppercase(java.util.Locale.ROOT)) {
+        val nativeTypes = listOf("qwdtt" to "qWDTT", "csqtt" to "CSQTT", "openflux" to "OpenFlux", "olcrtc" to "olcRTC")
+        // Keep the same editors and localized labels as the original manual-entry menu.
+        val originalTypes = listOf(
+            "autoselector" to R.string.action_auto_selector,
+            "socks" to R.string.action_socks,
+            "http" to R.string.action_http,
+            "shadowsocks" to R.string.action_shadowsocks,
+            "vmess" to R.string.action_vmess,
+            "vless" to R.string.action_vless,
+            "xrayvless" to R.string.action_vless_xray,
+            "trojan" to R.string.action_trojan,
+            "mieru" to R.string.action_mieru,
+            "naive" to R.string.action_naive,
+            "hysteria" to R.string.action_hysteria,
+            "tuic" to R.string.action_tuic,
+            "juicity" to R.string.action_juicity,
+            "shadowtls" to R.string.action_shadowtls,
+            "anytls" to R.string.action_anytls,
+            "trusttunnel" to R.string.action_trusttunnel,
+            "snell" to R.string.action_snell,
+            "ssh" to R.string.action_ssh,
+            "wireguard" to R.string.action_wireguard,
+            "masque" to R.string.action_masque,
+            "openvpn" to R.string.action_openvpn,
+            "openconnect" to R.string.action_openconnect,
+            "direct" to R.string.action_direct,
+            "custom" to R.string.custom_config,
+            "chain" to R.string.proxy_chain,
+        ).map { (type, title) -> type to getString(title) }
+        for((type, title) in nativeTypes + originalTypes) {
+            body.addView(action(title) {
                 sheet.dismiss()
                 startActivity(Intent(requireContext(),app.qthrone.mobile.ui.profile.settingsActivityFor(type)).putExtra("qmobileProfileType",type))
             })
