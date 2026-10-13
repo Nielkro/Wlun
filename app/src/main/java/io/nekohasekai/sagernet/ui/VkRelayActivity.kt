@@ -40,6 +40,7 @@ class VkRelayActivity : ThemedActivity() {
             var loginAttempt = 0
             var completedLogin = false
             var lastRetry = -1
+            var retryingLogin = false
             fun applySettings(view: WebView) {
                 view.settings.apply {
                     javaScriptEnabled = true;domStorageEnabled = true;databaseEnabled = true
@@ -52,7 +53,7 @@ class VkRelayActivity : ThemedActivity() {
             }
             fun retryLogin() {
                 val view = web ?: return
-                if(completedLogin || lastRetry == loginAttempt) return
+                if(completedLogin || retryingLogin || lastRetry == loginAttempt) return
                 lastRetry = loginAttempt
                 if(loginAttempt >= 2) {
                     MobileAlertDialogBuilder(this).setTitle("Вход VK")
@@ -60,7 +61,7 @@ class VkRelayActivity : ThemedActivity() {
                         .setPositiveButton(android.R.string.ok,null).show()
                     return
                 }
-                loginAttempt++;authorizing=false
+                retryingLogin=true;loginAttempt++;authorizing=false
                 val manager=CookieManager.getInstance()
                 manager.removeAllCookies {
                     if(isFinishing || isDestroyed) return@removeAllCookies
@@ -107,6 +108,7 @@ class VkRelayActivity : ThemedActivity() {
                 webViewClient = object : WebViewClient() {
                     private var completed = false
                     override fun onPageFinished(view: WebView,url: String?) {
+                        retryingLogin=false
                         if(url != null && runCatching { app.qthrone.mobile.bg.carrier.VkRelayOAuth.trustedHttps(java.net.URI(url)) }.getOrDefault(false))
                             view.evaluateJavascript(VkRelayLogin.errorWatcher,null)
                         if(!authorizing && !VkRelayLogin.awaitingLogin(url.orEmpty()) && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').trim().length >= 8 } }) {

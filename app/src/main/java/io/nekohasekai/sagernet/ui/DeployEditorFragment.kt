@@ -177,7 +177,11 @@ open class DeployEditorFragment : Fragment() {
         expand();render(DeployEngine.state.value)
     }
     private fun expand() { details?.visibility=if(expanded) View.VISIBLE else View.GONE;toggle?.text=if(expanded) "Консоль · свернуть" else "Консоль · развернуть" }
-    fun revealConsole() { expanded=true;expand();scroll.post { consoleCard?.let { scroll.smoothScrollTo(0,it.top) } } }
+    fun revealConsole() {
+        expanded=true;expand()
+        (requireContext().getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager).hideSoftInputFromWindow(scroll.windowToken,0)
+        scroll.post { consoleCard?.let { scroll.smoothScrollTo(0,it.top) } }
+    }
     fun render(state: DeployState) {
         val relevant=state.serverId==host.server?.id
         status?.text=if(relevant) state.step+(if(state.running && !state.installerProgress && state.percent in 45..99) "" else " · "+state.percent+"%") else "Готово к подключению"
@@ -190,6 +194,14 @@ open class DeployEditorFragment : Fragment() {
         progress?.progress=if(relevant) state.percent else 0
         progress?.isIndeterminate=relevant && state.running && !state.installerProgress && state.percent in 45..99
         stop?.visibility=if(relevant && state.running) View.VISIBLE else View.GONE
+        operations.forEach { it.isEnabled=!state.running }
+        // Keep the encrypted record consistent with the operation's SSH/settings snapshot.
+        fun editable(view: View) {
+            if(view===consoleCard) return
+            if(view is TextInputLayout || view is SwitchMaterial || view is MaterialButton) view.isEnabled=!(relevant && state.running)
+            if(view is ViewGroup) for(i in 0 until view.childCount) editable(view.getChildAt(i))
+        }
+        if(this::body.isInitialized) editable(body)
         operations.forEach { it.isEnabled=!state.running }
     }
     override fun onDestroyView() { output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;operations.clear();super.onDestroyView() }
