@@ -20,7 +20,8 @@ object MobileSelector {
                     }
             }
         }
-        val popup = PopupWindow(list, minOf(anchor.width, dp(300)), minOf(labels.size * dp(48), context.resources.displayMetrics.heightPixels / 2), true).apply {
+        // Keep long DNS lists attached to their row instead of filling the middle of the screen.
+        val popup = PopupWindow(list, minOf((anchor.width - dp(24)).coerceAtLeast(dp(120)), dp(240)), minOf(labels.size,4) * dp(48), true).apply {
             setBackgroundDrawable(android.graphics.drawable.GradientDrawable().apply {
                 setColor(MobilePalette.surface); cornerRadius = dp(16).toFloat()
                 setStroke(dp(1), MobilePalette.muted)
@@ -29,7 +30,7 @@ object MobileSelector {
             isOutsideTouchable = true
         }
         list.setOnItemClickListener { _, _, index, _ -> popup.dismiss(); onSelect(index) }
-        popup.showAsDropDown(anchor, dp(12), -anchor.height)
+        popup.showAsDropDown(anchor, dp(12), 0)
     }
     fun show(context: Context, preference: ListPreference): Boolean {
         val labels=preference.entries ?: return false

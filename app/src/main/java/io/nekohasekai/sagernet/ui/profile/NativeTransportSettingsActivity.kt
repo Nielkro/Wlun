@@ -137,7 +137,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
         val labels = mapOf("tag" to "Название", "name" to "Название", "server" to "Адрес сервера",
             "server_port" to "Порт сервера", "password" to "Пароль", "hashes" to "Хэши VK",
-            "workers" to "Число работников", "turn_tcp" to "Транспорт TURN", "mode" to "Режим",
+            "workers" to "Воркеры", "turn_tcp" to "Транспорт TURN", "mode" to "Режим",
             "raw_port" to "Порт RAW", "obfs" to "Маскировка", "go_dns" to "DNS VK",
             "device_id" to "Идентификатор устройства", "vk_anon_path" to "Авторизация VK", "captcha_mode" to "Режим капчи",
             "secret" to "Секрет", "context" to "Контекст", "codec" to "Кодек",

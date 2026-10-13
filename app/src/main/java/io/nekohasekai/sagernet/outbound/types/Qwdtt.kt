@@ -22,7 +22,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
     var vkAnonPath="vkcalls"
     var captchaMode="auto"
     var deviceId=UUID.randomUUID().toString()
-    override fun displayType()="qWDTT"
+    override fun displayType()=if(mode == "wg") "qWDTT (WG)" else "qWDTT (RAW)"
     override fun parseFromJson(obj:JsonObject):Boolean {
         if(obj.string("type") !in listOf("qwdtt","wdtt")) return false
         super.parseFromJson(obj)
