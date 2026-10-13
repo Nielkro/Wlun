@@ -11,6 +11,10 @@ class DeployDraftTest {
         assertNotEquals(original,server.editSignature())
         server["host"]=""
         assertEquals(original,server.editSignature())
+        server["manualPorts"]="true"
+        assertNotEquals(original,server.editSignature())
+        server["manualPorts"]="false"
+        assertEquals(original,server.editSignature())
         server.recordInstallation("generated config")
         assertEquals(original,server.editSignature())
     }

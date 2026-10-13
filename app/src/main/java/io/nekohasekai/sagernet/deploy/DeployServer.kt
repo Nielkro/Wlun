@@ -28,7 +28,7 @@ class DeployServer(val json: JSONObject) {
     fun recordInstallation(config: String) { set("installed","true");set("config",config) }
     fun recordUninstall() { set("installed","false");set("config","") }
     fun editSignature(): String = json.keys().asSequence()
-        .filterNot { it in setOf("config","installed","hostKey","adminPin") }.sorted()
+        .filterNot { json.optString(it).isEmpty() || it in setOf("config","installed","hostKey","adminPin") || (it in setOf("manualPorts","docker") && json.optString(it)!="true") }.sorted()
         .joinToString(";") { key -> val value=json.optString(key);"${key.length}:$key${value.length}:$value" }
     fun validateAddress() {
         require(get("host").matches(Regex("[A-Za-z0-9.:_-]+"))) { "Укажите IP или домен без схемы и порта" }
