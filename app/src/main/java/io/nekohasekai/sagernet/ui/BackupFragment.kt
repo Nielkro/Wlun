@@ -85,6 +85,11 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
         if (uri != null) openBackup(uri)
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("backupWebdavPage",binding?.backupTabs?.checkedButtonId == R.id.backup_tab_webdav)
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = LayoutBackupBinding.bind(view)
@@ -104,6 +109,15 @@ class BackupFragment : Fragment(R.layout.layout_backup) {
             if(node is android.view.ViewGroup) for(i in 0 until node.childCount) style(node.getChildAt(i))
         }
         style(view)
+        fun showPage(webdav: Boolean) {
+            binding.backupLocalPage.isVisible = !webdav
+            binding.backupWebdavPage.isVisible = webdav
+        }
+        binding.backupTabs.addOnButtonCheckedListener { _, id, checked ->
+            if(checked) showPage(id == R.id.backup_tab_webdav)
+        }
+        binding.backupTabs.check(if(savedInstanceState?.getBoolean("backupWebdavPage") == true) R.id.backup_tab_webdav else R.id.backup_tab_local)
+        showPage(binding.backupTabs.checkedButtonId == R.id.backup_tab_webdav)
 
         binding.resetSettings.setOnClickListener {
             requireContext().confirmAction(
