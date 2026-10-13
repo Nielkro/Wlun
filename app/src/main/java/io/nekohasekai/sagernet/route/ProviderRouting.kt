@@ -40,7 +40,7 @@ object ProviderRouting {
         }
         return Command(source, match?.groupValues?.get(2)?.equals("onadd", true) == true, false, json)
     }
-    data class Payload(val body: String, val commands: List<Command>)
+    data class Payload(val body: String, val commands: List<Command>, val warnings: List<String> = emptyList())
     fun subscription(body: String, header: String = "", provider: String = "Happ", ignoreRouting: Boolean = false): Payload {
         var text = body.trim()
         if (!text.contains("://") && !text.startsWith("{") && !text.startsWith("[")) {
@@ -48,11 +48,17 @@ object ProviderRouting {
             if (decoded.contains("://")) text = decoded
         }
         val commands = mutableListOf<Command>()
-        if (header.isNotBlank() && !ignoreRouting) commands.add(parse(header, provider))
+        val warnings = mutableListOf<String>()
+        fun importRoute(value: String) {
+            runCatching { parse(value,provider) }
+                .onSuccess { commands.add(it) }
+                .onFailure { warnings.add(it.message ?: "Повреждённый профиль маршрутизации") }
+        }
+        if (header.isNotBlank() && !ignoreRouting) importRoute(header)
         val cleaned = text.lineSequence().filter { line ->
-            if (isLink(line.trim())) { if (!ignoreRouting) commands.add(parse(line.trim(), provider)); false } else true
+            if (isLink(line.trim())) { if (!ignoreRouting) importRoute(line.trim()); false } else true
         }.joinToString("\n")
-        return Payload(cleaned, commands)
+        return Payload(cleaned, commands, warnings)
     }
     fun truth(json: JsonObject, key: String, default: Boolean): Boolean = when (val value = json[key]) {
         is Boolean -> value

@@ -53,6 +53,11 @@ internal object SubscriptionRefresh {
         // A body without a single profile is far likelier a broken or blocked response than an emptied subscription:
         // abort before the first write (no deletion, no update time). Parsing writes nothing, so it runs first.
         val payload = ProviderRouting.subscription(fetched.body, fetched.routing, options.routingProvider.ifBlank { "Happ" }, options.providerIgnoreImport)
+        if(payload.warnings.isNotEmpty()) {
+            val warning="Повреждённая маршрутизация пропущена; сохранённая маршрутизация не изменена. "+payload.warnings.distinct().joinToString("\n")
+            Logs.w("${group.name}: $warning")
+            if(notifyErrors) SubscriptionQueue.error(gid,warning)
+        }
         val parsed = parse(payload.body)
         if (parsed.isEmpty()) {
             // GroupUpdater.cpp:746-752: panels answer a device or quota limit with an empty list and an announcement

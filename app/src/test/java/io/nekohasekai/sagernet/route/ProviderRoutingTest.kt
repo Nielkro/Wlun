@@ -7,6 +7,20 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProviderRoutingTest {
+    @Test fun malformedRoutingDoesNotAbortValidServerProfiles() {
+        val server="vless://id@example.org:443"
+        val payload=ProviderRouting.subscription("$server\nhapp://routing/onadd/broken","{}")
+        assertEquals(server,payload.body)
+        assertTrue(payload.commands.isEmpty()) // No off command, so the stored route survives.
+        assertEquals(2,payload.warnings.size)
+    }
+
+    @Test fun validRoutingSurvivesAnotherDamagedDocument() {
+        val good="happ://routing/onadd/"+Base64Strict.encode(jsonObjectOf("Name" to "Good","GlobalProxy" to true).toCompact())
+        val payload=ProviderRouting.subscription("vless://id@example.org:443\n$good\nhapp://routing/onadd/broken")
+        assertEquals("Good",payload.commands.single().document!!.string("Name"))
+        assertEquals(1,payload.warnings.size)
+    }
     @Test fun browserLauncherImportsTheEmbeddedRouteInsteadOfItsHtml() {
         val direct="happ://routing/onadd/"+Base64Strict.encode(jsonObjectOf("Name" to "DigneZzz (lite)","GlobalProxy" to "true","DirectSites" to JsonArray.of("geosite:private")).toCompact())
         val wrapped="https://r.far.ovh/?url="+java.net.URLEncoder.encode(direct,"UTF-8")
