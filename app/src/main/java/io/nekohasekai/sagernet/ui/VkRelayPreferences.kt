@@ -54,7 +54,17 @@ object VkRelayPreferences {
             if(linked) {
                 summary = VkRelayAccount.displayName()
                 widgetLayoutResource = R.layout.vk_relay_unlink
-                isSelectable = false
+                isSelectable = true
+                setOnPreferenceClickListener {
+                    fragment.startActivity(Intent(context,VkRelayActivity::class.java).putExtra("login",true)); true
+                }
+                if(VkRelayAccount.needsRelink()) {
+                    title = "Подтвердить привязку VK"
+                    summary = "${VkRelayAccount.displayName()}\nПерейти на авторизацию qWDTT"
+                    setOnPreferenceClickListener {
+                        fragment.startActivity(Intent(context,VkRelayActivity::class.java).putExtra("login",true)); true
+                    }
+                }
             } else setOnPreferenceClickListener {
                 fragment.startActivity(Intent(context,VkRelayActivity::class.java).putExtra("login",true)); true
             }
@@ -88,7 +98,7 @@ object VkRelayPreferences {
                 }.getOrNull()
             }
             if(fragment.isAdded && group.findPreference<Preference>("vkRelayAccount") === account && VkRelayAccount.linked()) {
-                account.summary = VkRelayAccount.displayName()
+                if(!VkRelayAccount.needsRelink()) account.summary = VkRelayAccount.displayName()
                 if(avatar != null) account.icon = RoundedBitmapDrawableFactory.create(context.resources,avatar).apply { isCircular = true }
             }
         }

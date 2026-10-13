@@ -33,6 +33,9 @@ class VkRelayActivity : ThemedActivity() {
         }
         if(intent.getBooleanExtra("login",false)) {
             val oauthState = java.util.UUID.randomUUID().toString()
+            val cookieDomains = listOf("vk.com","vk.ru","m.vk.com","m.vk.ru","login.vk.com","login.vk.ru","oauth.vk.com","oauth.vk.ru","id.vk.com","id.vk.ru")
+            fun cookies(): Map<String,String> = cookieDomains.associate { host -> "https://$host" to CookieManager.getInstance().getCookie("https://$host").orEmpty() }
+            var authorizing = false
             web = WebView(this).apply {
                 settings.javaScriptEnabled = true; settings.domStorageEnabled = true
                 settings.allowFileAccess = false; settings.allowContentAccess = false
@@ -40,6 +43,13 @@ class VkRelayActivity : ThemedActivity() {
                 CookieManager.getInstance().setAcceptCookie(true)
                 webViewClient = object : WebViewClient() {
                     private var completed = false
+                    override fun onPageFinished(view: WebView,url: String?) {
+                        if(!authorizing && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').isNotBlank() } }) {
+                            authorizing = true
+                            CookieManager.getInstance().flush()
+                            view.loadUrl(VkRelayAccount.authorizeUrl(oauthState))
+                        }
+                    }
                     override fun shouldOverrideUrlLoading(view: WebView,request: WebResourceRequest): Boolean {
                         val uri = request.url
                         if(uri.scheme != "https") return true
@@ -48,9 +58,11 @@ class VkRelayActivity : ThemedActivity() {
                             val token = fields.getQueryParameter("access_token")
                             if(!completed && !token.isNullOrBlank() && fields.getQueryParameter("state") == oauthState) {
                                 completed = true
+                                val sessionCookies = cookies()
+                                val userAgent = view.settings.userAgentString
                                 lifecycleScope.launch {
                                     val result = withContext(Dispatchers.IO) { runCatching {
-                                        VkRelayAccount.link(token,fields.getQueryParameter("user_id").orEmpty(),fields.getQueryParameter("expires_in")?.toLongOrNull() ?: 0)
+                                        VkRelayAccount.link(token,fields.getQueryParameter("user_id").orEmpty(),fields.getQueryParameter("expires_in")?.toLongOrNull() ?: 0,sessionCookies,userAgent)
                                     } }
                                     Toast.makeText(this@VkRelayActivity,if(result.isSuccess) "Аккаунт VK привязан" else "Не удалось сохранить аккаунт VK",Toast.LENGTH_LONG).show()
                                     if(result.isSuccess) { CookieManager.getInstance().flush(); finish() }
@@ -62,7 +74,7 @@ class VkRelayActivity : ThemedActivity() {
                         return !(host == "vk.ru" || host.endsWith(".vk.ru") || host == "vk.com" || host.endsWith(".vk.com"))
                     }
                 }
-                loadUrl("https://oauth.vk.ru/authorize?client_id=7793118&scope=1073737727&redirect_uri=https%3A%2F%2Foauth.vk.ru%2Fblank.html&display=mobile&response_type=token&v=5.199&state=$oauthState")
+                loadUrl("https://m.vk.ru/login")
             }
             content.addView(web,FrameLayout.LayoutParams(-1,-1))
         } else if(state == null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commit()

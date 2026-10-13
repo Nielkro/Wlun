@@ -46,6 +46,7 @@ object VkRelayAccount {
         try { output.write(bytes); file.finishWrite(output) } catch(error: Exception) { file.failWrite(output); throw error }
     }
     fun linked() = read().optString("token").isNotBlank()
+    fun needsRelink() = read().optString("authClient") != "6287487"
     fun userId() = read().optString("user")
     fun displayName() = read().optString("name").ifBlank { "VK ID: ${userId()}" }
     fun avatarUrl() = read().optString("avatar")
@@ -83,19 +84,62 @@ object VkRelayAccount {
             for(group in groups) GroupRepo.postReload(group)
         }
     }
-    fun link(token: String,user: String,expiresIn: Long) {
+    fun authorizeUrl(state: String): String = "https://oauth.vk.com/authorize?client_id=6287487&display=mobile&redirect_uri=https%3A%2F%2Foauth.vk.com%2Fblank.html&response_type=token&scope=messages&v=5.199&state=$state"
+    fun link(token: String,user: String,expiresIn: Long,cookies: Map<String,String>,userAgent: String) {
         require(token.isNotBlank())
-        write(JSONObject().put("token",token).put("user",user)
-            .put("expires",if(expiresIn > 0) System.currentTimeMillis()+expiresIn*1000 else Long.MAX_VALUE))
+        require(cookies.values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').isNotBlank() } })
+        val previous = read()
+        val account = JSONObject().put("token",token).put("user",user).put("cookies",JSONObject(cookies)).put("userAgent",userAgent)
+            .put("authClient","6287487")
+            .put("expires",if(expiresIn > 0) System.currentTimeMillis()+expiresIn*1000 else Long.MAX_VALUE)
+        if(user.isNotBlank() && previous.optString("user") == user && previous.optString("authClient") == "6287487") {
+            previous.optJSONArray("hashes")?.let { account.put("hashes",it) }
+        }
+        write(account)
         refreshIdentity()
     }
     @Synchronized fun unlink() { storage().delete() }
     private val client = OkHttpClient.Builder().connectTimeout(15,TimeUnit.SECONDS)
         .readTimeout(20,TimeUnit.SECONDS).callTimeout(30,TimeUnit.SECONDS).build()
+    // The background process reads an encrypted snapshot, never the UI process's CookieManager.
+    private fun refreshToken(session: JSONObject): String? {
+        val cookies = session.optJSONObject("cookies") ?: return null
+        val state = java.util.UUID.randomUUID().toString()
+        val http = client.newBuilder().followRedirects(false).followSslRedirects(false).build()
+        var url = authorizeUrl(state)
+        repeat(12) {
+            val uri = java.net.URI(url)
+            if(!VkRelayOAuth.trustedHttps(uri)) return null
+            val request = Request.Builder().url(url)
+                .header("User-Agent",session.optString("userAgent"))
+                .header("Accept","text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            val header = cookies.optString("https://${uri.host}")
+            if(header.isNotBlank()) request.header("Cookie",header)
+            val next = http.newCall(request.build()).execute().use { response ->
+                val location = response.header("Location")
+                if(location != null) response.request.url.resolve(location)?.toString()
+                else if(response.isSuccessful) VkRelayOAuth.nextAuthorizeUrl(response.body?.string().orEmpty())
+                else null
+            } ?: return null
+            val fields = VkRelayOAuth.tokenFields(next,state)
+            if(fields != null) {
+                session.put("token",fields.first)
+                session.put("expires",if(fields.second > 0) System.currentTimeMillis()+fields.second*1000 else Long.MAX_VALUE)
+                write(session)
+                return fields.first
+            }
+            url = next
+        }
+        return null
+    }
     @Synchronized fun hashes(count: Int): List<String> {
         require(count in 1..6)
-        val session = read(); val token = session.optString("token")
-        check(token.isNotBlank() && session.optLong("expires") > System.currentTimeMillis()) { "Войдите в аккаунт VK в настройках VK-релея" }
+        val session = read()
+        check(session.optString("authClient") == "6287487") { "Перепривяжите аккаунт VK: способ авторизации обновлён" }
+        val token = if(session.optLong("expires") > System.currentTimeMillis()+60_000) session.optString("token")
+            else refreshToken(session).orEmpty()
+        check(token.isNotBlank()) { "Откройте привязку VK для подтверждения входа" }
+        check(session.optLong("retryAfter") <= System.currentTimeMillis()) { "VK ограничил запросы. Повторите позже или используйте ручные хеши" }
         val cached = session.optJSONArray("hashes")
         if(cached != null && cached.length() >= count) return (0 until count).map { cached.getString(it) }
         val hashes = mutableListOf<String>()
@@ -110,7 +154,10 @@ object VkRelayAccount {
             }
             val vkError = json.optJSONObject("error")
             if(vkError != null) {
-                if(vkError.optInt("error_code") in listOf(4,5,27,28)) unlink()
+                val code = vkError.optInt("error_code")
+                if(code in listOf(4,5,27,28)) session.put("expires",0L)
+                if(code in listOf(6,9,14,29)) session.put("retryAfter",System.currentTimeMillis()+60*60*1000L)
+                write(session)
                 error("Не удалось создать звонок VK: код ${vkError.optInt("error_code")}")
             }
             val call = json.optJSONObject("response") ?: error("VK не вернул ссылку звонка")
