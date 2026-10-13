@@ -26,7 +26,14 @@
 
 # JSch's algorithm registry instantiates implementations by class name.
 # This includes jce.Random before the first SSH connection is opened.
--keep class com.jcraft.jsch.** { *; }
+-keep class !com.jcraft.jsch.PageantConnector,!com.jcraft.jsch.JUnixSocketFactory,!com.jcraft.jsch.Log4j2Logger,!com.jcraft.jsch.Slf4jLogger,!com.jcraft.jsch.jgss.**,com.jcraft.jsch.** { *; }
+# Optional desktop agents, logging adapters and Kerberos are not used by VPS
+# password/key authentication over TCP. Do not retain their implementations.
+-dontwarn com.sun.jna.**
+-dontwarn org.newsclub.net.unix.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.slf4j.**
+-dontwarn org.ietf.jgss.**
 
 -dontobfuscate
 -keepattributes SourceFile
