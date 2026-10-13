@@ -83,7 +83,7 @@ object MobileSettingsStyle {
                     widget?.addView(android.widget.ImageButton(list.context).apply {
                         tag="socks-copy";contentDescription=list.context.getString(app.qthrone.mobile.R.string.action_copy)
                         setImageResource(app.qthrone.mobile.R.drawable.ic_mobile_clipboard)
-                        imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+                        imageTintList=if(preference?.key == "vkRelayAccount" && preference.icon is androidx.core.graphics.drawable.RoundedBitmapDrawable) null else android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
                         setBackgroundColor(Color.TRANSPARENT)
                         setOnClickListener {
                             val value=if(preference?.key=="inbound_user") app.qthrone.mobile.database.DataStore.inboundUser else app.qthrone.mobile.database.DataStore.inboundPass
@@ -100,7 +100,7 @@ object MobileSettingsStyle {
             styledBackgrounds[view] = view.background
             view.findViewById<android.widget.ImageView>(android.R.id.icon)?.apply {
                 visibility=if(preference?.icon!=null) View.VISIBLE else View.GONE
-                imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
+                imageTintList=if(preference?.key == "vkRelayAccount" && preference.icon is androidx.core.graphics.drawable.RoundedBitmapDrawable) null else android.content.res.ColorStateList.valueOf(MobilePalette.accent(list.context))
             }
             view.findViewById<TextView>(android.R.id.title)?.apply {
                 setTextColor(if(category) MobilePalette.accent(list.context) else MobilePalette.text)

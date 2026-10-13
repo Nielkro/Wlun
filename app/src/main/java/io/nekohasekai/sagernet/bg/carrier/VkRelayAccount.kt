@@ -43,10 +43,47 @@ object VkRelayAccount {
     }
     fun linked() = read().optString("token").isNotBlank()
     fun userId() = read().optString("user")
+    fun displayName() = read().optString("name").ifBlank { "VK ID: ${userId()}" }
+    fun avatarUrl() = read().optString("avatar")
+    @Synchronized fun refreshIdentity() {
+        val session = read()
+        if(session.optString("token").isBlank() || session.optString("name").isNotBlank()) return
+        runCatching {
+            val request = Request.Builder().url("https://api.vk.ru/method/users.get")
+                .post(FormBody.Builder().add("access_token",session.getString("token")).add("v","5.199").add("fields","photo_100").build()).build()
+            val person = client.newCall(request).execute().use { response ->
+                check(response.isSuccessful)
+                JSONObject(response.body?.string().orEmpty()).getJSONArray("response").getJSONObject(0)
+            }
+            session.put("name",listOf(person.optString("first_name"),person.optString("last_name")).filter { it.isNotBlank() }.joinToString(" "))
+            session.put("avatar",person.optString("photo_100"))
+            write(session)
+        }
+    }
+    suspend fun unlinkWithManualHashes() {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val groups = mutableSetOf<Long>()
+            val db = app.qthrone.mobile.database.SagerDatabase.instance
+            db.runInTransaction {
+                for(profile in app.qthrone.mobile.database.SagerDatabase.proxyDao.getAll()) {
+                    val outbound = profile.outbound as? app.qthrone.mobile.outbound.types.Qwdtt ?: continue
+                    outbound.hashSource = "manual"
+                    outbound.hashSourceChosen = true
+                    profile.putOutbound(outbound)
+                    app.qthrone.mobile.database.SagerDatabase.proxyDao.updateOutbound(profile.id,profile.type,profile.name,profile.outboundJson)
+                    groups.add(profile.groupId)
+                }
+            }
+            app.qthrone.mobile.database.DataStore.configurationStore.putString(DEFAULT_SOURCE,"manual")
+            unlink()
+            for(group in groups) app.qthrone.mobile.database.GroupRepo.postReload(group)
+        }
+    }
     fun link(token: String,user: String,expiresIn: Long) {
         require(token.isNotBlank())
         write(JSONObject().put("token",token).put("user",user)
             .put("expires",if(expiresIn > 0) System.currentTimeMillis()+expiresIn*1000 else Long.MAX_VALUE))
+        refreshIdentity()
     }
     @Synchronized fun unlink() { storage().delete() }
     private val client = OkHttpClient.Builder().connectTimeout(15,TimeUnit.SECONDS)

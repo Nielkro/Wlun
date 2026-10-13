@@ -71,29 +71,6 @@ class VkRelayActivity : ThemedActivity() {
     class Screen : PreferenceFragmentCompat() {
         override fun onCreatePreferences(state: Bundle?,rootKey: String?) { preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()); build() }
         override fun onResume() { super.onResume(); build() }
-        private fun build() {
-            preferenceScreen.removeAll()
-            preferenceScreen.addPreference(Preference(requireContext()).apply {
-                title = if(VkRelayAccount.linked()) "Аккаунт VK привязан" else "Привязать аккаунт VK"
-                summary = VkRelayAccount.userId().takeIf { it.isNotBlank() }?.let { "VK ID: $it" }
-                setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),VkRelayActivity::class.java).putExtra("login",true)); true }
-            })
-            if(VkRelayAccount.linked()) preferenceScreen.addPreference(Preference(requireContext()).apply {
-                title = "Отвязать аккаунт VK"
-                setOnPreferenceClickListener { VkRelayAccount.unlink()
-                    val cookies = CookieManager.getInstance()
-                    for(domain in listOf("https://vk.ru","https://vk.com","https://oauth.vk.ru","https://oauth.vk.com","https://login.vk.ru","https://login.vk.com","https://id.vk.ru")) {
-                        cookies.getCookie(domain)?.split(';')?.forEach { cookie -> cookies.setCookie(domain,cookie.substringBefore('=').trim()+"=; Max-Age=0; Path=/") }
-                    }
-                    cookies.flush(); build(); true }
-            })
-            preferenceScreen.addPreference(SimpleMenuPreference(requireContext()).apply {
-                title = "Хеши по умолчанию для новых профилей"; isSingleLineTitle = false; isPersistent = false
-                entries = arrayOf("Вручную","Авто"); entryValues = arrayOf("manual","auto")
-                value = DataStore.configurationStore.getString(VkRelayAccount.DEFAULT_SOURCE,"manual")
-                summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
-                setOnPreferenceChangeListener { _,next -> DataStore.configurationStore.putString(VkRelayAccount.DEFAULT_SOURCE,next as String); true }
-            })
-        }
+        private fun build() { VkRelayPreferences.bind(this,preferenceScreen) }
     }
 }
