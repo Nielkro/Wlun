@@ -11,6 +11,14 @@ import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.doOnLayout
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.R
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.databinding.LayoutLogcatBinding
@@ -29,6 +37,7 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
     }
 
     lateinit var binding: LayoutLogcatBinding
+    private var lastLog: String? = null
 
     private val saveLogs = registerForActivityResult(SaveDocument("text/plain")) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -62,10 +71,19 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
     @SuppressLint("RestrictedApi", "WrongConstant")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        toolbar?.setTitle(R.string.menu_log)
+        toolbar?.setTitle(R.string.qmobile_logs)
+        view.setBackgroundColor(MobilePalette.background)
+        view.findViewById<View>(R.id.log_panel).background = android.graphics.drawable.GradientDrawable().apply {
+            setColor(MobilePalette.surface)
+            cornerRadius = 20 * resources.displayMetrics.density
+        }
 
         toolbar?.inflateMenu(R.menu.logcat_menu)
         toolbar?.setOnMenuItemClickListener(this)
+        toolbar?.overflowIcon?.setTint(MobilePalette.text)
+        toolbar?.menu?.let { menu ->
+            for (i in 0 until menu.size()) menu.getItem(i).icon?.mutate()?.setTint(MobilePalette.accent(requireContext()))
+        }
         updateExportOptions()
 
         binding = LayoutLogcatBinding.bind(view)
@@ -76,7 +94,15 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
 
         binding.scroolview.applyListInsets()
 
-        reloadSession()
+        lastLog = null
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    reloadSession()
+                    delay(1000)
+                }
+            }
+        }
     }
 
     private fun updateExportOptions() {
@@ -90,10 +116,11 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
     }
 
     private fun getColorForLine(line: String): ForegroundColorSpan {
-        var color = ForegroundColorSpan(Color.GRAY)
+        var color = ForegroundColorSpan(MobilePalette.text)
         when {
             line.contains("INFO[") || line.contains(" [Info]") -> {
                 color = ForegroundColorSpan((0xFF86C166).toInt())
+                if (MobilePalette.light) color = ForegroundColorSpan((0xFF286A35).toInt())
             }
 
             line.contains("ERROR[") || line.contains(" [Error]") -> {
@@ -102,15 +129,18 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
 
             line.contains("WARN[") || line.contains(" [Warning]") -> {
                 color = ForegroundColorSpan((0xFFFFA000).toInt())
+                if (MobilePalette.light) color = ForegroundColorSpan((0xFF855400).toInt())
             }
         }
         return color
     }
 
-    private fun reloadSession() {
-        val span = SpannableString(
-            String(CoreLog.read(50 * 1024))
-        )
+    private suspend fun reloadSession() {
+        val text = withContext(Dispatchers.IO) { String(CoreLog.read(50 * 1024)) }
+        if (lastLog == text || binding.textview.hasSelection()) return
+        val follow = lastLog == null || !binding.scroolview.canScrollVertically(1)
+        lastLog = text
+        val span = SpannableString(text.ifEmpty { getString(R.string.log_empty) })
         var offset = 0
         for (line in span.lines()) {
             val color = getColorForLine(line)
@@ -120,9 +150,7 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
             offset += line.length + 1
         }
         binding.textview.text = span
-        binding.textview.clearFocus()
-        // Scroll to the bottom once the text view is laid out
-        binding.textview.doOnLayout {
+        if (follow) binding.textview.doOnLayout {
             binding.scroolview.scrollTo(0, binding.textview.height)
         }
     }
@@ -130,20 +158,23 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
     override fun onMenuItemClick(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.action_clear_logcat -> {
-                runOnDefaultDispatcher {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.clear_logcat)
+                    .setMessage(R.string.log_clear_confirm)
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(android.R.string.ok) { _, _ -> viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        CoreLog.clear()
-                        Runtime.getRuntime().exec("/system/bin/logcat -c")
-                    } catch (e: Exception) {
-                        onMainDispatcher {
-                            snackbar(e.readableMessage).show()
+                        withContext(Dispatchers.IO) {
+                            CoreLog.clear()
+                            ProcessBuilder("logcat", "-c").start().waitFor()
                         }
-                        return@runOnDefaultDispatcher
+                    } catch (e: Exception) {
+                        safeSnackbar(e.readableMessage)
+                        return@launch
                     }
-                    onMainDispatcher {
-                        binding.textview.text = ""
-                    }
-                }
+                    lastLog = null
+                    reloadSession()
+                } }.show()
 
             }
 
@@ -179,7 +210,7 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
             }
 
             R.id.action_refresh -> {
-                reloadSession()
+                viewLifecycleOwner.lifecycleScope.launch { lastLog = null; reloadSession() }
             }
         }
         return true

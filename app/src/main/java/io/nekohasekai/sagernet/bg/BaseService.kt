@@ -150,6 +150,22 @@ class BaseService {
         override fun getState(): Int = (data?.state ?: State.Idle).ordinal
         override fun getProfileName(): String = data?.proxy?.displayProfileName ?: "Idle"
 
+        override fun openConnectAuth(): String {
+            val core = CoreRuntime.running ?: return ""
+            val request = core.instance.openConnectAuth()
+            if (request.isNullOrEmpty()) return ""
+            return org.json.JSONObject(request).put("Session", core.authSession).toString()
+        }
+
+        override fun replyOpenConnectAuth(session: String, tag: String, challengeId: String, valuesJson: String, cancel: Boolean): String {
+            val core = CoreRuntime.running ?: return "OpenConnect session has ended"
+            if (core.authSession != session) return "OpenConnect session has changed"
+            return try {
+                core.instance.replyOpenConnectAuth(tag, challengeId, valuesJson, cancel)
+                ""
+            } catch (e: Exception) { e.readableMessage }
+        }
+
         override fun registerCallback(cb: ISagerNetServiceCallback, id: Int) {
             if (id == SagerConnection.CONNECTION_ID_RESTART_BG) {
                 Runtime.getRuntime().exit(0)

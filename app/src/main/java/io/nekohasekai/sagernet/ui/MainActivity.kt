@@ -161,6 +161,7 @@ class MainActivity : ThemedActivity(),
             animateControls = animateInitialControls,
         )
         connection.connect(this, this)
+        OpenConnectAuthDialog(this).start()
         DataStore.configurationStore.registerChangeListener(this)
 
         if (savedInstanceState == null) intent?.let(::handleImportIntent)

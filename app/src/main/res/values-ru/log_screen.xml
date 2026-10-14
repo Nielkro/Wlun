@@ -1,0 +1,8 @@
+<resources>
+    <string name="openconnect_auth_unsupported">Эта форма авторизации пока не поддерживается.</string>
+    <string name="openconnect_auth_title">Авторизация OpenConnect</string>
+    <string name="openconnect_browser_required">Сервер требует авторизацию через браузер. Этот способ входа пока не поддерживается.</string>
+    <string name="qmobile_logs">Логи</string>
+    <string name="log_empty">Логов пока нет. Здесь появятся события подключения.</string>
+    <string name="log_clear_confirm">Очистить логи текущего и предыдущего подключения?</string>
+</resources>

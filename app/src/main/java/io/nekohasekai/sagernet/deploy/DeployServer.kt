@@ -85,11 +85,13 @@ object DeployStore {
         write(items)
     }
     @Synchronized fun remove(id: String) { write(all().filter { it.id != id }) }
-    @Synchronized fun removeEmptyDrafts() {
+    @Synchronized fun savedServers(): List<DeployServer> {
         val stored=all()
         val kept=stored.filterNot { it.isEmptyDraft() }
         if(kept.size!=stored.size) write(kept)
+        return kept
     }
+    @Synchronized fun removeEmptyDrafts() { savedServers() }
     private fun write(items: List<DeployServer>) {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding").apply { init(Cipher.ENCRYPT_MODE,key()) }
         val data = cipher.iv+cipher.doFinal(JSONArray(items.map { it.json }).toString().toByteArray(Charsets.UTF_8))

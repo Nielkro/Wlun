@@ -5,6 +5,8 @@ import app.qthrone.mobile.aidl.ISagerNetServiceCallback;
 interface ISagerNetService {
   int getState();
   String getProfileName();
+  String openConnectAuth();
+  String replyOpenConnectAuth(String session, String tag, String challengeId, String valuesJson, boolean cancel);
 
   void registerCallback(in ISagerNetServiceCallback cb, int id);
   oneway void unregisterCallback(in ISagerNetServiceCallback cb);

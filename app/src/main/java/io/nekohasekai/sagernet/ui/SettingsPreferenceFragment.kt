@@ -29,9 +29,12 @@ open class SettingsPreferenceFragment(private val advanced: Boolean = false) : P
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         preferenceManager.preferenceDataStore = DataStore.configurationStore
         addPreferencesFromResource(if (advanced) R.xml.global_preferences else R.xml.qmobile_settings)
+        findPreference<Preference>("qmobileLogs")?.setOnPreferenceClickListener {
+            (activity as? MainActivity)?.displayFragment(LogcatFragment())
+            true
+        }
         findPreference<Preference>("qmobileUpdate")?.setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),app.qthrone.mobile.update.UpdateActivity::class.java));true }
 
-        findPreference<Preference>("qmobileVkRelay")?.setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),VkRelayActivity::class.java));true }
         findPreference<Preference>(KEY_BACKUP)!!.setOnPreferenceClickListener {
             (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_tools)
             true

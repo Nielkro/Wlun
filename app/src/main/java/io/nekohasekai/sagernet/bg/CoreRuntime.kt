@@ -25,7 +25,9 @@ object CoreRuntime {
     val platform: NativeInterface by lazy { NativeInterface() }
 
     /** The started main instance and the profile it runs, from box start to close (test-current). */
-    class RunningCore(val instance: Instance, val profileId: Long)
+    class RunningCore(val instance: Instance, val profileId: Long) {
+        val authSession = java.util.UUID.randomUUID().toString()
+    }
 
     @Volatile
     var running: RunningCore? = null

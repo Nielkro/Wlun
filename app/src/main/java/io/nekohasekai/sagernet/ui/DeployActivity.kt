@@ -54,10 +54,20 @@ class DeployActivity : ThemedActivity() {
         val content=FrameLayout(this).apply { id=android.R.id.content+3 }
         root.addView(toolbar);root.addView(content,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view,insets -> val b=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(b.left,b.top,b.right,b.bottom);insets }
-        val id=savedInstanceState?.getString("server")
-        if(server==null) server=DeployStore.all().firstOrNull { it.id==id }
+        val id=savedInstanceState?.getString("server") ?: intent.getStringExtra("editServer")
         onBackPressedDispatcher.addCallback(this,object : androidx.activity.OnBackPressedCallback(true) { override fun handleOnBackPressed() { back() } })
-        if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commit()
+        lifecycleScope.launch {
+            if (server == null && id != null) {
+                val result = withContext(Dispatchers.IO) { runCatching { DeployStore.all().firstOrNull { it.id == id } } }
+                server = result.getOrNull()
+                if (server == null) {
+                    Toast.makeText(this@DeployActivity,"Не удалось открыть VPS",Toast.LENGTH_LONG).show()
+                    finish();return@launch
+                }
+            } else if (server == null && intent.getBooleanExtra("directEditor",false)) server = DeployServer.create(kind)
+            if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commit()
+            else screen()?.build()
+        }
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 DeployEngine.state.collect { state ->
@@ -78,7 +88,13 @@ class DeployActivity : ThemedActivity() {
     }
     override fun onSaveInstanceState(outState: Bundle) { server?.let { outState.putString("server",it.id) };outState.putString("shownConfig",shownConfig);super.onSaveInstanceState(outState) }
     private fun screen() = supportFragmentManager.fragments.filterIsInstance<Screen>().firstOrNull()
-    private fun back() { if(server!=null) { server=null;screen()?.build() } else finish() }
+    private fun back() { if(intent.getBooleanExtra("directEditor",false)) finish() else if(server!=null) { server=null;screen()?.build() } else finish() }
+    fun saved(signature: String) {
+        editorState.baseline=signature
+        if(hasChanges()) screen()?.refreshSaveAction()
+        else if(intent.getBooleanExtra("directEditor",false)) finish()
+        else { server=null;screen()?.build() }
+    }
     fun pickKey() { keyPicker.launch("*/*") }
     fun start(uninstall: Boolean) {
         val target=server ?: return

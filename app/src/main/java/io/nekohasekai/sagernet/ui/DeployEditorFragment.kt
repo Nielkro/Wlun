@@ -8,6 +8,11 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.text.Editable
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import app.qthrone.mobile.R
 import app.qthrone.mobile.deploy.*
 import com.google.android.material.button.MaterialButton
@@ -34,6 +39,7 @@ open class DeployEditorFragment : Fragment() {
     private var displayedConfig=""
     private var saveAction: android.view.MenuItem?=null
     private var openSwipe: MobileSwipeTile?=null
+    private var listLoad: Job?=null
     private var output: TextView?=null
     private var logScroll: ScrollView?=null
     private var followLogs=true
@@ -187,29 +193,39 @@ open class DeployEditorFragment : Fragment() {
     }
     fun build() {
         if(!this::body.isInitialized) return
+        listLoad?.cancel()
         body.removeAllViews();host.toolbar.menu.clear();operations.clear();saveAction=null;openSwipe=null
         output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null
         consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configText=null;configCopy=null;displayedConfig=""
         val s=host.server
         host.toolbar.title=if(s==null) "Деплой "+(if(host.kind=="qwdtt") "qWDTT" else "CSQTT") else "Управление сервером"
         if(s==null) {
-            DeployStore.removeEmptyDrafts()
-            val servers=DeployStore.all().filter { it.kind==host.kind }
-            for(item in servers) {
-                serverTile(item["name"],item["host"].ifBlank { "Укажите адрес VPS" },R.drawable.ic_mobile_core,item) { host.server=item;build() }
-            }
-            serverTile("Добавить VPS для деплоя",null,R.drawable.ic_mobile_add) {
-                host.server=DeployServer.create(host.kind)
-                build()
+            listLoad=viewLifecycleOwner.lifecycleScope.launch {
+                val result=withContext(Dispatchers.IO) { runCatching { DeployStore.savedServers().filter { it.kind==host.kind } } }
+                if(host.server!=null) return@launch
+                result.onSuccess { servers -> for(item in servers) {
+                    serverTile(item["name"],item["host"].ifBlank { "Укажите адрес VPS" },R.drawable.ic_mobile_core,item) { host.server=item;build() }
+                } }.onFailure { Toast.makeText(context,"Не удалось загрузить список VPS",Toast.LENGTH_LONG).show() }
+                serverTile("Добавить VPS для деплоя",null,R.drawable.ic_mobile_add) {
+                    host.server=DeployServer.create(host.kind)
+                    build()
+                }
             }
             return
         }
         saveAction=host.toolbar.menu.add("Сохранить").apply {
             setIcon(R.drawable.ic_mobile_apply);setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
             setOnMenuItemClickListener {
-                runCatching { s.validateAddress();DeployStore.save(s) }
-                    .onSuccess { host.server=null;build();Toast.makeText(context,"Сервер сохранён",Toast.LENGTH_SHORT).show() }
-                    .onFailure { MobileAlertDialogBuilder(requireContext()).setMessage(it.message).setPositiveButton(android.R.string.ok,null).show() }
+                val snapshot=DeployServer(org.json.JSONObject(s.json.toString()))
+                val signature=snapshot.editSignature()
+                isEnabled=false
+                viewLifecycleOwner.lifecycleScope.launch {
+                    val result=withContext(Dispatchers.IO) { runCatching { snapshot.validateAddress();DeployStore.save(snapshot) } }
+                    if(host.server !== s) return@launch
+                    saveAction?.isEnabled=true
+                    result.onSuccess { Toast.makeText(context,"Сервер сохранён",Toast.LENGTH_SHORT).show();host.saved(signature) }
+                        .onFailure { MobileAlertDialogBuilder(requireContext()).setMessage(it.message).setPositiveButton(android.R.string.ok,null).show() }
+                }
                 true
             }
         }

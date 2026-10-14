@@ -149,6 +149,8 @@ class VkRelayActivity : ThemedActivity() {
     }
     override fun onDestroy() { web?.apply { stopLoading(); (parent as? android.view.ViewGroup)?.removeView(this); destroy() }; web = null; super.onDestroy() }
     class Screen : PreferenceFragmentCompat() {
+        override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): android.animation.Animator? =
+            MobileScreenMotion.create(this, nextAnim)
         private var firstResume=true
         override fun onCreatePreferences(state: Bundle?,rootKey: String?) { preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()); build() }
         override fun onResume() { super.onResume();if(firstResume) firstResume=false else build() }
@@ -164,7 +166,13 @@ class VkRelayActivity : ThemedActivity() {
             for(kind in listOf("qwdtt","csqtt")) deploy.addPreference(Preference(requireContext()).apply {
                 title = "Деплой " + if(kind == "qwdtt") "qWDTT" else "CSQTT"
                 setIcon(R.drawable.ic_mobile_core);widgetLayoutResource=R.layout.qmobile_preference_arrow
-                setOnPreferenceClickListener { startActivity(android.content.Intent(requireContext(),DeployActivity::class.java).putExtra("kind",kind));true }
+                fragment=DeployListFragment::class.java.name
+                extras.putString("kind",kind)
+                setOnPreferenceClickListener {
+                    if(parentFragment is SettingsFragment) false else {
+                        startActivity(android.content.Intent(requireContext(),DeployActivity::class.java).putExtra("kind",kind));true
+                    }
+                }
             })
         }
     }

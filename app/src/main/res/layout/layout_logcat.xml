@@ -12,14 +12,18 @@
         android:layout_height="wrap_content" />
 
     <LinearLayout
+        android:id="@+id/log_panel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp">
+        android:padding="16dp"
+        android:layout_margin="16dp">
 
         <ScrollView
             android:id="@+id/scroolview"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="match_parent"
+            android:scrollbars="none"
+            android:overScrollMode="never">
 
             <TextView
                 android:id="@+id/textview"
@@ -30,6 +34,8 @@
                 android:focusable="true"
                 android:gravity="start|top"
                 android:textIsSelectable="true"
+                android:fontFamily="monospace"
+                android:textSize="12sp"
                 tools:ignore="LabelFor" />
         </ScrollView>
     </LinearLayout>
