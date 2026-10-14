@@ -96,10 +96,16 @@ class CarrierProcess private constructor(private val process: Process, private v
                     }
                 } } }, "qThrone-carrier-output").apply { isDaemon = true; start() }
                 var deadline = System.nanoTime() + timeoutMs * 1_000_000
-                var captchaWaitAdded=false
+                var lastWaitTick=System.nanoTime()
+                var interactionBudget=20L*60*1_000_000_000L
                 while (System.nanoTime() < deadline) {
                     coroutineContext.ensureActive()
-                    if(!captchaWaitAdded && running.captcha.waiting) { deadline+=120_000_000_000L;captchaWaitAdded=true }
+                    val now=System.nanoTime()
+                    if(running.captcha.waiting) {
+                        val paused=(now-lastWaitTick).coerceAtMost(interactionBudget)
+                        deadline+=paused;interactionBudget-=paused
+                    }
+                    lastWaitTick=now
                     val exited = try { child.exitValue(); true } catch (_: IllegalThreadStateException) { false }
                     check(!exited) { "Transport client stopped before becoming ready" }
                     if (socksReady(socksPort, bridgeCredentials)) {

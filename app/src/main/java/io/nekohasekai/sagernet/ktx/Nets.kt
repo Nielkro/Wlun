@@ -133,7 +133,7 @@ fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetRes
         }
         if (!DataStore.mixedInboundDisabled) {
             val address = DataStore.inboundAddress.let { if (it == "::") LOCALHOST else it }
-            builder.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(address, DataStore.inboundSocksPort)))
+            builder.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(address, DataStore.inboundHttpPort)))
             if (DataStore.inboundAuth) {
                 val credential = Credentials.basic(DataStore.inboundUser, DataStore.inboundPass)
                 builder.proxyAuthenticator(object : okhttp3.Authenticator {
@@ -221,7 +221,7 @@ fun appHttpClient(viaProxy: Boolean, timeoutSeconds: Long = 30): OkHttpClient {
         .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)
     if (viaProxy && !DataStore.mixedInboundDisabled) {
         val address = DataStore.inboundAddress.let { if (it == "::") LOCALHOST else it }
-        builder.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(address, DataStore.inboundSocksPort)))
+        builder.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(address, DataStore.inboundHttpPort)))
         if (DataStore.inboundAuth) {
             val credential = Credentials.basic(DataStore.inboundUser, DataStore.inboundPass)
             builder.proxyAuthenticator(object : okhttp3.Authenticator {

@@ -52,7 +52,7 @@ class DeployServer(val json: JSONObject) {
     }
     companion object {
         fun create(kind: String) = DeployServer(JSONObject().put("id",java.util.UUID.randomUUID().toString()).put("kind",kind)).apply {
-            set("name","Новый сервер");set("user","root");set("auth","password");set("sshPort","22")
+            set("name","");set("user","root");set("auth","password");set("sshPort","22")
             set("peerPort",if(kind == "qwdtt") "56000" else "46000")
             set("wgPort","56001");set("directPort","56002");set("rawPort","56003");set("adminPort","56002");set("webPort","46002")
             set("dns1","1.1.1.1");set("dns2","1.0.0.1");set("deviceId",java.util.UUID.randomUUID().toString())

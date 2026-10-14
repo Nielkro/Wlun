@@ -93,7 +93,7 @@ object WarpClient {
         } else {
             ""
         }
-        return "http://$credentials$host:${DataStore.inboundSocksPort}"
+        return "http://$credentials$host:${DataStore.inboundHttpPort}"
     }
 
     /** RegisterWarp (warp.cpp:28-54) through ICoreService.warpRegister; failures throw with the core's text. */

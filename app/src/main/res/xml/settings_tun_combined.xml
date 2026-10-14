@@ -23,15 +23,14 @@
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/cag_authentication">
         <SwitchPreference app:icon="@drawable/ic_baseline_lock_24" app:key="inbound_auth" app:summary="@string/inbound_auth_sum" app:title="@string/qmobile_socks_auth" />
-    </PreferenceCategory>
-    <PreferenceCategory app:title="@string/lan_sharing" app:key="tunSharing">
-        <SwitchPreference app:key="lan_sharing_enabled" app:defaultValue="false" app:title="@string/lan_sharing_enabled" app:summary="@string/lan_sharing_summary" app:icon="@drawable/ic_mobile_globe" />
-        <Preference app:key="sharingInstructions" app:selectable="false" app:summary="@string/lan_sharing_help" />
-        <Preference app:key="sharingAddresses" app:title="@string/lan_sharing_address" app:icon="@drawable/ic_mobile_globe" />
-        <EditTextPreference app:icon="@drawable/ic_maps_directions_boat" app:key="inbound_socks_port" app:title="@string/lan_sharing_port" app:useSimpleSummaryProvider="true" />
+        <SwitchPreference app:key="lan_sharing_enabled" app:defaultValue="false" app:title="@string/allow_access" app:summary="@string/lan_sharing_summary" app:icon="@drawable/ic_mobile_globe" />
         <EditTextPreference app:key="inbound_user" app:title="@string/qmobile_socks_user" app:useSimpleSummaryProvider="true" />
         <EditTextPreference app:key="inbound_pass" app:title="@string/qmobile_socks_pass" />
         <Preference app:key="qmobileResetSocks" app:title="@string/qmobile_socks_reset" />
+        <Preference app:key="sharingAddresses" app:title="@string/lan_sharing_address" app:icon="@drawable/ic_mobile_globe" />
+        <EditTextPreference app:icon="@drawable/ic_maps_directions_boat" app:key="inbound_socks_port" app:title="@string/local_socks_port" app:useSimpleSummaryProvider="true" />
+        <EditTextPreference app:icon="@drawable/ic_maps_directions_boat" app:key="inbound_http_port" app:title="@string/local_http_port" app:useSimpleSummaryProvider="true" />
+        <Preference app:key="sharingInstructions" app:selectable="false" app:summary="@string/lan_sharing_help" />
         <Preference app:key="sharingHotspot" app:title="@string/lan_sharing_hotspot" app:icon="@drawable/ic_mobile_settings" app:widgetLayout="@layout/qmobile_preference_arrow" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/cag_advanced">

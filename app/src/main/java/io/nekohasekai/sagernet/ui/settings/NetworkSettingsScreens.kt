@@ -38,6 +38,7 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
 
     override fun bind() {
         val port = pref<EditTextPreference>(SettingsRegistry.INBOUND_SOCKS_PORT.key)
+        val httpPort = pref<EditTextPreference>(SettingsRegistry.INBOUND_HTTP_PORT.key)
         val randomPort = pref<SwitchPreference>(SettingsRegistry.RANDOM_INBOUND_PORT.key)
         val allowLan = pref<SwitchPreference>(KEY_ALLOW_LAN)
         val auth = pref<SwitchPreference>(SettingsRegistry.INBOUND_AUTH.key)
@@ -53,8 +54,10 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
         val httpProxyBypass = pref<EditTextPreference>(Key.HTTP_PROXY_BYPASS)
         val dnsInPort = pref<EditTextPreference>(SettingsRegistry.CORE_DNS_IN_PORT.key)
 
-        checkText(port.key, R.string.invalid_port, valid = SettingValidators::isPort)
+        checkText(port.key, R.string.invalid_port, valid = { SettingValidators.isPort(it) && it.toIntOrNull()!=DataStore.inboundHttpPort })
         port.setOnBindEditTextListener(EditTextPreferenceModifiers.Port)
+        checkText(httpPort.key, R.string.invalid_port, valid = { SettingValidators.isPort(it) && it.toIntOrNull()!=DataStore.inboundSocksPort })
+        httpPort.setOnBindEditTextListener(EditTextPreferenceModifiers.Port)
         // dialog_basic_settings.cpp:255-256.
         checkText(dnsInPort.key, R.string.invalid_port, valid = SettingValidators::isPort)
         dnsInPort.setOnBindEditTextListener(EditTextPreferenceModifiers.Port)
@@ -67,7 +70,7 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
 
         allowLan.isChecked = DataStore.allowLanAccess
         // This legacy switch binds the proxy-only listener; VPN sharing has its own explicit switch.
-        allowLan.isVisible = DataStore.serviceMode != Key.MODE_VPN
+        allowLan.isVisible = DataStore.serviceMode != Key.MODE_VPN && findPreference<Preference>(SettingsRegistry.LAN_SHARING_ENABLED.key)==null
         allowLan.setOnPreferenceChangeListener { _, newValue ->
             DataStore.inboundAddress = if (newValue as Boolean) SettingsRegistry.LAN_ADDRESS else SettingsRegistry.LOOPBACK_ADDRESS
             needReload()
@@ -91,7 +94,7 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
             mixedDisabled = disabled
             val sharing = DataStore.lanSharingEnabled && DataStore.serviceMode == Key.MODE_VPN
             if (sharing && !auth.isChecked) auth.isChecked = true
-            for (p in listOf(port, randomPort, allowLan, auth, user, pass)) p.isEnabled = !disabled
+            for (p in listOf(port, httpPort, randomPort, allowLan, auth, user, pass)) p.isEnabled = !disabled
             randomPort.isEnabled = !disabled && !sharing
             auth.isEnabled = !disabled && !sharing
             if (disabled && !sharing) {
@@ -101,6 +104,7 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
                 port.summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
             }
             port.isEnabled = !disabled || sharing
+            httpPort.isEnabled = !disabled || sharing
             user.isEnabled = sharing || (!disabled && auth.isChecked)
             pass.isEnabled = sharing || (!disabled && auth.isChecked)
             updateHttpProxyState()
@@ -108,6 +112,7 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
         updateMixedState(mixedDisabled)
         findPreference<SwitchPreference>(SettingsRegistry.LAN_SHARING_ENABLED.key)?.setOnPreferenceChangeListener { _, value ->
             DataStore.lanSharingEnabled = value as Boolean
+            if(DataStore.serviceMode == Key.MODE_PROXY) DataStore.inboundAddress = if(value) SettingsRegistry.LAN_ADDRESS else SettingsRegistry.LOOPBACK_ADDRESS
             updateMixedState(mixedDisabled)
             needReload()
             true

@@ -149,7 +149,8 @@ object SettingsRegistry {
     // ------------------------------------------------------------------------------------------------ inbound
 
     /** Android adds the per-user offset on first use (DataStore.inboundSocksPort). */
-    @JvmField val INBOUND_SOCKS_PORT = int("inbound_socks_port", 2080, SettingValidators::isPort)
+    @JvmField val INBOUND_SOCKS_PORT = int("inbound_socks_port", 10808, SettingValidators::isPort)
+    @JvmField val INBOUND_HTTP_PORT = int("inbound_http_port", 10809, SettingValidators::isPort)
     @JvmField val INBOUND_ADDRESS = string("inbound_address", LOOPBACK_ADDRESS) { it.isNotBlank() }
     @JvmField val DISABLE_MIXED_INBOUND = bool("disable_mixed_inbound", false)
     @JvmField val RANDOM_INBOUND_PORT = bool("random_inbound_port", false)
@@ -160,8 +161,7 @@ object SettingsRegistry {
 
     // ------------------------------------------------------------------------------------------------ tun
 
-    /** Android 9000 (decision D2; desktop 1500). */
-    @JvmField val VPN_MTU = int("vpn_mtu", 9000) { it in 1000..10000 }
+    @JvmField val VPN_MTU = int("vpn_mtu", 1500) { it in 1000..10000 }
     @JvmField val VPN_IPV6 = bool("vpn_ipv6", false)
     @JvmField val VPN_TUN_IPV4_CIDR = string("vpn_tun_ipv4_cidr", DEFAULT_TUN_IPV4_CIDR) {
         SettingValidators.isCidr(it, ipv6 = false)
@@ -328,7 +328,7 @@ object SettingsRegistry {
     /** The Android-only keys of the same table (camelCase, never read by the desktop). */
     @JvmField
     val ANDROID_KEYS: Set<String> = setOf(
-        LAN_SHARING_ENABLED.key, "openconnect_private_networks", // Legacy beta 1 key; no longer used by the generator.
+        LAN_SHARING_ENABLED.key, INBOUND_HTTP_PORT.key, "openconnect_private_networks", // Legacy beta 1 key; no longer used by the generator.
         Key.SERVICE_MODE, Key.PROXY_APPS, Key.BYPASS_MODE, Key.INDIVIDUAL, Key.APPEND_HTTP_PROXY, Key.HTTP_PROXY_BYPASS,
         Key.METERED_NETWORK, Key.WAKE_RESET_CONNECTIONS, Key.NETWORK_CHANGE_RESET_CONNECTIONS,
         Key.SHOW_DIRECT_SPEED, Key.SHOW_GROUP_IN_NOTIFICATION, Key.NOTIFICATION_ACTIONS,

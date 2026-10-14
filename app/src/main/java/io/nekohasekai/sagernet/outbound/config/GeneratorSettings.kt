@@ -31,7 +31,8 @@ data class GeneratorSettings(
     /** inbound_address (SettingsRepo.h:204): the mixed inbound's listen address, "::" once LAN access is allowed. */
     val inboundAddress: String = "127.0.0.1",
     /** inbound_socks_port (SettingsRepo.h:205). */
-    val mixedPort: Int = 2080,
+    val mixedPort: Int = 10808,
+    val httpPort: Int = 10809,
     /** inbound_auth / inbound_user / inbound_pass (SettingsRepo.h:208-210). */
     val mixedAuth: Boolean = false,
     val mixedUsername: String = "",
@@ -43,7 +44,7 @@ data class GeneratorSettings(
     /** spmode_vpn (SettingsRepo.h:48) <- DataStore.serviceMode == Key.MODE_VPN. */
     val vpnMode: Boolean = false,
     /** vpn_mtu (SettingsRepo.h:236). */
-    val tunMtu: Int = 9000,
+    val tunMtu: Int = 1500,
     /** vpn_strict_route (SettingsRepo.h:222-231); always true on Android (no setting). */
     val tunStrictRoute: Boolean = true,
     /** vpn_tun_ipv4_cidr (SettingsRepo.h:240). */
@@ -63,6 +64,7 @@ data class GeneratorSettings(
     val perAppBypass: Boolean = true,
     /** DataStore.individual split on newlines; the caller adds or removes its own package as it sees fit. */
     val perAppPackages: List<String> = emptyList(),
+    val perAppAllowedUids: List<Int> = emptyList(),
     /**
      * DataStore.appendHttpProxy (Android-only, off by default): `platform.http_proxy` points the VPN's system HTTP
      * proxy (VpnService.openTun) at the mixed inbound, only while that inbound is on and has no [mixedAuth].

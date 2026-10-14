@@ -14,9 +14,21 @@ def version_key(value):
     return (int(major), int(minor), int(patch or 0), {"beta": 0, "rc": 1, None: 2}[stage], int(number or 0))
 
 
+def release_build_number(version):
+    key = version_key(version)
+    if key[3] == 2:
+        return 999
+    if not 1 <= key[4] <= 499:
+        raise ValueError("Prerelease number must be 1..499")
+    return key[4] + (499 if key[3] == 1 else 0)
+
+
 if __name__ == "__main__":
     version = next(line.split("=", 1)[1].strip() for line in Path("nb4a.properties").read_text().splitlines() if line.startswith("VERSION_NAME="))
     key = version_key(version)
+    build = release_build_number(version)
+    index = int(next(line.split("=", 1)[1] for line in Path("nb4a.properties").read_text().splitlines() if line.startswith("VERSION_CODE=")))
+    code = index * 1000 + build
     stage = {0: "beta", 1: "rc"}.get(key[3])
     # GitHub orders same-day beta.10 below beta.9. The release title and APK
     # retain the dotted version; compact multi-digit tags sort above legacy tags.
@@ -30,5 +42,11 @@ if __name__ == "__main__":
                 continue
             if key <= version_key(release["tag_name"]):
                 raise SystemExit("Increase VERSION_NAME above published release " + release["tag_name"])
+            asset = next((a for a in release.get("assets", []) if a["name"] == "qthrone-update.json"), None)
+            if asset:
+                with urllib.request.urlopen(asset["browser_download_url"], timeout=30) as response:
+                    previous = json.load(response)
+                if code <= previous["versionCode"]:
+                    raise SystemExit("Increase VERSION_CODE: APK code must exceed " + str(previous["versionCode"]) + " from " + release["tag_name"])
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
-        output.write(f"tag={tag}\nname={version}\n")
+        output.write(f"tag={tag}\nname={version}\nbuild={build}\n")

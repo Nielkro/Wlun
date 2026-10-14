@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Release numbering regression
+        run: python3 buildScript/test_release_tag.py
       - name: Build
         uses: ./.github/actions/android-build
         with:

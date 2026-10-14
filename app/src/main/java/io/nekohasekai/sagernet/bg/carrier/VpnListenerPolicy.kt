@@ -13,8 +13,10 @@ object VpnListenerPolicy {
             check(inbound.string("type") in listOf("socks","http","mixed")) {
                 "VPN custom configuration contains an unsupported listening inbound; use the TUN inbound"
             }
-            val explicitSharing = allowSharing && inbound.string("tag") == "mixed-in" &&
-                inbound.string("type") == "mixed" && inbound.string("listen") == "0.0.0.0"
+            val explicitSharing = allowSharing &&
+                (inbound.string("tag") == "mixed-in" && inbound.string("type") == "socks" ||
+                    inbound.string("tag") == "http-in" && inbound.string("type") == "http") &&
+                inbound.string("listen") == "0.0.0.0"
             check(explicitSharing || inbound.string("listen") in listOf("127.0.0.1","::1")) {
                 "VPN proxy listeners must bind to loopback and require authentication"
             }

@@ -45,15 +45,28 @@ object VkRelayAccount {
         val file = storage(); val output = file.startWrite()
         try { output.write(bytes); file.finishWrite(output) } catch(error: Exception) { file.failWrite(output); throw error }
     }
-    fun linked() = read().optString("token").isNotBlank()
-    fun needsRelink() = read().optString("authClient") != "6287487"
+    fun linked() = read().optJSONObject("cookies")?.toString()?.contains("remixsid=") == true
+    fun needsRelink() = read().optString("authClient") != "qwdtt-account-turn"
+    fun sessionCookies(): Map<String,String> {
+        val cookies=read().optJSONObject("cookies") ?: return emptyMap()
+        return cookies.keys().asSequence().associateWith { cookies.optString(it) }
+    }
+    @Synchronized fun linkSession(cookies: Map<String,String>, userAgent: String) {
+        require(cookies.values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').isNotBlank() } })
+        val previous=read()
+        val oldCookies=previous.optJSONObject("cookies")
+        val sameSession=oldCookies!=null && cookies.any { (host,value) -> value==oldCookies.optString(host) && value.contains("remixsid=") }
+        val session=if(sameSession) previous else JSONObject()
+        session.put("cookies",JSONObject(cookies)).put("userAgent",userAgent).put("authClient","qwdtt-account-turn")
+        write(session)
+    }
     fun userId() = read().optString("user")
     fun displayName() = read().optString("name").ifBlank { "VK ID: ${userId()}" }
     fun avatarUrl() = read().optString("avatar")
     data class UiInfo(val linked: Boolean,val needsRelink: Boolean,val displayName: String)
     fun uiInfo(): UiInfo {
         val session=read()
-        return UiInfo(session.optString("token").isNotBlank(),session.optString("authClient")!="6287487",session.optString("name").ifBlank { "VK ID: ${session.optString("user")}" })
+        return UiInfo(linked(),needsRelink(),session.optString("name").ifBlank { "Аккаунт VK для qWDTT" })
     }
     fun refreshIdentity() {
         val session = read()
@@ -146,7 +159,7 @@ object VkRelayAccount {
     @Synchronized fun hashes(count: Int): List<String> {
         require(count in 1..6)
         val session = read()
-        check(session.optString("authClient") == "6287487") { "Перепривяжите аккаунт VK: способ авторизации обновлён" }
+        check(session.optString("authClient") == "qwdtt-account-turn") { "Перепривяжите аккаунт VK: способ авторизации обновлён" }
         val token = if(session.optLong("expires") > System.currentTimeMillis()+60_000) session.optString("token")
             else refreshToken(session).orEmpty()
         check(token.isNotBlank()) { "Откройте привязку VK для подтверждения входа" }

@@ -362,7 +362,7 @@ open class DeployEditorFragment : Fragment() {
         }
         progress?.progress=if(relevant) state.percent else 0
         progress?.isIndeterminate=relevant && state.running && !state.installerProgress && state.percent in 45..99
-        stop?.visibility=if(relevant && state.running) View.VISIBLE else View.GONE
+        stop?.isEnabled=relevant && state.running
         operations.forEach { it.isEnabled=!state.running }
         // Keep the encrypted record consistent with the operation's SSH/settings snapshot.
         fun editable(view: View) {

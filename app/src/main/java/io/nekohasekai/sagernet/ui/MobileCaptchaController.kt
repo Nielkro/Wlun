@@ -26,6 +26,10 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                 if(currentId==id) { currentId=null;dialog?.dismiss() }
             } else {
                 val url=intent.getStringExtra("url") ?: return
+                if(intent.getBooleanExtra("turn",false)) {
+                    if(!url.matches(Regex("[A-Za-z0-9_-]{16,512}"))) { reply(id,"error:invalid call hash");return }
+                    show(id,url,true);return
+                }
                 if(!allowed(url)) { reply(id,"error:invalid captcha address");return }
                 show(id,url)
             }
@@ -40,13 +44,14 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         host.sendBroadcast(Intent(host.packageName+".CAPTCHA_RESULT").setPackage(host.packageName).putExtra("id",id).putExtra("result",result),host.packageName+".SERVICE")
     }
     @SuppressLint("SetJavaScriptEnabled")
-    private fun show(id: String,url: String) {
+    private fun show(id: String,url: String,turn: Boolean=false) {
         dialog?.dismiss()
         currentId=id
         val sheet=BottomSheetDialog(host)
         dialog=sheet
         val body=LinearLayout(host).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(MobilePalette.surface) }
-        body.addView(TextView(host).apply { text="VK · Captcha";textSize=19f;setTextColor(MobilePalette.text);setPadding(24,20,24,20) })
+        body.addView(TextView(host).apply { text=if(turn) "VK · qWDTT" else "VK · Captcha";textSize=19f;setTextColor(MobilePalette.text);setPadding(24,20,24,20) })
+        var turnUrlIndex=0
         val web=WebView(host).apply {
             setBackgroundColor(MobilePalette.surface)
             settings.javaScriptEnabled=true
@@ -54,10 +59,36 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             settings.allowFileAccess=false
             settings.allowContentAccess=false
             settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
+            if(turn) {
+                settings.userAgentString=app.qthrone.mobile.bg.carrier.VkRelayLogin.userAgent(android.webkit.WebSettings.getDefaultUserAgent(host),0)
+                for((address,cookie) in app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionCookies())
+                    if(allowed(address)) android.webkit.CookieManager.getInstance().setCookie(address,cookie)
+            }
+            val hook=if(turn) VkTurnScripts.INTERCEPTOR else INTERCEPT
+            if(androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.DOCUMENT_START_SCRIPT))
+                androidx.webkit.WebViewCompat.addDocumentStartJavaScript(this,hook,setOf("https://vk.ru","https://*.vk.ru","https://vk.com","https://*.vk.com","https://ok.ru","https://*.ok.ru","https://*.okcdn.ru"))
             webViewClient=object: WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView,request: WebResourceRequest)= !allowed(request.url.toString())
+                override fun onPageStarted(view: WebView,address: String,favicon: android.graphics.Bitmap?) {
+                    if(allowed(address)) {
+                        if(turn) view.evaluateJavascript(VkTurnScripts.AUTO_JOIN_RESET,null)
+                        view.evaluateJavascript(hook,null)
+                    }
+                }
                 override fun onPageFinished(view: WebView,address: String) {
-                    if(allowed(address)) view.evaluateJavascript(INTERCEPT,null)
+                    if(allowed(address)) {
+                        view.evaluateJavascript(hook,null)
+                        if(turn) {
+                            view.evaluateJavascript(VkTurnScripts.AUTO_JOIN_SETUP,null)
+                            view.evaluateJavascript(VkTurnScripts.PAGE_404_CHECK) { value ->
+                                if(value=="\"404\"" && currentId==id && turnUrlIndex<VkTurnScripts.joinUrlCandidates(url).lastIndex) {
+                                    turnUrlIndex++
+                                    view.loadUrl(VkTurnScripts.joinUrlCandidates(url)[turnUrlIndex])
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -65,9 +96,11 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         val polling=object: Runnable {
             override fun run() {
                 if(currentId!=id) return
-                if(web.url?.let(::allowed)==true) web.evaluateJavascript("window.__qthroneCaptchaToken || null") { raw ->
+                if(turn && web.url?.let(::allowed)==true) web.evaluateJavascript(VkTurnScripts.AUTO_JOIN_TRY,null)
+                if(web.url?.let(::allowed)==true) web.evaluateJavascript(if(turn) "window.__qthroneTurnServer || null" else "window.__qthroneCaptchaToken || null") { raw ->
                     val token=runCatching { org.json.JSONTokener(raw).nextValue() as? String }.getOrNull()
-                    if(!token.isNullOrEmpty() && currentId==id) { reply(id,token);currentId=null;sheet.dismiss() }
+                    val result=if(turn && token!=null) VkTurnPayload.encode(url,token) else token
+                    if(!result.isNullOrEmpty() && currentId==id) { reply(id,result);currentId=null;sheet.dismiss() }
                 }
                 web.postDelayed(this,400)
             }
@@ -79,7 +112,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             if(dialog===sheet) dialog=null
         }
         sheet.setContentView(body);sheet.show()
-        web.loadUrl(url)
+        web.loadUrl(if(turn) VkTurnScripts.joinUrlCandidates(url).first() else url)
         web.postDelayed(polling,400)
     }
     override fun close() { dialog?.dismiss();runCatching { host.unregisterReceiver(receiver) } }

@@ -49,7 +49,7 @@ jobs:
         with:
           tasks: app:assembleOssRelease
           channel: stable
-          build-number: '999'
+          build-number: ${{ steps.version.outputs.build }}
           sign: 'true'
       - name: Verify release SSH classes
         run: python3 buildScript/check_release_ssh.py app/build/outputs/apk/oss/release

@@ -47,6 +47,7 @@ class ConfigGenerator @JvmOverloads constructor(
         if (custom != null && custom.isFullConfig()) {
             val core = custom.build(buildContext).json
             if (core.isEmpty()) return GeneratedConfig.failure("Custom full config is not a valid JSON object")
+            if(settings.vpnMode && settings.perAppEnabled) VpnAppGuard.apply(core,settings.perAppAllowedUids)
             return GeneratedConfig(
                 coreConfig = core.toCompact(),
                 xrayConfig = null,
@@ -88,6 +89,7 @@ class ConfigGenerator @JvmOverloads constructor(
         buildDnsSection(state, useDnsObj = true)
         buildRouteSection(state, route)
         if (state.failed) return GeneratedConfig.failure(state.error)
+        if(settings.vpnMode && settings.perAppEnabled) VpnAppGuard.apply(state.coreConfig,settings.perAppAllowedUids)
         buildExperimentalSection(state)
         buildServicesSection(state)
         buildXrayConfig(state)
@@ -467,9 +469,10 @@ class ConfigGenerator @JvmOverloads constructor(
         // so exposing a second proxy/DNS listener would bypass per-app VPN selection.
         if (!settings.vpnMode) inbounds.add(jsonObjectOf("tag" to Tags.DNS_IN, "type" to "direct", "listen" to "127.0.0.1", "listen_port" to settings.dnsInPort))
         if ((settings.mixedInboundEnabled && !settings.vpnMode) || (settings.vpnMode && settings.lanSharingEnabled)) {
+            require(settings.mixedPort != settings.httpPort) { "SOCKS5 and HTTP ports must differ" }
             val mixed = jsonObjectOf(
                 "tag" to Tags.MIXED_IN,
-                "type" to "mixed",
+                "type" to "socks",
                 "listen" to if (settings.vpnMode) "0.0.0.0" else settings.mixedListen,
                 "listen_port" to settings.mixedPort,
             )
@@ -477,6 +480,11 @@ class ConfigGenerator @JvmOverloads constructor(
                 mixed["users"] = JsonArray.of(jsonObjectOf("username" to settings.mixedUsername, "password" to settings.mixedPassword))
             }
             inbounds.add(mixed)
+            inbounds.add(mixed.copy().also { http ->
+                http["tag"] = "http-in"
+                http["type"] = "http"
+                http["listen_port"] = settings.httpPort
+            })
         }
         if (settings.vpnMode) inbounds.add(buildTunInbound(state))
         for (item in JsonInput.parseObject(settings.customInboundJson).array("inbounds")) inbounds.add(item)
@@ -961,7 +969,7 @@ class ConfigGenerator @JvmOverloads constructor(
         }
         rules.add(jsonObjectOf("action" to "sniff"))
         if (settings.resolveDomainStrategy.isNotEmpty()) {
-            rules.add(jsonObjectOf("inbound" to JsonArray.of(Tags.MIXED_IN, Tags.TUN_IN), "action" to "resolve", "strategy" to settings.resolveDomainStrategy))
+            rules.add(jsonObjectOf("inbound" to JsonArray.of(Tags.MIXED_IN, "http-in", Tags.TUN_IN), "action" to "resolve", "strategy" to settings.resolveDomainStrategy))
         }
         rules.add(jsonObjectOf("protocol" to "dns", "action" to "hijack-dns"))
         if (!state.forTest) rules.add(jsonObjectOf("inbound" to Tags.DNS_IN, "action" to "reject"))

@@ -27,7 +27,7 @@ class RemoteLanAndSharingTest {
                 val inbounds=config.array("inbounds").filterIsInstance<JsonObject>()
                 val tun=inbounds.first { it.string("type")=="tun" }
                 assertEquals(bypass && !remote,tun.array("route_exclude_address").contains("192.168.0.0/16"))
-                assertEquals(sharing,inbounds.any { it.string("type")=="mixed" })
+                assertEquals(sharing,inbounds.any { it.string("type")=="socks" })
                 val rules=config.obj("route").array("rules").filterIsInstance<JsonObject>()
                 assertEquals(remote,rules.any { it.bool("ip_is_private") && it.array("preferred_by").contains("proxy") })
                 assertEquals(remote && bypass,rules.any { it.bool("ip_is_private") && it.string("outbound")=="direct" })
@@ -70,7 +70,7 @@ class RemoteLanAndSharingTest {
         assertNull(result.error)
         VpnListenerPolicy.check(result.coreConfig,true)
         try { VpnListenerPolicy.check(result.coreConfig);fail("LAN opened without explicit permission") } catch(_:IllegalStateException) {}
-        val mixed=JsonInput.parseObject(result.coreConfig).array("inbounds").filterIsInstance<JsonObject>().first { it.string("type")=="mixed" }
+        val mixed=JsonInput.parseObject(result.coreConfig).array("inbounds").filterIsInstance<JsonObject>().first { it.string("type")=="socks" }
         assertEquals("0.0.0.0",mixed.string("listen"))
         assertEquals(1,mixed.array("users").size)
     }

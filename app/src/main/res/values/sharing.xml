@@ -10,4 +10,6 @@
     <string name="lan_sharing_help">On Windows: Network &amp; Internet → Proxy → Manual proxy: phone address and port below. For Telegram Desktop, use SOCKS5 in Telegram’s proxy settings. Enter the username and password below when prompted. Only applications configured to use this proxy will share the connection. VPN must remain connected.</string>
     <string name="openconnect_private_networks">OpenConnect: remote LAN</string>
     <string name="openconnect_private_networks_summary">OpenConnect only: route private addresses to the remote router, overriding private-range bypass. Enabled by default. Turn off to use the phone’s local network instead. Does not enable VPN sharing.</string>
+    <string name="local_socks_port">SOCKS5 proxy port</string>
+    <string name="local_http_port">HTTP proxy port</string>
 </resources>

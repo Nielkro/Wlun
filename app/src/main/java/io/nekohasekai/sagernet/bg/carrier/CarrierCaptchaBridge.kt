@@ -14,11 +14,16 @@ class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
         private set
     private var receiver: BroadcastReceiver? = null
     private var requestId: String? = null
+    private var command="CAPTCHA_RESULT|"
     @Synchronized fun accept(line: String) {
-        if(!line.startsWith("CAPTCHA_SOLVE|")) return
+        val turn=line.startsWith("VK_AUTH_REQUIRED|")
+        if(!turn && !line.startsWith("CAPTCHA_SOLVE|")) return
         val fields=line.split('|',limit=4)
-        if(fields.size!=4 || fields[2].length>8192) return
+        val target=if(turn) fields.getOrNull(1).orEmpty() else fields.getOrNull(2).orEmpty()
+        if(turn) { if(!target.matches(Regex("[A-Za-z0-9_-]{16,512}"))) return }
+        else if(fields.size!=4 || target.length>8192) return
         close()
+        command=if(turn) "TURN_CREDS|" else "CAPTCHA_RESULT|"
         val id=UUID.randomUUID().toString()
         requestId=id
         waiting=true
@@ -29,12 +34,12 @@ class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
         }
         ContextCompat.registerReceiver(app,callback,IntentFilter(app.packageName+".CAPTCHA_RESULT"),app.packageName+".SERVICE",null,ContextCompat.RECEIVER_NOT_EXPORTED)
         receiver=callback
-        app.sendBroadcast(Intent(app.packageName+".CAPTCHA_REQUEST").setPackage(app.packageName).putExtra("id",id).putExtra("url",fields[2]),app.packageName+".SERVICE")
+        app.sendBroadcast(Intent(app.packageName+".CAPTCHA_REQUEST").setPackage(app.packageName).putExtra("id",id).putExtra("url",target).putExtra("turn",turn),app.packageName+".SERVICE")
     }
     @Synchronized private fun respond(id: String?,result: String?) {
         if(id==null || id!=requestId || result==null || result.length>16384 || result.any { it=='\n' || it=='\r' }) return
         synchronized(process) {
-            runCatching { process.outputStream.write(("CAPTCHA_RESULT|"+result+"\n").toByteArray());process.outputStream.flush() }
+            runCatching { process.outputStream.write((command+result+"\n").toByteArray());process.outputStream.flush() }
         }
         close()
     }

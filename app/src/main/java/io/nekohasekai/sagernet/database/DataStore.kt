@@ -133,6 +133,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
         set(value) = SettingsRegistry.INBOUND_SOCKS_PORT.write(configurationStore, value)
 
     var inboundAddress by SettingsRegistry.INBOUND_ADDRESS
+    var inboundHttpPort by SettingsRegistry.INBOUND_HTTP_PORT
     var disableMixedInbound by SettingsRegistry.DISABLE_MIXED_INBOUND
     var randomInboundPort by SettingsRegistry.RANDOM_INBOUND_PORT
     var inboundAuth by SettingsRegistry.INBOUND_AUTH
@@ -142,7 +143,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
 
     /** disable_mixed_inbound only applies in VPN mode: the proxy-only service mode needs the mixed inbound. */
     val mixedInboundDisabled: Boolean
-        get() = disableMixedInbound && serviceMode == Key.MODE_VPN
+        get() = serviceMode == Key.MODE_VPN && !lanSharingEnabled
 
     /** inbound_address is anything but a loopback address (the desktop's "Allow other devices to connect"). */
     val allowLanAccess: Boolean

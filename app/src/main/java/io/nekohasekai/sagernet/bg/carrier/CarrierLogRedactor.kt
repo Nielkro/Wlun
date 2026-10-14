@@ -19,7 +19,7 @@ internal class CarrierLogRedactor(config: String, credentials: CarrierBridgeCred
         }
     }
     fun redact(line: String): String? {
-        if (line.startsWith("CAPTCHA_SOLVE|") || line.startsWith("CAPTCHA_RESULT|")) return null
+        if (line.startsWith("CAPTCHA_SOLVE|") || line.startsWith("CAPTCHA_RESULT|") || line.startsWith("VK_AUTH_REQUIRED|") || line.startsWith("TURN_CREDS|")) return null
         var safe = line
         secrets.sortedByDescending { it.length }.forEach { secret ->
             safe = if (secret.length >= 4) safe.replace(secret, "<redacted>")

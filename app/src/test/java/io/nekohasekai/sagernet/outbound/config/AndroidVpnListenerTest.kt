@@ -23,7 +23,7 @@ class AndroidVpnListenerTest {
 
     @Test fun explicitProxyModeStillHasItsProxyListener() {
         val types = build(false).array("inbounds").map { (it as JsonObject).string("type") }
-        assertTrue(types.contains("mixed"))
+        assertTrue(types.contains("socks") && types.contains("http"))
         assertFalse(types.contains("tun"))
     }
 }

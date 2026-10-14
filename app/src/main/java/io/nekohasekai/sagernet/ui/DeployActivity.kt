@@ -109,9 +109,7 @@ class DeployActivity : ThemedActivity() {
     private fun back() { if(intent.getBooleanExtra("directEditor",false)) finish() else if(server!=null) { server=null;screen()?.build() } else finish() }
     fun saved(signature: String) {
         editorState.baseline=signature
-        if(hasChanges()) screen()?.refreshSaveAction()
-        else if(intent.getBooleanExtra("directEditor",false)) finish()
-        else { server=null;screen()?.build() }
+        screen()?.refreshSaveAction()
     }
     fun pickKey() { keyPicker.launch("*/*") }
     fun start(uninstall: Boolean) {

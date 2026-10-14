@@ -33,10 +33,8 @@ class VkRelayActivity : ThemedActivity() {
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars()); view.setPadding(bars.left,bars.top,bars.right,bars.bottom); insets
         }
         if(intent.getBooleanExtra("login",false)) {
-            val oauthState = java.util.UUID.randomUUID().toString()
             val cookieDomains = listOf("vk.com","vk.ru","m.vk.com","m.vk.ru","login.vk.com","login.vk.ru","oauth.vk.com","oauth.vk.ru","id.vk.com","id.vk.ru")
             fun cookies(): Map<String,String> = cookieDomains.associate { host -> "https://$host" to CookieManager.getInstance().getCookie("https://$host").orEmpty() }
-            var authorizing = false
             var loginAttempt = 0
             var completedLogin = false
             var lastRetry = -1
@@ -61,7 +59,7 @@ class VkRelayActivity : ThemedActivity() {
                         .setPositiveButton(android.R.string.ok,null).show()
                     return
                 }
-                retryingLogin=true;loginAttempt++;authorizing=false
+                retryingLogin=true;loginAttempt++
                 val manager=CookieManager.getInstance()
                 manager.removeAllCookies {
                     if(isFinishing || isDestroyed) return@removeAllCookies
@@ -106,36 +104,26 @@ class VkRelayActivity : ThemedActivity() {
                     }
                 }
                 webViewClient = object : WebViewClient() {
-                    private var completed = false
                     override fun onPageFinished(view: WebView,url: String?) {
                         retryingLogin=false
                         if(url != null && runCatching { app.qthrone.mobile.bg.carrier.VkRelayOAuth.trustedHttps(java.net.URI(url)) }.getOrDefault(false))
                             view.evaluateJavascript(VkRelayLogin.errorWatcher,null)
-                        if(!authorizing && !VkRelayLogin.awaitingLogin(url.orEmpty()) && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').trim().length >= 8 } }) {
-                            authorizing = true
+                        if(!completedLogin && !VkRelayLogin.awaitingLogin(url.orEmpty()) && cookies().values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').trim().length >= 8 } }) {
+                            completedLogin=true
                             CookieManager.getInstance().flush()
-                            view.loadUrl(VkRelayAccount.authorizeUrl(oauthState),VkRelayLogin.headers)
+                            val sessionCookies=cookies()
+                            val userAgent=view.settings.userAgentString
+                            lifecycleScope.launch {
+                                val result=withContext(Dispatchers.IO) { runCatching { VkRelayAccount.linkSession(sessionCookies,userAgent) } }
+                                if(result.isSuccess) { Toast.makeText(this@VkRelayActivity,"Аккаунт VK привязан",Toast.LENGTH_SHORT).show();finish() }
+                                else { completedLogin=false;Toast.makeText(this@VkRelayActivity,"Не удалось сохранить сессию VK",Toast.LENGTH_LONG).show() }
+                            }
                         }
                     }
                     override fun shouldOverrideUrlLoading(view: WebView,request: WebResourceRequest): Boolean {
                         val uri = request.url
                         if(uri.scheme != "https") return true
                         if(uri.host in listOf("oauth.vk.ru","oauth.vk.com") && uri.path == "/blank.html") {
-                            val fields = android.net.Uri.parse("https://localhost/?"+uri.fragment.orEmpty())
-                            val token = fields.getQueryParameter("access_token")
-                            if(!completed && !token.isNullOrBlank() && fields.getQueryParameter("state") == oauthState) {
-                                completed = true
-                                completedLogin = true
-                                val sessionCookies = cookies()
-                                val userAgent = view.settings.userAgentString
-                                lifecycleScope.launch {
-                                    val result = withContext(Dispatchers.IO) { runCatching {
-                                        VkRelayAccount.link(token,fields.getQueryParameter("user_id").orEmpty(),fields.getQueryParameter("expires_in")?.toLongOrNull() ?: 0,sessionCookies,userAgent)
-                                    } }
-                                    Toast.makeText(this@VkRelayActivity,if(result.isSuccess) "Аккаунт VK привязан" else "Не удалось сохранить аккаунт VK",Toast.LENGTH_LONG).show()
-                                    if(result.isSuccess) { CookieManager.getInstance().flush(); finish() }
-                                }
-                            }
                             return true
                         }
                         val host = uri.host.orEmpty()

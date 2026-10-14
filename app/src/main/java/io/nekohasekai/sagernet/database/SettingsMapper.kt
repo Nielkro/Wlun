@@ -62,6 +62,7 @@ object SettingsMapper {
             mixedInboundEnabled = mixedEnabled,
             inboundAddress = DataStore.inboundAddress.ifBlank { SettingsRegistry.LOOPBACK_ADDRESS },
             mixedPort = DataStore.inboundSocksPort,
+            httpPort = DataStore.inboundHttpPort,
             mixedAuth = DataStore.inboundAuth,
             mixedUsername = DataStore.inboundUser,
             mixedPassword = DataStore.inboundPass,
@@ -79,6 +80,9 @@ object SettingsMapper {
             perAppEnabled = DataStore.proxyApps,
             perAppBypass = DataStore.bypass,
             perAppPackages = GeneratorSettings.splitLines(DataStore.individual),
+            perAppAllowedUids = if(DataStore.proxyApps) app.qthrone.mobile.outbound.config.VpnAppGuard.allowedUids(
+                app.qthrone.mobile.utils.PackageCache.snapshot().uidMap,
+                GeneratorSettings.splitLines(DataStore.individual).toSet(),DataStore.bypass) else emptyList(),
             httpProxyEnabled = DataStore.appendHttpProxy,
             httpProxyBypassDomains = GeneratorSettings.splitLines(DataStore.httpProxyBypass),
             remoteDns = DataStore.remoteDns,

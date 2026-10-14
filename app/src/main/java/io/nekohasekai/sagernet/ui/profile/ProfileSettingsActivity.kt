@@ -109,7 +109,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
     /** Whether the "Edit as JSON" action (the whole ExportToJson in the JSON editor) is offered. */
     protected open val supportsRawJson: Boolean = true
 
-    val proxyEntity by lazy { SagerDatabase.proxyDao.getById(DataStore.editingId) }
+    val proxyEntity get() = SagerDatabase.proxyDao.getById(DataStore.editingId)
     protected var isSubscription by Delegates.notNull<Boolean>()
 
     /** The outbound under edit: a fresh one for a new profile, the entity's parsed one otherwise. */
@@ -121,6 +121,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
     private var initialCache: Map<String,String>? = null
     private fun cacheSnapshot() = moe.matsuri.nb4a.TempDatabase.profileCacheDao.all()
         .filter { it.key !in setOf(Key.PROFILE_DIRTY,KEY_RAW_JSON,Key.PROFILE_ID,Key.PROFILE_GROUP) }
+        .filterNot { it.string?.isEmpty() == true }
         .associate { it.key to "${it.valueType}:${android.util.Base64.encodeToString(it.value,android.util.Base64.NO_WRAP)}" }
     private fun updateDirtyState() {
         DataStore.dirty = initialCache?.let { cacheSnapshot() != it } ?: false
@@ -193,7 +194,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
 
         val editingId = DataStore.editingId
         if (editingId == 0L) {
-            ProfileManager.createProfile(DataStore.editingGroup, outbound)
+            DataStore.editingId = ProfileManager.createProfile(DataStore.editingGroup, outbound).id
         } else {
             val entity = proxyEntity
             if (entity == null) {
@@ -205,7 +206,8 @@ abstract class ProfileSettingsActivity<T : Outbound>(
                 setResult(RESULT_OK, Intent().putExtra(EXTRA_RESTART_NEEDED, true))
             }
         }
-        finish()
+        initialCache = cacheSnapshot()
+        onMainDispatcher { updateDirtyState() }
 
     }
 
@@ -287,11 +289,7 @@ abstract class ProfileSettingsActivity<T : Outbound>(
 
     private val unsavedChangesCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            if (DataStore.dirty) {
-                UnsavedChangesDialogFragment().apply { key() }.show(supportFragmentManager, null)
-            } else {
-                finish()
-            }
+            finish()
         }
     }
 

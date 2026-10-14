@@ -23,7 +23,7 @@ class CarrierPlan private constructor(
             val runtimeProfile = if(profile is Qwdtt && profile.type == "qwdtt" && profile.hashSource == "auto") {
                 val copy = app.qthrone.mobile.outbound.OutboundFactory.newByType(profile.type) as Qwdtt
                 check(copy.parseFromJson(profile.exportToJson()))
-                copy.hashes = VkRelayAccount.hashes(((profile.workers+26)/27).coerceIn(1,if(profile.type == "csqtt") 6 else 4))
+                copy.hashes = profile.hashes.ifEmpty { VkRelayAccount.hashes(((profile.workers+26)/27).coerceIn(1,4)) }
                 copy.hashSource = "manual"
                 copy
             } else profile
@@ -31,7 +31,9 @@ class CarrierPlan private constructor(
             val credentials=CarrierBridgeCredentials.fresh()
             return ServerSocket(0,1,loopback).use { tcp -> DatagramSocket(0,loopback).use { udp ->
                 CarrierPlan(profileId,profile.carrierKind,tcp.localPort,key,credentials,
-                    runtimeProfile.privateConfig(tcp.localPort,udp.localPort,credentials).toCompact())
+                    runtimeProfile.privateConfig(tcp.localPort,udp.localPort,credentials).also {
+                        if(profile is Qwdtt && profile.type=="qwdtt" && profile.hashSource=="auto") it["vk_auth"]="account"
+                    }.toCompact())
             } }
         }
     }

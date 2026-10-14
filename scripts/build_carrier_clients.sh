@@ -35,7 +35,7 @@ s=s.replace(old, old+'\n\tif runtime.GOOS == "android" { name = "libcsqtt_transp
 p.write_text(s,encoding='utf-8')
 PY
 python3 "$ROOT/scripts/prepare_android_captcha.py" "$SOURCE/qThrone/qwdtt"
-(cd "$SOURCE/qThrone/qwdtt"; gofmt -w creds.go csqtt_bridge.go; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libqwdtt.so" .)
+(cd "$SOURCE/qThrone/qwdtt"; gofmt -w creds.go csqtt_bridge.go bridge_config.go vk_account.go; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libqwdtt.so" .)
 cp "$SOURCE/qThrone/qwdtt/LICENSE" "$OUT/qWDTT-LICENSE"
 OLC=f3ad8fb7c0d0fa981423f83269526fa94077c23d
 fetch_source "$SOURCE/olcrtc" https://github.com/openlibrecommunity/olcrtc.git "$OLC"
