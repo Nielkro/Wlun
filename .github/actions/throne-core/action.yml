@@ -34,7 +34,7 @@ runs:
         path: |
           app/libs/qThroneCore.aar
           app/src/main/assets/schema/sing-box.json
-        key: throne-core-${{ env.THRONE_CORE_REF }}-${{ env.THRONE_CORE_SHA }}-${{ env.THRONE_CORE_SCRIPT_SHA }}-${{ hashFiles('.github/actions/throne-core/action.yml', 'core-dependencies.json', 'scripts/prepare_mobile_core.py', 'scripts/patch_mobile_trusttunnel.py', 'scripts/patch_mobile_openconnect.py', 'core-patches/openconnect/*.go', 'core-patches/trusttunnel/*.go', 'core-patches/mobile/*.go') }}
+        key: throne-core-${{ env.THRONE_CORE_REF }}-${{ env.THRONE_CORE_SHA }}-${{ env.THRONE_CORE_SCRIPT_SHA }}-${{ hashFiles('.github/actions/throne-core/action.yml', 'core-dependencies.json', 'scripts/prepare_mobile_core.py', 'scripts/patch_mobile_trusttunnel.py', 'core-patches/trusttunnel/*.go', 'core-patches/mobile/*.go') }}
     - name: Install Golang
       if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/setup-go@v7
@@ -49,12 +49,10 @@ runs:
         key: go-mod-throne-${{ runner.os }}-${{ env.THRONE_CORE_SHA }}
         restore-keys: |
           go-mod-throne-${{ runner.os }}-
-    - name: Apply mobile transport fixes
+    - name: Apply mobile TrustTunnel fallback
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
-      run: |
-        python3 scripts/patch_mobile_trusttunnel.py "$THRONE_DIR/core"
-        python3 scripts/patch_mobile_openconnect.py "$THRONE_DIR/core"
+      run: python3 scripts/patch_mobile_trusttunnel.py "$THRONE_DIR/core"
     - name: Setup Java
       if: steps.cache.outputs.cache-hit != 'true'
       uses: actions/setup-java@v6
@@ -83,11 +81,11 @@ runs:
       run: |
         sed -i -e 's/ThroneCore.aar/qThroneCore.aar/g' -e 's/-javapkg=io.throneproj/-javapkg=app.qthrone.core/g' -e 's/-libname=throne/-libname=qthrone/g' script/build_android.sh
         DEST="$GITHUB_WORKSPACE/app/libs" bash script/build_android.sh
-    - name: Mobile transport regressions
+    - name: TrustTunnel connection regression
       if: steps.cache.outputs.cache-hit != 'true'
       shell: bash
       working-directory: ${{ env.THRONE_DIR }}/core
-      run: CGO_ENABLED=0 go test -tags with_quic,with_utls,with_purego github.com/xchacha20-poly1305/sing-trusttunnel github.com/sagernet/sing-openconnect ./mobile -count=1
+      run: CGO_ENABLED=0 go test -tags with_quic,with_utls,with_purego github.com/xchacha20-poly1305/sing-trusttunnel ./mobile -count=1
     # Same registries as the AAR: the Android TAGS of script/build_android.sh (cf. script/gen_schema.sh). with_purego and
     # CGO_ENABLED=0 only keep cronet-go from linking its static library; option registration does not depend on them.
     - name: Generate sing-box schema
@@ -124,4 +122,4 @@ runs:
         path: |
           app/libs/qThroneCore.aar
           app/src/main/assets/schema/sing-box.json
-        key: throne-core-${{ env.THRONE_CORE_REF }}-${{ env.THRONE_CORE_SHA }}-${{ env.THRONE_CORE_SCRIPT_SHA }}-${{ hashFiles('.github/actions/throne-core/action.yml', 'core-dependencies.json', 'scripts/prepare_mobile_core.py', 'scripts/patch_mobile_trusttunnel.py', 'scripts/patch_mobile_openconnect.py', 'core-patches/openconnect/*.go', 'core-patches/trusttunnel/*.go', 'core-patches/mobile/*.go') }}
+        key: throne-core-${{ env.THRONE_CORE_REF }}-${{ env.THRONE_CORE_SHA }}-${{ env.THRONE_CORE_SCRIPT_SHA }}-${{ hashFiles('.github/actions/throne-core/action.yml', 'core-dependencies.json', 'scripts/prepare_mobile_core.py', 'scripts/patch_mobile_trusttunnel.py', 'core-patches/trusttunnel/*.go', 'core-patches/mobile/*.go') }}
