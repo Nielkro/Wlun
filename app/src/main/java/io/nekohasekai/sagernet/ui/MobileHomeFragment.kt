@@ -168,6 +168,7 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     override fun onResume() { super.onResume(); refresh() }
     override fun onPause() {
+        load?.cancel()
         powerPulse?.cancel(); powerPulse=null; pulseTarget=null
         power?.scaleX=1f; power?.scaleY=1f
         super.onPause()
@@ -188,7 +189,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private var renderedStructure: String? = null
     private fun ViewGroup.childrenList(): List<View> = (0 until childCount).map { getChildAt(it) }
     fun refresh() {
-        if (content == null || !isAdded) return
+        if (content == null || !isAdded || !isResumed || isHidden) return
         load?.cancel()
         load = viewLifecycleOwner.lifecycleScope.launch {
             val groups = withContext(Dispatchers.IO) {

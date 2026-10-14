@@ -964,8 +964,8 @@ class ConfigGenerator @JvmOverloads constructor(
         }
         rules.add(jsonObjectOf("protocol" to "dns", "action" to "hijack-dns"))
         if (!state.forTest) rules.add(jsonObjectOf("inbound" to Tags.DNS_IN, "action" to "reject"))
-          if (state.remotePrivateNetworks) rules.add(jsonObjectOf(
-              "ip_is_private" to true, "action" to "route", "outbound" to Tags.PROXY))
+        if (state.remotePrivateNetworks) rules.add(jsonObjectOf(
+            "ip_is_private" to true, "action" to "route", "outbound" to Tags.PROXY))
         for (rule in profileRules) rules.add(rule)
         val defaultOutbound = route.default_outbound_id
         // A block default is a direct final that nothing reaches (:2064-2068, :2126-2128).

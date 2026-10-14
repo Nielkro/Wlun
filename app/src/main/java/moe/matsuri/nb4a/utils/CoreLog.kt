@@ -42,7 +42,7 @@ object CoreLog {
     private fun policy(): Policy {
         val now = System.nanoTime()
         val current = cachedPolicy
-        if (now - current.checkedAt < 1_000_000_000L) return current
+        if (current.checkedAt != 0L && now - current.checkedAt < 1_000_000_000L) return current
         return Policy(runCatching { DataStore.logLevel != "panic" }.getOrDefault(true), readMaxSizeBytes(), now)
             .also { cachedPolicy = it }
     }

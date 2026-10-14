@@ -49,7 +49,7 @@ class LanSharingSettingsFragment : SettingsScreenFragment(R.xml.settings_sharing
         viewLifecycleOwner.lifecycleScope.launch {
             val addresses=withContext(Dispatchers.IO) {
                 runCatching { NetworkInterface.getNetworkInterfaces().toList().filter {
-                    it.isUp && !it.isLoopback && !it.name.startsWith("tun") && !it.name.startsWith("wg")
+                    it.isUp && !it.isLoopback && listOf("tun","wg","rmnet","ccmni","pdp").none { prefix -> it.name.startsWith(prefix) }
                 }.flatMap { it.inetAddresses.toList() }.filterIsInstance<Inet4Address>()
                     .filter { it.isSiteLocalAddress }.mapNotNull { it.hostAddress }.distinct() }.getOrDefault(emptyList())
             }

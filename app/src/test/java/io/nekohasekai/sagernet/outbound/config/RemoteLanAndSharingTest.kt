@@ -45,6 +45,15 @@ class RemoteLanAndSharingTest {
         assertFalse(effective.ipv6Enabled)
         assertTrue(effective.remoteDnsDisableIpv6)
         assertEquals("ipv4_only",TransportIpPolicy.context(BuildContext()).directDomainStrategy())
+        val proxy=Socks().apply { server="192.0.2.1";serverPort=1080 }
+        val generated=ConfigGenerator(ProfileProvider { proxy },effective,TransportIpPolicy.context(BuildContext())).build(1)
+        assertNull(generated.error)
+        val config=JsonInput.parseObject(generated.coreConfig)
+        val tun=config.array("inbounds").filterIsInstance<JsonObject>().first { it.string("type")=="tun" }
+        assertEquals(1,tun.array("address").size)
+        assertTrue(config.obj("dns").array("rules").filterIsInstance<JsonObject>().any {
+            it.string("action")=="predefined" && it.array("query_type").contains("AAAA")
+        })
         assertTrue(original.ipv6Enabled)
         assertFalse(original.remoteDnsDisableIpv6)
     }
