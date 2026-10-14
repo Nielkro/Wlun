@@ -23,7 +23,7 @@ internal class CarrierLogRedactor(config: String, credentials: CarrierBridgeCred
         var safe = line
         secrets.sortedByDescending { it.length }.forEach { secret ->
             safe = if (secret.length >= 4) safe.replace(secret, "<redacted>")
-            else Regex("(?<![\w])" + Regex.escape(secret) + "(?![\w])").replace(safe, "<redacted>")
+            else Regex("""(?<![\w])""" + Regex.escape(secret) + """(?![\w])""").replace(safe, "<redacted>")
         }
         return general.redact(safe).take(8192)
     }
