@@ -9,11 +9,15 @@ import app.qthrone.mobile.bg.XrayGeoAssets
 import app.qthrone.mobile.bg.proto.SpeedTestSnapshot
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.GroupSortAction
+import app.qthrone.mobile.database.GroupSortMethod
 import app.qthrone.mobile.database.ProfileManager
 import app.qthrone.mobile.database.ProxyEntity
 import app.qthrone.mobile.database.SagerDatabase
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.ktx.readableMessage
 import app.qthrone.core.mobile.Mobile
 import app.qthrone.core.mobile.SpeedTestResult
 import kotlinx.coroutines.CancellationException
@@ -114,8 +118,7 @@ internal class TestSession(
         } finally {
             try { if(completed && !cancelled && kind==TestSpec.KIND_URL && spec.sortGroupId>0 &&
                 GroupRepo.get(spec.sortGroupId)?.subOptions?.autoSortByPing==true) {
-                app.qthrone.mobile.database.GroupSort.sortProfiles(spec.sortGroupId,
-                    app.qthrone.mobile.database.GroupSortAction(app.qthrone.mobile.database.GroupSortMethod.BY_LATENCY))
+                GroupSort.sortProfiles(spec.sortGroupId,GroupSortAction(GroupSortMethod.BY_LATENCY))
             } } catch(error: Exception) { Logs.w("Ping sort failed: ${error.readableMessage}") }
             notification.finish(assetProblems)
             notifyClient { it.onDone(id, cancelled) }
