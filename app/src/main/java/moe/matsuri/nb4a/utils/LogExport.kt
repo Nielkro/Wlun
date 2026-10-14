@@ -45,7 +45,8 @@ object LogExport {
         val dir = File(context.cacheDir, "log").apply { mkdirs() }
         val now = System.currentTimeMillis()
         dir.listFiles()?.forEach { if (now - it.lastModified() > MAX_AGE_MS) it.delete() }
-        val file = File(dir, fileName())
+        // Sharing and saving may run concurrently; neither may overwrite or delete the other's snapshot.
+        val file = File.createTempFile(fileName().removeSuffix(".txt") + "-", ".txt", dir)
         val redactor = if (redact) LogRedactor(hideDestinations) else null
         file.bufferedWriter().use { out ->
             out.write(header(context, redact, hideDestinations))

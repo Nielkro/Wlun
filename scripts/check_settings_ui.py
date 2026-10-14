@@ -87,7 +87,7 @@ time.sleep(1.5)
 assert 'UI-log-fixture-live-update' in state(), 'Log viewer did not update automatically'
 capture('43-live-logs')
 tap('More options')
-find('Save logs', scroll=False)
+find('Save logs…', scroll=False)
 find('Hide sensitive data', scroll=False)
 capture('44-log-export-options')
 back()

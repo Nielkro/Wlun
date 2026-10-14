@@ -3,13 +3,12 @@ package app.qthrone.mobile.ui
 import android.content.res.ColorStateList
 import android.text.InputType
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.button.MaterialButton
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -24,6 +23,7 @@ import org.json.JSONObject
 /** Presents the core's authentication continuation; answers are never stored or written to logs. */
 class OpenConnectAuthDialog(private val activity: MainActivity) {
     private var dialog: AlertDialog? = null
+    private var choiceDialog: AlertDialog? = null
     private var shownRequest: String? = null
 
     fun start() = activity.lifecycleScope.launch {
@@ -35,6 +35,7 @@ class OpenConnectAuthDialog(private val activity: MainActivity) {
                         runCatching { service?.openConnectAuth().orEmpty() }.getOrDefault("")
                     }
                     if (request.isEmpty()) {
+                        choiceDialog?.dismiss(); choiceDialog = null
                         dialog?.dismiss()
                         dialog = null
                         shownRequest = null
@@ -43,6 +44,7 @@ class OpenConnectAuthDialog(private val activity: MainActivity) {
                             val challenge = data.getJSONObject("Challenge")
                             val key = data.getString("Session") + ":" + data.getString("Tag") + ":" + challenge.getString("ID")
                             if (shownRequest != key) {
+                                choiceDialog?.dismiss(); choiceDialog = null
                                 dialog?.dismiss()
                                 shownRequest = key
                                 show(data)
@@ -54,6 +56,7 @@ class OpenConnectAuthDialog(private val activity: MainActivity) {
             } finally {
                 // Rotation/backgrounding must not cancel the server challenge.
                 dialog?.dismiss()
+                choiceDialog?.dismiss(); choiceDialog = null
                 dialog = null
                 shownRequest = null
             }
@@ -117,19 +120,22 @@ class OpenConnectAuthDialog(private val activity: MainActivity) {
                     val labels = (0 until (choices?.length() ?: 0)).map {
                         choices!!.getJSONObject(it).optString("Label").ifBlank { values[it] }
                     }
-                    val input = Spinner(activity).apply {
-                        adapter = object : ArrayAdapter<String>(activity, android.R.layout.simple_spinner_dropdown_item, labels) {
-                            override fun getView(position: Int, convertView: View?, parent: android.view.ViewGroup): View =
-                                super.getView(position, convertView, parent).also { (it as TextView).setTextColor(MobilePalette.text) }
-                            override fun getDropDownView(position: Int, convertView: View?, parent: android.view.ViewGroup): View =
-                                super.getDropDownView(position, convertView, parent).also {
-                                    (it as TextView).setTextColor(MobilePalette.text); it.setBackgroundColor(MobilePalette.surface)
-                                }
+                    var selected = values.indexOf(field.optString("Value")).coerceAtLeast(0)
+                    val input = MaterialButton(activity).apply {
+                        isAllCaps = false; cornerRadius = dp(16)
+                        setTextColor(MobilePalette.accent(activity))
+                        backgroundTintList = ColorStateList.valueOf(MobilePalette.background)
+                        text = labels.getOrElse(selected) { "" }
+                        setOnClickListener {
+                            choiceDialog?.dismiss()
+                            choiceDialog = MobileAlertDialogBuilder(activity).setTitle(field.optString("Label").take(256))
+                                .setSingleChoiceItems(labels.toTypedArray(), selected) { picker, choice ->
+                                    selected = choice; text = labels[choice]; picker.dismiss()
+                                }.setNegativeButton(android.R.string.cancel, null).show()
                         }
-                        setSelection(values.indexOf(field.optString("Value")).coerceAtLeast(0))
                     }
                     fields.addView(input)
-                    answers[key] = { values.getOrElse(input.selectedItemPosition) { "" } }
+                    answers[key] = { values.getOrElse(selected) { "" } }
                     if (values.isEmpty()) supportedFields = false
                 }
                 else -> supportedFields = false

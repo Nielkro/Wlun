@@ -7,9 +7,10 @@ package moe.matsuri.nb4a.utils
 class LogRedactor(private val hideDestinations: Boolean) {
 
     private companion object {
+        val AUTH_HEADER = Regex("""(?im)(\b(?:cookie|set-cookie|authorization|proxy-authorization)\s*:\s*)[^\r\n]+""")
         val URL = Regex("""\b([a-zA-Z][a-zA-Z0-9+.\-]*)://([^\s/@"'<>]*@)?([^\s/?#"'<>]+)([^\s"'<>]*)""")
         val SECRET = Regex(
-            """(?i)("?)([\w\-]*(?:password|passwd|pass|secret|token|key|uuid|auth|psk|short_id)[\w\-]*)\1(\s*[:=]\s*)("(?:[^"\\]|\\.)*"|[^\s,;&}\]]+)"""
+            """(?i)("?)([\w\-]*(?:password|passwd|pass|secret|token|key|uuid|auth|cookie|username|user_name|login|psk|short_id)[\w\-]*)\1(\s*[:=]\s*)("(?:[^"\\]|\\.)*"|[^\s,;&}\]]+)"""
         )
         // The logged start config names the servers by domain as well as by IP.
         val SERVER = Regex(
@@ -27,7 +28,8 @@ class LogRedactor(private val hideDestinations: Boolean) {
     }
 
     fun redact(line: String): String {
-        var s = URL.replace(line) { m ->
+        var s = AUTH_HEADER.replace(line) { m -> m.groupValues[1] + "<redacted>" }
+        s = URL.replace(s) { m ->
             val (scheme, credentials, host, rest) = m.destructured
             "$scheme://" + (if (credentials.isNotEmpty()) "<redacted>@" else "") + host +
                     (if (rest.isNotEmpty()) "/<redacted>" else "")
