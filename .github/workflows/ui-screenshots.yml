@@ -73,6 +73,8 @@ jobs:
         env:
           ADB: ${{ env.ANDROID_HOME }}/platform-tools/adb
         run: python3 scripts/capture_ui.py
+      - name: Verify logs and deployment settings
+        run: python3 scripts/check_settings_ui.py
       - name: Verify VPN lifecycle and HTTP latency
         env:
           TESTED_BUILD_RUN: ${{ inputs.build_run }}
