@@ -71,6 +71,9 @@ class ConfigGenerator @JvmOverloads constructor(
         val front = if (plan != null) plan.group?.frontProxyId ?: -1L else frontProxyId
 
         val state = BuildState(forTest = false)
+        state.remotePrivateNetworks = settings.openConnectPrivateNetworks &&
+            (profile.type == "openconnect" || (profile.type == "chain" &&
+                TypeAccess.chainHops(profile).any { reads.get(it)?.type == "openconnect" }))
         val chains = ChainBuilder(reads, buildContext, state, if (settings.enableWarp) WarpHop.outbound(settings) else null)
         calculatePrerequisites(state, chains, reads, profile, route, landing, front, plan)
         if (state.failed) return GeneratedConfig.failure(state.error)
@@ -202,7 +205,7 @@ class ConfigGenerator @JvmOverloads constructor(
 
         parseSelectorList(route.directIps()) { prefix, value -> if (prefix == "ip:") pre.directIpCidrs.add(value) }
 
-        if (settings.bypassLan) {
+        if (settings.bypassLan && !state.remotePrivateNetworks) {
             // sing-tun keeps an excluded range out of the tun entirely, so a rule aimed at one would never fire (#1741).
             val hijacked = route.hijackedIps(settings.privateRanges)
             for (range in settings.privateRanges) {
@@ -462,14 +465,14 @@ class ConfigGenerator @JvmOverloads constructor(
         // Android apps share loopback across UIDs. VPN uses the core's native TUN,
         // so exposing a second proxy/DNS listener would bypass per-app VPN selection.
         if (!settings.vpnMode) inbounds.add(jsonObjectOf("tag" to Tags.DNS_IN, "type" to "direct", "listen" to "127.0.0.1", "listen_port" to settings.dnsInPort))
-        if (settings.mixedInboundEnabled && !settings.vpnMode) {
+        if ((settings.mixedInboundEnabled && !settings.vpnMode) || (settings.vpnMode && settings.lanSharingEnabled)) {
             val mixed = jsonObjectOf(
                 "tag" to Tags.MIXED_IN,
                 "type" to "mixed",
-                "listen" to settings.mixedListen,
+                "listen" to if (settings.vpnMode) "0.0.0.0" else settings.mixedListen,
                 "listen_port" to settings.mixedPort,
             )
-            if (settings.mixedAuth) {
+            if (settings.mixedAuth || settings.vpnMode) {
                 mixed["users"] = JsonArray.of(jsonObjectOf("username" to settings.mixedUsername, "password" to settings.mixedPassword))
             }
             inbounds.add(mixed)
@@ -529,7 +532,7 @@ class ConfigGenerator @JvmOverloads constructor(
                 add("255.255.255.255/32")
                 addAll(pre.bypassedPrivateRanges)
             }
-            if (settings.enableTunRouting) addAll(pre.directIpCidrs)
+            if (settings.enableTunRouting && !state.remotePrivateNetworks) addAll(pre.directIpCidrs)
         }
         excluded = Cidrs.subtract(excluded, settings.tunIPv4Cidr)
         if (settings.ipv6Enabled) excluded = Cidrs.subtract(excluded, settings.tunIPv6Cidr)
@@ -961,6 +964,8 @@ class ConfigGenerator @JvmOverloads constructor(
         }
         rules.add(jsonObjectOf("protocol" to "dns", "action" to "hijack-dns"))
         if (!state.forTest) rules.add(jsonObjectOf("inbound" to Tags.DNS_IN, "action" to "reject"))
+          if (state.remotePrivateNetworks) rules.add(jsonObjectOf(
+              "ip_is_private" to true, "action" to "route", "outbound" to Tags.PROXY))
         for (rule in profileRules) rules.add(rule)
         val defaultOutbound = route.default_outbound_id
         // A block default is a direct final that nothing reaches (:2064-2068, :2126-2128).

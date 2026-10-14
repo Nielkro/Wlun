@@ -9,5 +9,6 @@
     <Preference app:key="qmobileAppearance" app:fragment="app.qthrone.mobile.ui.settings.AppearanceSettingsFragment" app:title="@string/settings_appearance" app:widgetLayout="@layout/qmobile_preference_arrow" />
     <Preference app:key="settingsBackup" app:widgetLayout="@layout/qmobile_preference_arrow" app:title="@string/qmobile_backup" />
     <Preference app:fragment="app.qthrone.mobile.ui.settings.UpdateSettingsFragment" app:widgetLayout="@layout/qmobile_preference_arrow" app:title="@string/qmobile_updates" />
+    <Preference app:key="qmobileSharing" app:fragment="app.qthrone.mobile.ui.settings.LanSharingSettingsFragment" app:widgetLayout="@layout/qmobile_preference_arrow" app:title="@string/lan_sharing" />
     <Preference app:key="qmobileLogs" app:widgetLayout="@layout/qmobile_preference_arrow" app:title="@string/qmobile_logs" />
 </PreferenceScreen>

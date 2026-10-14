@@ -346,7 +346,9 @@ class MainActivity : ThemedActivity(),
             .setCustomAnimations(R.anim.settings_enter, R.anim.settings_exit, R.anim.settings_pop_enter, R.anim.settings_pop_exit)
         val previous = supportFragmentManager.findFragmentById(R.id.fragment_holder)
         if (previous is MobileHomeFragment && fragment !is MobileHomeFragment) {
-            transaction.hide(previous).add(R.id.fragment_holder, fragment)
+            transaction.hide(previous)
+                .setMaxLifecycle(previous, androidx.lifecycle.Lifecycle.State.STARTED)
+                .add(R.id.fragment_holder, fragment)
         } else {
             transaction.replace(R.id.fragment_holder, fragment)
         }

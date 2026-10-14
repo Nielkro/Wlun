@@ -31,13 +31,21 @@ object CoreLog {
     val previousFile: File get() = File(app.filesDir, PREVIOUS_FILE_NAME)
 
     /** logBufSize KB (the long-press setting), [DEFAULT_SIZE_KB] while unset. */
-    private fun maxSizeBytes(): Long {
+    private fun readMaxSizeBytes(): Long {
         val kb = runCatching { DataStore.logBufSize }.getOrDefault(0)
         return (if (kb <= 0) DEFAULT_SIZE_KB else kb.coerceAtLeast(MIN_SIZE_KB)) * 1024L
     }
 
     // "panic" keeps the file empty, the way the old "none" level did.
-    private fun enabled(): Boolean = runCatching { DataStore.logLevel != "panic" }.getOrDefault(true)
+    private data class Policy(val enabled: Boolean, val maxBytes: Long, val checkedAt: Long)
+    @Volatile private var cachedPolicy = Policy(true, DEFAULT_SIZE_KB * 1024L, 0)
+    private fun policy(): Policy {
+        val now = System.nanoTime()
+        val current = cachedPolicy
+        if (now - current.checkedAt < 1_000_000_000L) return current
+        return Policy(runCatching { DataStore.logLevel != "panic" }.getOrDefault(true), readMaxSizeBytes(), now)
+            .also { cachedPolicy = it }
+    }
 
     private fun stream(): FileOutputStream {
         stream?.let { return it }
@@ -48,14 +56,15 @@ object CoreLog {
     private val ansiColor = Regex("\u001B\\[[0-9;]*m")
 
     fun write(line: String) {
-        if (!enabled()) return
+        val policy = policy()
+        if (!policy.enabled) return
         val stamp = synchronized(timestamp) { timestamp.format(Date()) }
         val text = if (line.indexOf('\u001B') >= 0) ansiColor.replace(line, "") else line
         val bytes = "$stamp $text\n".toByteArray()
         synchronized(lock) {
             runCatching {
                 val out = stream()
-                val max = maxSizeBytes()
+                val max = policy.maxBytes
                 if (out.channel.size() + bytes.size > max) rotate(out.channel, max, bytes.size)
                 out.write(bytes)
             }.onFailure { stream = null }

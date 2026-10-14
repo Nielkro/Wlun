@@ -36,7 +36,8 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
         private var hideDestinations = false
     }
 
-    lateinit var binding: LayoutLogcatBinding
+    private var viewBinding: LayoutLogcatBinding? = null
+    val binding: LayoutLogcatBinding get() = requireNotNull(viewBinding)
     private var lastLog: String? = null
 
     private val saveLogs = registerForActivityResult(SaveDocument("text/plain")) { uri ->
@@ -86,7 +87,7 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
         }
         updateExportOptions()
 
-        binding = LayoutLogcatBinding.bind(view)
+        viewBinding = LayoutLogcatBinding.bind(view)
 
         if (Build.VERSION.SDK_INT >= 23) {
             binding.textview.breakStrategy = 0 // simple
@@ -96,13 +97,20 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
 
         lastLog = null
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                 while (true) {
                     reloadSession()
                     delay(1000)
                 }
             }
         }
+    }
+
+    override fun onDestroyView() {
+        toolbar?.setOnMenuItemClickListener(null)
+        viewBinding = null
+        lastLog = null
+        super.onDestroyView()
     }
 
     private fun updateExportOptions() {
@@ -140,14 +148,15 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
         if (lastLog == text || binding.textview.hasSelection()) return
         val follow = lastLog == null || !binding.scroolview.canScrollVertically(1)
         lastLog = text
-        val span = SpannableString(text.ifEmpty { getString(R.string.log_empty) })
-        var offset = 0
-        for (line in span.lines()) {
-            val color = getColorForLine(line)
-            span.setSpan(
-                color, offset, offset + line.length, SPAN_EXCLUSIVE_EXCLUSIVE
-            )
-            offset += line.length + 1
+        val emptyText = getString(R.string.log_empty)
+        val span = withContext(Dispatchers.Default) {
+            SpannableString(text.ifEmpty { emptyText }).also { result ->
+                var offset = 0
+                for (line in result.lines()) {
+                    result.setSpan(getColorForLine(line), offset, offset + line.length, SPAN_EXCLUSIVE_EXCLUSIVE)
+                    offset += line.length + 1
+                }
+            }
         }
         binding.textview.text = span
         if (follow) binding.textview.doOnLayout {

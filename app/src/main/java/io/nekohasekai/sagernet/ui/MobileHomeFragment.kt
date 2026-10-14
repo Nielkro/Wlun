@@ -167,6 +167,11 @@ class MobileHomeFragment : ToolbarFragment() {
         super.onSaveInstanceState(outState)
     }
     override fun onResume() { super.onResume(); refresh() }
+    override fun onPause() {
+        powerPulse?.cancel(); powerPulse=null; pulseTarget=null
+        power?.scaleX=1f; power?.scaleY=1f
+        super.onPause()
+    }
     override fun onDestroyView() {
         geoBanner = null; geoStatus = null; geoProgress = null; geoCheck = null
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
@@ -381,14 +386,18 @@ class MobileHomeFragment : ToolbarFragment() {
                         val total=if(quota.total>0) TrafficFormat.format(quota.total) else "\u221e"
                         usage="$used / $total"
                     }
-                    bar.addView(text(usage,11f).apply { gravity=Gravity.CENTER; setPadding(dp(4),0,dp(4),0) },FrameLayout.LayoutParams(-1,-1))
-                    traffic.addView(bar,LinearLayout.LayoutParams(0,dp(20),1f).apply { marginStart=dp(8) })
-                    if (quota.expire > 0) traffic.addView(text(getString(R.string.qmobile_expiry,java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000))),11f,muted).apply { setPadding(dp(10),0,0,0) })
+                    bar.addView(text(usage,11f).apply {
+                        gravity=Gravity.CENTER; setPadding(dp(6),dp(2),dp(6),dp(2))
+                        setSingleLine(true)
+                        androidx.core.widget.TextViewCompat.setAutoSizeTextTypeUniformWithConfiguration(this,9,11,1,android.util.TypedValue.COMPLEX_UNIT_SP)
+                    },FrameLayout.LayoutParams(-1,-1))
+                    traffic.addView(bar,LinearLayout.LayoutParams(0,dp(28),1f).apply { marginStart=dp(8) })
                     if (quota.supportUrl.isNotBlank()) traffic.addView(iconAction(R.drawable.ic_mobile_globe,getString(R.string.qmobile_subscription_info)) {
                         val uri = android.net.Uri.parse(quota.supportUrl)
                         if (uri.scheme == "https" || uri.scheme == "http") runCatching { startActivity(Intent(Intent.ACTION_VIEW,uri)) }
                     },LinearLayout.LayoutParams(dp(32),dp(32)))
                     box.addView(traffic)
+                    if (quota.expire > 0) box.addView(text(getString(R.string.qmobile_expiry,java.text.DateFormat.getDateInstance().format(java.util.Date(quota.expire*1000))),11f,muted).apply { setPadding(dp(14),0,dp(14),dp(8)) })
                     if (quota.announce.isNotBlank()) box.addView(text(quota.announce,12f,muted).apply { setPadding(dp(14),0,dp(14),dp(10)) })
                 }
                 for (profile in profiles) {
@@ -488,7 +497,7 @@ class MobileHomeFragment : ToolbarFragment() {
         updateState()
     }
     fun updateState() {
-        if(!isAdded || power==null) return
+        if(!isAdded || !isResumed || isHidden || power==null) return
         if(renderedSelectedProxy != DataStore.selectedProxy) {
             renderedSelectedProxy=DataStore.selectedProxy
             profileRows.forEach { (id, row) -> row.background=tile(id==renderedSelectedProxy); MobileFeedback.apply(row) }

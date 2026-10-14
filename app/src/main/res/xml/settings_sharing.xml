@@ -1,0 +1,9 @@
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <SwitchPreference app:key="lan_sharing_enabled" app:defaultValue="false" app:title="@string/lan_sharing_enabled" app:summary="@string/lan_sharing_summary" app:icon="@drawable/ic_mobile_globe" />
+    <Preference app:key="sharingInstructions" app:selectable="false" app:summary="@string/lan_sharing_help" />
+    <Preference app:key="sharingAddresses" app:title="@string/lan_sharing_address" app:icon="@drawable/ic_mobile_globe" />
+    <EditTextPreference app:key="inbound_socks_port" app:title="@string/lan_sharing_port" app:icon="@drawable/ic_mobile_core" app:useSimpleSummaryProvider="true" />
+    <EditTextPreference app:key="inbound_user" app:title="@string/username" app:useSimpleSummaryProvider="true" />
+    <EditTextPreference app:key="inbound_pass" app:title="@string/password" />
+    <Preference app:key="sharingHotspot" app:title="@string/lan_sharing_hotspot" app:icon="@drawable/ic_mobile_settings" app:widgetLayout="@layout/qmobile_preference_arrow" />
+</PreferenceScreen>

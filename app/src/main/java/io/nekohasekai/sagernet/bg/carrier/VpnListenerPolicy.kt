@@ -5,7 +5,7 @@ import app.qthrone.mobile.outbound.json.JsonObject
 
 /** Custom full configurations must not reopen the per-app VPN bypass through local listeners. */
 object VpnListenerPolicy {
-    fun check(config:String) {
+    fun check(config:String, allowSharing: Boolean = false) {
         val json=JsonInput.parseObject(config)
         for(value in json.array("inbounds")) {
             val inbound=value as? JsonObject ?: error("Invalid VPN inbound configuration")
@@ -13,7 +13,9 @@ object VpnListenerPolicy {
             check(inbound.string("type") in listOf("socks","http","mixed")) {
                 "VPN custom configuration contains an unsupported listening inbound; use the TUN inbound"
             }
-            check(inbound.string("listen") in listOf("127.0.0.1","::1")) {
+            val explicitSharing = allowSharing && inbound.string("tag") == "mixed-in" &&
+                inbound.string("type") == "mixed" && inbound.string("listen") == "0.0.0.0"
+            check(explicitSharing || inbound.string("listen") in listOf("127.0.0.1","::1")) {
                 "VPN proxy listeners must bind to loopback and require authentication"
             }
             val users=inbound.array("users")
