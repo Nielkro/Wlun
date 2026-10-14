@@ -38,7 +38,7 @@ class RemoteLanAndSharingTest {
         assertEquals(1,mixed.array("users").size)
     }
     @Test fun qwdttUsesRuntimeIpv4WithoutChangingGlobalPreferences() {
-        val original=GeneratorSettings(ipv6Enabled=true,remoteDnsDisableIpv6=false)
+        val original=GeneratorSettings(vpnMode=true,ipv6Enabled=true,remoteDnsDisableIpv6=false)
         assertTrue(TransportIpPolicy.ipv4Only(Qwdtt(),ProfileProvider { null }))
         assertFalse(TransportIpPolicy.ipv4Only(Socks(),ProfileProvider { null }))
         val effective=TransportIpPolicy.settings(original)
