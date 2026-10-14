@@ -22,7 +22,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
     override fun start(probe: TestProbe, batch: List<ProxyEntity>, emit: (ProbeResult) -> Unit, done: () -> Unit) {
         val request = probe.request().apply {
             url = session.options.url
-            timeoutMs = session.options.timeoutMs
+            timeoutMs = app.qthrone.mobile.bg.proto.ProbeTimeout.effective(session.options.timeoutMs,probe.carrierPlans.isNotEmpty())
             maxConcurrency = session.options.concurrency
         }
         // The probe box closes with the test, so the verdict is asked for up front (TestRunner.cpp:171-176).

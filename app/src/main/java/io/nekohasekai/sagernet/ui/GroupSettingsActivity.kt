@@ -85,6 +85,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         private const val KEY_URL_TEST = "groupSubUrlTest"
         private const val KEY_REMOVE_UNAVAILABLE = "groupSubRemoveUnavailable"
         private const val KEY_SORT_BY_LATENCY = "groupSubSortByLatency"
+        private const val KEY_AUTO_SORT_PING = "groupAutoSortByPing"
         private const val KEY_FILTER = "groupFilter"
         private const val KEY_NAME_INCLUDE = "groupSubNameInclude"
         private const val KEY_NAME_EXCLUDE = "groupSubNameExclude"
@@ -299,6 +300,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         store.putBoolean(KEY_URL_TEST, options.urlTest)
         store.putBoolean(KEY_REMOVE_UNAVAILABLE, options.removeUnavailable)
         store.putBoolean(KEY_SORT_BY_LATENCY, options.sortByLatency)
+        store.putBoolean(KEY_AUTO_SORT_PING, options.autoSortByPing)
         store.putString(KEY_NAME_INCLUDE, options.nameInclude)
         store.putString(KEY_NAME_EXCLUDE, options.nameExclude)
     }
@@ -322,6 +324,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             urlTest = flag(KEY_URL_TEST),
             removeUnavailable = flag(KEY_REMOVE_UNAVAILABLE),
             sortByLatency = flag(KEY_SORT_BY_LATENCY),
+            autoSortByPing = flag(KEY_AUTO_SORT_PING),
             nameInclude = text(KEY_NAME_INCLUDE),
             nameExclude = text(KEY_NAME_EXCLUDE),
             showInfoCard = store.getBoolean(KEY_SHOW_INFO_CARD, true),

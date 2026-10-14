@@ -30,6 +30,20 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     private var hashCheck: CarrierHashCheck? = null
     private var hashCheckJob: Job? = null
     private var captchaController: app.qthrone.mobile.ui.MobileCaptchaController? = null
+    private var resetHashResults: (() -> Unit)? = null
+
+    private fun stopHashCheck() {
+        val session=hashCheck
+        hashCheck=null
+        session?.close()
+        hashCheckJob?.cancel();hashCheckJob=null
+    }
+
+    override fun onStop() {
+        stopHashCheck()
+        resetHashResults?.invoke()
+        super.onStop()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,8 +51,8 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     }
 
     override fun onDestroy() {
-        hashCheck?.close()
-        hashCheckJob?.cancel()
+        stopHashCheck()
+        resetHashResults=null
         captchaController?.close()
         super.onDestroy()
     }
@@ -185,12 +199,10 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         val checkButton=Preference(requireContext()).apply {
             title="Проверить хеши";isPersistent=false;setIcon(R.drawable.ic_mobile_hash)
         }
-        val checkStatus=Preference(requireContext()).apply { isPersistent=false;isSelectable=false;isVisible=false }
         fun refreshEditors() {
             val automatic = DataStore.profileCacheStore.getString(cache("hash_source")) == "auto"
             editors.filterKeys { it.startsWith("hash_") && it != "hash_source" }.values.forEach { it.isVisible = !automatic }
             checkButton.isVisible=!automatic
-            checkStatus.isVisible=!automatic && checkStatus.summary!=null
             checkButton.isEnabled=hashCheck!=null || fields.keys.any { it.startsWith("hash_") && it!="hash_source" && !DataStore.profileCacheStore.getString(cache(it)).isNullOrBlank() }
             editors["raw_port"]?.isEnabled=DataStore.profileCacheStore.getString(cache("mode"))!="wg"
             if(editingOutbound.type in listOf("qwdtt","csqtt")) {
@@ -265,6 +277,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 if(range!=null && text.toIntOrNull()?.let { it in range }!=true) return@setOnPreferenceChangeListener false
                 if(key in listOf("server_port","raw_port") && text.toIntOrNull()?.let { it in 1..65535 }!=true) return@setOnPreferenceChangeListener false
                 DataStore.profileCacheStore.putString(cache(path),text)
+                if(path.startsWith("hash_") && path!="hash_source") (editors[path] as? HashTextPreference)?.setCheckStatus(null)
                 if(path=="provider") {
                     val current=DataStore.profileCacheStore.getString(cache("transport"))
                     if((text=="telemost" && current in listOf("datachannel","seichannel")) || (text=="wbstream" && current=="datachannel")) {
@@ -291,23 +304,26 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             preferenceScreen.addPreference(preference)
             if(path=="hash_"+(if(editingOutbound.type=="csqtt") 6 else 4)) {
                 preferenceScreen.addPreference(checkButton)
-                preferenceScreen.addPreference(checkStatus)
             }
         }
         val results=linkedMapOf<Int,String>()
         fun showResults() {
-            checkStatus.summary=results.entries.joinToString("\n") { "Хэш VK ${it.key}: ${it.value}" }
-            checkStatus.isVisible=true
+            for((slot,status) in results) (editors["hash_$slot"] as? HashTextPreference)?.setCheckStatus(status)
         }
         fun unlockHashes() {
             editors.filterKeys { it.startsWith("hash_") }.values.forEach { it.isEnabled=true }
             checkButton.title="Проверить хеши"
             refreshEditors()
         }
+        resetHashResults={
+            results.clear()
+            editors.values.filterIsInstance<HashTextPreference>().forEach { it.setCheckStatus(null) }
+            unlockHashes()
+        }
         checkButton.setOnPreferenceClickListener {
             val active=hashCheck
             if(active!=null) {
-                hashCheck=null;active.close();hashCheckJob?.cancel();hashCheckJob=null
+                stopHashCheck()
                 results.replaceAll { _, status -> if(status in listOf("В очереди","Проверяется…")) "Остановлено" else status }
                 showResults();unlockHashes()
             } else {

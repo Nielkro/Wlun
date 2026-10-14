@@ -110,7 +110,11 @@ object LogExport {
         val process = ProcessBuilder("logcat", "-d", "-v", "threadtime", "-t", LOGCAT_LINES.toString())
             .redirectErrorStream(true)
             .start()
-        process.inputStream.bufferedReader().use { it.readText() }.also { process.destroy() }
+        val read=java.util.concurrent.FutureTask { process.inputStream.bufferedReader().use { it.readText() } }
+        Thread(read,"qThrone-logcat-export").apply { isDaemon=true;start() }
+        try { read.get(3,java.util.concurrent.TimeUnit.SECONDS) }
+        catch(_: java.util.concurrent.TimeoutException) { "logcat snapshot timed out" }
+        finally { process.destroy();read.cancel(true) }
     } catch (e: Exception) {
         "logcat failed: ${e.stackTraceToString()}"
     }

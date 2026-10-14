@@ -28,6 +28,9 @@ class LogRedactor(private val hideDestinations: Boolean) {
     }
 
     fun redact(line: String): String {
+        // Debug JSON/base64 lines can trigger quadratic regex backtracking. Omit them whole,
+        // rather than cutting a credential in half and accidentally exporting its suffix.
+        if(line.length>4096) return "<oversized diagnostic line omitted>"
         var s = AUTH_HEADER.replace(line) { m -> m.groupValues[1] + "<redacted>" }
         s = URL.replace(s) { m ->
             val (scheme, credentials, host, rest) = m.destructured

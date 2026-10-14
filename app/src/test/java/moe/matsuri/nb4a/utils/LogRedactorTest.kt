@@ -5,6 +5,12 @@ import org.junit.Test
 
 class LogRedactorTest {
     private val redactor = LogRedactor(false)
+    @Test(timeout=2000) fun oversizedTokenLinesCannotStallExportOrLeakSuffix() {
+        val line="access_token="+"a".repeat(200000)+"secretSuffix"
+        val result=redactor.redact(line)
+        assertFalse(result.contains("secretSuffix"))
+        assertTrue(result.length<100)
+    }
 
     @Test fun hidesOpenConnectCredentialsInConfiguration() {
         val result = redactor.redact("""{"type":"openconnect","username":"alice","password":"sample-password","cookie":"webvpn=session-cookie; other=private"}""")

@@ -95,6 +95,7 @@ class BaseService {
 
         val binder = Binder(this)
         var connectingJob: Job? = null
+        var networkChangeJob: Job? = null
 
         fun changeState(s: State, msg: String? = null) {
             if (state == s && msg == null) return
@@ -413,6 +414,7 @@ class BaseService {
 
                 try {
                     data.connectingJob?.cancelAndJoin() // ensure stop connecting first
+                    data.networkChangeJob?.cancel();data.networkChangeJob=null
                 } catch (error: Throwable) {
                     recordCleanupFailure("connecting-job-cancel", error)
                 } finally {
@@ -516,15 +518,36 @@ class BaseService {
         suspend fun preInit() {
             // Tracks the underlying network for VpnService.setUnderlyingNetworks only; the
             // "reset on network change" switch is applied by NativeInterface's monitor callback.
+            var observedNetwork=SagerNet.underlyingNetwork
             DefaultNetworkListener.start(this) { network ->
-                if (network == null) return@start
+                if (network == null) {
+                    observedNetwork=null
+                    SagerNet.underlyingNetwork=null
+                    DataStore.vpnService?.updateUnderlyingNetwork()
+                    return@start
+                }
                 SagerNet.connectivity.getLinkProperties(network)?.also { link ->
+                    val previousNetwork=observedNetwork
+                    observedNetwork=network
                     SagerNet.underlyingNetwork = network
                     DataStore.vpnService?.updateUnderlyingNetwork()
                     val oldName = upstreamInterfaceName
-                    if (oldName != link.interfaceName) {
+                    if (oldName != link.interfaceName || previousNetwork!=network) {
                         Logs.d("Network changed: $oldName -> ${link.interfaceName}")
                         upstreamInterfaceName = link.interfaceName
+                        if(oldName!=null) {
+                            data.networkChangeJob?.cancel()
+                            data.networkChangeJob=CoroutineScope(Dispatchers.Main).launch {
+                                delay(600)
+                                if(data.state==State.Connected && SagerNet.underlyingNetwork==network &&
+                                    data.proxy?.config?.carrierPlans?.isNotEmpty()==true) {
+                                    // The core can rebind its sockets; external TURN/native clients cannot.
+                                    TestEngine.stopAndJoin()
+                                    Logs.i("Underlying network changed; reconnecting native transport")
+                                    SagerNet.reloadService()
+                                }
+                            }
+                        }
                     }
                 }
             }

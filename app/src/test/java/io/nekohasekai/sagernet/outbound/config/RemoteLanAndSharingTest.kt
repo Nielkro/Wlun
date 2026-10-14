@@ -77,6 +77,7 @@ class RemoteLanAndSharingTest {
     @Test fun qwdttUsesRuntimeIpv4WithoutChangingGlobalPreferences() {
         val original=GeneratorSettings(vpnMode=true,ipv6Enabled=true,remoteDnsDisableIpv6=false)
         assertTrue(TransportIpPolicy.ipv4Only(Qwdtt(),ProfileProvider { null }))
+        assertTrue(TransportIpPolicy.ipv4Only(app.qthrone.mobile.outbound.types.Csqtt(),ProfileProvider { null }))
         assertFalse(TransportIpPolicy.ipv4Only(Socks(),ProfileProvider { null }))
         val effective=TransportIpPolicy.settings(original)
         assertFalse(effective.ipv6Enabled)

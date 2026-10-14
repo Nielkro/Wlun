@@ -202,6 +202,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 for ((group, profiles) in groups) {
                     append(group.id); append(group.displayName()); append(group.isSubscription); append(group.subLastUpdate)
                     append(group.subInfo.toString())
+                    append(group.subOptions.autoSortByPing)
                     for (profile in profiles) {
                         append(profile.id); append(profile.displayName()); append(profile.displayType())
                         append(profile.outboundJson)
@@ -332,7 +333,7 @@ class MobileHomeFragment : ToolbarFragment() {
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val signature=buildString {
-                    append(surface); append(blue); append(group.displayName()); append(group.isSubscription); append(group.subLastUpdate); append(group.subInfo)
+                    append(surface); append(blue); append(group.displayName()); append(group.isSubscription); append(group.subLastUpdate); append(group.subInfo);append(group.subOptions.autoSortByPing)
                     profiles.forEach { append(it.id); append(it.displayName()); append(it.displayType()); append(it.outboundJson) }
                 }
                 val retained=groupViews[group.id]?.takeIf { it.first==signature }?.second
@@ -360,8 +361,13 @@ class MobileHomeFragment : ToolbarFragment() {
                     arrow.animate().rotation(if(group.id in collapsed) 0f else 90f).setDuration(180).start()
                 }
                 title.addView(heading,LinearLayout.LayoutParams(0,-2,1f))
-                if (group.isSubscription) title.addView(iconAction(R.drawable.ic_mobile_refresh,getString(R.string.qmobile_refresh)) { SubscriptionClient.refreshGroup(group.id,false) }.apply { isEnabled=!SubscriptionClient.states.value.containsKey(group.id); alpha=1f;refreshButtons[group.id]=this },LinearLayout.LayoutParams(dp(44),dp(48)))
-                title.addView(iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests)) { testMenu(profiles.map { it.id }.toLongArray(),group.displayName(),group.id) },LinearLayout.LayoutParams(dp(44),dp(48)))
+                if(!group.subOptions.autoSortByPing) title.addView(iconAction(R.drawable.ic_mobile_sort_ping,"Сортировать по пингу") {
+                    viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) {
+                        app.qthrone.mobile.database.GroupSort.sortProfiles(group.id,app.qthrone.mobile.database.GroupSortAction(app.qthrone.mobile.database.GroupSortMethod.BY_LATENCY))
+                    } }
+                },LinearLayout.LayoutParams(dp(36),dp(48)))
+                if (group.isSubscription) title.addView(iconAction(R.drawable.ic_mobile_refresh,getString(R.string.qmobile_refresh)) { SubscriptionClient.refreshGroup(group.id,false) }.apply { isEnabled=!SubscriptionClient.states.value.containsKey(group.id); alpha=1f;refreshButtons[group.id]=this },LinearLayout.LayoutParams(dp(40),dp(48)))
+                title.addView(iconAction(R.drawable.ic_mobile_test,getString(R.string.qmobile_tests)) { testMenu(profiles.map { it.id }.toLongArray(),group.displayName(),group.id,true) },LinearLayout.LayoutParams(dp(40),dp(48)))
                 lateinit var more: ImageButton
                 more=iconAction(R.drawable.ic_mobile_more,getString(R.string.qmobile_more)) { groupMenu(group,more) }
                 title.addView(more,LinearLayout.LayoutParams(dp(44),dp(48)))
@@ -562,8 +568,8 @@ class MobileHomeFragment : ToolbarFragment() {
             },FrameLayout.LayoutParams(-1,-1))
         }
     }
-    private fun testMenu(ids: LongArray, label: String, gid: Long) {
-        TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label),gid)
+    private fun testMenu(ids: LongArray, label: String, gid: Long, wholeGroup: Boolean=false) {
+        TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label,sortGroupId=if(wholeGroup) gid else 0L),gid)
     }
     private fun importClipboard() {
         val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

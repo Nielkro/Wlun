@@ -303,7 +303,11 @@ open class DeployEditorFragment : Fragment() {
             if(followLogs && !touchingLogs) logScroll?.scrollTo(0,output?.height ?: 0)
         }
         content.addView(logScroll,LinearLayout.LayoutParams(-1,dp(220)))
-        stop=button(content,"Остановить") { DeployEngine.cancel() }
+        stop=button(content,"Остановить") { DeployEngine.cancel() }.apply {
+            backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.background)
+            insetTop=0;insetBottom=0
+            (layoutParams as LinearLayout.LayoutParams).apply { topMargin=dp(12);bottomMargin=dp(6);height=dp(48) }
+        }
         val config=card();configCard=config.parent as View
         configArrow=disclosure(config,if(s.kind=="qwdtt") "qWDTT конфиг" else "CSQTT конфиг") { configExpanded=!configExpanded;expand() }
         val configBody=column();config.addView(configBody);configDetails=configBody
@@ -362,7 +366,11 @@ open class DeployEditorFragment : Fragment() {
         }
         progress?.progress=if(relevant) state.percent else 0
         progress?.isIndeterminate=relevant && state.running && !state.installerProgress && state.percent in 45..99
-        stop?.isEnabled=relevant && state.running
+        stop?.apply {
+            isEnabled=relevant && state.running
+            alpha=if(isEnabled) 1f else .45f
+            setTextColor(if(isEnabled) MobilePalette.accent(requireContext()) else MobilePalette.muted)
+        }
         operations.forEach { it.isEnabled=!state.running }
         // Keep the encrypted record consistent with the operation's SSH/settings snapshot.
         fun editable(view: View) {

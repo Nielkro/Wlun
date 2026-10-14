@@ -108,6 +108,7 @@ class NativeInterface : PlatformInterface {
     }
 
     private class IfaceReportState {
+        var wasConnected=false
         var name: String? = null
         var index: Int = Int.MIN_VALUE
         var network: Network? = null
@@ -137,6 +138,7 @@ class NativeInterface : PlatformInterface {
     private fun checkDefaultInterfaceUpdate(listener: InterfaceUpdateListener, network: Network?) {
         val state = reportState(listener)
         if (network == null) {
+            lastResetNetwork=null
             clearInterface(listener, state)
             return
         }
@@ -163,7 +165,8 @@ class NativeInterface : PlatformInterface {
             // Capability-change storms repeat the same interface; skip them without a JNI round trip. A metering change
             // alone (a Wi-Fi marked metered) is still reported so the core re-reads its interfaces, but is no switch.
             if (sameInterface && state.isExpensive == isExpensive) return
-            val changed = !sameInterface && state.name != null
+            val changed = !sameInterface && state.wasConnected
+            state.wasConnected=true
             state.name = linkProperties.interfaceName
             state.index = interfaceIndex
             state.network = network

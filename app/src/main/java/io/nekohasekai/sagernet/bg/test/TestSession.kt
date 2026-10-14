@@ -94,6 +94,7 @@ internal class TestSession(
     }
 
     suspend fun run() {
+        var completed=false
         notification.start()
         try {
             coroutineScope {
@@ -104,12 +105,18 @@ internal class TestSession(
                     refresher.cancel()
                 }
             }
+            completed=true
         } catch (e: CancellationException) {
             stop()
             throw e
         } catch (e: Exception) {
             Logs.w(e)
         } finally {
+            try { if(completed && !cancelled && kind==TestSpec.KIND_URL && spec.sortGroupId>0 &&
+                GroupRepo.get(spec.sortGroupId)?.subOptions?.autoSortByPing==true) {
+                app.qthrone.mobile.database.GroupSort.sortProfiles(spec.sortGroupId,
+                    app.qthrone.mobile.database.GroupSortAction(app.qthrone.mobile.database.GroupSortMethod.BY_LATENCY))
+            } } catch(error: Exception) { Logs.w("Ping sort failed: ${error.readableMessage}") }
             notification.finish(assetProblems)
             notifyClient { it.onDone(id, cancelled) }
         }

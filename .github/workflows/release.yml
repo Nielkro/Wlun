@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      - name: Release numbering regression
+        run: python3 buildScript/test_release_tag.py
       # Public tags use three version components and always increase.
       - name: Version
         id: version
@@ -47,12 +49,19 @@ jobs:
       - name: Build
         uses: ./.github/actions/android-build
         with:
-          tasks: app:assembleOssRelease
+          tasks: app:testOssDebugUnitTest app:assembleOssRelease
           channel: stable
           build-number: ${{ steps.version.outputs.build }}
           sign: 'true'
       - name: Verify release SSH classes
         run: python3 buildScript/check_release_ssh.py app/build/outputs/apk/oss/release
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: qThroneMobile-release-test-reports
+          path: app/build/reports/tests/
+          if-no-files-found: ignore
       - name: Release assets
         run: python3 buildScript/release_assets.py app/build/outputs/apk/oss/release dist stable
       - name: Upload artifact

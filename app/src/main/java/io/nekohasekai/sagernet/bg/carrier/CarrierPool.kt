@@ -17,7 +17,7 @@ object CarrierPool {
         private val closed=AtomicBoolean()
         override fun close() { if(closed.compareAndSet(false,true)) release() }
     }
-    suspend fun acquire(plan:CarrierPlan):Lease {
+    suspend fun acquire(plan:CarrierPlan, interactive: Boolean=true):Lease {
         var owner=false
         val entry=synchronized(entries) {
             val existing=entries[plan.key]
@@ -38,9 +38,14 @@ object CarrierPool {
             if(owner) {
                 val context=app.qthrone.mobile.ktx.app
                 try {
+                    val privateJson=if(!interactive && plan.kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) {
+                        app.qthrone.mobile.outbound.json.JsonInput.parseObject(plan.privateJson).also {
+                            it["probe_only"]=true;it["interactive_captcha"]=false
+                        }.toCompact()
+                    } else plan.privateJson
                     val started=CarrierProcess.start(plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),
                         java.io.File(context.cacheDir,"carriers"),android.os.Build.VERSION.SDK_INT,
-                        plan.privateJson,plan.port,plan.credentials)
+                        privateJson,plan.port,plan.credentials,allowInteractions=interactive)
                     synchronized(entries) { entry.process=started }
                     entry.ready.complete(started)
                 } catch(error:Throwable) { entry.ready.completeExceptionally(error);throw error }

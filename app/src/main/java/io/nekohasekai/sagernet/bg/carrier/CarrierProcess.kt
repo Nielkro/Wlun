@@ -30,9 +30,9 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 }
 
 /** Native client owner. Config secrets are removed before provider output enters application logs. */
-class CarrierProcess private constructor(private val process: Process, private val config: File) : AutoCloseable {
+class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean) : AutoCloseable {
     private val closed = AtomicBoolean(false)
-    private val captcha=CarrierCaptchaBridge(process)
+    private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions)
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -59,6 +59,7 @@ class CarrierProcess private constructor(private val process: Process, private v
             apiLevel: Int, privateJson: String, socksPort: Int,
             bridgeCredentials: CarrierBridgeCredentials,
             timeoutMs: Long = 60_000,
+            allowInteractions: Boolean = true,
             launch: (ProcessBuilder) -> Process = { it.start() },
         ): CarrierProcess = withContext(Dispatchers.IO) {
             require(apiLevel >= kind.minimumApi) { "Transport requires Android API ${kind.minimumApi}" }
@@ -85,7 +86,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                 val child = try { launch(builder) } catch (_: Exception) {
                     throw IllegalStateException("Cannot start transport client")
                 }
-                val running = CarrierProcess(child, config)
+                val running = CarrierProcess(child, config,allowInteractions)
                 owner = running
                 val redactor = CarrierLogRedactor(privateJson, bridgeCredentials)
                 moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Starting native transport")
@@ -94,12 +95,13 @@ class CarrierProcess private constructor(private val process: Process, private v
                         running.captcha.accept(line)
                         redactor.redact(line)?.let { safe -> moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] $safe") }
                     }
-                } } }, "qThrone-carrier-output").apply { isDaemon = true; start() }
+                } }.also { running.captcha.close() } }, "qThrone-carrier-output").apply { isDaemon = true; start() }
                 var deadline = System.nanoTime() + timeoutMs * 1_000_000
                 var lastWaitTick=System.nanoTime()
                 var interactionBudget=20L*60*1_000_000_000L
                 while (System.nanoTime() < deadline) {
                     coroutineContext.ensureActive()
+                    check(!running.captcha.interactionRequired) { "VK confirmation required; connect this profile before testing" }
                     val now=System.nanoTime()
                     if(running.captcha.waiting) {
                         val paused=(now-lastWaitTick).coerceAtMost(interactionBudget)

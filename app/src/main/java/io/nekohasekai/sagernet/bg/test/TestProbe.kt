@@ -14,8 +14,6 @@ import app.qthrone.mobile.outbound.types.Custom
 import app.qthrone.core.mobile.Mobile
 import app.qthrone.core.mobile.TestRequest
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -288,24 +286,19 @@ internal abstract class LatencySweep(protected val session: TestSession) {
             probe.profileIds.forEach { emit(ProbeResult(it, error = ERROR_ABORTED, measured = false)) }
             return null
         }
-        val transports=mutableListOf<app.qthrone.mobile.bg.carrier.CarrierPool.Lease>()
         try {
-            if(probe.carrierPlans.isNotEmpty()) {
-                // TunApplicationPolicy excludes this app UID for every VPN configuration,
-                // so all native carrier subprocesses can probe outside an already running TUN.
-                withTimeout(session.options.timeoutMs.toLong()) {
-                    for(plan in probe.carrierPlans) transports.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
-                }
+            // CSQTT must obtain its tunnel config before the short HTTP latency deadline starts.
+            // CarrierProcess owns the startup deadline; coroutine cancellation still stops preparation.
+            withPreparedTransports(probe.carrierPlans,{ plan -> app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan,
+                session.interactive && session.kind!=TestSpec.KIND_URL) }) {
+                session.awaitCore { done -> start(probe, batch, emit, done) }
             }
-            session.awaitCore { done -> start(probe, batch, emit, done) }
-        } catch (e: TimeoutCancellationException) {
-            return "Connection timed out"
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Logs.w("Test probe failed to start: ${e.readableMessage}")
             return e.readableMessage
-        } finally { transports.asReversed().forEach { it.close() } }
+        }
         probe.profileIds.forEach { emit(ProbeResult(it, error = ERROR_NO_RESULT, measured = false)) }
         return null
     }

@@ -28,6 +28,7 @@ internal object CarrierUiRequests {
                 previousId=previous.optString("id").takeIf { it.isNotEmpty() && it!=id }
             }
             val json=JSONObject().put("id",id).put("url",url).put("turn",turn)
+                .put("ownerPid",android.os.Process.myPid())
                 .put("expires",System.currentTimeMillis()+5*60_000L)
             if(tokenState!=null) json.put("tokenState",tokenState)
             val store=file();val out=store.startWrite()
@@ -62,7 +63,11 @@ internal object CarrierUiRequests {
     }
     fun pending(): Intent? = locked { runCatching {
         val json=JSONObject(String(file().readFully(),Charsets.UTF_8))
-        if(json.getLong("expires")<=System.currentTimeMillis()) { file().delete();return@runCatching null }
+        val owner=json.optInt("ownerPid")
+        if(json.getLong("expires")<=System.currentTimeMillis() || owner<=0 || !File("/proc/$owner").isDirectory) {
+            file().delete();app.getSystemService(android.app.NotificationManager::class.java).cancel(notificationId)
+            return@runCatching null
+        }
         Intent(app.packageName+".CAPTCHA_REQUEST").setPackage(app.packageName)
             .putExtra("id",json.getString("id")).putExtra("url",json.getString("url"))
             .putExtra("turn",json.optBoolean("turn"))

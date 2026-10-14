@@ -39,6 +39,7 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
     private var viewBinding: LayoutLogcatBinding? = null
     val binding: LayoutLogcatBinding get() = requireNotNull(viewBinding)
     private var lastLog: String? = null
+    private var sharing=false
 
     private val saveLogs = registerForActivityResult(SaveDocument("text/plain")) { uri ->
         if (uri == null) return@registerForActivityResult
@@ -199,21 +200,23 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
             }
 
             R.id.action_share_logs -> {
+                if(sharing) return true
+                sharing=true;item.isEnabled=false
                 val context = requireContext()
                 val redact = DataStore.logExportRedact
                 val destinations = hideDestinations
-                runOnDefaultDispatcher {
+                viewLifecycleOwner.lifecycleScope.launch {
                     try {
-                        val file = LogExport.build(context, redact, destinations)
-                        onMainDispatcher {
-                            SendLog.share(context, file, file.nameWithoutExtension)
-                        }
+                        val file = withContext(Dispatchers.IO) { LogExport.build(context.applicationContext, redact, destinations) }
+                        if(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) SendLog.share(context, file, file.nameWithoutExtension)
+                    } catch(e: kotlinx.coroutines.CancellationException) {
+                        throw e
                     } catch (e: Exception) {
                         Logs.w(e)
                         onMainDispatcher {
                             safeSnackbar(context.getString(R.string.log_export_failed, e.readableMessage))
                         }
-                    }
+                    } finally { sharing=false;item.isEnabled=true }
                 }
             }
 

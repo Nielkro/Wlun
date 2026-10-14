@@ -126,7 +126,7 @@ object TestSessionClient {
         prepare(m) {
             val group = GroupRepo.get(groupId)
             val ids = if (group == null) emptyList() else ProfileManager.memberIds(groupId)
-            TestSpec(kind, ids.toLongArray(), scopeLabel = group?.displayName().orEmpty())
+            TestSpec(kind, ids.toLongArray(), scopeLabel = group?.displayName().orEmpty(),sortGroupId=groupId)
         }
         return true
     }

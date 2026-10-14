@@ -79,6 +79,7 @@ data class SubscriptionOptions(
     var urlTest: Boolean = false,
     var removeUnavailable: Boolean = false,
     var sortByLatency: Boolean = false,
+    var autoSortByPing: Boolean = false,
     /** Android-only (#53): name filters applied on every update; desktop's codec drops these keys. */
     var nameInclude: String = "",
     var nameExclude: String = "",
@@ -106,6 +107,7 @@ data class SubscriptionOptions(
         if (urlTest) json["url_test"] = true
         if (removeUnavailable) json["remove_unavailable"] = true
         if (sortByLatency) json["sort_by_latency"] = true
+        if (autoSortByPing) json["auto_sort_by_ping"] = true
         if (nameInclude.isNotEmpty()) json["name_include"] = nameInclude
         if (nameExclude.isNotEmpty()) json["name_exclude"] = nameExclude
         if (!showInfoCard) json["show_info_card"] = false
@@ -142,6 +144,7 @@ data class SubscriptionOptions(
                 urlTest = json.bool("url_test"),
                 removeUnavailable = json.bool("remove_unavailable"),
                 sortByLatency = json.bool("sort_by_latency"),
+                autoSortByPing = json.bool("auto_sort_by_ping"),
                 nameInclude = json.string("name_include"),
                 nameExclude = json.string("name_exclude"),
                 showInfoCard = !json.isBool("show_info_card") || json.bool("show_info_card"),

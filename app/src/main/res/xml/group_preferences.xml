@@ -35,6 +35,8 @@
             app:key="groupAutoClearUnavailable"
             app:title="@string/grp_auto_clear_unavailable" />
 
+        <SwitchPreference app:key="groupAutoSortByPing" app:title="Автосортировка по пингу"
+            app:summary="После общего теста группы: быстрые профили сверху, без пинга — снизу" app:defaultValue="false" />
     </PreferenceCategory>
 
     <PreferenceCategory

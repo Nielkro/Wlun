@@ -65,7 +65,7 @@ object CoreConfigs {
         if (app.qthrone.mobile.outbound.config.TransportIpPolicy.ipv4Only(profile.outbound, profiles)) {
             settings = app.qthrone.mobile.outbound.config.TransportIpPolicy.settings(settings)
             context = app.qthrone.mobile.outbound.config.TransportIpPolicy.context(context)
-            moe.matsuri.nb4a.utils.CoreLog.write("[Info] qWDTT uses IPv4-only tunnel and DNS; saved IPv6 preference is unchanged")
+            moe.matsuri.nb4a.utils.CoreLog.write("[Info] ${profile.outbound.displayType()} uses IPv4-only tunnel and DNS; saved IPv6 preference is unchanged")
         }
         val generated = ConfigGenerator(profiles, settings, context, routing).build(profile.id, landing, front)
         if (!generated.ok) error(generated.error ?: "config generation failed")

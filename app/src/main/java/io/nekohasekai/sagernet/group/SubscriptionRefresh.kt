@@ -147,7 +147,9 @@ internal object SubscriptionRefresh {
 
         Logs.i(">>>>>>>> " + str(R.string.subs_processing))
         for (outbound in servers) {
-            if(outbound is app.qthrone.mobile.outbound.types.Qwdtt) NativeHashPolicy.preserve(outbound,previousNative)
+            if(outbound is app.qthrone.mobile.outbound.types.Qwdtt) {
+                NativeHashPolicy.preserve(outbound,previousNative)
+            }
             sink.add(outbound)
         }
         sink.flush()
@@ -313,6 +315,10 @@ internal object SubscriptionRefresh {
         private val entryIndex = ArrayList<Int>()
 
         suspend fun add(outbound: Outbound) {
+            if(outbound is app.qthrone.mobile.outbound.types.Qwdtt && !outbound.deviceIdProvided) {
+                outbound.deviceId=NativeHashPolicy.defaultDeviceId(DeviceDetails.get().hwid)
+                outbound.deviceIdProvided=true
+            }
             val entry = NewEntry(outbound.displayTypeAndName())
             if (index != null) {
                 entry.content = SubscriptionReconcile.contentKey(outbound.exportToJson().toCompact())

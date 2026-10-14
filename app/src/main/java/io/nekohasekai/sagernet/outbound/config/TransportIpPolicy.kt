@@ -3,11 +3,11 @@ package app.qthrone.mobile.outbound.config
 import app.qthrone.mobile.outbound.BuildContext
 import app.qthrone.mobile.outbound.Outbound
 
-/** qWDTT's netstack has IPv4 routes only (qwdtt/socks5.go: dialIPv4Only). Never change saved global settings. */
+/** qWDTT/CSQTT netstacks have IPv4 routes only. Never change saved global settings. */
 object TransportIpPolicy {
     fun ipv4Only(profile: Outbound, profiles: ProfileProvider): Boolean =
-        profile.type == "qwdtt" || (profile.type == "chain" &&
-            TypeAccess.chainHops(profile).any { profiles.get(it)?.type == "qwdtt" })
+        profile.type in listOf("qwdtt","csqtt") || (profile.type == "chain" &&
+            TypeAccess.chainHops(profile).any { profiles.get(it)?.type in listOf("qwdtt","csqtt") })
 
     fun settings(base: GeneratorSettings) = base.copy(
         ipv6Enabled = false, remoteDnsDisableIpv6 = true, fakeIpDisableIpv6 = true,

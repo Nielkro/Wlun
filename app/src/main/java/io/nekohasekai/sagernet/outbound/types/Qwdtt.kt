@@ -24,6 +24,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
     var vkAnonPath="vkcalls"
     var captchaMode="auto"
     var deviceId=UUID.randomUUID().toString()
+    var deviceIdProvided=false
     override fun displayType()=if(mode == "wg") "qWDTT (WG)" else "qWDTT (RAW)"
     override fun parseFromJson(obj:JsonObject):Boolean {
         if(obj.string("type") !in listOf("qwdtt","wdtt")) return false
@@ -51,7 +52,8 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         goDns=obj.string("go_dns").ifEmpty { "yandex" }
         vkAnonPath=obj.string("vk_anon_path").ifEmpty { "vkcalls" }
         captchaMode=obj.string("captcha_mode").ifEmpty { "auto" }
-        if(obj.string("device_id").isNotEmpty()) deviceId=obj.string("device_id")
+        deviceIdProvided=obj.string("device_id").isNotEmpty()
+        if(deviceIdProvided) deviceId=obj.string("device_id")
         return server.isNotEmpty() && serverPort in 1..65535 && rawPort in 1..65535 && mode in listOf("raw","wg")
     }
     override fun parseFromLink(link:String):Boolean {

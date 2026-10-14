@@ -56,7 +56,8 @@ object GroupSort {
                 }
             }
 
-            GroupSortMethod.BY_LATENCY -> compareBy { latencyKey(it.latency) }
+            GroupSortMethod.BY_LATENCY -> compareBy<ProxyEntity> { it.latency<=0 }
+                .thenBy { if(it.latency>0) it.latency else 0 }
             GroupSortMethod.BY_TEST_RESULT -> when (TestBy.of(group.testSortBy)) {
                 TestBy.LATENCY -> compareBy { latencyKey(it.latency) }
                 TestBy.DL_SPEED -> compareBy { bitrateToBps(it.dlSpeed) }
