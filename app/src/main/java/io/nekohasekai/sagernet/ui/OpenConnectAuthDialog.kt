@@ -13,6 +13,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import app.qthrone.mobile.R
+import app.qthrone.mobile.aidl.ISagerNetService
 import app.qthrone.mobile.ktx.readableMessage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -21,16 +22,19 @@ import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
 /** Presents the core's authentication continuation; answers are never stored or written to logs. */
-class OpenConnectAuthDialog(private val activity: MainActivity) {
+class OpenConnectAuthDialog(private val activity: MainActivity,
+    private val serviceProvider: () -> ISagerNetService? = { activity.connection.service }) {
     private var dialog: AlertDialog? = null
     private var choiceDialog: AlertDialog? = null
     private var shownRequest: String? = null
+    internal val visibleDialog get() = dialog
+    internal val visibleChoices get() = choiceDialog
 
     fun start() = activity.lifecycleScope.launch {
         activity.repeatOnLifecycle(Lifecycle.State.RESUMED) {
             try {
                 while (true) {
-                    val service = activity.connection.service
+                    val service = serviceProvider()
                     val request = withContext(Dispatchers.IO) {
                         runCatching { service?.openConnectAuth().orEmpty() }.getOrDefault("")
                     }
@@ -161,7 +165,7 @@ class OpenConnectAuthDialog(private val activity: MainActivity) {
     }
 
     private fun reply(data: JSONObject, values: JSONObject, cancel: Boolean) {
-        val service = activity.connection.service ?: return
+        val service = serviceProvider() ?: return
         val currentDialog = dialog
         currentDialog?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
         activity.lifecycleScope.launch {
