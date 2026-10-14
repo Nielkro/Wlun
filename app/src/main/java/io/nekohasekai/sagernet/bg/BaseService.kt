@@ -98,6 +98,8 @@ class BaseService {
 
         fun changeState(s: State, msg: String? = null) {
             if (state == s && msg == null) return
+            moe.matsuri.nb4a.utils.CoreLog.write("[Info] VPN service: $state -> $s; profile=${proxy?.profile?.id ?: 0}; protocol=${proxy?.profile?.type ?: "none"}")
+            if (!msg.isNullOrBlank()) moe.matsuri.nb4a.utils.CoreLog.write("[Error] VPN service: $msg")
             if(s == State.Connected) DataStore.mobileConnectedAt = SystemClock.elapsedRealtime()
             else if(s == State.Stopped) DataStore.mobileConnectedAt = 0L
             state = s
@@ -628,7 +630,9 @@ class BaseService {
                 try {
                     withContext(Dispatchers.IO) { TestEngine.stopAndJoin() }
                     preInit()
+                    moe.matsuri.nb4a.utils.CoreLog.write("[Info] Preparing profile ${profile.id}; protocol=${profile.type}; mode=${DataStore.serviceMode}")
                     proxy.init()
+                    moe.matsuri.nb4a.utils.CoreLog.write("[Info] Profile ${profile.id} configuration and assets ready; starting core")
                     DataStore.currentProfile = profile.id
                     DataStore.runningProfiles = proxy.config.involvedProfileIds.map { it.toString() }
 

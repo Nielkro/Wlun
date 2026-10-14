@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 class DeployListFragment : Fragment() {
     private lateinit var body: LinearLayout
     private var load: Job? = null
+    private var cachedItems: List<DeployServer> = emptyList()
     private var openSwipe: MobileSwipeTile? = null
     private val kind get() = arguments?.getString("kind").takeIf { it in listOf("qwdtt", "csqtt") } ?: "qwdtt"
     private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
@@ -41,6 +42,7 @@ class DeployListFragment : Fragment() {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(16), dp(8), dp(16), dp(24))
         }
+        render(cachedItems)
         return ScrollView(requireContext()).apply {
             setBackgroundColor(MobilePalette.background); isVerticalScrollBarEnabled = false
             addView(body); applyListInsets()
@@ -58,12 +60,17 @@ class DeployListFragment : Fragment() {
             val result = withContext(Dispatchers.IO) { runCatching {
                 DeployStore.savedServers().filter { it.kind == kind }
             } }
-            body.removeAllViews(); openSwipe = null
-            result.onSuccess { items -> items.forEach { server ->
-                tile(server["name"], server["host"], R.drawable.ic_mobile_core, server) { open(server.id) }
-            } }.onFailure { Toast.makeText(requireContext(), "РќРµ СѓРґР°Р»РѕСЃСЊ Р·Р°РіСЂСѓР·РёС‚СЊ СЃРїРёСЃРѕРє VPS", Toast.LENGTH_LONG).show() }
-            tile("Р”РѕР±Р°РІРёС‚СЊ VPS РґР»СЏ РґРµРїР»РѕСЏ", null, R.drawable.ic_mobile_add) { open(null) }
+            result.onSuccess { items -> cachedItems = items; render(items) }
+                .onFailure { Toast.makeText(requireContext(), "Не удалось загрузить список VPS", Toast.LENGTH_LONG).show() }
         }
+    }
+
+    private fun render(items: List<DeployServer>) {
+        body.removeAllViews(); openSwipe = null
+        items.forEach { server ->
+            tile(server["name"], server["host"], R.drawable.ic_mobile_core, server) { open(server.id) }
+        }
+        tile("Добавить VPS для деплоя", null, R.drawable.ic_mobile_add) { open(null) }
     }
 
     private fun open(id: String?) {

@@ -157,6 +157,17 @@ class LogcatFragment : ToolbarFragment(R.layout.layout_logcat),
 
     override fun onMenuItemClick(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.action_log_detail -> {
+                val levels = listOf("debug", "info", "error")
+                MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.log_detail)
+                    .setSingleChoiceItems(R.array.log_detail_choices, levels.indexOf(DataStore.logLevel)) { dialog, index ->
+                        DataStore.configurationStore.putBoolean("diagnosticLogsConfigured", true)
+                        DataStore.logLevel = levels[index]
+                        DataStore.xrayLogLevel = levels[index]
+                        dialog.dismiss()
+                        needReload()
+                    }.setNegativeButton(android.R.string.cancel, null).show()
+            }
             R.id.action_clear_logcat -> {
                 MaterialAlertDialogBuilder(requireContext())
                     .setTitle(R.string.clear_logcat)

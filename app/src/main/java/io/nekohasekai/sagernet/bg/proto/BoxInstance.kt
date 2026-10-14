@@ -40,6 +40,7 @@ abstract class BoxInstance(
     }
 
     protected open fun buildConfig() {
+        moe.matsuri.nb4a.utils.DiagnosticLogging.prepare()
         // random_inbound_port: a fresh port per start, saved so the app's own requests reach it (mainwindow_setup.cpp:193-196).
         if (DataStore.randomInboundPort) DataStore.inboundSocksPort = mkPort()
         // The dashboard is on by default, so another app holding its port must not fail the start: it moves, and the

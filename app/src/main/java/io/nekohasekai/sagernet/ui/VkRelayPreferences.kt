@@ -20,6 +20,19 @@ import java.util.concurrent.TimeUnit
 
 object VkRelayPreferences {
     fun bind(fragment: PreferenceFragmentCompat, group: PreferenceGroup) {
+        if (group.preferenceCount == 0) {
+            group.addPreference(Preference(fragment.requireContext()).apply {
+                title="Привязать аккаунт VK"; setIcon(R.drawable.ic_mobile_vk); isSelectable=false
+            })
+            group.addPreference(Preference(fragment.requireContext()).apply {
+                title="Хеши по умолчанию для новых профилей qWDTT"
+                summary="Загрузка…"; isSingleLineTitle=false; setIcon(R.drawable.ic_mobile_hash); isSelectable=false
+            })
+            group.addPreference(Preference(fragment.requireContext()).apply {
+                summary="В режиме Авто повышенные риски бана аккаунта ВК, используйте на свой страх и риск."
+                isSelectable=false; isIconSpaceReserved=false
+            })
+        }
         fragment.lifecycleScope.launch {
             val info=withContext(Dispatchers.IO) { VkRelayAccount.uiInfo() }
             if(fragment.isAdded && group.parent===fragment.preferenceScreen) bindLoaded(fragment,group,info)

@@ -20,6 +20,7 @@
         android:id="@+id/action_save_logs"
         android:title="@string/log_save"
         app:showAsAction="never" />
+    <item android:id="@+id/action_log_detail" android:title="@string/log_detail" app:showAsAction="never" />
     <item
         android:id="@+id/action_hide_sensitive"
         android:checkable="true"

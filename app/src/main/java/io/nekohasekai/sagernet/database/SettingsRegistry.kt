@@ -295,8 +295,8 @@ object SettingsRegistry {
     // ------------------------------------------------------------------------------------------------ core
 
     /** Android "warn" (decision D9; desktop "info"). */
-    @JvmField val LOG_LEVEL = oneOf("log_level", "warn", LOG_LEVELS)
-    @JvmField val XRAY_LOG_LEVEL = oneOf("xray_log_level", "warning", XRAY_LOG_LEVELS)
+    @JvmField val LOG_LEVEL = oneOf("log_level", "debug", LOG_LEVELS)
+    @JvmField val XRAY_LOG_LEVEL = oneOf("xray_log_level", "debug", XRAY_LOG_LEVELS)
     @JvmField val ENABLE_STATS = bool("enable_stats", true)
     @JvmField val DISABLE_TRAFFIC_STATS = bool("disable_traffic_stats", false)
     /** Sign-encoded port: at most 0 is off. */

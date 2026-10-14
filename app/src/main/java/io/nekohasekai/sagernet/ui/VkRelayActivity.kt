@@ -152,14 +152,16 @@ class VkRelayActivity : ThemedActivity() {
         override fun onCreateAnimator(transit: Int, enter: Boolean, nextAnim: Int): android.animation.Animator? =
             MobileScreenMotion.create(this, nextAnim)
         private var firstResume=true
+        private lateinit var accountGroup: PreferenceCategory
         override fun onCreatePreferences(state: Bundle?,rootKey: String?) { preferenceScreen = preferenceManager.createPreferenceScreen(requireContext()); build() }
-        override fun onResume() { super.onResume();if(firstResume) firstResume=false else build() }
+        override fun onResume() { super.onResume();if(firstResume) firstResume=false else VkRelayPreferences.bind(this,accountGroup) }
         override fun onViewCreated(view: android.view.View,state: Bundle?) {
             super.onViewCreated(view,state);MobileSettingsStyle.apply(this,view)
         }
         private fun build() {
             preferenceScreen.removeAll()
             val account = PreferenceCategory(requireContext()).apply { title = "Аккаунт и хеши" }
+            accountGroup=account
             preferenceScreen.addPreference(account);VkRelayPreferences.bind(this,account)
             val deploy = PreferenceCategory(requireContext()).apply { title = "Управление серверами" }
             preferenceScreen.addPreference(deploy)

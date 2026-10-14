@@ -19,7 +19,7 @@ object CoreLog {
 
     private const val FILE_NAME = "core.log"
     private const val PREVIOUS_FILE_NAME = "core.log.prev"
-    const val DEFAULT_SIZE_KB = 512
+    const val DEFAULT_SIZE_KB = 2048
     private const val MIN_SIZE_KB = 50
 
     private val lock = Any()
