@@ -583,7 +583,7 @@
     <string name="enable_tun_routing">Tun routing</string>
     <string name="enable_tun_routing_sum">Keep the direct IP rules of the route profile outside the tun</string>
     <string name="bypass_private_ranges">Bypass private ranges</string>
-    <string name="bypass_private_ranges_sum">Keep the ranges below outside the tun</string>
+    <string name="bypass_private_ranges_sum">Bypass these private ranges by default. Explicit routing rules and server-advertised VPN networks can take priority.</string>
     <string name="private_ranges">Private ranges</string>
     <string name="private_ranges_dialog_message">One address or CIDR per line</string>
     <string name="restore_default_ranges">Restore default ranges</string>

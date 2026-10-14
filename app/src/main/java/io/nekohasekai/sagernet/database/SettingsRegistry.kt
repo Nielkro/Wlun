@@ -170,7 +170,6 @@ object SettingsRegistry {
         SettingValidators.isCidr(it, ipv6 = true)
     }
     @JvmField val DISABLE_PRIVATE_RANGE_BYPASS = bool("disable_private_range_bypass", false)
-    @JvmField val OPENCONNECT_PRIVATE_NETWORKS = bool("openconnect_private_networks", true)
     @JvmField val LAN_SHARING_ENABLED = bool("lan_sharing_enabled", false)
     @JvmField val VPN_PRIVATE_RANGES = stringList("vpn_private_ranges", DEFAULT_PRIVATE_RANGES) { ranges ->
         ranges.all { SettingValidators.isPrivateRange(it) }
@@ -329,7 +328,7 @@ object SettingsRegistry {
     /** The Android-only keys of the same table (camelCase, never read by the desktop). */
     @JvmField
     val ANDROID_KEYS: Set<String> = setOf(
-        LAN_SHARING_ENABLED.key, OPENCONNECT_PRIVATE_NETWORKS.key,
+        LAN_SHARING_ENABLED.key, "openconnect_private_networks", // Legacy beta 1 key; no longer used by the generator.
         Key.SERVICE_MODE, Key.PROXY_APPS, Key.BYPASS_MODE, Key.INDIVIDUAL, Key.APPEND_HTTP_PROXY, Key.HTTP_PROXY_BYPASS,
         Key.METERED_NETWORK, Key.WAKE_RESET_CONNECTIONS, Key.NETWORK_CHANGE_RESET_CONNECTIONS,
         Key.SHOW_DIRECT_SPEED, Key.SHOW_GROUP_IN_NOTIFICATION, Key.NOTIFICATION_ACTIONS,

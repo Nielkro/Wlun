@@ -54,7 +54,6 @@ data class GeneratorSettings(
     val ipv6Enabled: Boolean = false,
     /** !disable_private_range_bypass (SettingsRepo.h:238). */
     val bypassLan: Boolean = true,
-    val openConnectPrivateNetworks: Boolean = true,
     val lanSharingEnabled: Boolean = false,
     /** vpn_private_ranges (SettingsRepo.h:239, defaultTunPrivateRanges); a range a non-direct rule targets stays in the tun. */
     val privateRanges: List<String> = DEFAULT_PRIVATE_RANGES,

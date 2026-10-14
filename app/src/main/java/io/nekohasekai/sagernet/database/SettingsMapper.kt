@@ -74,7 +74,6 @@ object SettingsMapper {
             tunIPv6Cidr = DataStore.vpnTunIpv6Cidr,
             ipv6Enabled = DataStore.vpnIpv6,
             bypassLan = !DataStore.disablePrivateRangeBypass,
-            openConnectPrivateNetworks = DataStore.openConnectPrivateNetworks,
             lanSharingEnabled = DataStore.lanSharingEnabled,
             privateRanges = DataStore.vpnPrivateRanges,
             perAppEnabled = DataStore.proxyApps,

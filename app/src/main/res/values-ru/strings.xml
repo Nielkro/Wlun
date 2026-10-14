@@ -578,7 +578,7 @@
     <string name="battery_state_restricted">Ограничено системой: фоновый запуск заблокирован</string>
     <string name="battery_state_unrestricted">Без ограничений</string>
     <string name="bypass_private_ranges">Обходить частные диапазоны</string>
-    <string name="bypass_private_ranges_sum">Оставлять перечисленные ниже диапазоны вне tun</string>
+    <string name="bypass_private_ranges_sum">По умолчанию обходить эти частные диапазоны. Явные правила маршрутизации и сети, объявленные VPN-сервером, могут иметь приоритет.</string>
     <string name="cag_advanced">Дополнительно</string>
     <string name="cag_app_requests">Запросы приложений</string>
     <string name="cag_authentication">Аутентификация</string>

@@ -162,7 +162,6 @@ open class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_comb
         reloadOn(
             SettingsRegistry.VPN_MTU.key, SettingsRegistry.VPN_IPV6.key,
             SettingsRegistry.ENABLE_TUN_ROUTING.key,
-            SettingsRegistry.OPENCONNECT_PRIVATE_NETWORKS.key,
         )
 
         val ranges = pref<StringListPreference>(SettingsRegistry.VPN_PRIVATE_RANGES.key)

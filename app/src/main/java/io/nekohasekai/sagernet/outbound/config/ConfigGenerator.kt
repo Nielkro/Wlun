@@ -71,9 +71,10 @@ class ConfigGenerator @JvmOverloads constructor(
         val front = if (plan != null) plan.group?.frontProxyId ?: -1L else frontProxyId
 
         val state = BuildState(forTest = false)
-        state.remotePrivateNetworks = settings.openConnectPrivateNetworks &&
-            (profile.type == "openconnect" || (profile.type == "chain" &&
-                TypeAccess.chainHops(profile).any { reads.get(it)?.type == "openconnect" }))
+        val remoteVpnTypes = listOf("openconnect", "openvpn")
+        state.remotePrivateNetworks = settings.vpnMode &&
+            (profile.type in remoteVpnTypes || (profile.type == "chain" &&
+                TypeAccess.chainHops(profile).firstOrNull()?.let { reads.get(it)?.type in remoteVpnTypes } == true))
         val chains = ChainBuilder(reads, buildContext, state, if (settings.enableWarp) WarpHop.outbound(settings) else null)
         calculatePrerequisites(state, chains, reads, profile, route, landing, front, plan)
         if (state.failed) return GeneratedConfig.failure(state.error)
@@ -964,9 +965,19 @@ class ConfigGenerator @JvmOverloads constructor(
         }
         rules.add(jsonObjectOf("protocol" to "dns", "action" to "hijack-dns"))
         if (!state.forTest) rules.add(jsonObjectOf("inbound" to Tags.DNS_IN, "action" to "reject"))
-        if (state.remotePrivateNetworks) rules.add(jsonObjectOf(
-            "ip_is_private" to true, "action" to "route", "outbound" to Tags.PROXY))
         for (rule in profileRules) rules.add(rule)
+        if (state.remotePrivateNetworks) {
+            // Server-advertised include/exclude routes are matched dynamically by the endpoint.
+            // Only use the primary egress: auxiliary route endpoints and inner hops must not bypass a chain.
+            val primaryVpn = state.endpoints.filterIsInstance<JsonObject>().firstOrNull {
+                it.string("tag") == Tags.PROXY && it.string("type") in listOf("openconnect", "openvpn-client")
+            }
+            if (primaryVpn != null) rules.add(jsonObjectOf(
+                "ip_is_private" to true, "preferred_by" to JsonArray.of(Tags.PROXY),
+                "action" to "route", "outbound" to Tags.PROXY))
+            if (settings.bypassLan) rules.add(jsonObjectOf(
+                "ip_is_private" to true, "action" to "route", "outbound" to Tags.DIRECT))
+        }
         val defaultOutbound = route.default_outbound_id
         // A block default is a direct final that nothing reaches (:2064-2068, :2126-2128).
         if (defaultOutbound == OutboundIds.BLOCK) rules.add(jsonObjectOf("action" to "reject"))

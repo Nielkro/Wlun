@@ -35,7 +35,6 @@
         <Preference app:key="sharingHotspot" app:title="@string/lan_sharing_hotspot" app:icon="@drawable/ic_mobile_settings" app:widgetLayout="@layout/qmobile_preference_arrow" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/cag_advanced">
-        <SwitchPreference app:key="openconnect_private_networks" app:defaultValue="true" app:icon="@drawable/ic_mobile_globe" app:title="@string/openconnect_private_networks" app:summary="@string/openconnect_private_networks_summary" />
         <EditTextPreference app:dialogMessage="@string/dns_in_port_dialog_message" app:icon="@drawable/ic_action_dns" app:key="core_dns_in_port" app:title="@string/dns_in_port" app:useSimpleSummaryProvider="true" />
         <moe.matsuri.nb4a.ui.EditConfigPreference app:icon="@drawable/ic_baseline_layers_24" app:jsonAllowEmpty="true" app:jsonSchema="#" app:key="custom_inbound" app:title="@string/custom_inbound" />
     </PreferenceCategory>

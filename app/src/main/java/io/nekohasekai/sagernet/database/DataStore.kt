@@ -163,7 +163,6 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var vpnTunIpv4Cidr by SettingsRegistry.VPN_TUN_IPV4_CIDR
     var vpnTunIpv6Cidr by SettingsRegistry.VPN_TUN_IPV6_CIDR
     var disablePrivateRangeBypass by SettingsRegistry.DISABLE_PRIVATE_RANGE_BYPASS
-    var openConnectPrivateNetworks by SettingsRegistry.OPENCONNECT_PRIVATE_NETWORKS
     var lanSharingEnabled by SettingsRegistry.LAN_SHARING_ENABLED
     var vpnPrivateRanges by SettingsRegistry.VPN_PRIVATE_RANGES
     var enableTunRouting by SettingsRegistry.ENABLE_TUN_ROUTING
