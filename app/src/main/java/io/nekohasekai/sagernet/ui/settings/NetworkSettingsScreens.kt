@@ -66,6 +66,8 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
         pref<EditConfigPreference>(SettingsRegistry.CUSTOM_INBOUND.key).useConfigStore(SettingsRegistry.CUSTOM_INBOUND.key)
 
         allowLan.isChecked = DataStore.allowLanAccess
+        // This legacy switch binds the proxy-only listener; VPN sharing has its own explicit switch.
+        allowLan.isVisible = DataStore.serviceMode != Key.MODE_VPN
         allowLan.setOnPreferenceChangeListener { _, newValue ->
             DataStore.inboundAddress = if (newValue as Boolean) SettingsRegistry.LAN_ADDRESS else SettingsRegistry.LOOPBACK_ADDRESS
             needReload()
@@ -87,18 +89,29 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
 
         fun updateMixedState(disabled: Boolean) {
             mixedDisabled = disabled
+            val sharing = DataStore.lanSharingEnabled && DataStore.serviceMode == Key.MODE_VPN
+            if (sharing && !auth.isChecked) auth.isChecked = true
             for (p in listOf(port, randomPort, allowLan, auth, user, pass)) p.isEnabled = !disabled
-            if (disabled) {
+            randomPort.isEnabled = !disabled && !sharing
+            auth.isEnabled = !disabled && !sharing
+            if (disabled && !sharing) {
                 port.summaryProvider = null
                 port.summary = getString(R.string.mixed_inbound_disabled)
             } else {
                 port.summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
             }
-            user.isEnabled = !disabled && auth.isChecked
-            pass.isEnabled = !disabled && auth.isChecked
+            port.isEnabled = !disabled || sharing
+            user.isEnabled = sharing || (!disabled && auth.isChecked)
+            pass.isEnabled = sharing || (!disabled && auth.isChecked)
             updateHttpProxyState()
         }
         updateMixedState(mixedDisabled)
+        findPreference<SwitchPreference>(SettingsRegistry.LAN_SHARING_ENABLED.key)?.setOnPreferenceChangeListener { _, value ->
+            DataStore.lanSharingEnabled = value as Boolean
+            updateMixedState(mixedDisabled)
+            needReload()
+            true
+        }
         pref<SwitchPreference>(SettingsRegistry.DISABLE_MIXED_INBOUND.key).setOnPreferenceChangeListener { _, newValue ->
             val disabled = newValue as Boolean
             if (disabled && DataStore.serviceMode == Key.MODE_PROXY) {
@@ -113,9 +126,10 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
             true
         }
         auth.setOnPreferenceChangeListener { _, newValue ->
-            user.isEnabled = newValue as Boolean
-            pass.isEnabled = newValue
-            updateHttpProxyState(authOn = newValue)
+            val enabled = newValue as Boolean
+            user.isEnabled = DataStore.lanSharingEnabled || enabled
+            pass.isEnabled = DataStore.lanSharingEnabled || enabled
+            updateHttpProxyState(authOn = enabled)
             needReload()
             true
         }
@@ -129,7 +143,10 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
             appendHttpProxy.isVisible = false
             httpProxyBypass.isVisible = false
         }
-        reloadOn(randomPort.key, user.key, pass.key, httpProxyBypass.key)
+        user.setOnPreferenceChangeListener { _, value ->
+            if (value.toString().isBlank()) false else { needReload(); true }
+        }
+        reloadOn(randomPort.key, httpProxyBypass.key)
     }
 
     private companion object {
@@ -138,9 +155,10 @@ open class InboundSettingsFragment(@androidx.annotation.XmlRes preferences: Int 
 }
 
 /** Tun Settings: stack, MTU, IPv6, tun routing, private range bypass, per-app proxy and the tun addresses. */
-class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined) {
+open class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined) {
     override fun bind() {
         super.bind()
+        LanSharingSettings.bind(this)
         reloadOn(
             SettingsRegistry.VPN_MTU.key, SettingsRegistry.VPN_IPV6.key,
             SettingsRegistry.ENABLE_TUN_ROUTING.key,
@@ -183,6 +201,11 @@ class TunSettingsFragment : InboundSettingsFragment(R.xml.settings_tun_combined)
             true
         }
 
+    }
+
+    override fun onResume() {
+        super.onResume()
+        LanSharingSettings.refresh(this)
     }
 
     private companion object {

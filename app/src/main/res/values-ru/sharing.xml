@@ -3,10 +3,11 @@
     <string name="lan_sharing_enabled">Разрешить подключения других устройств</string>
     <string name="lan_sharing_summary">HTTP- и SOCKS5-прокси через телефон. Подключите другое устройство к точке доступа телефона или той же сети Wi-Fi, затем настройте на нём прокси. Примените изменения к работающему VPN.</string>
     <string name="lan_sharing_address">Адреса телефона</string>
+    <string name="lan_sharing_loading">Определяем адрес телефона…</string>
     <string name="lan_sharing_no_address">Включите точку доступа или подключитесь к Wi-Fi, затем откройте этот экран заново.</string>
     <string name="lan_sharing_port">Порт HTTP / SOCKS5</string>
     <string name="lan_sharing_hotspot">Настройки точки доступа</string>
     <string name="lan_sharing_help">На Windows: Сеть и Интернет → Прокси-сервер → Настройка вручную: адрес телефона и порт ниже. В Telegram Desktop укажите SOCKS5 в настройках прокси Telegram. При запросе введите имя пользователя и пароль ниже. Раздача работает для приложений, настроенных на этот прокси. VPN должен оставаться подключённым.</string>
     <string name="openconnect_private_networks">OpenConnect: удалённая локальная сеть</string>
-    <string name="openconnect_private_networks_summary">Направлять частные адреса через OpenConnect для доступа к удалённому роутеру и его сети. Отключите, чтобы использовать локальную сеть телефона.</string>
+    <string name="openconnect_private_networks_summary">Только для OpenConnect: направлять частные адреса к удалённому роутеру, с приоритетом над обходом частных диапазонов. По умолчанию включено. Отключите для доступа к локальной сети телефона. Не включает раздачу VPN.</string>
 </resources>

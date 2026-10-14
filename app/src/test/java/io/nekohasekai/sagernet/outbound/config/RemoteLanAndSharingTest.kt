@@ -11,6 +11,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class RemoteLanAndSharingTest {
+    @Test fun lanControlsHaveIndependentEffectsAndExplicitRemotePriority() {
+        val profile=OpenConnect().apply { server="vpn.example.org" }
+        for(remote in listOf(false,true)) for(bypass in listOf(false,true))
+            for(sharing in listOf(false,true)) for(legacyLan in listOf(false,true)) {
+                val result=ConfigGenerator(ProfileProvider { profile },GeneratorSettings(
+                    vpnMode=true,openConnectPrivateNetworks=remote,bypassLan=bypass,
+                    lanSharingEnabled=sharing,inboundAddress=if(legacyLan) "::" else "127.0.0.1",
+                    mixedUsername="sharing-user",mixedPassword="01234567890123456789012345678901"
+                )).build(1)
+                assertNull(result.error)
+                VpnListenerPolicy.check(result.coreConfig,sharing)
+                val config=JsonInput.parseObject(result.coreConfig)
+                val inbounds=config.array("inbounds").filterIsInstance<JsonObject>()
+                val tun=inbounds.first { it.string("type")=="tun" }
+                assertEquals(bypass && !remote,tun.array("route_exclude_address").contains("192.168.0.0/16"))
+                assertEquals(sharing,inbounds.any { it.string("type")=="mixed" })
+                assertEquals(remote,config.obj("route").array("rules").filterIsInstance<JsonObject>().any {
+                    it.bool("ip_is_private") && it.string("outbound")=="proxy"
+                })
+            }
+    }
     @Test fun openConnectCapturesRemotePrivateLanBeforeGenericRouting() {
         val profile=OpenConnect().apply { server="vpn.example.org" }
         fun config(enabled: Boolean): JsonObject {

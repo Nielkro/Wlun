@@ -1,59 +1,47 @@
 package app.qthrone.mobile.ui.settings
 
 import android.content.Intent
-import android.os.Bundle
 import android.provider.Settings
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.EditTextPreference
 import androidx.preference.Preference
 import app.qthrone.mobile.R
 import app.qthrone.mobile.SagerNet
-import app.qthrone.mobile.database.DataStore
-import app.qthrone.mobile.database.SettingValidators
-import app.qthrone.mobile.database.SettingsRegistry
-import app.qthrone.mobile.database.preference.EditTextPreferenceModifiers
-import app.qthrone.mobile.ui.GroupSettingsActivity
-import app.qthrone.mobile.ktx.needReload
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.net.Inet4Address
 import java.net.NetworkInterface
 
-class LanSharingSettingsFragment : SettingsScreenFragment(R.xml.settings_sharing) {
-    override fun beforeInflate() { DataStore.initGlobal() }
-    override fun bind() {
-        val port = pref<EditTextPreference>(SettingsRegistry.INBOUND_SOCKS_PORT.key)
-        checkText(port.key, R.string.invalid_port, valid=SettingValidators::isPort)
-        port.setOnBindEditTextListener(EditTextPreferenceModifiers.Port)
-        val user = pref<EditTextPreference>(SettingsRegistry.INBOUND_USER.key)
-        user.setOnPreferenceChangeListener { _, value ->
-            if (value.toString().isBlank()) false else { needReload(); true }
-        }
-        val pass = pref<EditTextPreference>(SettingsRegistry.INBOUND_PASS.key)
-        checkText(pass.key,R.string.qmobile_socks_password_invalid,valid={ it.length>=32 })
-        pass.summaryProvider=GroupSettingsActivity.PasswordSummaryProvider
-        pass.setOnBindEditTextListener { it.inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD }
-        reloadOn(SettingsRegistry.LAN_SHARING_ENABLED.key)
-        pref<Preference>("sharingAddresses").setOnPreferenceClickListener {
+object LanSharingSettings {
+    private var cachedAddresses: String? = null
+    fun bind(fragment: androidx.preference.PreferenceFragmentCompat) {
+        fragment.findPreference<Preference>("sharingAddresses")!!.summary =
+            cachedAddresses ?: fragment.getString(R.string.lan_sharing_loading)
+        fragment.findPreference<Preference>("sharingAddresses")!!.setOnPreferenceClickListener {
             SagerNet.trySetPrimaryClip(it.summary?.toString().orEmpty()); true
         }
-        pref<Preference>("sharingHotspot").setOnPreferenceClickListener {
-            runCatching { startActivity(Intent("android.settings.TETHER_SETTINGS")) }
-                .onFailure { startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) }
+        fragment.findPreference<Preference>("sharingHotspot")!!.setOnPreferenceClickListener {
+            runCatching { fragment.startActivity(Intent("android.settings.TETHER_SETTINGS")) }
+                .onFailure { fragment.startActivity(Intent(Settings.ACTION_WIRELESS_SETTINGS)) }
             true
         }
     }
-    override fun onResume() {
-        super.onResume()
-        viewLifecycleOwner.lifecycleScope.launch {
+    fun refresh(fragment: androidx.preference.PreferenceFragmentCompat) {
+        fragment.viewLifecycleOwner.lifecycleScope.launch {
             val addresses=withContext(Dispatchers.IO) {
                 runCatching { NetworkInterface.getNetworkInterfaces().toList().filter {
                     it.isUp && !it.isLoopback && listOf("tun","wg","rmnet","ccmni","pdp").none { prefix -> it.name.startsWith(prefix) }
                 }.flatMap { it.inetAddresses.toList() }.filterIsInstance<Inet4Address>()
                     .filter { it.isSiteLocalAddress }.mapNotNull { it.hostAddress }.distinct() }.getOrDefault(emptyList())
             }
-            pref<Preference>("sharingAddresses").summary=addresses.joinToString("\n").ifEmpty { getString(R.string.lan_sharing_no_address) }
+            val summary=addresses.joinToString("\n").ifEmpty { fragment.getString(R.string.lan_sharing_no_address) }
+            cachedAddresses=summary
+            fragment.findPreference<Preference>("sharingAddresses")?.let { preference ->
+                if(preference.summary?.toString()!=summary) preference.summary=summary
+            }
         }
     }
 }
+
+/** Compatibility for a beta 1 screen restored by Android after an update. */
+class LanSharingSettingsFragment : TunSettingsFragment()

@@ -30,7 +30,6 @@ object MobileSettingsStyle {
                 if(fragment is SettingsPreferenceFragment && preference !is PreferenceCategory) {
                     val icon=when {
                         preference.key=="qmobileLogs" -> app.qthrone.mobile.R.drawable.ic_mobile_logs
-                        preference.key=="qmobileSharing" -> app.qthrone.mobile.R.drawable.ic_mobile_globe
                         preference.key=="qmobileVkRelay" -> app.qthrone.mobile.R.drawable.ic_mobile_vk
                         preference.key=="qmobileTun" -> app.qthrone.mobile.R.drawable.ic_mobile_tun
                         preference.key=="qmobileCore" -> app.qthrone.mobile.R.drawable.ic_mobile_core
@@ -70,18 +69,20 @@ object MobileSettingsStyle {
             }
         })
         val styledBackgrounds = java.util.WeakHashMap<View, android.graphics.drawable.Drawable>()
+        val styledKeys = java.util.WeakHashMap<View, String?>()
         fun style(view: View) {
-            if (view.background != null && styledBackgrounds[view] === view.background) return
             val position=list.getChildAdapterPosition(view)
             if(position==RecyclerView.NO_POSITION) return
             val preference=(list.adapter as? PreferenceGroupAdapter)?.getItem(position)
+            val oldKey=styledKeys[view]
+            if (view.background != null && styledBackgrounds[view] === view.background && oldKey == preference?.key) return
             if(preference != null) MobileSelector.bind(preference,view)
             val category=preference is PreferenceCategory
             val iconFrame=view.findViewById<View>(androidx.preference.R.id.icon_frame)
             iconFrame?.visibility=if(!category && preference?.icon!=null) View.VISIBLE else View.GONE
             // Only change the view here: preference setters notify the adapter while
             // onChildViewAttachedToWindow can still be inside RecyclerView layout.
-            val warning=preference?.key == "vkRelayAutoWarning" || preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
+            val warning=preference?.key == "sharingInstructions" || preference?.key == "vkRelayAutoWarning" || preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
             if(category) {
                 view.minimumHeight=0
                 view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())
@@ -121,6 +122,12 @@ object MobileSettingsStyle {
                 setTypeface(null,if(category) Typeface.BOLD else Typeface.NORMAL)
             }
             view.findViewById<TextView>(android.R.id.summary)?.setTextColor(muted)
+            if(preference?.key == "sharingAddresses") view.findViewById<TextView>(android.R.id.summary)?.apply {
+                minLines=2; maxLines=2; ellipsize=android.text.TextUtils.TruncateAt.END
+            } else if(oldKey == "sharingAddresses") view.findViewById<TextView>(android.R.id.summary)?.apply {
+                minLines=0; maxLines=Int.MAX_VALUE; ellipsize=null
+            }
+            styledKeys[view]=preference?.key
         }
         list.addOnChildAttachStateChangeListener(object: RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view:View) { style(view) }

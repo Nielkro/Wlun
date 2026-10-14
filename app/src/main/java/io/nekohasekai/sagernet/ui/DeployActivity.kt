@@ -48,10 +48,23 @@ class DeployActivity : ThemedActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(MobilePalette.background))
+        window.setWindowAnimations(0)
+        if(android.os.Build.VERSION.SDK_INT>=34) {
+            overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_OPEN,0,0)
+            overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_CLOSE,0,0)
+        }
         shownConfig=savedInstanceState?.getString("shownConfig").orEmpty()
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(MobilePalette.background) }
         toolbar=Toolbar(this).apply { setTitleTextColor(MobilePalette.text);setNavigationIcon(R.drawable.baseline_arrow_back_24);setNavigationOnClickListener { back() } }
         val content=FrameLayout(this).apply { id=android.R.id.content+3 }
+        content.viewTreeObserver.addOnPreDrawListener(object: android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                if(screen()?.view == null) return false
+                content.viewTreeObserver.removeOnPreDrawListener(this)
+                return true
+            }
+        })
         root.addView(toolbar);root.addView(content,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view,insets -> val b=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(b.left,b.top,b.right,b.bottom);insets }
         val id=savedInstanceState?.getString("server") ?: intent.getStringExtra("editServer")
@@ -65,7 +78,7 @@ class DeployActivity : ThemedActivity() {
                     finish();return@launch
                 }
             } else if (server == null && intent.getBooleanExtra("directEditor",false)) server = DeployServer.create(kind)
-            if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commit()
+            if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commitNow()
             else screen()?.build()
         }
         lifecycleScope.launch {
@@ -85,6 +98,11 @@ class DeployActivity : ThemedActivity() {
                 }
             }
         }
+    }
+    @Suppress("DEPRECATION")
+    override fun finish() {
+        super.finish()
+        if(android.os.Build.VERSION.SDK_INT<34) overridePendingTransition(0,0)
     }
     override fun onSaveInstanceState(outState: Bundle) { server?.let { outState.putString("server",it.id) };outState.putString("shownConfig",shownConfig);super.onSaveInstanceState(outState) }
     private fun screen() = supportFragmentManager.fragments.filterIsInstance<Screen>().firstOrNull()

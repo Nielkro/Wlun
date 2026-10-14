@@ -75,7 +75,9 @@ class DeployListFragment : Fragment() {
 
     private fun open(id: String?) {
         startActivity(Intent(requireContext(), DeployActivity::class.java).putExtra("kind", kind)
-            .putExtra("editServer", id).putExtra("directEditor", true))
+            .putExtra("editServer", id).putExtra("directEditor", true)
+            .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION),
+            android.app.ActivityOptions.makeCustomAnimation(requireContext(),0,0).toBundle())
     }
 
     private fun tile(title: String, subtitle: String?, icon: Int, server: DeployServer? = null, click: () -> Unit) {
