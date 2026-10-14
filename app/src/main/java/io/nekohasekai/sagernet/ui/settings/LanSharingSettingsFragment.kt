@@ -44,4 +44,5 @@ object LanSharingSettings {
 }
 
 /** Compatibility for a beta 1 screen restored by Android after an update. */
+@androidx.annotation.Keep
 class LanSharingSettingsFragment : TunSettingsFragment()
