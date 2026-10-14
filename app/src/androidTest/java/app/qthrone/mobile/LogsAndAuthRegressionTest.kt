@@ -49,7 +49,7 @@ class LogsAndAuthRegressionTest {
         if (view is ViewGroup) (0 until view.childCount).flatMap { descendants(view.getChildAt(it)) } else emptyList()
     private fun screenshot(name: String) {
         val file = File(context.filesDir, name)
-        instrumentation.uiAutomation.takeScreenshot().useBitmap { bitmap ->
+        requireNotNull(instrumentation.uiAutomation.takeScreenshot()).useBitmap { bitmap ->
             file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         }
     }
@@ -87,7 +87,7 @@ class LogsAndAuthRegressionTest {
             screenshot("openconnect-auth-form.png")
             val dialog = ui { controller.visibleDialog!! }
             val inputs = ui { descendants(dialog.window!!.decorView) }
-            val group = inputs.filterIsInstance<MaterialButton>().single { it.text == "Group One" }
+            val group = inputs.filterIsInstance<MaterialButton>().single { it.text.toString() == "Group One" }
             ui { group.performClick() }
             await { ui { controller.visibleChoices?.isShowing == true } }
             screenshot("openconnect-auth-groups.png")
