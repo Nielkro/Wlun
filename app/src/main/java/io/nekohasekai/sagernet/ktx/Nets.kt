@@ -52,12 +52,17 @@ fun newHttpClient(
     timeoutSeconds: Long = 30,
 ): OkHttpClient {
     val builder = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request=chain.request()
+            chain.proceed(if(request.header("User-Agent")!=null) request
+                else request.newBuilder().header("User-Agent",appUserAgent()).build())
+        }
         .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
         .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
         .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)
     if (viaProxy && DataStore.serviceState.connected && !DataStore.mixedInboundDisabled) {
         builder.proxy(Proxy(Proxy.Type.SOCKS, InetSocketAddress(LOCALHOST, DataStore.inboundSocksPort)))
-        if (DataStore.inboundAuth) SocksAuthenticator.install()
+        if (DataStore.effectiveInboundAuth) SocksAuthenticator.install()
     }
     if (restrictTls13) {
         builder.connectionSpecs(
@@ -134,7 +139,7 @@ fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetRes
         if (!DataStore.mixedInboundDisabled) {
             val address = DataStore.inboundAddress.let { if (it == "::") LOCALHOST else it }
             builder.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(address, DataStore.inboundHttpPort)))
-            if (DataStore.inboundAuth) {
+            if (DataStore.effectiveInboundAuth) {
                 val credential = Credentials.basic(DataStore.inboundUser, DataStore.inboundPass)
                 builder.proxyAuthenticator(object : okhttp3.Authenticator {
                     override fun authenticate(route: Route?, response: Response): Request? {
@@ -216,13 +221,18 @@ fun serviceConnected(): Boolean = DataStore.baseService?.data?.state?.connected 
  */
 fun appHttpClient(viaProxy: Boolean, timeoutSeconds: Long = 30): OkHttpClient {
     val builder = OkHttpClient.Builder()
+        .addInterceptor { chain ->
+            val request=chain.request()
+            chain.proceed(if(request.header("User-Agent")!=null) request
+                else request.newBuilder().header("User-Agent",appUserAgent()).build())
+        }
         .connectTimeout(timeoutSeconds, TimeUnit.SECONDS)
         .readTimeout(timeoutSeconds, TimeUnit.SECONDS)
         .writeTimeout(timeoutSeconds, TimeUnit.SECONDS)
     if (viaProxy && !DataStore.mixedInboundDisabled) {
         val address = DataStore.inboundAddress.let { if (it == "::") LOCALHOST else it }
         builder.proxy(Proxy(Proxy.Type.HTTP, InetSocketAddress(address, DataStore.inboundHttpPort)))
-        if (DataStore.inboundAuth) {
+        if (DataStore.effectiveInboundAuth) {
             val credential = Credentials.basic(DataStore.inboundUser, DataStore.inboundPass)
             builder.proxyAuthenticator(object : okhttp3.Authenticator {
                 override fun authenticate(route: Route?, response: Response): Request? {
@@ -307,4 +317,4 @@ fun isLoopbackPortFree(port: Int): Boolean = try {
     false
 }
 
-const val USER_AGENT = "Throne/Android/" + BuildConfig.VERSION_NAME
+const val USER_AGENT = "qThroneMobile/" + BuildConfig.VERSION_NAME + " (Android)"

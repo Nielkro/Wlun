@@ -14,6 +14,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 import app.qthrone.mobile.ui.AnchoredTextPreference
+import app.qthrone.mobile.ui.HashTextPreference
+import app.qthrone.mobile.bg.carrier.CarrierHashCheck
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import app.qthrone.mobile.R
 
 /** Typed controls edit the exported document, preserving unrecognized members. */
 class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
@@ -21,6 +27,21 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     private fun cache(path: String) = "native.$path"
     private var document = JsonObject()
     private val fields = linkedMapOf<String, Any>()
+    private var hashCheck: CarrierHashCheck? = null
+    private var hashCheckJob: Job? = null
+    private var captchaController: app.qthrone.mobile.ui.MobileCaptchaController? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        captchaController=app.qthrone.mobile.ui.MobileCaptchaController(this)
+    }
+
+    override fun onDestroy() {
+        hashCheck?.close()
+        hashCheckJob?.cancel()
+        captchaController?.close()
+        super.onDestroy()
+    }
 
     override fun Outbound.init() {
         if(this is app.qthrone.mobile.outbound.types.Qwdtt && type == "qwdtt" && DataStore.editingId == 0L && !hashSourceChosen) {
@@ -161,9 +182,16 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             "vk_anon_path" to listOf("Звонок VK","Капча"),"captcha_mode" to listOf("Автоматически, с переходом в браузер","Окно браузера","Автоматически"),
             "provider" to listOf("Jitsi","Телемост","WBStream"),"obfs" to listOf("Аудио","Видео"))
         val editors=linkedMapOf<String,Preference>()
+        val checkButton=Preference(requireContext()).apply {
+            title="Проверить хеши";isPersistent=false;setIcon(R.drawable.ic_mobile_hash)
+        }
+        val checkStatus=Preference(requireContext()).apply { isPersistent=false;isSelectable=false;isVisible=false }
         fun refreshEditors() {
             val automatic = DataStore.profileCacheStore.getString(cache("hash_source")) == "auto"
             editors.filterKeys { it.startsWith("hash_") && it != "hash_source" }.values.forEach { it.isVisible = !automatic }
+            checkButton.isVisible=!automatic
+            checkStatus.isVisible=!automatic && checkStatus.summary!=null
+            checkButton.isEnabled=hashCheck!=null || fields.keys.any { it.startsWith("hash_") && it!="hash_source" && !DataStore.profileCacheStore.getString(cache(it)).isNullOrBlank() }
             editors["raw_port"]?.isEnabled=DataStore.profileCacheStore.getString(cache("mode"))!="wg"
             if(editingOutbound.type in listOf("qwdtt","csqtt")) {
                 val count=editors.keys.filter { it.startsWith("hash_") && it != "hash_source" }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.distinct().size.coerceAtLeast(1)
@@ -196,7 +224,9 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     this.value=DataStore.profileCacheStore.getString(cache(path))
                     summaryProvider = ListPreference.SimpleSummaryProvider.getInstance()
                 }
-                else -> (if(path in listOf("go_dns","dns")) AnchoredTextPreference(requireContext()) else EditTextPreference(requireContext())).apply {
+                else -> (if(path in listOf("go_dns","dns")) AnchoredTextPreference(requireContext())
+                    else if(path.startsWith("hash_") && path!="hash_source") HashTextPreference(requireContext())
+                    else EditTextPreference(requireContext())).apply {
                     summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
                     positiveButtonText=getString(android.R.string.ok)
                     negativeButtonText=getString(android.R.string.cancel)
@@ -259,6 +289,53 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             }
             editors[path]=preference
             preferenceScreen.addPreference(preference)
+            if(path=="hash_"+(if(editingOutbound.type=="csqtt") 6 else 4)) {
+                preferenceScreen.addPreference(checkButton)
+                preferenceScreen.addPreference(checkStatus)
+            }
+        }
+        val results=linkedMapOf<Int,String>()
+        fun showResults() {
+            checkStatus.summary=results.entries.joinToString("\n") { "Хэш VK ${it.key}: ${it.value}" }
+            checkStatus.isVisible=true
+        }
+        fun unlockHashes() {
+            editors.filterKeys { it.startsWith("hash_") }.values.forEach { it.isEnabled=true }
+            checkButton.title="Проверить хеши"
+            refreshEditors()
+        }
+        checkButton.setOnPreferenceClickListener {
+            val active=hashCheck
+            if(active!=null) {
+                hashCheck=null;active.close();hashCheckJob?.cancel();hashCheckJob=null
+                results.replaceAll { _, status -> if(status in listOf("В очереди","Проверяется…")) "Остановлено" else status }
+                showResults();unlockHashes()
+            } else {
+                val hashes=fields.keys.filter { it.startsWith("hash_") && it!="hash_source" }.mapNotNull { path ->
+                    DataStore.profileCacheStore.getString(cache(path))?.trim()?.takeIf { it.isNotEmpty() }?.let { path.removePrefix("hash_").toInt() to it }
+                }
+                if(hashes.any { !it.second.matches(Regex("[A-Za-z0-9_-]{16,512}")) }) {
+                    Toast.makeText(this@NativeTransportSettingsActivity,"Некорректный хеш VK",Toast.LENGTH_SHORT).show()
+                } else if(hashes.isNotEmpty()) {
+                    val session=CarrierHashCheck();hashCheck=session
+                    checkButton.title="Стоп"
+                    editors.filterKeys { it.startsWith("hash_") }.values.forEach { it.isEnabled=false }
+                    results.clear();hashes.forEach { results[it.first]="В очереди" };showResults()
+                    val captchaMode=DataStore.profileCacheStore.getString(cache("captcha_mode")) ?: "auto"
+                    val anonPath=DataStore.profileCacheStore.getString(cache("vk_anon_path")) ?: "vkcalls"
+                    val dns=DataStore.profileCacheStore.getString(cache("go_dns"))?.takeIf { it.isNotBlank() } ?: "yandex"
+                    hashCheckJob=lifecycleScope.launch {
+                        try {
+                            withContext(Dispatchers.IO) { session.run(this@NativeTransportSettingsActivity,hashes,captchaMode,anonPath,dns) { slot,status ->
+                                runOnUiThread { if(hashCheck===session) { results[slot]=status;showResults() } }
+                            } }
+                        } catch(error: kotlinx.coroutines.CancellationException) { throw error }
+                        catch(_: Exception) { if(hashCheck===session) { results.replaceAll { _,status -> if(status in listOf("В очереди","Проверяется…")) "Ошибка проверки" else status };showResults() } }
+                        finally { if(hashCheck===session) { session.close();hashCheck=null;hashCheckJob=null;unlockHashes() } }
+                    }
+                }
+            }
+            true
         }
         refreshEditors()
         if(editingOutbound.type=="olcrtc") preferenceScreen.addPreference(Preference(requireContext()).apply {

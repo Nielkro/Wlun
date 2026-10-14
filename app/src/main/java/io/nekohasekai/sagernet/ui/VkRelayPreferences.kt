@@ -109,7 +109,6 @@ object VkRelayPreferences {
         })
         if(linked) fragment.lifecycleScope.launch {
             val avatar = withContext(Dispatchers.IO) {
-                VkRelayAccount.refreshIdentity()
                 runCatching {
                     val url = VkRelayAccount.avatarUrl()
                     if(!url.startsWith("https://")) return@runCatching null

@@ -9,7 +9,7 @@ import app.qthrone.mobile.ktx.app
 import java.util.UUID
 
 /** Private, same-app messages; captcha addresses and tokens never enter logs. */
-class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
+class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdle: Boolean = false): AutoCloseable {
     @Volatile var waiting=false
         private set
     private var receiver: BroadcastReceiver? = null
@@ -34,7 +34,9 @@ class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
         }
         ContextCompat.registerReceiver(app,callback,IntentFilter(app.packageName+".CAPTCHA_RESULT"),app.packageName+".SERVICE",null,ContextCompat.RECEIVER_NOT_EXPORTED)
         receiver=callback
-        app.sendBroadcast(Intent(app.packageName+".CAPTCHA_REQUEST").setPackage(app.packageName).putExtra("id",id).putExtra("url",target).putExtra("turn",turn),app.packageName+".SERVICE")
+        if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle)) {
+            respond(id,"error:VK confirmation is busy")
+        }
     }
     @Synchronized private fun respond(id: String?,result: String?) {
         if(id==null || id!=requestId || result==null || result.length>16384 || result.any { it=='\n' || it=='\r' }) return
@@ -47,7 +49,10 @@ class CarrierCaptchaBridge(private val process: Process): AutoCloseable {
         receiver?.let { runCatching { app.unregisterReceiver(it) } }
         receiver=null
         waiting=false
-        requestId?.let { app.sendBroadcast(Intent(app.packageName+".CAPTCHA_CLOSE").setPackage(app.packageName).putExtra("id",it),app.packageName+".SERVICE") }
+        requestId?.let {
+            CarrierUiRequests.clear(it)
+            app.sendBroadcast(Intent(app.packageName+".CAPTCHA_CLOSE").setPackage(app.packageName).putExtra("id",it),app.packageName+".SERVICE")
+        }
         requestId=null
     }
 }

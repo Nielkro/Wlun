@@ -79,6 +79,9 @@ class UpdateActivity : ThemedActivity() {
     private fun canInstall() = Build.VERSION.SDK_INT < 26 || packageManager.canRequestPackageInstalls()
 
     private fun render(state: State) {
+        binding.currentVersion.text = getString(R.string.update_current_version, BuildConfig.VERSION_NAME)
+        binding.currentVersion.visibility = if (state is State.Checking || state is State.UpToDate ||
+            state is State.Failed && state.offer == null) View.VISIBLE else View.GONE
         awaitingPermission?.let {
             if (state is State.Available) return renderPermission(it)
             awaitingPermission = null
@@ -98,7 +101,7 @@ class UpdateActivity : ThemedActivity() {
                 val channel = if (DataStore.allowBetaUpdate) R.string.update_channel_beta else R.string.update_channel_stable
                 show(
                     getString(R.string.update_up_to_date),
-                    getString(R.string.update_current_version, BuildConfig.VERSION_NAME) + "\n" + getString(channel),
+                    getString(channel),
                 )
                 buttons(positive = getString(android.R.string.ok) to {
                     UpdateManager.dismiss()
@@ -161,7 +164,6 @@ class UpdateActivity : ThemedActivity() {
 
     private fun renderOffer(offer: UpdateChecker.Offer) {
         val message = buildString {
-            appendLine(getString(R.string.update_current_version, BuildConfig.VERSION_NAME))
             val newVersion = if (offer.release.prerelease) R.string.update_new_version_pre else R.string.update_new_version
             appendLine(getString(newVersion, offer.versionName))
             offer.expected?.let { appendLine(getString(R.string.update_size, Formatter.formatShortFileSize(this@UpdateActivity, it.size))) }

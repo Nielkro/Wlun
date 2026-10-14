@@ -82,7 +82,7 @@ object MobileSettingsStyle {
             iconFrame?.visibility=if(!category && preference?.icon!=null) View.VISIBLE else View.GONE
             // Only change the view here: preference setters notify the adapter while
             // onChildViewAttachedToWindow can still be inside RecyclerView layout.
-            val warning=preference?.key == "sharingInstructions" || preference?.key == "vkRelayAutoWarning" || preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
+            val warning=preference?.key == "updateCurrentVersion" || preference?.key == "sharingInstructions" || preference?.key == "vkRelayAutoWarning" || preference?.key == "providerJsonWarning" || preference?.key?.startsWith("providerWarning") == true
             if(category) {
                 view.minimumHeight=0
                 view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())

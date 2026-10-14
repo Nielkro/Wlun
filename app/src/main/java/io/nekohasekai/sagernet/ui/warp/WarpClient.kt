@@ -87,7 +87,7 @@ object WarpClient {
         if (DataStore.mixedInboundDisabled) return ""
         var host = DataStore.inboundAddress.let { if (it == "::") LOCALHOST else it }
         if (host.contains(':')) host = "[$host]"
-        val credentials = if (DataStore.inboundAuth) {
+        val credentials = if (DataStore.effectiveInboundAuth) {
             val user = LinkCodec.percentEncodeAll(DataStore.inboundUser)
             "$user:${LinkCodec.percentEncodeAll(DataStore.inboundPass)}@"
         } else {

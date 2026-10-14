@@ -64,7 +64,7 @@ class RequestIdentity(
         @JvmStatic
         fun resolve(group: ProxyGroup?): RequestIdentity {
             // Panels serving Happ's full Xray JSON otherwise omit protocols such as Hy2.
-            var userAgent = if (DataStore.userAgent2.isBlank()) "Happ/3.0 qThroneMobile/" + app.qthrone.mobile.BuildConfig.VERSION_NAME else appUserAgent()
+            var userAgent = if (DataStore.userAgent2.isBlank()) "Happ/3.0 " + app.qthrone.mobile.ktx.USER_AGENT else appUserAgent()
             var sendHwid = DataStore.subSendHwid
             var device = applyCustomHwidParams(DeviceDetails.get(), DataStore.subCustomHwidParams)
             if (group == null) return RequestIdentity(userAgent, sendHwid, device)

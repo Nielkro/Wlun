@@ -112,7 +112,7 @@ class VkRelayActivity : ThemedActivity() {
                             completedLogin=true
                             CookieManager.getInstance().flush()
                             val sessionCookies=cookies()
-                            val userAgent=view.settings.userAgentString
+                            val userAgent=WebSettings.getDefaultUserAgent(this@VkRelayActivity)
                             lifecycleScope.launch {
                                 val result=withContext(Dispatchers.IO) { runCatching { VkRelayAccount.linkSession(sessionCookies,userAgent) } }
                                 if(result.isSuccess) { Toast.makeText(this@VkRelayActivity,"Аккаунт VK привязан",Toast.LENGTH_SHORT).show();finish() }

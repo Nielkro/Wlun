@@ -133,10 +133,16 @@ object DataStore : OnPreferenceDataStoreChangeListener {
         set(value) = SettingsRegistry.INBOUND_SOCKS_PORT.write(configurationStore, value)
 
     var inboundAddress by SettingsRegistry.INBOUND_ADDRESS
-    var inboundHttpPort by SettingsRegistry.INBOUND_HTTP_PORT
+    var inboundHttpPort: Int
+        get() = configurationStore.getRaw(SettingsRegistry.INBOUND_HTTP_PORT.key)
+            ?.let(SettingsRegistry.INBOUND_HTTP_PORT::decode)
+            ?: (SettingsRegistry.INBOUND_HTTP_PORT.default + userIndex)
+        set(value) = SettingsRegistry.INBOUND_HTTP_PORT.write(configurationStore, value)
     var disableMixedInbound by SettingsRegistry.DISABLE_MIXED_INBOUND
     var randomInboundPort by SettingsRegistry.RANDOM_INBOUND_PORT
     var inboundAuth by SettingsRegistry.INBOUND_AUTH
+    val effectiveInboundAuth: Boolean
+        get() = inboundAuth || (serviceMode == Key.MODE_VPN && lanSharingEnabled)
     var inboundUser by SettingsRegistry.INBOUND_USER
     var inboundPass by SettingsRegistry.INBOUND_PASS
     var customInbound by SettingsRegistry.CUSTOM_INBOUND
@@ -156,6 +162,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
         if (!configurationStore.contains(SettingsRegistry.INBOUND_SOCKS_PORT.key)) {
             inboundSocksPort = inboundSocksPort
         }
+        if (!configurationStore.contains(SettingsRegistry.INBOUND_HTTP_PORT.key)) inboundHttpPort = inboundHttpPort
     }
 
     // tun
