@@ -13,15 +13,7 @@ def patch(core: Path):
     if info.get("Sum") != "h1:Ui4XtxNgQiEquK+ch4dYhthKsVlGQpdCdKIpOuJVyog=" or info.get("GoModSum") != "h1:4AKZLVcvY3r54UaK2Gbnm7aN8pOwdLz+y4EP0QFZ5Eg=":
         raise ValueError("OpenConnect source checksum mismatch")
     target = core / ".qthrone" / "openconnect"
-    if target.exists():
-        target.chmod(0o755)
-        for entry in target.rglob("*"):
-            entry.chmod(0o755 if entry.is_dir() else 0o644)
     shutil.copytree(info["Dir"], target, dirs_exist_ok=True)
-    # Go's module cache is read-only; copied directory modes must allow patches.
-    target.chmod(0o755)
-    for entry in target.rglob("*"):
-        entry.chmod(0o755 if entry.is_dir() else 0o644)
     client = target / "cstp_client.go"
     before = '\tresult.Configuration.ExcludedRoutes, err = parseCSTPRoutes('
     content = client.read_text(encoding="utf-8")
