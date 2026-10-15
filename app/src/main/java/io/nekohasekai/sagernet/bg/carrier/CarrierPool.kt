@@ -22,6 +22,9 @@ object CarrierPool {
         val entry=synchronized(entries) {
             val existing=entries[plan.key]
             check(existing==null || existing.plan===plan) { "Native session changed while configuration was being built; retry the test" }
+            check(existing!=null || entries.values.none {
+                NativeSessionPolicy.sharesRemoteSession(it.plan.kind,it.plan.privateJson,plan.kind,plan.privateJson)
+            }) { "Эта сессия уже используется с другими настройками; проверка пропущена, чтобы не прервать туннель" }
             (existing ?: Entry(plan).also { entries[plan.key]=it;owner=true }).also { it.references++ }
         }
         fun release() {

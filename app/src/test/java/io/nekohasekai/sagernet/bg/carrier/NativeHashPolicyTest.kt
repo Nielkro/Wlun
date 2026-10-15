@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeHashPolicyTest {
-    @Test fun manualHashesAndExistingRowSurviveRepeatedRefreshForBothTransports() {
+    @Test fun subscriptionHashesAndExistingRowSurviveRepeatedRefreshForBothTransports() {
         for (old in listOf(profile(),app.qthrone.mobile.outbound.types.Csqtt().apply {
             name="Example";server="192.0.2.1";password="test";hashes=listOf("local_hash")
         })) {
@@ -15,7 +15,7 @@ class NativeHashPolicyTest {
                 incoming.hashes=listOf("subscription_default")
                 incoming.workers=18
                 NativeHashPolicy.preserve(incoming,listOf(old))
-                assertEquals(old.hashes,incoming.hashes)
+                assertEquals(listOf("subscription_default"),incoming.hashes)
                 assertEquals(old.deviceId,incoming.deviceId)
                 val previous=app.qthrone.mobile.group.OldEntry(7,"old-content",NativeHashPolicy.subscriptionIdentity(old),"old")
                 val index=app.qthrone.mobile.group.ContentIndex(listOf(previous))
@@ -29,6 +29,20 @@ class NativeHashPolicyTest {
                 assertEquals(listOf(8L),plan.stale)
             }
         }
+    }
+    @Test fun subscriptionReplacesLeadingSlotsAndKeepsOnlyUnclaimedManualSlots() {
+        for(type in listOf("qwdtt","csqtt")) {
+            val old=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+            old.name="Example";old.hashes=listOf("sub-old","manual-2","manual-3","manual-4")
+            for(count in listOf(1,3,4)) {
+                val incoming=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+                incoming.name="Example";incoming.hashes=(1..count).map { "sub-new-$it" }
+                NativeHashPolicy.preserve(incoming,listOf(old))
+                assertEquals((1..count).map { "sub-new-$it" }+old.hashes.drop(count),incoming.hashes)
+                old.hashes=incoming.hashes
+            }
+        }
+        assertEquals(listOf("a","b"),NativeHashPolicy.mergeSlots(emptyList(),listOf("a","b"),4))
     }
     @Test fun newImportsUseSameIdentityAcrossGroupsAndServerChanges() {
         assertEquals(NativeHashPolicy.defaultDeviceId("same-phone"),NativeHashPolicy.defaultDeviceId("same-phone"))

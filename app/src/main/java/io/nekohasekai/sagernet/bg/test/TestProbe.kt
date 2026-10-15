@@ -194,7 +194,7 @@ internal abstract class LatencySweep(protected val session: TestSession) {
     /** A candidate the generator rejected (BuildTestConfig: "Skipping invalid config"). */
     protected abstract fun invalid(profileId: Long, reason: String): ProbeResult
 
-    suspend fun run(profiles: List<ProxyEntity>) {
+    open suspend fun run(profiles: List<ProxyEntity>) {
         for (slice in profiles.chunked(TEST_BATCH_SIZE)) {
             if (session.cancelled) break
             runBatch(slice)

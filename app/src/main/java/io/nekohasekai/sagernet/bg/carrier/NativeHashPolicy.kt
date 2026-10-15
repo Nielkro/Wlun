@@ -19,8 +19,13 @@ object NativeHashPolicy {
             incoming.deviceId=it.deviceId
             incoming.deviceIdProvided=true
             incoming.hashSource = it.hashSource; incoming.hashSourceChosen = true
-            // Manual hashes are local profile settings, not subscription identity changes.
-            if (it.hashSource == "manual") incoming.hashes = it.hashes.toList()
+            // The subscription owns its leading slots; local trailing slots survive until replaced.
+            if (it.hashSource == "manual") incoming.hashes = mergeSlots(incoming.hashes,it.hashes,
+                if(incoming.type=="csqtt") 6 else 4)
         }
+    }
+    fun mergeSlots(subscription:List<String>, previous:List<String>,limit:Int):List<String> {
+        val prefix=subscription.take(limit)
+        return (prefix+previous.drop(prefix.size)).distinct().take(limit)
     }
 }

@@ -22,6 +22,7 @@ import app.qthrone.mobile.bg.CoreRuntime
 import app.qthrone.mobile.bg.SagerConnection
 import app.qthrone.mobile.bg.autoselector.AutoSelectorRuntime
 import app.qthrone.mobile.database.DataStore
+import app.qthrone.mobile.ui.SeasonalPolicy
 import app.qthrone.mobile.database.SettingsMapper
 import app.qthrone.mobile.group.RemoteRouteUpdater
 import app.qthrone.mobile.group.SubscriptionScheduler
@@ -84,6 +85,10 @@ class SagerNet : Application(),
         }
 
         if (isMainProcess) {
+            if(!DataStore.seasonalAuto151Migrated) {
+                DataStore.seasonalDecoration=SeasonalPolicy.migratedChoice(DataStore.seasonalDecoration,false)
+                DataStore.seasonalAuto151Migrated=true
+            }
             Theme.apply(this)
             Theme.applyNightTheme()
             AppLocale.apply()

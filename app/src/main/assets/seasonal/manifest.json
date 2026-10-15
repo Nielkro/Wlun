@@ -1,0 +1,82 @@
+{
+  "halloween": {
+    "file": "halloween-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 180,
+    "interval": 100
+  },
+  "newyear": {
+    "file": "newyear-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  },
+  "remembrance": {
+    "file": "remembrance-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 300,
+    "interval": 100
+  },
+  "may_remembrance": {
+    "file": "may_remembrance-wide.png",
+    "width": 544,
+    "height": 184,
+    "columns": 8,
+    "frames": 120,
+    "interval": 200
+  },
+  "kupala": {
+    "file": "kupala-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  },
+  "patrick": {
+    "file": "patrick-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  },
+  "valentine": {
+    "file": "valentine-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  },
+  "maslenitsa": {
+    "file": "maslenitsa-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  },
+  "christmas": {
+    "file": "christmas-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  },
+  "easter": {
+    "file": "easter-wide.png",
+    "width": 136,
+    "height": 46,
+    "columns": 16,
+    "frames": 240,
+    "interval": 100
+  }
+}

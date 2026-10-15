@@ -32,6 +32,7 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 /** Native client owner. Config secrets are removed before provider output enters application logs. */
 class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean) : AutoCloseable {
     private val closed = AtomicBoolean(false)
+    private val startupFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
     private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions)
 
     override fun close() {
@@ -90,9 +91,10 @@ class CarrierProcess private constructor(private val process: Process, private v
                 owner = running
                 val redactor = CarrierLogRedactor(privateJson, bridgeCredentials)
                 moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Starting native transport")
-                Thread({ runCatching { child.inputStream.bufferedReader().use { input ->
+                val outputReader=Thread({ runCatching { child.inputStream.bufferedReader().use { input ->
                     input.forEachLine { line ->
                         running.captcha.accept(line)
+                        NativeSessionPolicy.startupFailure(line)?.let { running.startupFailure.compareAndSet(null,it) }
                         redactor.redact(line)?.let { safe -> moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] $safe") }
                     }
                 } }.also { running.captcha.close() } }, "qThrone-carrier-output").apply { isDaemon = true; start() }
@@ -109,11 +111,15 @@ class CarrierProcess private constructor(private val process: Process, private v
                     }
                     lastWaitTick=now
                     val exited = try { child.exitValue(); true } catch (_: IllegalThreadStateException) { false }
-                    check(!exited) { "Transport client stopped before becoming ready" }
+                    if(exited) {
+                        outputReader.join(200)
+                        error(running.startupFailure.get() ?: "Transport client stopped before becoming ready")
+                    }
                     if (socksReady(socksPort, bridgeCredentials)) {
                         moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Native transport ready")
                         return@withContext running
                     }
+                    running.startupFailure.get()?.let { throw IllegalStateException(it) }
                     delay(100)
                 }
                 throw IllegalStateException("Transport client startup timed out")

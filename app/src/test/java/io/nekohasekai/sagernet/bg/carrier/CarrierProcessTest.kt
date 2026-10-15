@@ -14,6 +14,32 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
+    @Test fun qwdttAndCsqttExposeServerAuthRefusalInsteadOfStartupTimeout() = runBlocking {
+        val root=Files.createTempDirectory("carrier-auth-refusal").toFile()
+        try {
+            val native=File(root,"native").apply { mkdir() }
+            File(native,"libqwdtt.so").apply { writeText("fixture");setExecutable(true) }
+            File(native,"libcsqtt_transport.so").apply { writeText("fixture");setExecutable(true) }
+            for(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) {
+                val directory=File(root,kind.name).apply { mkdir() }
+                val error=runCatching {
+                    CarrierProcess.start(kind,native,directory,35,"{}",12345,CarrierBridgeCredentials.fresh(),1000) {
+                        object:Process() {
+                            override fun getOutputStream()=ByteArrayOutputStream()
+                            override fun getInputStream()=ByteArrayInputStream("FATAL_AUTH: fixture-secret\n".toByteArray())
+                            override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun waitFor()=0
+                            override fun exitValue()=0
+                            override fun destroy() {}
+                        }
+                    }
+                }.exceptionOrNull()
+                assertEquals(NativeSessionPolicy.startupFailure("FATAL_AUTH:"),error?.message)
+                assertFalse(error?.message.orEmpty().contains("fixture-secret"))
+                assertTrue(directory.listFiles().orEmpty().isEmpty())
+            }
+        } finally { root.deleteRecursively() }
+    }
     @Test fun failedStartUsesPrivateFileAndRemovesIt() = runBlocking {
         val root = Files.createTempDirectory("carrier-test").toFile()
         try {
