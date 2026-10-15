@@ -82,30 +82,27 @@ class Custom : Outbound("custom") {
         return ""
     }
 
-    /** custom.h:70-86. */
+    /** Use the same protocol labels as ordinary profiles, regardless of subscription format. */
     override fun displayType(): String = when (subtype) {
-        CUSTOM_OUTBOUND -> {
-            val outboundType = capitalized(configObject().string("type"))
-            if (outboundType.isEmpty()) "Custom Outbound" else "Custom $outboundType Outbound"
-        }
-        CUSTOM_FULL_CONFIG -> "Custom Config"
-        CUSTOM_XRAY_OUTBOUND -> {
-            val protocol = capitalized(configObject().string("protocol"))
-            if (protocol.isEmpty()) "Custom Xray Outbound" else "Custom Xray $protocol Outbound"
-        }
-        CUSTOM_XRAY_FULL_CONFIG -> {
-            val outbound = firstXrayEgress(configObject().array("outbounds"))
-            when (val protocol = outbound.string("protocol")) {
-                "vless" -> "VLESS (Xray)"
-                "vmess" -> "VMess (Xray)"
-                "trojan" -> "Trojan (Xray)"
-                "hysteria" -> if (outbound.obj("settings").int("version") == 2 || outbound.obj("streamSettings").obj("hysteriaSettings").int("version") == 2) "Hysteria2 (Xray)" else "Hysteria (Xray)"
-                "shadowsocks" -> "Shadowsocks (Xray)"
-                "" -> "Custom Xray Config"
-                else -> "${capitalized(protocol)} (Xray)"
-            }
-        }
+        CUSTOM_OUTBOUND -> protocolLabel(configObject().string("type"), false) ?: "Custom Outbound"
+        CUSTOM_FULL_CONFIG -> protocolLabel(singBoxFullConfigEgress(configObject()).string("type"), false) ?: "Custom Config"
+        CUSTOM_XRAY_OUTBOUND -> protocolLabel(configObject().string("protocol"), true) ?: "Custom Xray Outbound"
+        CUSTOM_XRAY_FULL_CONFIG -> protocolLabel(firstXrayEgress(configObject().array("outbounds")).string("protocol"), true) ?: "Custom Xray Config"
         else -> subtype
+    }
+
+    private fun protocolLabel(protocol: String, xray: Boolean): String? {
+        val type = when (protocol.lowercase()) {
+            "hy2", "hysteria2" -> "hysteria"
+            "shadowsocks2022" -> "shadowsocks"
+            "vless" -> if (xray) "xrayvless" else "vless"
+            else -> protocol.lowercase()
+        }
+        if (type !in setOf("socks", "http", "shadowsocks", "vmess", "trojan", "vless", "xrayvless",
+                "hysteria", "tuic", "juicity", "trusttunnel", "anytls", "mieru", "snell", "shadowtls",
+                "wireguard", "masque", "openvpn", "openconnect", "ssh", "naive")) return null
+        val outbound = OutboundFactory.newByType(type)
+        return if (outbound.invalid) null else outbound.displayType()
     }
 
     /** custom.cpp:176-196: the verdict of the outbound the config actually exits through. */
