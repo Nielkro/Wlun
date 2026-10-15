@@ -139,28 +139,57 @@ object ProfileImport {
         }
 
         /** Parser::json (SubscriptionParser.cpp:340-370): Xray first, its configs share the `outbounds` wrapper with sing-box. */
-        private fun json(doc: Any, text: String) {
-            val nativeItems = when(doc) {
-                is JsonArray -> doc
-                is JsonObject -> when {
-                    doc.isArray("profiles") -> doc.array("profiles")
-                    doc.isArray("servers") -> doc.array("servers")
-                    else -> JsonArray.of(doc)
+        private fun json(doc: Any, text: String, jsonDepth: Int = 0) {
+            if(jsonDepth>MAX_DEPTH) { log("JSON profile nesting limit exceeded");return }
+            // Process heterogeneous arrays independently; one native transport must not hide its neighbours.
+            if (doc is JsonArray) {
+                for (item in doc) {
+                    if (item is JsonObject) json(item, item.toCompact(),jsonDepth+1) else log("Invalid profile JSON item")
                 }
-                else -> JsonArray()
+                return
             }
-            var nativeFound = false
-            for(item in nativeItems) {
-                val obj = item as? JsonObject ?: continue
-                val type = obj.string("type").lowercase().ifEmpty { if(obj.contains("peer")) "qwdtt" else "" }
-                if(type !in listOf("qwdtt","wdtt","csqtt")) continue
-                nativeFound = true
-                val copy = JsonInput.parseObjectOrNull(obj.toCompact()) ?: continue
-                copy["type"] = if(type == "wdtt") "qwdtt" else type
-                val outbound = OutboundFactory.newByType(copy.string("type"))
-                if(outbound.parseFromJson(copy)) produce(outbound)
+            if (doc is JsonObject) {
+                val items = when {
+                    doc.isArray("profiles") -> doc.array("profiles")
+                    doc.isArray("servers") && (!doc.contains("version") || doc.array("servers").filterIsInstance<JsonObject>().any {
+                        it.contains("type") || it.contains("protocol") || it.contains("peer") || it.contains("outbounds")
+                    }) -> doc.array("servers")
+                    else -> null
+                }
+                if (items != null) { json(items, items.toCompact(),jsonDepth+1); return }
+                if (doc.contains("outbounds") && hasXrayOutbound(doc.array("outbounds"))) {
+                    produce(Custom.fromXrayFullConfig(doc)); return
+                }
+                if (doc.contains("outbounds") && (doc.contains("route") || doc.contains("inbounds") ||
+                        doc.array("outbounds").filterIsInstance<JsonObject>().any { it.string("type") in listOf("selector","urltest") })) {
+                    produce(Custom().apply { subtype=Custom.CUSTOM_FULL_CONFIG;config=text;name=doc.string("remarks").ifEmpty { doc.string("tag") } })
+                    return
+                }
+                val type=doc.string("type").lowercase()
+                if (type in listOf("qwdtt","wdtt","csqtt","openflux","olcrtc","chain","autoselector","custom","xrayvless")) {
+                    val outbound=OutboundFactory.newByType(type)
+                    if(outbound.parseFromJson(doc)) produce(outbound) else log("Invalid $type profile")
+                    return
+                }
+                if (type.isEmpty() && doc.contains("peer")) {
+                    val copy=doc.copy();copy["type"]="qwdtt"
+                    val outbound=OutboundFactory.newByType("qwdtt")
+                    if(outbound.parseFromJson(copy)) produce(outbound) else log("Invalid qwdtt profile")
+                    return
+                }
+                // Re-import our own exported profiles as editable native objects, but keep arbitrary
+                // sing-box extensions verbatim when a model would discard or reinterpret a field.
+                if(type.isNotEmpty() && OutboundFactory.canonicalType(type) in OutboundFactory.ALL_TYPES) {
+                    val outbound=OutboundFactory.newByType(type)
+                    if(!outbound.invalid && outbound.parseFromJson(doc)) {
+                        val exported=outbound.exportToJson()
+                        if(doc.all { (key,value) -> exported.contains(key) &&
+                                app.qthrone.mobile.outbound.json.JsonWriter.write(value)==app.qthrone.mobile.outbound.json.JsonWriter.write(exported[key]) }) {
+                            produce(outbound);return
+                        }
+                    }
+                }
             }
-            if(nativeFound) return
             val xrayType = xraySubType(doc)
             if (xrayType == XraySubType.OutboundObject) {
                 produce(Custom.fromXrayOutbound(doc as JsonObject))
@@ -177,7 +206,7 @@ object ProfileImport {
                 return
             }
             if (subType != SingBoxSubType.Invalid) {
-                singBox(doc, subType)
+                singBox(doc, subType,jsonDepth)
                 return
             }
 
@@ -219,7 +248,7 @@ object ProfileImport {
             outbounds.any { it is JsonObject && it.contains("protocol") }
 
         /** Parser::singBox (SubscriptionParser.cpp:372-400). */
-        private fun singBox(doc: Any, type: SingBoxSubType) {
+        private fun singBox(doc: Any, type: SingBoxSubType, jsonDepth: Int) {
             val outbounds: JsonArray
             val endpoints: JsonArray
             when (type) {
@@ -242,11 +271,7 @@ object ProfileImport {
                     if (out.isEmpty()) {
                         log("invalid outbound: empty object")
                     } else {
-                        val profileType = OutboundFactory.typeForSingBox(out.string("type"))
-                        if (profileType != null) {
-                            val outbound = OutboundFactory.newByType(profileType)
-                            if (outbound.parseFromJson(out)) produce(outbound)
-                        }
+                        if(out.string("type") !in listOf("direct","block","dns")) json(out,out.toCompact(),jsonDepth+1)
                     }
                 }
             }
@@ -368,6 +393,12 @@ object ProfileImport {
          * (json:// and throne://add/ match no scheme).
          */
         private fun link(line: String, depth: Int, overrideName: String) {
+            if (line.startsWith("json://",ignoreCase=true) || line.startsWith("throne://add/",ignoreCase=true)) {
+                val payload=OutboundFactory.decodeJsonLink(line,line.startsWith("throne://add/",ignoreCase=true))
+                if(payload==null) log("Invalid JSON profile link")
+                else document(payload,allowBase64=false,needParse=true,depth=depth+1,overrideName=overrideName)
+                return
+            }
             if (line.startsWith("vpn://", ignoreCase = true)) {
                 vpnLink(line, depth)
                 return

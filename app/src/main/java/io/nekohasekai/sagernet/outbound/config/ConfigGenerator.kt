@@ -47,6 +47,22 @@ class ConfigGenerator @JvmOverloads constructor(
         if (custom != null && custom.isFullConfig()) {
             val core = custom.build(buildContext).json
             if (core.isEmpty()) return GeneratedConfig.failure("Custom full config is not a valid JSON object")
+            if(settings.vpnMode && core.array("inbounds").filterIsInstance<JsonObject>().none { it.string("type")=="tun" }) {
+                val inbounds=core.array("inbounds")
+                inbounds.add(buildTunInbound(BuildState(forTest=false)))
+                core["inbounds"]=inbounds
+                if(core.obj("dns").array("servers").isEmpty()) {
+                    core["dns"]=jsonObjectOf("servers" to JsonArray.of(jsonObjectOf(
+                        "type" to "udp","tag" to Tags.DNS_DIRECT,"server" to "1.1.1.1")))
+                }
+                val route=core.obj("route")
+                route["auto_detect_interface"]=true
+                if(!route.contains("default_domain_resolver")) {
+                    val server=(core.obj("dns").array("servers").firstOrNull() as? JsonObject)?.string("tag").orEmpty()
+                    if(server.isNotEmpty()) route["default_domain_resolver"]=jsonObjectOf("server" to server)
+                }
+                core["route"]=route
+            }
             if(settings.vpnMode && settings.perAppEnabled) VpnAppGuard.apply(core,settings.perAppAllowedUids)
             return GeneratedConfig(
                 coreConfig = core.toCompact(),

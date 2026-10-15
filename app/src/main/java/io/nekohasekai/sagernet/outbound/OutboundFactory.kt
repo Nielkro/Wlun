@@ -189,17 +189,19 @@ object OutboundFactory {
 
     /** Parser::jsonLink (SubscriptionParser.cpp:539-560): `throne://add/<base64 of ExportToJson>` or `json://#<base64url>`. */
     @JvmStatic
-    fun parseJsonLink(link: String, throneAdd: Boolean): Outbound? {
+    fun decodeJsonLink(link: String, throneAdd: Boolean): String? {
         val url = LinkParser.parse(link)
         if (!url.isValid) return null
         var dataBytes = if (throneAdd) Base64Strict.decode(url.path.drop(1)) else Base64Strict.decode(url.fragment ?: "", urlSafe = true)
         // ExportJsonLink emits the url-safe alphabet, which the standard decoder rejects whenever '-' or '_' occurs
         if ((dataBytes == null || dataBytes.isEmpty()) && throneAdd) dataBytes = Base64Strict.decode(url.path.drop(1), urlSafe = true)
         if (dataBytes == null || dataBytes.isEmpty()) return null
-        val data = JsonInput.parseObject(String(dataBytes, Charsets.UTF_8))
-        if (data.isEmpty()) return null
-        return fromJson(data)
+        return String(dataBytes, Charsets.UTF_8)
     }
+
+    @JvmStatic
+    fun parseJsonLink(link: String, throneAdd: Boolean): Outbound? =
+        decodeJsonLink(link,throneAdd)?.let { app.qthrone.mobile.outbound.`import`.ProfileImport.parse(it).outbounds.singleOrNull() }
 
     /**
      * Parser::link (SubscriptionParser.cpp:510-537) for one subscription line: comments and short lines are skipped,

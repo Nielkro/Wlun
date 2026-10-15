@@ -52,7 +52,8 @@ class ChainSettingsActivity : ProfileSettingsActivity<Chain>(R.layout.layout_cha
 
     override fun Chain.serialize() {
         pbm.fromCacheAll(this)
-        list = ArrayList(proxyList.map { it.id })
+        list = (DataStore.profileCacheStore.getString(KEY_CHAIN_IDS) ?: "").split(",")
+            .mapNotNullTo(ArrayList()) { it.toLongOrNull() }
     }
 
     override fun PreferenceFragmentCompat.createPreferences(
@@ -60,6 +61,10 @@ class ChainSettingsActivity : ProfileSettingsActivity<Chain>(R.layout.layout_cha
         rootKey: String?,
     ) {
         addPreferencesFromResource(R.xml.name_preferences)
+        preferenceScreen.addPreference(androidx.preference.Preference(requireContext()).apply {
+            summary="Сверху — первый сервер подключения, снизу — выход в интернет. После сохранения выберите профиль цепочки на главном экране."
+            isSelectable=false
+        })
         pbm.setPreferenceFragment(this)
     }
 
@@ -136,29 +141,31 @@ class ChainSettingsActivity : ProfileSettingsActivity<Chain>(R.layout.layout_cha
         suspend fun reload() {
             val idList = (DataStore.profileCacheStore.getString(KEY_CHAIN_IDS) ?: "").split(",")
                 .mapNotNull { it.takeIf { it.isNotBlank() }?.toLongOrNull() }
+            val loaded=ArrayList<ProxyEntity>()
             if (idList.isNotEmpty()) {
                 val profiles = ProfileManager.getProfiles(idList).map { it.id to it }.toMap()
                 for (id in idList) {
-                    proxyList.add(profiles[id] ?: continue)
+                    loaded.add(profiles[id] ?: continue)
                 }
             }
             onMainDispatcher {
+                proxyList.clear();proxyList.addAll(loaded)
                 notifyDataSetChanged()
             }
         }
 
         fun move(from: Int, to: Int) {
-            val toMove = proxyList[to - 1]
-            proxyList[to - 1] = proxyList[from - 1]
-            proxyList[from - 1] = toMove
+            if(from !in 1..proxyList.size || to !in 1..proxyList.size) return
+            proxyList.add(to-1,proxyList.removeAt(from-1))
+            cacheChain()
             notifyItemMoved(from, to)
-            DataStore.dirty = true
         }
 
         fun remove(index: Int) {
+            if(index !in 1..proxyList.size) return
             proxyList.removeAt(index - 1)
+            cacheChain()
             notifyItemRemoved(index)
-            DataStore.dirty = true
         }
 
         override fun getItemId(position: Int): Long {
@@ -191,6 +198,10 @@ class ChainSettingsActivity : ProfileSettingsActivity<Chain>(R.layout.layout_cha
 
     }
 
+    private fun cacheChain() {
+        DataStore.profileCacheStore.putString(KEY_CHAIN_IDS,proxyList.joinToString(",") { it.id.toString() })
+    }
+
     fun testProfileAllowed(profile: ProxyEntity): Boolean {
         if (profile.id == DataStore.editingId) return false
 
@@ -221,13 +232,12 @@ class ChainSettingsActivity : ProfileSettingsActivity<Chain>(R.layout.layout_cha
     val selectProfileForAdd =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { (resultCode, data) ->
             if (resultCode == Activity.RESULT_OK) runOnDefaultDispatcher {
-                DataStore.dirty = true
 
                 val profile = ProfileManager.getProfile(
-                    data!!.getLongExtra(
+                    data?.getLongExtra(
                         ProfileSelectActivity.EXTRA_PROFILE_ID, 0
-                    )
-                )!!
+                    ) ?: 0L
+                ) ?: return@runOnDefaultDispatcher
 
                 if (!testProfileAllowed(profile)) {
                     onMainDispatcher {
@@ -237,13 +247,14 @@ class ChainSettingsActivity : ProfileSettingsActivity<Chain>(R.layout.layout_cha
                     }
                 } else {
                     configurationList.post {
-                        if (replacing != 0) {
+                        if (replacing in 1..proxyList.size) {
                             proxyList[replacing - 1] = profile
                             configurationAdapter.notifyItemChanged(replacing)
                         } else {
                             proxyList.add(profile)
                             configurationAdapter.notifyItemInserted(proxyList.size)
                         }
+                        cacheChain()
                     }
                 }
             }

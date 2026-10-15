@@ -66,6 +66,18 @@ class MobileHomeFragment : ToolbarFragment() {
     private var powerPulse: android.animation.ObjectAnimator?=null
     private var pulseTarget: View?=null
     private var load: Job? = null
+    private var reordering=false
+    private var groupReorder: MobileReorder?=null
+    private val profileReorders=mutableMapOf<Long,MobileReorder>()
+    private fun saveReorder(groupId: Long?, ids: List<Long>) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    if(groupId==null) GroupRepo.setDisplayOrder(ids) else ProfileManager.setOrder(groupId,ids)
+                }
+            } finally { reordering=false;refresh() }
+        }
+    }
     private val latencyViews=mutableMapOf<Long,FrameLayout>()
     private val collapsed = mutableSetOf<Long>()
     private val knownGroups = mutableSetOf<Long>()
@@ -168,12 +180,14 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     override fun onResume() { super.onResume(); refresh() }
     override fun onPause() {
+        groupReorder?.cancel();profileReorders.values.forEach { it.cancel() }
         load?.cancel()
         powerPulse?.cancel(); powerPulse=null; pulseTarget=null
         power?.scaleX=1f; power?.scaleY=1f
         super.onPause()
     }
     override fun onDestroyView() {
+        groupReorder?.cancel();groupReorder=null;profileReorders.values.forEach { it.cancel() };profileReorders.clear();reordering=false
         geoBanner = null; geoStatus = null; geoProgress = null; geoCheck = null
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
         observer = null; load?.cancel(); content = null; powerPulse?.cancel();powerPulse=null;pulseTarget=null; power = null
@@ -189,12 +203,13 @@ class MobileHomeFragment : ToolbarFragment() {
     private var renderedStructure: String? = null
     private fun ViewGroup.childrenList(): List<View> = (0 until childCount).map { getChildAt(it) }
     fun refresh() {
-        if (content == null || !isAdded || !isResumed || isHidden) return
+        if (content == null || !isAdded || !isResumed || isHidden || reordering) return
         load?.cancel()
         load = viewLifecycleOwner.lifecycleScope.launch {
             val groups = withContext(Dispatchers.IO) {
                 GroupRepo.all().sortedBy { if(it.id in pinnedGroups()) 0 else 1 }.map { it to SagerDatabase.proxyDao.getByGroup(it.id) }
             }
+            if(reordering) return@launch
             val column = content ?: return@launch
             groups.forEach { (group, _) -> knownGroups.add(group.id) }
             val structure = buildString {
@@ -223,6 +238,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val nextChromeKey="$surface:$blue:$hasServers:$hwid"
             if(chromeKey != nextChromeKey) {
                 chromeKey=nextChromeKey
+                groupReorder=null;profileReorders.clear()
                 column.removeAllViews(); latencyViews.clear(); profileRows.clear(); groupViews.clear(); refreshButtons.clear()
                 openSwipe=null
                 val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
@@ -323,27 +339,41 @@ class MobileHomeFragment : ToolbarFragment() {
             val anchor=serverColumn.childrenList().firstOrNull { it.bottom > serverScroll.scrollY }
             val anchorId=groupViews.entries.firstOrNull { it.value.second === anchor }?.key
             val anchorOffset=(anchor?.top ?: 0)-serverScroll.scrollY
+            val groupDrag=groupReorder ?: MobileReorder(serverColumn,serverScroll,
+                { reordering=it },{ saveReorder(null,it) },
+                { first,second -> (first in pinnedGroups())==(second in pinnedGroups()) }).also { groupReorder=it }
             val desired=mutableListOf<View>()
             val liveIds=groups.flatMap { it.second }.map { it.id }.toSet()
             latencyViews.keys.retainAll(liveIds); profileRows.keys.retainAll(liveIds)
             val liveGroups=groups.map { it.first.id }.toSet()
             groupViews.keys.retainAll(liveGroups); refreshButtons.keys.retainAll(liveGroups)
+            profileReorders.keys.retainAll(liveGroups)
 
             var firstGroup = true
             for ((group, profiles) in groups) {
                 if (profiles.isEmpty() && !group.isSubscription) continue
                 val signature=buildString {
                     append(surface); append(blue); append(group.displayName()); append(group.isSubscription); append(group.subLastUpdate); append(group.subInfo);append(group.subOptions.autoSortByPing)
-                    profiles.forEach { append(it.id); append(it.displayName()); append(it.displayType()); append(it.outboundJson) }
+                    profiles.sortedBy { it.id }.forEach { append(it.id); append(it.displayName()); append(it.displayType()); append(it.outboundJson) }
                 }
                 val retained=groupViews[group.id]?.takeIf { it.first==signature }?.second
                 if(retained != null) {
+                    val retainedBox=retained as LinearLayout
+                    val retainedRows=retainedBox.getChildAt(retainedBox.childCount-1) as LinearLayout
+                    profiles.forEachIndexed { index,profile ->
+                        val swipe=profileRows[profile.id]?.parent as? MobileSwipeTile
+                        if(swipe!=null && swipe.parent===retainedRows && retainedRows.getChildAt(index)!==swipe) {
+                            retainedRows.removeView(swipe);retainedRows.addView(swipe,index)
+                        }
+                    }
                     desired.add(retained); firstGroup=false
                     profiles.forEach { latencyViews[it.id]?.tag=it.latency }
                     continue
                 }
                 val box = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; background = tile() }
                 val rows = LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
+                val profileDrag=MobileReorder(rows,serverScroll,{ reordering=it },{ saveReorder(group.id,it) })
+                profileReorders[group.id]=profileDrag
                 val title = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
                 val arrow = ImageView(requireContext()).apply {
                     setImageResource(R.drawable.ic_mobile_chevron); imageTintList=android.content.res.ColorStateList.valueOf(muted); rotation=if(group.id in collapsed) 0f else 90f
@@ -360,6 +390,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
                     arrow.animate().rotation(if(group.id in collapsed) 0f else 90f).setDuration(180).start()
                 }
+                groupDrag.bind(heading,box,group.id,heading)
                 title.addView(heading,LinearLayout.LayoutParams(0,-2,1f))
                 if(!group.subOptions.autoSortByPing) title.addView(iconAction(R.drawable.ic_mobile_sort_ping,"Сортировать по пингу") {
                     viewLifecycleOwner.lifecycleScope.launch { withContext(Dispatchers.IO) {
@@ -414,9 +445,6 @@ class MobileHomeFragment : ToolbarFragment() {
                             if (DataStore.serviceState.connected) SagerNet.reloadService()
                             profileRows.forEach { (id,view) -> view.background=tile(id==profile.id); MobileFeedback.apply(view) }
                         }
-                        setOnLongClickListener {
-                            startActivity(profile.profileSettingsIntent(requireContext(),group.isSubscription)); true
-                        }
                     }
                     profileRows[profile.id]=row
                     val displayName=profile.displayName().trim()
@@ -457,6 +485,7 @@ class MobileHomeFragment : ToolbarFragment() {
                                 if(!result.ok) Toast.makeText(requireContext(),R.string.qmobile_delete_failed,Toast.LENGTH_LONG).show()
                             }
                         }).apply { onOpened={ opened -> openSwipe?.takeIf { it!==opened }?.closeActions(); openSwipe=opened } }
+                    profileDrag.bind(row,swipe,profile.id)
                     rows.addView(swipe, LinearLayout.LayoutParams(-1,-2).apply { setMargins(dp(5),0,dp(5),dp(3)) })
                 }
                 rows.visibility=if(group.id in collapsed) View.GONE else View.VISIBLE
@@ -475,6 +504,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     serverColumn.addView(box,index)
                 }
             }
+            groupDrag.prune()
             // Restore before drawing, after layout knows the new row heights.
             serverScroll.viewTreeObserver.addOnPreDrawListener(object: android.view.ViewTreeObserver.OnPreDrawListener {
                 override fun onPreDraw(): Boolean {

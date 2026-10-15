@@ -87,7 +87,7 @@ class Custom : Outbound("custom") {
         CUSTOM_OUTBOUND -> protocolLabel(configObject().string("type"), false) ?: "Custom Outbound"
         CUSTOM_FULL_CONFIG -> protocolLabel(singBoxFullConfigEgress(configObject()).string("type"), false) ?: "Custom Config"
         CUSTOM_XRAY_OUTBOUND -> protocolLabel(configObject().string("protocol"), true) ?: "Custom Xray Outbound"
-        CUSTOM_XRAY_FULL_CONFIG -> protocolLabel(firstXrayEgress(configObject().array("outbounds")).string("protocol"), true) ?: "Custom Xray Config"
+        CUSTOM_XRAY_FULL_CONFIG -> protocolLabel(xrayFullConfigEgress(configObject()).string("protocol"), true) ?: "Custom Xray Config"
         else -> subtype
     }
 
@@ -114,7 +114,7 @@ class Custom : Outbound("custom") {
         }
         CUSTOM_XRAY_OUTBOUND -> analyzeXrayOutbound(configObject())
         CUSTOM_XRAY_FULL_CONFIG -> {
-            val egress = firstXrayEgress(configObject().array("outbounds"))
+            val egress = xrayFullConfigEgress(configObject())
             if (egress.isEmpty()) SecurityInfo() else analyzeXrayOutbound(egress)
         }
         else -> SecurityInfo()
@@ -130,7 +130,7 @@ class Custom : Outbound("custom") {
             }
             CUSTOM_XRAY_OUTBOUND -> xrayOutboundIdentity(configObject())
             CUSTOM_XRAY_FULL_CONFIG -> {
-                val egress = firstXrayEgress(configObject().array("outbounds"))
+                val egress = xrayFullConfigEgress(configObject())
                 if (egress.isEmpty()) JsonObject() else xrayOutboundIdentity(egress)
             }
             else -> JsonObject()
@@ -193,6 +193,7 @@ class Custom : Outbound("custom") {
             val custom = Custom()
             custom.subtype = CUSTOM_OUTBOUND
             custom.config = text.trim()
+            custom.name = obj.string("tag").ifEmpty { obj.string("name") }
             return custom
         }
 
@@ -288,8 +289,12 @@ class Custom : Outbound("custom") {
             return ob.exportIdentity()
         }
 
-        private fun singBoxFullConfigEgress(cfg: JsonObject): JsonObject =
-            resolveSingBoxEgress(cfg.array("outbounds"), cfg.obj("route").string("final"), 5)
+        private fun singBoxFullConfigEgress(cfg: JsonObject): JsonObject {
+            val targets=JsonArray()
+            for(item in cfg.array("outbounds")) targets.add(item)
+            for(item in cfg.array("endpoints")) targets.add(item)
+            return resolveSingBoxEgress(targets,cfg.obj("route").string("final"),8)
+        }
 
         // custom.cpp:44-69: the named tag, or the first outbound (sing-box's default egress), through selector/urltest groups.
         private fun resolveSingBoxEgress(outbounds: JsonArray, tag: String, depth: Int): JsonObject {
@@ -310,8 +315,14 @@ class Custom : Outbound("custom") {
             val type = target.string("type")
             if (type == "selector" || type == "urltest") {
                 val subs = target.array("outbounds")
+                if(type == "urltest") {
+                    val candidates=subs.map { resolveSingBoxEgress(outbounds,JsonValues.toStringValue(it),depth-1) }
+                    if(candidates.isEmpty() || candidates.any { it.isEmpty() } || candidates.map { it.string("type") }.distinct().size!=1) return JsonObject()
+                    return candidates.first()
+                }
                 var next = target.string("default")
                 if (next.isEmpty() && subs.isNotEmpty()) next = JsonValues.toStringValue(subs[0])
+                if(next.isEmpty()) return JsonObject()
                 return resolveSingBoxEgress(outbounds, next, depth - 1)
             }
             if (type.isEmpty() || isSingBoxInfra(type)) return JsonObject()
@@ -378,13 +389,27 @@ class Custom : Outbound("custom") {
             return id
         }
 
-        /** custom.cpp:166-173: Xray routes to the first outbound by default; pick the first real proxy. */
-        private fun firstXrayEgress(outbounds: JsonArray): JsonObject {
-            for (v in outbounds) {
-                val obj = v as? JsonObject ?: JsonObject()
-                if (!isXrayInfra(obj.string("protocol"))) return obj
+        private fun xrayFullConfigEgress(cfg: JsonObject): JsonObject {
+            val outbounds=cfg.array("outbounds").filterIsInstance<JsonObject>()
+            val routing=cfg.obj("routing")
+            val catchAll=routing.array("rules").filterIsInstance<JsonObject>().firstOrNull { rule ->
+                rule.all { it.key in setOf("type","outboundTag","balancerTag","network") } &&
+                    rule.string("network").replace(" ","") in listOf("","tcp,udp","udp,tcp")
             }
-            return JsonObject()
+            val directTag=catchAll?.string("outboundTag").orEmpty()
+            if(directTag.isNotEmpty()) return outbounds.firstOrNull { it.string("tag")==directTag && !isXrayInfra(it.string("protocol")) } ?: JsonObject()
+            val balancerTag=catchAll?.string("balancerTag").orEmpty()
+            if(balancerTag.isNotEmpty()) {
+                val balancer=routing.array("balancers").filterIsInstance<JsonObject>().firstOrNull { it.string("tag")==balancerTag } ?: return JsonObject()
+                val selectors=balancer.array("selector").strings()
+                val fallback=balancer.string("fallbackTag")
+                val candidates=outbounds.filter { ob -> selectors.any { ob.string("tag").startsWith(it) } ||
+                    (fallback.isNotEmpty() && ob.string("tag")==fallback) }
+                if(candidates.isEmpty() || candidates.any { isXrayInfra(it.string("protocol")) } || candidates.map { it.string("protocol") }.distinct().size!=1) return JsonObject()
+                return candidates.first()
+            }
+            // Without a matching routing rule Xray uses the first outbound, including a direct default.
+            return outbounds.firstOrNull()?.takeUnless { isXrayInfra(it.string("protocol")) } ?: JsonObject()
         }
     }
 }
