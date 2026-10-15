@@ -64,10 +64,6 @@ class ProviderRoutingActivity : ThemedActivity() {
         private var saving: Job? = null
         private val saveLock = Mutex()
         private var fullJson = false
-        override fun onDisplayPreferenceDialog(preference:Preference) {
-            if(preference is DialogPreference && preference.dialogTitle.isNullOrBlank()) preference.dialogTitle=preference.title
-            super.onDisplayPreferenceDialog(preference)
-        }
         override fun onCreatePreferences(state: Bundle?, rootKey: String?) {
             preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
             lifecycleScope.launch {
@@ -333,6 +329,9 @@ class ProviderRoutingActivity : ThemedActivity() {
             }
         }
         override fun onDisplayPreferenceDialog(preference: Preference) {
+            if (preference is DialogPreference && preference.dialogTitle.isNullOrBlank()) {
+                preference.dialogTitle = preference.title
+            }
             if (preference is EditTextPreference) MobilePreferenceDialog().apply {
                 arguments = Bundle().apply { putString("key",preference.key) }; setTargetFragment(this@Screen,0)
             }.show(parentFragmentManager,"provider-input") else super.onDisplayPreferenceDialog(preference)
