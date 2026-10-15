@@ -23,6 +23,9 @@ object MobileSettingsStyle {
         fun compact(group: androidx.preference.PreferenceGroup) {
             for (i in 0 until group.preferenceCount) {
                 val preference = group.getPreference(i)
+                if (preference is androidx.preference.DialogPreference && preference.dialogTitle.isNullOrBlank()) {
+                    preference.dialogTitle = preference.title
+                }
                 if (preference is androidx.preference.EditTextPreference) {
                     preference.positiveButtonText = fragment.getString(android.R.string.ok)
                     preference.negativeButtonText = fragment.getString(android.R.string.cancel)
@@ -77,9 +80,6 @@ object MobileSettingsStyle {
             val oldKey=styledKeys[view]
             if (view.background != null && styledBackgrounds[view] === view.background && oldKey == preference?.key) return
             if(preference != null) MobileSelector.bind(preference,view)
-            if(preference is androidx.preference.DialogPreference && preference.dialogTitle.isNullOrBlank()) {
-                preference.dialogTitle=preference.title
-            }
             val category=preference is PreferenceCategory
             val iconFrame=view.findViewById<View>(androidx.preference.R.id.icon_frame)
             iconFrame?.visibility=if(!category && preference?.icon!=null) View.VISIBLE else View.GONE
@@ -136,7 +136,8 @@ object MobileSettingsStyle {
             override fun onChildViewAttachedToWindow(view:View) { style(view) }
             override fun onChildViewDetachedFromWindow(view:View) {}
         })
-        fun restyle() { list.post { for(i in 0 until list.childCount) style(list.getChildAt(i)) } }
+        var restylePending = true
+        fun restyle() { restylePending = true; list.invalidate() }
         list.adapter?.registerAdapterDataObserver(object: RecyclerView.AdapterDataObserver() {
             override fun onChanged() = restyle()
             override fun onItemRangeChanged(positionStart: Int, itemCount: Int) = restyle()
@@ -146,9 +147,13 @@ object MobileSettingsStyle {
         // A Preference rebind can restore its stock background without reattaching the row.
         // Restore the surface before drawing, including rows whose summaries arrive later.
         list.viewTreeObserver.addOnPreDrawListener {
-            for (i in 0 until list.childCount) style(list.getChildAt(i))
+            // Adapter updates can arrive in batches. Style once after rebinding,
+            // instead of scanning every visible row on every scrolling frame.
+            if (restylePending) {
+                restylePending = false
+                for (i in 0 until list.childCount) style(list.getChildAt(i))
+            }
             true
         }
-        list.post { for(i in 0 until list.childCount) style(list.getChildAt(i)) }
     }
 }

@@ -316,7 +316,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 column.addView(geoBanner,LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
                 updateGeoStatus()
                 val serverColumn=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
-                subscriptionTop?.let { serverColumn.addView(it) }
+                subscriptionTop?.let { column.addView(it) }
                 val serverScroll=ScrollView(requireContext()).apply {
                     isVerticalScrollBarEnabled=false; isHorizontalScrollBarEnabled=false
                     clipToPadding=false; addView(serverColumn,FrameLayout.LayoutParams(-1,-2))
@@ -346,7 +346,6 @@ class MobileHomeFragment : ToolbarFragment() {
                 { reordering=it },{ saveReorder(null,it) },
                 { first,second -> (first in pinnedGroups())==(second in pinnedGroups()) }).also { groupReorder=it }
             val desired=mutableListOf<View>()
-            subscriptionTop?.let { desired.add(it) }
             val liveIds=groups.flatMap { it.second }.map { it.id }.toSet()
             latencyViews.keys.retainAll(liveIds); profileRows.keys.retainAll(liveIds)
             val liveGroups=groups.map { it.first.id }.toSet()
@@ -502,7 +501,7 @@ class MobileHomeFragment : ToolbarFragment() {
             }
             serverColumn.childrenList().filter { it !in desired }.forEach { serverColumn.removeView(it) }
             desired.forEachIndexed { index, box ->
-                (box.layoutParams as LinearLayout.LayoutParams).topMargin=if(index==0 || (subscriptionTop!=null && index==1)) 0 else dp(16)
+                (box.layoutParams as LinearLayout.LayoutParams).topMargin=if(index==0) 0 else dp(16)
                 if(serverColumn.getChildAt(index) !== box) {
                     (box.parent as? ViewGroup)?.removeView(box)
                     serverColumn.addView(box,index)
