@@ -82,6 +82,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private val collapsed = mutableSetOf<Long>()
     private val knownGroups = mutableSetOf<Long>()
     private var serverScrollView: ScrollView? = null
+    private var subscriptionTop: View? = null
     private var serverRows: LinearLayout? = null
     private var chromeKey: String? = null
     private val groupViews = mutableMapOf<Long, Pair<String, View>>()
@@ -194,7 +195,7 @@ class MobileHomeFragment : ToolbarFragment() {
         currentResultJob?.cancel(); currentResultJob=null
         if(!currentTestArmed) currentPing=null
         openSwipe=null; renderedStructure=null
-        serverScrollView=null; serverRows=null; chromeKey=null
+        serverScrollView=null; serverRows=null; chromeKey=null; subscriptionTop=null
         groupViews.clear(); refreshButtons.clear(); latencyViews.clear(); profileRows.clear()
         super.onDestroyView()
     }
@@ -297,9 +298,10 @@ class MobileHomeFragment : ToolbarFragment() {
                         setOnClickListener { checkCurrentConnection() }
                     }
                     above.addView(currentCheck,FrameLayout.LayoutParams(-2,-2,Gravity.START or Gravity.BOTTOM).apply { bottomMargin=dp(6) })
-                    column.addView(above,LinearLayout.LayoutParams(-1,dp(64)))
+                    subscriptionTop=above
+                    above.layoutParams=LinearLayout.LayoutParams(-1,dp(64))
                     updateState()
-                } else currentCheck=null
+                } else { currentCheck=null;subscriptionTop=null }
                 geoBanner = LinearLayout(requireContext()).apply {
                     gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(12))
                     background = GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }
@@ -314,6 +316,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 column.addView(geoBanner,LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
                 updateGeoStatus()
                 val serverColumn=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL }
+                subscriptionTop?.let { serverColumn.addView(it) }
                 val serverScroll=ScrollView(requireContext()).apply {
                     isVerticalScrollBarEnabled=false; isHorizontalScrollBarEnabled=false
                     clipToPadding=false; addView(serverColumn,FrameLayout.LayoutParams(-1,-2))
@@ -343,6 +346,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 { reordering=it },{ saveReorder(null,it) },
                 { first,second -> (first in pinnedGroups())==(second in pinnedGroups()) }).also { groupReorder=it }
             val desired=mutableListOf<View>()
+            subscriptionTop?.let { desired.add(it) }
             val liveIds=groups.flatMap { it.second }.map { it.id }.toSet()
             latencyViews.keys.retainAll(liveIds); profileRows.keys.retainAll(liveIds)
             val liveGroups=groups.map { it.first.id }.toSet()
@@ -498,7 +502,7 @@ class MobileHomeFragment : ToolbarFragment() {
             }
             serverColumn.childrenList().filter { it !in desired }.forEach { serverColumn.removeView(it) }
             desired.forEachIndexed { index, box ->
-                (box.layoutParams as LinearLayout.LayoutParams).topMargin=if(index==0) 0 else dp(16)
+                (box.layoutParams as LinearLayout.LayoutParams).topMargin=if(index==0 || (subscriptionTop!=null && index==1)) 0 else dp(16)
                 if(serverColumn.getChildAt(index) !== box) {
                     (box.parent as? ViewGroup)?.removeView(box)
                     serverColumn.addView(box,index)

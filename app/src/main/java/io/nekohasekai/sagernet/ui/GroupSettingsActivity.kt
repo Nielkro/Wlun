@@ -370,6 +370,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             group.subOptions = optionsFromCache().also {
                 it.routingProvider = group.subOptions.routingProvider
                 it.providerRoutingEnabled = group.subOptions.providerRoutingEnabled
+                it.providerRoutingManual = group.subOptions.providerRoutingManual
                 it.providerRouting = group.subOptions.providerRouting
                 it.providerRoutingProfiles = group.subOptions.providerRoutingProfiles
                 it.providerIgnoreImport = group.subOptions.providerIgnoreImport

@@ -64,6 +64,10 @@ class ProviderRoutingActivity : ThemedActivity() {
         private var saving: Job? = null
         private val saveLock = Mutex()
         private var fullJson = false
+        override fun onDisplayPreferenceDialog(preference:Preference) {
+            if(preference is DialogPreference && preference.dialogTitle.isNullOrBlank()) preference.dialogTitle=preference.title
+            super.onDisplayPreferenceDialog(preference)
+        }
         override fun onCreatePreferences(state: Bundle?, rootKey: String?) {
             preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
             lifecycleScope.launch {
@@ -79,7 +83,9 @@ class ProviderRoutingActivity : ThemedActivity() {
         }
         private fun build() {
             val options = group!!.subOptions
-            document = JsonInput.parseObjectOrNull(options.providerRouting) ?: JsonObject()
+            document = JsonInput.parseObjectOrNull(options.providerRouting)?.let {
+                app.qthrone.mobile.route.ProviderRouteProfiles.tagged(it,app.qthrone.mobile.route.ProviderRouteProfiles.source(it,options.routingProvider))
+            } ?: JsonObject()
             preferenceScreen.removeAll(); controls.clear()
             val details = requireArguments().getBoolean("details")
             fun category(label: Int) { preferenceScreen.addPreference(PreferenceCategory(requireContext()).apply { layoutResource = R.layout.provider_preference_text; isIconSpaceReserved = false; title = getString(label) }) }
@@ -107,18 +113,44 @@ class ProviderRoutingActivity : ThemedActivity() {
             })
             fun add(preference: Preference) { preference.isSingleLineTitle = false; preference.layoutResource = R.layout.provider_preference; preference.isPersistent = false; controls.add(preference); preferenceScreen.addPreference(preference) }
             val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.filterIsInstance<JsonObject>().orEmpty()
-            add(SimpleMenuPreference(requireContext()).apply {
+            val choices=app.qthrone.mobile.route.ProviderRouteProfiles.choices(profiles,document,options.routingProvider)
+            add(Preference(requireContext()).apply {
                 isIconSpaceReserved = false
                 key = "providerProfile"; title = getString(R.string.provider_routing_profile)
-                entries = profiles.map { it.string("Name").ifBlank { "Default" } }.toTypedArray()
-                entryValues = profiles.indices.map { it.toString() }.toTypedArray()
-                value = profiles.indexOfFirst { it.string("Name") == document.string("Name") }.coerceAtLeast(0).toString()
-                summary = document.string("Name").ifBlank { "Default" }
-                setOnPreferenceChangeListener { _, next ->
-                    document = profiles[(next as String).toInt()].copy(); options.providerRouting = document.toCompact()
-                    save(); build(); true
+                val selected=choices.indexOfFirst { app.qthrone.mobile.route.ProviderRouteProfiles.key(document,options.routingProvider) in it.keys }.coerceAtLeast(0)
+                summary = choices.getOrNull(selected)?.let { it.label+"\n"+getString(R.string.provider_profile_source,it.providers) }
+                    ?: document.string("Name").ifBlank { "Default" }
+                setOnPreferenceClickListener {
+                    val adapter=object:android.widget.BaseAdapter() {
+                        override fun getCount()=choices.size
+                        override fun getItem(position:Int)=choices[position]
+                        override fun getItemId(position:Int)=position.toLong()
+                        override fun getView(position:Int,reused:View?,parent:android.view.ViewGroup):View {
+                            val density=resources.displayMetrics.density
+                            val choice=choices[position]
+                            return LinearLayout(requireContext()).apply {
+                                orientation=LinearLayout.VERTICAL
+                                setPadding((24*density).toInt(),(12*density).toInt(),(24*density).toInt(),(12*density).toInt())
+                                addView(android.widget.TextView(context).apply {
+                                    text=choice.label;textSize=17f;setTextColor(MobilePalette.text)
+                                    setTypeface(null,if(position==selected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
+                                })
+                                addView(android.widget.TextView(context).apply {
+                                    text=getString(R.string.provider_profile_source,choice.providers);textSize=13f;setTextColor(MobilePalette.muted)
+                                })
+                            }
+                        }
+                    }
+                    MobileAlertDialogBuilder(requireContext()).setTitle(R.string.provider_routing_profile)
+                        .setAdapter(adapter) { _,index ->
+                            document=choices[index].document.copy();options.providerRouting=document.toCompact()
+                            options.routingProvider=app.qthrone.mobile.route.ProviderRouteProfiles.source(document,options.routingProvider)
+                            options.providerRoutingManual=true
+                            save();build()
+                        }.show()
+                    true
                 }
-                isEnabled = profiles.isNotEmpty() && !fullJson
+                isEnabled = choices.isNotEmpty()
             })
             category(R.string.provider_profile_settings)
             add(Preference(requireContext()).apply {
@@ -173,12 +205,14 @@ class ProviderRoutingActivity : ThemedActivity() {
             }
             if (section == "manual") {
                 add(EditTextPreference(requireContext()).apply {
-                    key = "providerManual"; title = getString(R.string.provider_edit_rules); text = document.toCompact()
+                    key = "providerManual"; title = getString(R.string.provider_edit_rules)
+                    text = app.qthrone.mobile.route.ProviderRouteProfiles.externalDocument(document).toCompact()
                     setOnBindEditTextListener { it.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE; it.setHorizontallyScrolling(false) }
                     setOnPreferenceChangeListener { _, next ->
                         val candidate = runCatching { ProviderRouting.parse(next as String,options.routingProvider).document }.getOrNull() ?: return@setOnPreferenceChangeListener false
                         if (runCatching { ProviderRouting.profile(candidate,options.routingProvider) }.isFailure) return@setOnPreferenceChangeListener false
-                        document = candidate; update(); true
+                        document = app.qthrone.mobile.route.ProviderRouteProfiles.tagged(candidate,
+                            app.qthrone.mobile.route.ProviderRouteProfiles.source(document,options.routingProvider)); update(); true
                     }
                 })
                 field("DnsHosts",R.string.provider_routing_hosts,hosts = true)
@@ -267,27 +301,34 @@ class ProviderRoutingActivity : ThemedActivity() {
             val options = group!!.subOptions
             val previous = JsonInput.parseObjectOrNull(options.providerRouting)
             val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.filterIsInstance<JsonObject>()?.toMutableList() ?: mutableListOf()
-            val index = profiles.indexOfFirst { it.string("Name") == previous?.string("Name") }
+            val index = profiles.indexOfFirst { previous!=null &&
+                app.qthrone.mobile.route.ProviderRouteProfiles.key(it,options.routingProvider)==app.qthrone.mobile.route.ProviderRouteProfiles.key(previous,options.routingProvider) }
             if (index >= 0) profiles[index] = document.copy() else profiles.add(document.copy())
             options.providerRoutingProfiles = JsonArray().apply { profiles.forEach { add(it) } }.toCompact()
-            options.providerRouting = document.toCompact(); save()
+            options.providerRouting = document.toCompact(); options.providerRoutingManual=true; save()
         }
         private fun save() {
             val gid = group!!.id; val options = group!!.subOptions.copy()
             saving = lifecycleScope.launch {
                 saveLock.withLock {
-                withContext(Dispatchers.IO) {
+                val reload=withContext(Dispatchers.IO) {
+                    var changed=false
                     SagerDatabase.instance.runInTransaction {
                         val latest = GroupRepo.get(gid) ?: return@runInTransaction
+                        changed=app.qthrone.mobile.route.ProviderRouteProfiles.requiresReload(
+                            latest.subOptions.providerRoutingEnabled,options.providerRoutingEnabled,
+                            latest.subOptions.providerRouting,options.providerRouting)
                         latest.subOptions.routingProvider = options.routingProvider
                         latest.subOptions.providerRoutingEnabled = options.providerRoutingEnabled
                         latest.subOptions.providerRouting = options.providerRouting
                         latest.subOptions.providerRoutingProfiles = options.providerRoutingProfiles
                         latest.subOptions.providerIgnoreImport = options.providerIgnoreImport
+                        latest.subOptions.providerRoutingManual = options.providerRoutingManual
                         SagerDatabase.groupDao.update(latest)
                     }
+                    changed
                 }
-                (activity as? ProviderRoutingActivity)?.needReload()
+                if(reload) (activity as? ProviderRoutingActivity)?.needReload()
                 }
             }
         }

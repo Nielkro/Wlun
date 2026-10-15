@@ -9,5 +9,6 @@
 <string name="qmobile_save">Сохранить</string>
 <string name="qmobile_server_list">Список серверов</string>
 <string-array name="mobile_theme_names"><item>Красный</item><item>Розовый SSR</item><item>Розовый</item><item>Фиолетовый</item><item>Тёмно-фиолетовый</item><item>Индиго</item><item>Синий</item><item>Голубой</item><item>Бирюзовый</item><item>Морская волна</item><item>Зелёный</item><item>Светло-зелёный</item><item>Лайм</item><item>Жёлтый</item><item>Янтарный</item><item>Оранжевый</item><item>Тёмно-оранжевый</item><item>Коричневый</item><item>Серый</item><item>Серо-голубой</item><item>Чёрный</item><item>Мятный</item><item>Белый</item></string-array>
-<string-array name="qmobile_seasons"><item>Выключено</item><item>Авто</item><item>Хэллоуин</item><item>Зима</item><item>Иван Купала</item><item>День святого Патрика</item><item>Рождество</item><item>Пасха</item><item>День святого Валентина</item><item>Масленица</item><item>Весна</item><item>Осень</item></string-array>
+<string-array name="qmobile_seasons"><item>Выключено</item><item>Авто</item><item>Осень</item><item>Зима</item><item>Весна</item><item>Лето</item></string-array>
+<string name="provider_profile_source">Источник: %1$s</string>
 </resources>

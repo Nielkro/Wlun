@@ -89,6 +89,12 @@ class SagerNet : Application(),
                 DataStore.seasonalDecoration=SeasonalPolicy.migratedChoice(DataStore.seasonalDecoration,false)
                 DataStore.seasonalAuto151Migrated=true
             }
+            if(!DataStore.seasonalAuto153Migrated) {
+                DataStore.seasonalDecoration=SeasonalPolicy.migratedChoice(DataStore.seasonalDecoration,false)
+                DataStore.seasonalAuto153Migrated=true
+            }
+            val retainedDecoration=SeasonalPolicy.retainedChoice(DataStore.seasonalDecoration)
+            if(retainedDecoration!=DataStore.seasonalDecoration) DataStore.seasonalDecoration=retainedDecoration
             Theme.apply(this)
             Theme.applyNightTheme()
             AppLocale.apply()

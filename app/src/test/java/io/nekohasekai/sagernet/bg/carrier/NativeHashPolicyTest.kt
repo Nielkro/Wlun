@@ -5,6 +5,24 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeHashPolicyTest {
+    @Test fun workerCeilingFollowsTheResultingHashCountWithoutResettingToNine() {
+        assertEquals(81,NativeHashPolicy.preservedWorkers(108,108,81))
+        assertEquals(108,NativeHashPolicy.preservedWorkers(81,81,108))
+        assertEquals(126,NativeHashPolicy.preservedWorkers(108,108,126))
+        assertEquals(54,NativeHashPolicy.preservedWorkers(54,108,81))
+        for(type in listOf("qwdtt","csqtt")) {
+            val old=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+            old.name="workers";old.server="192.0.2.1";old.password="fixture";old.hashSource="manual"
+            old.hashes=listOf("a","b","c","d");old.workers=108
+            val incoming=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+            incoming.name=old.name;incoming.server=old.server;incoming.password=old.password
+            // Provider now supplies three slots; the surviving trailing slot duplicates one of them.
+            incoming.hashes=listOf("d","e","f");incoming.workers=9
+            NativeHashPolicy.preserve(incoming,listOf(old))
+            assertEquals(listOf("d","e","f"),incoming.hashes)
+            assertEquals(81,incoming.workers)
+        }
+    }
     @Test fun subscriptionHashesAndExistingRowSurviveRepeatedRefreshForBothTransports() {
         for (old in listOf(profile(),app.qthrone.mobile.outbound.types.Csqtt().apply {
             name="Example";server="192.0.2.1";password="test";hashes=listOf("local_hash")

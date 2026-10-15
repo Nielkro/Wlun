@@ -5,8 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.os.SystemClock
 import android.view.View
@@ -22,13 +20,12 @@ import org.json.JSONObject
 /** Approved wide artwork. Only the current and next small sprite pages are cached. */
 class MobileSeasonalView(context:Context):View(context) {
     private companion object { val animationEpoch=SystemClock.uptimeMillis() }
-    private data class Artwork(val files:List<String>,val base:String,val width:Int,val height:Int,
+    private data class Artwork(val files:List<String>,val width:Int,val height:Int,
         val columns:Int,val pageFrames:Int,val frames:Int,val interval:Long)
     private val manifest=runCatching {
         context.assets.open("seasonal/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
     }.getOrNull()
     private val paint=Paint().apply { isFilterBitmap=true;isAntiAlias=true }
-    private val movingPaint=Paint(paint).apply { xfermode=PorterDuffXfermode(PorterDuff.Mode.ADD) }
     private val pages=mutableMapOf<Int,Bitmap>()
     private val pending=mutableSetOf<Int>()
     private val failed=mutableSetOf<Int>()
@@ -50,7 +47,7 @@ class MobileSeasonalView(context:Context):View(context) {
         pages.clear();pending.clear();failed.clear();displayedPage=null
         artwork=manifest?.optJSONObject(selected)?.let { entry -> runCatching {
             val files=entry.getJSONArray("files")
-            Artwork(List(files.length()) { files.getString(it) },entry.getString("base"),entry.getInt("width"),entry.getInt("height"),
+            Artwork(List(files.length()) { files.getString(it) },entry.getInt("width"),entry.getInt("height"),
                 entry.getInt("columns"),entry.getInt("page_frames"),entry.getInt("frames"),entry.getLong("interval"))
                 .also { require(it.files.isNotEmpty() && it.width>0 && it.height>0 && it.columns>0 &&
                     it.pageFrames>0 && it.frames>0 && it.interval>0) }
@@ -63,7 +60,7 @@ class MobileSeasonalView(context:Context):View(context) {
         pending.add(index)
         scope.launch {
             val image=withContext(Dispatchers.IO) { runCatching {
-                context.assets.open("seasonal/"+(if(index==-1) info.base else info.files[index])).use {
+                context.assets.open("seasonal/"+info.files[index]).use {
                     BitmapFactory.decodeStream(it,null,BitmapFactory.Options().apply { inScaled=false })
                 }
             }.getOrNull() }
@@ -83,24 +80,17 @@ class MobileSeasonalView(context:Context):View(context) {
             val frame=((elapsed/info.interval)%info.frames).toInt()
             val page=frame/info.pageFrames
             val next=(page+1)%info.files.size
-            pages.keys.retainAll(setOf(-1,page,next))
-            requestPage(-1,info);requestPage(page,info);requestPage(next,info)
+            pages.keys.retainAll(setOf(page,next))
+            requestPage(page,info);requestPage(next,info)
             pages[page]?.let { displayedPage=it;displayedSlot=frame%info.pageFrames }
             // Keep the previous frame while an uncached page loads; never flash an empty frame.
-            val base=pages[-1]
-            displayedPage?.takeIf { base!=null }?.let { image ->
+            displayedPage?.let { image ->
                 val scale=minOf(resources.displayMetrics.density*1.35f,width/136f,height/46f)
                 val w=(136*scale).toInt();val h=(46*scale).toInt()
                 val x=displayedSlot%info.columns*info.width
                 val y=displayedSlot/info.columns*info.height
                 val destination=Rect(width-w,height-h,width,height)
-                // Add disjoint static/moving pixels on a transparent layer. Filtering their sum
-                // preserves the original antialiased edges instead of producing seams between masks.
-                val layer=canvas.saveLayer(destination.left.toFloat(),destination.top.toFloat(),
-                    destination.right.toFloat(),destination.bottom.toFloat(),null)
-                canvas.drawBitmap(base!!,null,destination,paint)
-                canvas.drawBitmap(image,Rect(x,y,x+info.width,y+info.height),destination,movingPaint)
-                canvas.restoreToCount(layer)
+                canvas.drawBitmap(image,Rect(x,y,x+info.width,y+info.height),destination,paint)
             }
         }
         if(isShown && windowVisibility==VISIBLE) {

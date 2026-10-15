@@ -2,6 +2,7 @@ package app.qthrone.mobile.group
 
 import app.qthrone.mobile.database.*
 import app.qthrone.mobile.route.ProviderRouting
+import app.qthrone.mobile.route.ProviderRouteProfiles
 import app.qthrone.mobile.outbound.json.*
 
 object ProviderRouteStore {
@@ -15,27 +16,14 @@ object ProviderRouteStore {
             val group = GroupRepo.get(gid) ?: return@runInTransaction
             val options = group.subOptions
             if (options.providerIgnoreImport) return@runInTransaction
-            val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.toList()?.filterIsInstance<JsonObject>()?.toMutableList() ?: mutableListOf()
+            val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.filterIsInstance<JsonObject>().orEmpty()
             for (command in commands) {
-                options.routingProvider = command.provider
-                if (command.off) { options.providerRouting = "off"; continue }
                 val document = command.document ?: continue
-                if (fullJson) profiles.removeAll { it.string("Name") != document.string("Name") }
-                // Validate the complete replacement before changing the stored profile.
                 ProviderRouting.profile(document, command.provider)
-                val index = profiles.indexOfFirst { it.string("Name") == document.string("Name") }
-                if (index >= 0) {
-                    val previous = profiles[index]
-                    val oldStamp = previous.variantLong("LastUpdated")
-                    val stamp = document.variantLong("LastUpdated")
-                    if (stamp > 0 && oldStamp > 0 && stamp < oldStamp) continue
-                    profiles[index] = document
-                    val selected = JsonInput.parseObjectOrNull(options.providerRouting)
-                    if (selected?.string("Name") == document.string("Name")) options.providerRouting = document.toCompact()
-                } else profiles.add(document)
-                if (options.providerRouting.isBlank() || command.activate) options.providerRouting = document.toCompact()
             }
-            options.providerRoutingProfiles = JsonArray().apply { profiles.forEach { add(it) } }.toCompact()
+            val merged=ProviderRouteProfiles.merge(profiles,options.providerRouting,options.routingProvider,commands,options.providerRoutingManual)
+            options.providerRouting=merged.selected;options.routingProvider=merged.provider
+            options.providerRoutingProfiles = JsonArray().apply { merged.profiles.forEach { add(it) } }.toCompact()
             SagerDatabase.groupDao.update(group)
         }
     }

@@ -77,6 +77,9 @@ object MobileSettingsStyle {
             val oldKey=styledKeys[view]
             if (view.background != null && styledBackgrounds[view] === view.background && oldKey == preference?.key) return
             if(preference != null) MobileSelector.bind(preference,view)
+            if(preference is androidx.preference.DialogPreference && preference.dialogTitle.isNullOrBlank()) {
+                preference.dialogTitle=preference.title
+            }
             val category=preference is PreferenceCategory
             val iconFrame=view.findViewById<View>(androidx.preference.R.id.icon_frame)
             iconFrame?.visibility=if(!category && preference?.icon!=null) View.VISIBLE else View.GONE

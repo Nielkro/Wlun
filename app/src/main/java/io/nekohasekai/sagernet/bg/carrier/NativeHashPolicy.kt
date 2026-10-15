@@ -22,8 +22,16 @@ object NativeHashPolicy {
             // The subscription owns its leading slots; local trailing slots survive until replaced.
             if (it.hashSource == "manual") incoming.hashes = mergeSlots(incoming.hashes,it.hashes,
                 if(incoming.type=="csqtt") 6 else 4)
+            incoming.workers=preservedWorkers(it.workers,workerLimit(it),workerLimit(incoming))
         }
     }
+    fun workerLimit(profile:Qwdtt):Int {
+        val slots=if(profile.type=="csqtt") 6 else 4
+        val hashes=if(profile.hashSource=="auto") slots else profile.hashes.size.coerceIn(1,slots)
+        return (hashes*27).coerceAtMost(if(profile.type=="csqtt") 126 else 108)
+    }
+    fun preservedWorkers(previous:Int,previousLimit:Int,currentLimit:Int):Int =
+        if(previous>=previousLimit) currentLimit else previous.coerceIn(9,currentLimit)/9*9
     fun mergeSlots(subscription:List<String>, previous:List<String>,limit:Int):List<String> {
         val prefix=subscription.take(limit)
         return (prefix+previous.drop(prefix.size)).distinct().take(limit)
