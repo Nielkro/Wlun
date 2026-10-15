@@ -47,7 +47,8 @@ object CoreConfigs {
         }
         var routing = SettingsMapper.routingInput(route)
         val fullJson = profile.outbound.isXrayFullConfig()
-        app.qthrone.mobile.route.ProviderRouting.stored(route)?.let { (_, document) ->
+        val providerRouting=app.qthrone.mobile.route.ProviderRouting.stored(route)
+        providerRouting?.let { (_, document) ->
             if (fullJson) {
                 val custom = profile.outbound as? app.qthrone.mobile.outbound.types.Custom
                 if (custom != null) app.qthrone.mobile.route.ProviderGeoAssets.installXray(document,app.qthrone.mobile.bg.XrayGeoAssets.needed(listOf(custom.config)))
@@ -67,6 +68,7 @@ object CoreConfigs {
             context = app.qthrone.mobile.outbound.config.TransportIpPolicy.context(context)
             moe.matsuri.nb4a.utils.CoreLog.write("[Info] ${profile.outbound.displayType()} uses IPv4-only tunnel and DNS; saved IPv6 preference is unchanged")
         }
+        moe.matsuri.nb4a.utils.CoreLog.write("[Info] "+DnsDiagnostics.summary(settings,providerRouting!=null))
         val generated = ConfigGenerator(profiles, settings, context, routing).build(profile.id, landing, front)
         if (!generated.ok) error(generated.error ?: "config generation failed")
         return generated

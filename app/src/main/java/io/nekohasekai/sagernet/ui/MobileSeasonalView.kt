@@ -5,24 +5,39 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.Rect
 import android.os.SystemClock
 import android.view.View
 import app.qthrone.mobile.database.DataStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 
-/** Approved transparent wide artwork; dates follow the device clock, including changes while the app is open. */
+/** Approved wide artwork. Only the current and next small sprite pages are cached. */
 class MobileSeasonalView(context:Context):View(context) {
     private companion object { val animationEpoch=SystemClock.uptimeMillis() }
-    private val manifest=runCatching { context.assets.open("seasonal/manifest.json").bufferedReader().use { JSONObject(it.readText()) } }.getOrNull()
-    private val paint=Paint().apply { isFilterBitmap=false;isAntiAlias=false }
+    private data class Artwork(val files:List<String>,val base:String,val width:Int,val height:Int,
+        val columns:Int,val pageFrames:Int,val frames:Int,val interval:Long)
+    private val manifest=runCatching {
+        context.assets.open("seasonal/manifest.json").bufferedReader().use { JSONObject(it.readText()) }
+    }.getOrNull()
+    private val paint=Paint().apply { isFilterBitmap=true;isAntiAlias=true }
+    private val movingPaint=Paint(paint).apply { xfermode=PorterDuffXfermode(PorterDuff.Mode.ADD) }
+    private val pages=mutableMapOf<Int,Bitmap>()
+    private val pending=mutableSetOf<Int>()
+    private val failed=mutableSetOf<Int>()
+    private var loadingScope:CoroutineScope?=null
+    private var revision=0
     private var kind=""
-    private var atlas:Bitmap?=null
-    private var columns=1
-    private var frames=1
-    private var interval=100L
-    private var sourceWidth=136
-    private var sourceHeight=46
+    private var artwork:Artwork?=null
+    private var displayedPage:Bitmap?=null
+    private var displayedSlot=0
     private var nextCheck=0L
     init { importantForAccessibility=IMPORTANT_FOR_ACCESSIBILITY_NO;isClickable=false }
 
@@ -31,34 +46,78 @@ class MobileSeasonalView(context:Context):View(context) {
         nextCheck=now+1000
         val selected=SeasonalPolicy.resolve(DataStore.seasonalDecoration)
         if(selected==kind) return
-        kind=selected
-        val entry=manifest?.optJSONObject(selected)
-        val image=entry?.let { info -> runCatching {
-            val sample=if(info.getInt("width")>=544) 4 else 1
-            context.assets.open("seasonal/"+info.getString("file")).use {
-                BitmapFactory.decodeStream(it,null,BitmapFactory.Options().apply { inSampleSize=sample })
-            }
+        kind=selected;revision++
+        pages.clear();pending.clear();failed.clear();displayedPage=null
+        artwork=manifest?.optJSONObject(selected)?.let { entry -> runCatching {
+            val files=entry.getJSONArray("files")
+            Artwork(List(files.length()) { files.getString(it) },entry.getString("base"),entry.getInt("width"),entry.getInt("height"),
+                entry.getInt("columns"),entry.getInt("page_frames"),entry.getInt("frames"),entry.getLong("interval"))
+                .also { require(it.files.isNotEmpty() && it.width>0 && it.height>0 && it.columns>0 &&
+                    it.pageFrames>0 && it.frames>0 && it.interval>0) }
         }.getOrNull() }
-        atlas=image
-        if(image!=null && entry!=null) {
-            columns=entry.getInt("columns");frames=entry.getInt("frames");interval=entry.getLong("interval")
-            sourceWidth=image.width/columns
-            sourceHeight=image.height/((frames+columns-1)/columns)
+    }
+    private fun requestPage(index:Int,info:Artwork) {
+        val scope=loadingScope ?: return
+        if(index in pages || index in pending || index in failed) return
+        val version=revision
+        pending.add(index)
+        scope.launch {
+            val image=withContext(Dispatchers.IO) { runCatching {
+                context.assets.open("seasonal/"+(if(index==-1) info.base else info.files[index])).use {
+                    BitmapFactory.decodeStream(it,null,BitmapFactory.Options().apply { inScaled=false })
+                }
+            }.getOrNull() }
+            if(version!=revision) return@launch
+            pending.remove(index)
+            if(image==null) failed.add(index) else pages[index]=image
+            invalidate()
         }
     }
     override fun onDraw(canvas:Canvas) {
         super.onDraw(canvas)
         val now=SystemClock.uptimeMillis()
+        val elapsed=now-animationEpoch
         updateTheme(now)
-        val image=atlas
-        if(image!=null && width>0 && height>0) {
-            val scale=minOf(resources.displayMetrics.density*1.35f,width/136f,height/46f)
-            val w=(136*scale).toInt();val h=(46*scale).toInt()
-            val frame=(((now-animationEpoch)/interval)%frames).toInt()
-            val x=frame%columns*sourceWidth;val y=frame/columns*sourceHeight
-            canvas.drawBitmap(image,Rect(x,y,x+sourceWidth,y+sourceHeight),Rect(width-w,height-h,width,height),paint)
+        val info=artwork
+        if(info!=null) {
+            val frame=((elapsed/info.interval)%info.frames).toInt()
+            val page=frame/info.pageFrames
+            val next=(page+1)%info.files.size
+            pages.keys.retainAll(setOf(-1,page,next))
+            requestPage(-1,info);requestPage(page,info);requestPage(next,info)
+            pages[page]?.let { displayedPage=it;displayedSlot=frame%info.pageFrames }
+            // Keep the previous frame while an uncached page loads; never flash an empty frame.
+            val base=pages[-1]
+            displayedPage?.takeIf { base!=null }?.let { image ->
+                val scale=minOf(resources.displayMetrics.density*1.35f,width/136f,height/46f)
+                val w=(136*scale).toInt();val h=(46*scale).toInt()
+                val x=displayedSlot%info.columns*info.width
+                val y=displayedSlot/info.columns*info.height
+                val destination=Rect(width-w,height-h,width,height)
+                // Add disjoint static/moving pixels on a transparent layer. Filtering their sum
+                // preserves the original antialiased edges instead of producing seams between masks.
+                val layer=canvas.saveLayer(destination.left.toFloat(),destination.top.toFloat(),
+                    destination.right.toFloat(),destination.bottom.toFloat(),null)
+                canvas.drawBitmap(base!!,null,destination,paint)
+                canvas.drawBitmap(image,Rect(x,y,x+info.width,y+info.height),destination,movingPaint)
+                canvas.restoreToCount(layer)
+            }
         }
-        if(isShown && windowVisibility==VISIBLE) postInvalidateDelayed(if(image==null) 1000 else interval)
+        if(isShown && windowVisibility==VISIBLE) {
+            val interval=info?.interval ?: 1000L
+            postInvalidateDelayed(interval-elapsed%interval)
+        }
+    }
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        loadingScope=CoroutineScope(SupervisorJob()+Dispatchers.Main.immediate)
+        nextCheck=0;invalidate()
+    }
+    override fun onDetachedFromWindow() {
+        loadingScope?.cancel();loadingScope=null;revision++
+        pages.clear();pending.clear();failed.clear();displayedPage=null;artwork=null;kind=""
+        // Bitmaps may still belong to a RenderThread display list; let the runtime reclaim them.
+        super.onDetachedFromWindow()
     }
     override fun onWindowVisibilityChanged(visibility:Int) { super.onWindowVisibilityChanged(visibility);if(visibility==VISIBLE) { nextCheck=0;invalidate() } }
     override fun onVisibilityChanged(changedView:View,visibility:Int) { super.onVisibilityChanged(changedView,visibility);if(visibility==VISIBLE) { nextCheck=0;invalidate() } }

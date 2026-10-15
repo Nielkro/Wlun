@@ -742,8 +742,28 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     private fun manualProfile() {
         val sheet=MobileSheetDialog(requireContext())
-        val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(16),dp(16),dp(24));setBackgroundColor(surface) }
-        body.addView(text(getString(R.string.qmobile_manual),20f).apply { setTypeface(null,Typeface.BOLD) })
+        val body=LinearLayout(requireContext()).apply {
+            orientation=LinearLayout.VERTICAL;setPadding(dp(16),dp(12),dp(16),0)
+            setBackgroundColor(MobilePalette.background)
+        }
+        body.addView(View(requireContext()).apply {
+            background=GradientDrawable().apply { setColor(muted);cornerRadius=dp(2).toFloat() }
+            importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        },LinearLayout.LayoutParams(dp(40),dp(4)).apply {
+            gravity=Gravity.CENTER_HORIZONTAL;bottomMargin=dp(20)
+        })
+        body.addView(text(getString(R.string.qmobile_manual),20f).apply {
+            setTypeface(null,Typeface.BOLD)
+        },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(12) })
+        val protocols=LinearLayout(requireContext()).apply {
+            orientation=LinearLayout.VERTICAL;setPadding(0,0,0,dp(24))
+        }
+        // Nested scrolling lets the sheet consume a downward drag only at the top of the list.
+        // The handle and title stay outside the scrolling content.
+        body.addView(androidx.core.widget.NestedScrollView(requireContext()).apply {
+            isFillViewport=true;isVerticalScrollBarEnabled=false
+            addView(protocols,ViewGroup.LayoutParams(-1,-2))
+        },LinearLayout.LayoutParams(-1,0,1f))
         val nativeTypes = listOf("qwdtt" to "qWDTT", "csqtt" to "CSQTT", "openflux" to "OpenFlux", "olcrtc" to "olcRTC")
         // Keep the same editors and localized labels as the original manual-entry menu.
         val originalTypes = listOf(
@@ -774,11 +794,31 @@ class MobileHomeFragment : ToolbarFragment() {
             "chain" to R.string.proxy_chain,
         ).map { (type, title) -> type to getString(title) }
         for((type, title) in nativeTypes + originalTypes) {
-            body.addView(action(title) {
-                sheet.dismiss()
-                startActivity(Intent(requireContext(),app.qthrone.mobile.ui.profile.settingsActivityFor(type)).putExtra("qmobileProfileType",type))
-            })
+            protocols.addView(androidx.appcompat.widget.AppCompatButton(requireContext()).apply {
+                text=title;isAllCaps=false;textSize=18f;setTypeface(null,Typeface.BOLD)
+                setTextColor(MobilePalette.text);background=tile();stateListAnimator=null
+                supportBackgroundTintList=null
+                gravity=Gravity.CENTER_VERTICAL or Gravity.START;includeFontPadding=false
+                minimumHeight=dp(56);setPadding(dp(16),dp(14),dp(16),dp(14))
+                MobileFeedback.apply(this,radius=5f)
+                setOnClickListener {
+                    isEnabled=false
+                    sheet.dismiss()
+                    startActivity(Intent(requireContext(),app.qthrone.mobile.ui.profile.settingsActivityFor(type)).putExtra("qmobileProfileType",type))
+                }
+            },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(8) })
         }
-        sheet.setContentView(ScrollView(requireContext()).apply { addView(body) });sheet.show()
+        sheet.setContentView(body,ViewGroup.LayoutParams(-1,(resources.displayMetrics.heightPixels*.9f).toInt()))
+        sheet.setOnShowListener {
+            val panel=sheet.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            val available=(panel?.parent as? View)?.height?.takeIf { it>0 }
+                ?: resources.displayMetrics.heightPixels
+            body.layoutParams=body.layoutParams.apply { height=(available*.9f).toInt() }
+            sheet.behavior.apply {
+                skipCollapsed=true
+                state=com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+        sheet.show()
     }
 }

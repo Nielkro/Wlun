@@ -228,7 +228,11 @@ fun Context.getColorAttr(@AttrRes resId: Int): Int {
     return try {
         val typedValue = TypedValue()
         if (theme.resolveAttribute(resId, typedValue, true)) {
-            ContextCompat.getColor(this, typedValue.resourceId)
+            when {
+                typedValue.type in TypedValue.TYPE_FIRST_COLOR_INT..TypedValue.TYPE_LAST_COLOR_INT -> typedValue.data
+                typedValue.resourceId != 0 -> ContextCompat.getColor(this, typedValue.resourceId)
+                else -> 0
+            }
         } else 0
     } catch (e: Exception) {
         Logs.w(e)
