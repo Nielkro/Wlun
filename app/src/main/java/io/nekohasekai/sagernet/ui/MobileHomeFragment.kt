@@ -615,8 +615,8 @@ class MobileHomeFragment : ToolbarFragment() {
         }
         entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id,true) } }
         val autoSort=androidx.appcompat.widget.SwitchCompat(requireContext()).apply {
-            text="Автосортировка по пингу";setTextColor(MobilePalette.text);textSize=16f
-            gravity=Gravity.CENTER_VERTICAL;minHeight=dp(56);setPadding(dp(14),dp(8),dp(14),dp(8));background=tile()
+            text="Автосортировка по пингу";setTextColor(MobilePalette.text);textSize=17f;setTypeface(null,Typeface.BOLD)
+            gravity=Gravity.CENTER_VERTICAL;minHeight=dp(56);setPadding(dp(14),dp(12),dp(14),dp(12))
             isChecked=group.subOptions.autoSortByPing
             setOnCheckedChangeListener { _,checked ->
                 isEnabled=false
@@ -633,7 +633,14 @@ class MobileHomeFragment : ToolbarFragment() {
                 }
             }
         }
-        body.addView(autoSort,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
+        val autoSortRow=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL;minimumHeight=dp(56);background=tile() }
+        autoSortRow.addView(ImageView(requireContext()).apply {
+            setImageResource(R.drawable.ic_mobile_sort_ping)
+            imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.muted)
+        },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginStart=dp(14) })
+        autoSortRow.addView(autoSort,LinearLayout.LayoutParams(0,-2,1f))
+        autoSortRow.setOnClickListener { if(autoSort.isEnabled) autoSort.toggle() }
+        body.addView(autoSortRow,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         entry(getString(R.string.qmobile_edit),R.drawable.ic_mobile_edit) { editGroup(group,false) }
         val pinned=group.id in pinnedGroups()
         entry(getString(if(pinned) R.string.qmobile_unpin else R.string.qmobile_pin),R.drawable.ic_mobile_pin) { val ids=pinnedGroups().toMutableSet();if(pinned) ids.remove(group.id) else ids.add(group.id);DataStore.mobilePinnedGroups=ids.joinToString(",");refresh() }
