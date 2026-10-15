@@ -599,21 +599,41 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun groupMenu(group: ProxyGroup, anchor: View) {
         val dialog=MobileSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply {
-            orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(24)); setBackgroundColor(MobilePalette.surface)
+            orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(24)); setBackgroundColor(MobilePalette.background)
         }
         body.addView(View(requireContext()).apply { background=GradientDrawable().apply { setColor(MobilePalette.muted); cornerRadius=dp(2).toFloat() } },LinearLayout.LayoutParams(dp(40),dp(4)).apply { gravity=Gravity.CENTER_HORIZONTAL; bottomMargin=dp(20) })
         body.addView(text(group.displayName(),18f).apply { setTypeface(null,Typeface.BOLD) })
         fun entry(label:String,icon:Int,action:()->Unit) {
-            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; isFocusable=true; contentDescription=label; setOnClickListener { dialog.dismiss();action() } }
+            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; minimumHeight=dp(56);background=tile(); isFocusable=true; contentDescription=label; setOnClickListener { dialog.dismiss();action() } }
             row.addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.muted) },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginStart=dp(14) })
-            row.addView(text(label,17f).apply { setTypeface(null,Typeface.BOLD) },LinearLayout.LayoutParams(-1,dp(56)))
-            body.addView(row)
+            row.addView(text(label,17f).apply { gravity=Gravity.CENTER_VERTICAL; setTypeface(null,Typeface.BOLD) },LinearLayout.LayoutParams(-1,-2))
+            body.addView(row,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         }
         if(group.isSubscription) entry(getString(R.string.qmobile_refresh),R.drawable.ic_mobile_refresh) { SubscriptionClient.refreshGroup(group.id,false) }
         if(group.subOptions.routingProvider.isNotBlank()) entry(getString(R.string.provider_routing_title,group.subOptions.routingProvider),R.drawable.ic_mobile_route) {
             startActivity(Intent(requireContext(),ProviderRoutingActivity::class.java).putExtra("groupId",group.id))
         }
-        entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id) } }
+        entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id,true) } }
+        val autoSort=androidx.appcompat.widget.SwitchCompat(requireContext()).apply {
+            text="Автосортировка по пингу";setTextColor(MobilePalette.text);textSize=16f
+            gravity=Gravity.CENTER_VERTICAL;minHeight=dp(56);setPadding(dp(14),dp(8),dp(14),dp(8));background=tile()
+            isChecked=group.subOptions.autoSortByPing
+            setOnCheckedChangeListener { _,checked ->
+                isEnabled=false
+                viewLifecycleOwner.lifecycleScope.launch {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            val latest=GroupRepo.get(group.id) ?: return@withContext
+                            latest.subOptions=latest.subOptions.copy(autoSortByPing=checked)
+                            GroupRepo.save(latest)
+                        }
+                        group.subOptions=group.subOptions.copy(autoSortByPing=checked)
+                        refresh()
+                    } finally { isEnabled=true }
+                }
+            }
+        }
+        body.addView(autoSort,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         entry(getString(R.string.qmobile_edit),R.drawable.ic_mobile_edit) { editGroup(group,false) }
         val pinned=group.id in pinnedGroups()
         entry(getString(if(pinned) R.string.qmobile_unpin else R.string.qmobile_pin),R.drawable.ic_mobile_pin) { val ids=pinnedGroups().toMutableSet();if(pinned) ids.remove(group.id) else ids.add(group.id);DataStore.mobilePinnedGroups=ids.joinToString(",");refresh() }
@@ -623,7 +643,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 if(!deleted) Toast.makeText(requireContext(),R.string.qmobile_delete_failed,Toast.LENGTH_LONG).show()
             }
         }
-        dialog.setContentView(body);dialog.show()
+        dialog.setContentView(androidx.core.widget.NestedScrollView(requireContext()).apply { addView(body) });dialog.show()
     }
     private fun editGroup(group:ProxyGroup,settings:Boolean) {
         val dialog=MobileSheetDialog(requireContext())

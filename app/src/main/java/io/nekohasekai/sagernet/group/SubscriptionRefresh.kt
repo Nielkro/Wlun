@@ -306,7 +306,13 @@ internal object SubscriptionRefresh {
     )
 
     private fun identityKey(profile: ProxyEntity): String =
-        SubscriptionReconcile.identityKey(profile.type, profile.outbound.exportIdentity().toCompact())
+        subscriptionIdentityKey(profile.outbound)
+
+    private fun subscriptionIdentityKey(outbound: Outbound): String = SubscriptionReconcile.identityKey(
+        outbound.type,
+        if (outbound is app.qthrone.mobile.outbound.types.Qwdtt) NativeHashPolicy.subscriptionIdentity(outbound)
+        else outbound.exportIdentity().toCompact()
+    )
 
     /** ImportSink (GroupUpdater.cpp:112-154): inserts in chunks, claiming old ids by identical content first. */
     private class ImportSink(private val gid: Long, private val index: ContentIndex?) {
@@ -332,7 +338,7 @@ internal object SubscriptionRefresh {
                     return
                 }
                 if (!entry.contentKnown) {
-                    entry.identity = SubscriptionReconcile.identityKey(outbound.type, outbound.exportIdentity().toCompact())
+                    entry.identity = subscriptionIdentityKey(outbound)
                 }
             }
             entryIndex.add(entries.size)

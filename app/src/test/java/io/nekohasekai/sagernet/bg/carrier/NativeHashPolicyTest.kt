@@ -5,6 +5,31 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeHashPolicyTest {
+    @Test fun manualHashesAndExistingRowSurviveRepeatedRefreshForBothTransports() {
+        for (old in listOf(profile(),app.qthrone.mobile.outbound.types.Csqtt().apply {
+            name="Example";server="192.0.2.1";password="test";hashes=listOf("local_hash")
+        })) {
+            repeat(2) {
+                val incoming=if(old is app.qthrone.mobile.outbound.types.Csqtt) app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+                assertTrue(incoming.parseFromJson(old.exportToJson()))
+                incoming.hashes=listOf("subscription_default")
+                incoming.workers=18
+                NativeHashPolicy.preserve(incoming,listOf(old))
+                assertEquals(old.hashes,incoming.hashes)
+                assertEquals(old.deviceId,incoming.deviceId)
+                val previous=app.qthrone.mobile.group.OldEntry(7,"old-content",NativeHashPolicy.subscriptionIdentity(old),"old")
+                val index=app.qthrone.mobile.group.ContentIndex(listOf(previous))
+                val next=app.qthrone.mobile.group.NewEntry("new").apply {
+                    id=8;content="new-content";identity=NativeHashPolicy.subscriptionIdentity(incoming)
+                }
+                index.noteArrival(next.content)
+                val plan=app.qthrone.mobile.group.SubscriptionReconcile.reconcile(listOf(previous),listOf(next),index)
+                assertEquals(listOf(7L),plan.order)
+                assertEquals(listOf(7L to 8L),plan.updates)
+                assertEquals(listOf(8L),plan.stale)
+            }
+        }
+    }
     @Test fun newImportsUseSameIdentityAcrossGroupsAndServerChanges() {
         assertEquals(NativeHashPolicy.defaultDeviceId("same-phone"),NativeHashPolicy.defaultDeviceId("same-phone"))
         assertNotEquals(NativeHashPolicy.defaultDeviceId("same-phone"),NativeHashPolicy.defaultDeviceId("another-phone"))

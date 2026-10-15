@@ -3,6 +3,10 @@ package app.qthrone.mobile.bg.carrier
 import app.qthrone.mobile.outbound.types.Qwdtt
 
 object NativeHashPolicy {
+    fun subscriptionIdentity(profile: Qwdtt): String = profile.exportIdentity().also {
+        it.remove("hashes")
+        it.remove("workers")
+    }.toCompact()
     fun defaultDeviceId(hwid: String): String = java.util.UUID.nameUUIDFromBytes(
         ("qThrone-native:"+hwid).toByteArray(Charsets.UTF_8)).toString()
     fun preserve(incoming: Qwdtt, previous: List<Qwdtt>) {
@@ -15,6 +19,8 @@ object NativeHashPolicy {
             incoming.deviceId=it.deviceId
             incoming.deviceIdProvided=true
             incoming.hashSource = it.hashSource; incoming.hashSourceChosen = true
+            // Manual hashes are local profile settings, not subscription identity changes.
+            if (it.hashSource == "manual") incoming.hashes = it.hashes.toList()
         }
     }
 }
