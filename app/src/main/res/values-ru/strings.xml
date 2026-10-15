@@ -1751,7 +1751,7 @@
     <string name="exit_ip_location">%1$s, %2$s</string>
     <string name="exit_ip_summary">Выходной IP: %1$s</string>
     <string name="exit_ip_summary_location">Выходной IP: %1$s (%2$s)</string>
-    <string name="provider_routing_title">Маршрутизация %1$s</string>
+    <string name="provider_routing_title">Маршрутизация подписки</string>
     <string name="provider_routing_use">Использовать Маршрутизацию %1$s</string>
     <string name="provider_routing_use_summary">Если выключено, используются общие настройки маршрутизации qThrone.</string>
     <string name="provider_routing_profile">Профиль маршрутизации</string>

@@ -50,7 +50,7 @@ class ProviderRoutingActivity : ThemedActivity() {
         lifecycleScope.launch {
             val group = withContext(Dispatchers.IO) { GroupRepo.get(intent.getLongExtra("groupId",0)) }
             if (group == null) { finish(); return@launch }
-            toolbar.title = if (intent.getBooleanExtra("details",false)) getString(R.string.provider_rules_title) else getString(R.string.provider_routing_title,group.subOptions.routingProvider)
+            toolbar.title = if (intent.getBooleanExtra("details",false)) getString(R.string.provider_rules_title) else getString(R.string.provider_routing_title)
             if (state == null) supportFragmentManager.beginTransaction().replace(content.id,Screen().apply {
                 arguments = Bundle().apply { putLong("groupId",group.id); putBoolean("details",intent.getBooleanExtra("details",false)); putString("section",intent.getStringExtra("section")) }
             }).commit()
@@ -110,11 +110,14 @@ class ProviderRoutingActivity : ThemedActivity() {
             fun add(preference: Preference) { preference.isSingleLineTitle = false; preference.layoutResource = R.layout.provider_preference; preference.isPersistent = false; controls.add(preference); preferenceScreen.addPreference(preference) }
             val profiles = (JsonInput.parseValue(options.providerRoutingProfiles) as? JsonArray)?.filterIsInstance<JsonObject>().orEmpty()
             val choices=app.qthrone.mobile.route.ProviderRouteProfiles.choices(profiles,document,options.routingProvider)
+            val selectedChoice=choices.firstOrNull {
+                app.qthrone.mobile.route.ProviderRouteProfiles.key(document,options.routingProvider) in it.keys
+            } ?: choices.firstOrNull()
             add(Preference(requireContext()).apply {
                 isIconSpaceReserved = false
                 key = "providerProfile"; title = getString(R.string.provider_routing_profile)
                 val selected=choices.indexOfFirst { app.qthrone.mobile.route.ProviderRouteProfiles.key(document,options.routingProvider) in it.keys }.coerceAtLeast(0)
-                summary = choices.getOrNull(selected)?.let { it.label+"\n"+getString(R.string.provider_profile_source,it.providers) }
+                summary = selectedChoice?.label
                     ?: document.string("Name").ifBlank { "Default" }
                 setOnPreferenceClickListener {
                     val adapter=object:android.widget.BaseAdapter() {
@@ -153,6 +156,8 @@ class ProviderRoutingActivity : ThemedActivity() {
                 isIconSpaceReserved = false
                 widgetLayoutResource = R.layout.qmobile_preference_arrow
                 title = document.string("Name").ifBlank { "Default" }
+                summary = getString(R.string.provider_profile_source,selectedChoice?.providers
+                    ?: app.qthrone.mobile.route.ProviderRouteProfiles.source(document,options.routingProvider))
                 setOnPreferenceClickListener {
                     startActivity(Intent(requireContext(),ProviderRoutingActivity::class.java).putExtra("groupId",group!!.id).putExtra("details",true)); true
                 }

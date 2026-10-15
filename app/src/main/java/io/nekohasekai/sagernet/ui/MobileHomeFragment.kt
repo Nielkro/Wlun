@@ -643,7 +643,7 @@ class MobileHomeFragment : ToolbarFragment() {
             body.addView(row,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         }
         if(group.isSubscription) entry(getString(R.string.qmobile_refresh),R.drawable.ic_mobile_refresh) { SubscriptionClient.refreshGroup(group.id,false) }
-        if(group.subOptions.routingProvider.isNotBlank()) entry(getString(R.string.provider_routing_title,group.subOptions.routingProvider),R.drawable.ic_mobile_route) {
+        if(group.subOptions.routingProvider.isNotBlank()) entry(getString(R.string.provider_routing_title),R.drawable.ic_mobile_route) {
             startActivity(Intent(requireContext(),ProviderRoutingActivity::class.java).putExtra("groupId",group.id))
         }
         entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id,true) } }
