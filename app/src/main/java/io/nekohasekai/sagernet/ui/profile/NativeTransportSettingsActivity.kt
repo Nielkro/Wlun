@@ -340,9 +340,11 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     val captchaMode=DataStore.profileCacheStore.getString(cache("captcha_mode")) ?: "auto"
                     val anonPath=DataStore.profileCacheStore.getString(cache("vk_anon_path")) ?: "vkcalls"
                     val dns=DataStore.profileCacheStore.getString(cache("go_dns"))?.takeIf { it.isNotBlank() } ?: "yandex"
+                    val deviceId=DataStore.profileCacheStore.getString(cache("device_id"))
+                        ?.takeIf { it.isNotBlank() } ?: (editingOutbound as? app.qthrone.mobile.outbound.types.Qwdtt)?.deviceId.orEmpty()
                     hashCheckJob=lifecycleScope.launch {
                         try {
-                            withContext(Dispatchers.IO) { session.run(this@NativeTransportSettingsActivity,hashes,captchaMode,anonPath,dns) { slot,status ->
+                            withContext(Dispatchers.IO) { session.run(this@NativeTransportSettingsActivity,hashes,captchaMode,anonPath,dns,deviceId) { slot,status ->
                                 runOnUiThread { if(hashCheck===session) { results[slot]=status;showResults() } }
                             } }
                         } catch(error: kotlinx.coroutines.CancellationException) { throw error }

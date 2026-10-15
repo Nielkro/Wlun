@@ -13,6 +13,11 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
 
 internal object QwdttPing {
+    // VK may spend up to 90 seconds authorizing each hash, before RunPing measures RTT.
+    // The UI's network timeout must not terminate that preparation prematurely.
+    fun processBudgetMs(timeoutMs:Long,hashCount:Int):Long =
+        timeoutMs.coerceIn(1,300_000) + hashCount.coerceIn(1,4)*90_000L
+
     fun parseResult(line:String):Int? {
         if(!line.startsWith("PING_RESULT|")) return null
         return line.substringAfter('|').trim().toLongOrNull()?.takeIf { it in 0..Int.MAX_VALUE.toLong() }
@@ -35,6 +40,8 @@ internal object QwdttPing {
         launch:(ProcessBuilder)->Process={ it.start() }):Int = withContext(Dispatchers.IO) {
         require(timeoutMs>0 && privateJson.toByteArray(Charsets.UTF_8).size<=65_536)
         coroutineContext.ensureActive()
+        val hashCount=app.qthrone.mobile.outbound.json.JsonInput.parseObject(privateJson).array("hashes").size
+        val processBudget=processBudgetMs(timeoutMs,hashCount)
         val binary=File(nativeDirectory,CarrierKind.QWDTT.executable)
         check(binary.canExecute()) { "Бинарный клиент qWDTT не найден" }
         val directory=File(cacheDirectory,"qwdtt-ping-"+UUID.randomUUID())
@@ -63,7 +70,7 @@ internal object QwdttPing {
                     parseResult(line)?.let { latency.set(it) }
                 } }
             } },"qThrone-native-ping").apply { isDaemon=true;start() }
-            val deadline=System.nanoTime()+timeoutMs*1_000_000
+            val deadline=System.nanoTime()+processBudget*1_000_000
             while(System.nanoTime()<deadline) {
                 coroutineContext.ensureActive()
                 if(latency.get()>0) return@withContext latency.get()
