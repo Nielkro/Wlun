@@ -28,13 +28,18 @@ import app.qthrone.mobile.outbound.types.Qwdtt
 internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
 
     override suspend fun run(profiles:List<ProxyEntity>) = coroutineScope {
-        val (native,regular)=profiles.partition { it.type in NATIVE_TYPES }
+        val (all,regular)=profiles.partition { it.type in NATIVE_TYPES }
+        // qWDTT and CSQTT both ask VK for credentials: one budget for the two, so a sweep stays below VK's limits.
+        val (vk,native)=all.partition { it.type in listOf("qwdtt","csqtt") }
         launch { super.run(regular) }
-        // Each carrier gets its own HTTP probe: one slow authorization cannot stall a batch,
+        launch {
+            runIndependentProbes(vk,MAX_PARALLEL_PROBES,{ session.cancelled },{ (it.outbound as? Qwdtt)?.probeSessionKey() }) { profile ->
+                if(profile.type=="qwdtt") report(listOf(ping(profile))) else super.run(listOf(profile))
+            }
+        }
+        // Each carrier gets its own HTTP probe: one slow start cannot stall a batch,
         // and one unreachable room cannot fail the shared box of its neighbours.
-        runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled },{ profile ->
-            (profile.outbound as? Qwdtt)?.probeSessionKey()
-        }) { profile ->
+        runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled }) { profile ->
             super.run(listOf(profile))
         }
     }
@@ -72,6 +77,21 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
     }
 
     override fun report(results: List<ProbeResult>) = session.reportUrl(results)
+
+    /** qWDTT is measured by its own TURN/DTLS handshake, like the original app and the desktop client. */
+    private suspend fun ping(profile: ProxyEntity): ProbeResult {
+        if (session.cancelled) return ProbeResult(profile.id, error = ERROR_ABORTED, measured = false)
+        val outcome = try {
+            app.qthrone.mobile.bg.carrier.QwdttPing.measure(profile.id, profile.outbound as NativeCarrier,
+                QWDTT_PING_TIMEOUT_MS.coerceAtLeast(session.options.timeoutMs.toLong()))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            app.qthrone.mobile.bg.carrier.QwdttPing.Outcome(0, e.readableMessage)
+        }
+        return if (outcome.error.isEmpty()) ProbeResult(profile.id, latency = outcome.latency)
+        else ProbeResult(profile.id, error = outcome.error)
+    }
 
     /** BuildTestConfig marks it SetLatency(-1): a failed test with the generator's reason. */
     override fun invalid(profileId: Long, reason: String) = ProbeResult(profileId, error = reason)
@@ -159,5 +179,8 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
 
         /** Profiles backed by a native client process instead of a sing-box outbound. */
         val NATIVE_TYPES = listOf("qwdtt","csqtt","openflux","olcrtc")
+
+        /** Credentials, an automatic VK check and the handshake; the original app allows 20 s without a check. */
+        const val QWDTT_PING_TIMEOUT_MS = 60_000L
     }
 }
