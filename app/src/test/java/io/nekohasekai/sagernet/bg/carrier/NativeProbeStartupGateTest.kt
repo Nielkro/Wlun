@@ -5,6 +5,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeProbeStartupGateTest {
+    @Test fun preparationTimeoutFailsOnlyThatProbeAndReleasesItsPermit() = runBlocking {
+        val gate=NativeProbeStartupGate(1,100)
+        val failure=runCatching { gate.prepare { awaitCancellation() } }.exceptionOrNull()
+        assertTrue(failure is IllegalStateException)
+        assertTrue(currentCoroutineContext().isActive)
+        assertEquals(7,gate.prepare { 7 })
+    }
+
     @Test fun defaultLimitAllowsThreePreparationsAndQueuesTheFourth() = runBlocking {
         val gate=NativeProbeStartupGate()
         val three=CompletableDeferred<Unit>()

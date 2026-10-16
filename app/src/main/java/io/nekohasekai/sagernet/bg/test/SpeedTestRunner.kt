@@ -35,7 +35,11 @@ internal class SpeedTestRunner(private val session: TestSession) {
     private val traffic = TrafficCredit(session.options.creditTraffic)
 
     suspend fun run(profiles: List<ProxyEntity>) {
-        for (slice in profiles.chunked(if (countryOnly) TEST_BATCH_SIZE else 1)) {
+        val slices=if(countryOnly) {
+            val (native,regular)=profiles.partition { it.type in listOf("qwdtt","csqtt") }
+            regular.chunked(TEST_BATCH_SIZE)+native.map { listOf(it) }
+        } else profiles.chunked(1)
+        for (slice in slices) {
             if (session.cancelled) break
             val excluded = session.screenXrayFullConfigs(slice)
             for (entry in excluded) session.reportSpeedUnmeasured(entry.profileId, entry.reason)

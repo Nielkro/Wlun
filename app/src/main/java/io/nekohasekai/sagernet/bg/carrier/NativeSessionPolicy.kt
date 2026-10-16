@@ -14,8 +14,11 @@ internal object NativeSessionPolicy {
 
     fun startupTimeoutMs(kind:CarrierKind,requested:Long):Long =
         if(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) requested.coerceAtLeast(300_000L) else requested
-    fun unavailableCall(line:String):Boolean = line.contains("Call not found",ignoreCase=true) ||
-        line.contains("error_code=951") || line.contains("error_code:951")
+    private val callErrorCode=Regex("error_code[\\s]*[:=][\\s]*[\"']?([0-9]+)",RegexOption.IGNORE_CASE)
+    fun unavailableCall(line:String):Boolean {
+        val code=callErrorCode.find(line)?.groupValues?.get(1)?.toIntOrNull()
+        return line.contains("Call not found",ignoreCase=true) || code==951 || code==954 || (code!=null && code in 9000..9999)
+    }
     fun rotatedHashes(privateJson:String,attempt:Int):String {
         if(attempt==0) return privateJson
         val config=JsonInput.parseObject(privateJson)

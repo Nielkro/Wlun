@@ -57,6 +57,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
             session.reportCurrentUrl(ProbeResult(0L, error = ERROR_NOT_RUNNING))
             return
         }
+        val nativeCurrent=ProfileManager.getProfile(running.profileId)?.type in listOf("qwdtt","csqtt")
         val request = TestRequest().apply {
             testCurrent = true
             url = session.options.url
@@ -70,6 +71,15 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         try {
             // Sessions never overlap, so only the stats bar's test can report this tag meanwhile.
             TestTags.holding(listOf(TestTags.CURRENT)) {
+                // Match the desktop native-current path: warm one HTTP connection,
+                // then report the second request. Neither request reauthorizes VK.
+                if(nativeCurrent) {
+                    session.awaitCore { done ->
+                        Mobile.startURLTest(running.instance,CoreRuntime.platform,request,
+                            Handler({ running.profileId },result::set,done))
+                    }
+                    if(result.get().error.isNotEmpty()) return@holding
+                }
                 session.awaitCore { done ->
                     Mobile.startURLTest(
                         running.instance, CoreRuntime.platform, request,

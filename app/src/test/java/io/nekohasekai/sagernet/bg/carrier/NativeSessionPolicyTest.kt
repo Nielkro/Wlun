@@ -30,6 +30,10 @@ class NativeSessionPolicyTest {
     @Test fun unavailableFirstCallCanTryEveryHashWithoutChangingTheStoredConfig() {
         val source="""{"peer":"192.0.2.1:56003","device_id":"phone","hashes":["closed","second","third"],"password":"fixture"}"""
         assertTrue(NativeSessionPolicy.unavailableCall("step2: Call not found (error_code=951)"))
+        assertTrue(NativeSessionPolicy.unavailableCall("VK returns error: invalid join link (error_code=954)"))
+        assertTrue(NativeSessionPolicy.unavailableCall("VK error_code=9001"))
+        assertFalse(NativeSessionPolicy.unavailableCall("VK error_code=29"))
+        assertFalse(NativeSessionPolicy.unavailableCall("VK error_code=14 captcha"))
         assertFalse(NativeSessionPolicy.unavailableCall("network timeout"))
         assertFalse(NativeSessionPolicy.unavailableCall("FATAL_AUTH: wrong password"))
         for(attempt in 0..2) {
