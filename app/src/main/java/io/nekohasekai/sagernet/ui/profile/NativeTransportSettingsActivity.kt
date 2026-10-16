@@ -71,10 +71,12 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 if(!options.contains(key)) options[key]=value
             document["options"]=options
         }
-        if(type == "openflux") {
-            for((key,value) in mapOf("secret" to "","context" to "http://openflux","codec" to "batched","negotiate" to true))
+        // A new profile is a Session; an imported one keeps exactly what its link says.
+        if(type == "openflux" && document.array("transports").isEmpty()) {
+            for((key,value) in mapOf("secret" to "","negotiate" to true))
                 if(!document.contains(key)) document[key]=value
         }
+        if(type == "openflux" && !document.contains("context")) document["context"]=""
         fun write(obj: JsonObject, prefix: String = "") {
             for ((key, value) in obj) {
                 if (key == "type") continue
@@ -93,7 +95,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         val order = when(type) {
             "qwdtt" -> listOf("name","server","server_port","mode","password","hash_source") + (1..4).map { "hash_$it" } + listOf("raw_port","workers","turn_tcp","vk_anon_path","captcha_mode","obfs","go_dns","device_id")
             "csqtt" -> listOf("name","server","server_port","password","hash_source") + (1..6).map { "hash_$it" } + listOf("workers","turn_tcp","vk_anon_path","captcha_mode","obfs","device_id")
-            "openflux" -> listOf("name","secret","transport_yandex","transport_mailru","transport_cupsonline","context")
+            "openflux" -> listOf("name","secret") + openFluxKinds.map { "transport_$it" } + listOf("context")
             else -> listOf("name","provider","transport","room","key","token","channel","dns","device_id") + optionDefaults.keys.map { "options.$it" }
         }
         if(type in listOf("qwdtt","csqtt")) {
@@ -103,8 +105,11 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 DataStore.profileCacheStore.putString(cache("hash_$i"),hashes.getOrElse(i-1) { "" })
             }
         }
-        if(type=="openflux") for(kind in listOf("yandex","mailru","cupsonline")) {
-            val value=document.array("transports").filterIsInstance<JsonObject>().firstOrNull { it.string("type")==kind }?.string("url").orEmpty()
+        if(type=="openflux") for(kind in openFluxKinds) {
+            val existing=document.array("transports").filterIsInstance<JsonObject>().firstOrNull { it.string("type")==kind }
+            // Rarer carriers get a field only when the profile already uses them.
+            if(existing==null && kind !in listOf("yandex","mailru","cupsonline")) continue
+            val value=existing?.string(if(kind=="direct") "dial" else "url").orEmpty()
             fields["transport_$kind"]=value
             DataStore.profileCacheStore.putString(cache("transport_$kind"),value)
         }
@@ -146,17 +151,25 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         }
         if(type=="openflux") {
             val transports=JsonArray()
-            document.array("transports").filterIsInstance<JsonObject>().filter { it.string("type")=="direct" }.forEach { transports.add(it.copy()) }
-            for((index,kind) in listOf("yandex","mailru","cupsonline").withIndex()) {
-                val value=DataStore.profileCacheStore.getString(cache("transport_$kind"))?.trim().orEmpty()
-                if(value.isEmpty()) continue
-                val transport=document.array("transports").filterIsInstance<JsonObject>().firstOrNull { it.string("type")==kind }?.copy()
-                    ?: jsonObjectOf("type" to kind,"name" to kind,"priority" to index)
-                transport[if(kind=="direct") "dial" else "url"]=value
-                transports.add(transport)
+            fun edited(kind:String)=DataStore.profileCacheStore.getString(cache("transport_$kind"))?.trim().orEmpty()
+            val handled=mutableSetOf<String>()
+            // The first carrier of a type is the one its field edits; any further ones pass through untouched.
+            for(item in document.array("transports").filterIsInstance<JsonObject>()) {
+                val kind=item.string("type")
+                if(fields.containsKey("transport_$kind") && handled.add(kind)) {
+                    val value=edited(kind)
+                    if(value.isNotEmpty()) transports.add(item.copy().also { it[if(kind=="direct") "dial" else "url"]=value })
+                } else transports.add(item.copy())
+            }
+            for(kind in openFluxKinds) {
+                if(!fields.containsKey("transport_$kind") || kind in handled || edited(kind).isEmpty()) continue
+                transports.add(jsonObjectOf("type" to kind,(if(kind=="direct") "dial" else "url") to edited(kind)))
             }
             result["transports"]=transports
-            if(result.string("context").isBlank()) result["context"]=transports.filterIsInstance<JsonObject>().firstNotNullOfOrNull { it.string("url").takeIf(String::isNotBlank) } ?: "http://openflux"
+            if(result.string("context").isBlank()) result.remove("context")
+            if(result.string("secret").isEmpty()) result.remove("secret")
+            // Several carriers only work as a Session.
+            if(transports.size>1) result["negotiate"]=true
         }
         val candidate = OutboundFactory.newByType(type)
         require(candidate.parseFromJson(result)) { "Проверьте параметры профиля" }
@@ -266,6 +279,10 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 path=="transport_yandex" -> "Документ Яндекс"
                 path=="transport_mailru" -> "Документ Mail.ru"
                 path=="transport_cupsonline" -> "Документ Cups.online"
+                path=="transport_vyandex" -> "Документ Яндекс (Volga)"
+                path=="transport_boards" -> "Доска Яндекс"
+                path=="transport_telemost" -> "Конференция Телемост"
+                path=="transport_avito" -> "Комната Авито"
                 else -> labels[key] ?: path.removePrefix("options.")
             }
             if(preference is EditTextPreference) preference.dialogTitle = preference.title
@@ -362,7 +379,9 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         })
     }
 
-    private val optionDefaults=linkedMapOf<String,Any>("vp8-fps" to 60,"vp8-batch" to 64,"fps" to 30,"batch" to 64,"frag" to 900,"ack-ms" to 2000,
+    /** OpenFlux carriers in the order the original apps list them. */
+    private val openFluxKinds=listOf("yandex","vyandex","boards","mailru","cupsonline","avito","telemost","direct")
+    private val optionDefaults=linkedMapOf<String,Any>("vp8-fps" to 30,"vp8-batch" to 64,"fps" to 30,"batch" to 64,"frag" to 900,"ack-ms" to 2000,
         "video-w" to 1080,"video-h" to 1080,"video-fps" to 30,"video-qr-size" to 0,"video-tile-module" to 4,"video-tile-rs" to 0,"video-codec" to "qrcode","video-qr-recovery" to "low")
     private val optionLimits=mapOf("vp8-fps" to 1..120,"vp8-batch" to 1..64,"fps" to 1..120,"batch" to 1..64,"frag" to 1..65535,"ack-ms" to 1..60000,
         "video-w" to 1..4096,"video-h" to 1..4096,"video-fps" to 1..120,"video-qr-size" to 0..65535,"video-tile-module" to 1..270,"video-tile-rs" to 0..200)
