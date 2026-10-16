@@ -124,6 +124,12 @@ object ProfileManager {
             outbound.hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
             outbound.hashSourceChosen = true
         }
+        // One identity per phone, as the original apps send ANDROID_ID: servers bind passwords to it,
+        // so a profile added again must not look like another device.
+        if(outbound is app.qthrone.mobile.outbound.types.Qwdtt && !outbound.deviceIdProvided) {
+            outbound.deviceId = app.qthrone.mobile.bg.carrier.NativeHashPolicy.defaultDeviceId(app.qthrone.mobile.group.DeviceDetails.get().hwid)
+            outbound.deviceIdProvided = true
+        }
     }
 
     suspend fun addProfile(outbound: Outbound, groupId: Long = -1L): ProxyEntity {
