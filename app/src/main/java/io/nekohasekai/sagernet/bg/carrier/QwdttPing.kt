@@ -1,6 +1,9 @@
 package app.qthrone.mobile.bg.carrier
 
 import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.outbound.json.JsonInput
+import app.qthrone.mobile.outbound.link.Hosts
+import app.qthrone.mobile.outbound.types.Qwdtt
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -20,12 +23,10 @@ object QwdttPing {
 
     suspend fun measure(profileId: Long, profile: NativeCarrier, timeoutMs: Long): Outcome = withContext(Dispatchers.IO) {
         val plan = CarrierPlan.qwdtt(profileId, profile)
-        val json = app.qthrone.mobile.outbound.json.JsonInput.parseObject(
-            NativeSessionPolicy.probeConfig(CarrierKind.QWDTT, plan.privateJson, interactive = false, latencyProbe = true)).also {
+        val json = JsonInput.parseObject(
+            NativeSessionPolicy.probeConfig(CarrierKind.QWDTT, plan.privateJson, interactive = false, latencyProbe = true)).also { config ->
             // The handshake is DTLS; the RAW port speaks without it. The original app pings the DTLS port in every mode.
-            (profile as? app.qthrone.mobile.outbound.types.Qwdtt)?.let { qwdtt ->
-                it["peer"] = app.qthrone.mobile.outbound.link.Hosts.displayAddress(qwdtt.server, qwdtt.serverPort)
-            }
+            (profile as? Qwdtt)?.let { config["peer"] = Hosts.displayAddress(it.server, it.serverPort) }
         }.toCompact()
         val binary = File(app.applicationInfo.nativeLibraryDir, CarrierKind.QWDTT.executable)
         check(binary.canExecute()) { "Transport client is not installed" }

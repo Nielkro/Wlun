@@ -9,6 +9,7 @@ import app.qthrone.mobile.ktx.readableMessage
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.bg.carrier.NativeCarrier
+import app.qthrone.mobile.bg.carrier.QwdttPing
 import app.qthrone.mobile.bg.proto.ProbeTimeout
 import app.qthrone.core.mobile.Mobile
 import app.qthrone.core.mobile.TestRequest
@@ -82,12 +83,12 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
     private suspend fun ping(profile: ProxyEntity): ProbeResult {
         if (session.cancelled) return ProbeResult(profile.id, error = ERROR_ABORTED, measured = false)
         val outcome = try {
-            app.qthrone.mobile.bg.carrier.QwdttPing.measure(profile.id, profile.outbound as NativeCarrier,
+            QwdttPing.measure(profile.id, profile.outbound as NativeCarrier,
                 QWDTT_PING_TIMEOUT_MS.coerceAtLeast(session.options.timeoutMs.toLong()))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            app.qthrone.mobile.bg.carrier.QwdttPing.Outcome(0, e.readableMessage)
+            QwdttPing.Outcome(0, e.readableMessage)
         }
         return if (outcome.error.isEmpty()) ProbeResult(profile.id, latency = outcome.latency)
         else ProbeResult(profile.id, error = outcome.error)
