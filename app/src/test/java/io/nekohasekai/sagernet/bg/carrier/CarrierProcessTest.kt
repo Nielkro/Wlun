@@ -14,7 +14,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
-    @Test fun fiftySequentialProbeProcessesFinishCleanupBeforeTheNextStart() = runBlocking {
+    @Test fun fiftySequentialProbeProcessesFinishCleanupBeforeTheNextStart(): Unit = runBlocking {
         val root=Files.createTempDirectory("carrier-repeat").toFile()
         val executor=Executors.newSingleThreadExecutor()
         try {
