@@ -56,6 +56,16 @@ class NativeSessionPolicyTest {
         }
         assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.CSQTT,"{}",CarrierKind.CSQTT,"{}"))
     }
+
+    @Test fun openFluxExitServesOneClientSoSharedCarriersAreOneSession() {
+        val active="""{"negotiate":true,"transports":[{"type":"vyandex","url":"https://docs.yandex.ru/d/A"},{"type":"direct","dial":"203.0.113.7:9443"}]}"""
+        val sameNode="""{"negotiate":true,"transports":[{"type":"direct","dial":"203.0.113.7:9443"}]}"""
+        val otherNode="""{"negotiate":true,"transports":[{"type":"vyandex","url":"https://docs.yandex.ru/d/B"}]}"""
+        assertTrue(NativeSessionPolicy.sharesRemoteSession(CarrierKind.OPENFLUX,active,CarrierKind.OPENFLUX,sameNode))
+        assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.OPENFLUX,active,CarrierKind.OPENFLUX,otherNode))
+        // olcRTC rooms carry a session per client.
+        assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.OLCRTC,"""{"room":"r"}""",CarrierKind.OLCRTC,"""{"room":"r"}"""))
+    }
     @Test fun serverRejectionsAreReportedWithoutEchoingSecretsOrGuessingOneCause() {
         val message=NativeSessionPolicy.startupFailure("[worker] FATAL_AUTH: private-password private-device")!!
         assertFalse(message.contains("private"))

@@ -32,6 +32,13 @@ internal object NativeSessionPolicy {
     }
 
     fun sharesRemoteSession(firstKind:CarrierKind,first:String,secondKind:CarrierKind,second:String):Boolean {
+        if(firstKind==CarrierKind.OPENFLUX && secondKind==CarrierKind.OPENFLUX) {
+            // An OpenFlux exit serves one client at a time: a second one on any shared carrier takes the session over.
+            fun carriers(json:String)=JsonInput.parseObject(json).array("transports")
+                .filterIsInstance<app.qthrone.mobile.outbound.json.JsonObject>()
+                .map { it.string("type")+" "+it.string(if(it.string("type")=="direct") "dial" else "url").trim() }.toSet()
+            return carriers(first).intersect(carriers(second)).isNotEmpty()
+        }
         if(firstKind!=secondKind || firstKind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) return false
         val a=JsonInput.parseObject(first);val b=JsonInput.parseObject(second)
         return a.string("peer").isNotEmpty() && a.string("device_id").isNotEmpty() &&
