@@ -1,32 +1,36 @@
 {
-  "build_commit": "729e1f627a8733424df632531e6be1c70ca88d93",
+  "build_commit": "7522fa7de9710e05e0dc2a70ae90ae3565aa415d",
   "core_commit": "93e4873c56c2285f647d0146a0df9c088f122910",
   "archives": [
     {
       "abi": "armeabi-v7a",
-      "name": "qthrone-transports-729e1f62-armeabi-v7a.tar.gz",
-      "sha256": "ed12108c063b79f89d70ff30e2d0c3181b774bf4ef68398eb3cf6ebaaecf6310",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-729e1f62-armeabi-v7a.tar.gz"
+      "name": "qthrone-transports-7522fa7d-armeabi-v7a.tar.gz",
+      "sha256": "8cfdf4c1781bda648457543d2a870e09ae030e2ca941e127906fe1c5363cd67e",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-7522fa7d-armeabi-v7a.tar.gz"
     },
     {
       "abi": "arm64-v8a",
-      "name": "qthrone-transports-729e1f62-arm64-v8a.tar.gz",
-      "sha256": "d30a83a1d11cce1bd32f17c32dde6aa79a2d1e449106c1754f3b4f54e1cf6925",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-729e1f62-arm64-v8a.tar.gz"
+      "name": "qthrone-transports-7522fa7d-arm64-v8a.tar.gz",
+      "sha256": "6b8aa276491f90b8acab4b4dc1485aca14ea98f4ecf001eb5e18bdbee6a17968",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-7522fa7d-arm64-v8a.tar.gz"
     },
     {
       "abi": "x86_64",
-      "name": "qthrone-transports-729e1f62-x86_64.tar.gz",
-      "sha256": "9cd2ea70e19d6f156d86566c464442391d354e5ce76dc974c1fd491352f8b488",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux 74cac6d47bf4c27947348ee957538a2c0728a485\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-729e1f62-x86_64.tar.gz"
+      "name": "qthrone-transports-7522fa7d-x86_64.tar.gz",
+      "sha256": "06e11b09a52ad33c5d4685b82aa6190c34ca4570114a62d0aff2774ba4cf66a4",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-7522fa7d-x86_64.tar.gz"
     }
   ],
   "inputs": {
-    "scripts/build_carrier_clients.sh": "de6d57170ee8cab2f64b553c9baa100ec4dffac91de9937646be6953deb2e1ec",
-    "scripts/secure_carrier_wrappers.py": "865e334e3e99d210a800f0ebab691d2bc0406a48d05b864ced42e66ea37aea87",
-    "scripts/prepare_android_captcha.py": "1423df4d10a14127ce19347563f5e7a4a4f1e272b77fa6c1105debe1eeec8534"
+    "scripts/build_carrier_clients.sh": "853f371dec4509f5d02c40730ecf3629786d8f1720e16c73a4193749343da458",
+    "scripts/prepare_android_captcha.py": "1423df4d10a14127ce19347563f5e7a4a4f1e272b77fa6c1105debe1eeec8534",
+    "scripts/prepare_mobile_csqtt.py": "5b275c431eb5a668be1c88cc52ce36d95aec005acc93265e7febcd86c75062e6",
+    "carriers/openflux/main.go": "b9e94cb4e8242bf626433869c526d7c6b4512e9811616e4831618c94bbd711e4",
+    "carriers/olcrtc/main.go": "cbaeae54189b1594a4bf1976170396b6e707e609e73d844a76d5ae2ed79d340d",
+    "carriers/olcrtc/main_test.go": "e31129143ae483f955b813902731741834b094d2f5a626b51a9303098d9456fb",
+    "carriers/olcrtc/integration_test.go": "c4c08af66123c2dd4b5a2c64f3c9e20a4f5d3e7c389cfe2ef5cfe432e8c823c8"
   }
 }
