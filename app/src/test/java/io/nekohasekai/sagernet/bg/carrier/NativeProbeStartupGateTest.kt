@@ -5,6 +5,15 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeProbeStartupGateTest {
+    @Test fun queuedProfilesReceiveFreshPreparationBudgets(): Unit = runBlocking {
+        val gate=NativeProbeStartupGate(1,1000)
+        // All four individual preparations fit their budget. The total queue wait does not.
+        val results=(1..4).map { id -> async {
+            gate.prepare { delay(400);id }
+        } }.awaitAll()
+        assertEquals(listOf(1,2,3,4),results)
+    }
+
     @Test fun preparationTimeoutFailsOnlyThatProbeAndReleasesItsPermit() = runBlocking {
         val gate=NativeProbeStartupGate(1,100)
         val failure=runCatching { gate.prepare { awaitCancellation() } }.exceptionOrNull()

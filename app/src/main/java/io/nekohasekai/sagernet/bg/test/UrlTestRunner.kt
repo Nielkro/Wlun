@@ -32,9 +32,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         launch { super.run(regular) }
         // Each carrier gets its own HTTP probe: one slow authorization cannot stall a batch.
         runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled },{ profile ->
-            (profile.outbound as? Qwdtt)?.let {
-                listOf(it.type,it.server,it.serverPort.toString(),it.deviceId)
-            }
+            (profile.outbound as? Qwdtt)?.probeSessionKey()
         }) { profile ->
             super.run(listOf(profile))
         }
