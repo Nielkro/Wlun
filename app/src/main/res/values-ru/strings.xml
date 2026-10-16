@@ -1773,4 +1773,8 @@
     <string name="provider_routing_proxy_ips">IP через прокси</string>
     <string name="provider_routing_block_sites">Блокируемые домены</string>
     <string name="provider_routing_block_ips">Блокируемые IP</string>
+    <string name="qmobile_vk_authorizing">Авторизация VK…</string>
+    <string name="qmobile_vk_captcha">Подтверждение VK…</string>
+    <string name="qmobile_vk_waiting">Ожидание VK…</string>
+    <string name="qmobile_reconnecting">Переподключение…</string>
 </resources>

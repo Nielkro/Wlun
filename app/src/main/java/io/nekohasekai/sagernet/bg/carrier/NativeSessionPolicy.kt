@@ -38,8 +38,9 @@ internal object NativeSessionPolicy {
             a.string("peer")==b.string("peer") && a.string("device_id")==b.string("device_id")
     }
     fun startupFailure(line:String):String? = when {
-        line.contains("FATAL_AUTH:") -> "Сервер отклонил авторизацию: проверьте пароль, срок доступа и привязку устройства"
-        line.contains("FATAL_PROTOCOL:") -> "Сервер отклонил несовместимый протокол подключения"
+        line.contains("FATAL_AUTH:") || line.contains("Сервер отказал в авторизации CSQTT") ||
+            line.contains("Пароль CSQTT привязан к другому устройству") -> "Сервер отклонил авторизацию: проверьте пароль, срок доступа и привязку устройства"
+        line.contains("FATAL_PROTOCOL:") || line.contains("Клиент и сервер CSQTT несовместимы") -> "Сервер отклонил несовместимый протокол подключения"
         else -> null
     }
 }

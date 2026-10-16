@@ -89,6 +89,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         },LinearLayout.LayoutParams((48*host.resources.displayMetrics.density).toInt(),(48*host.resources.displayMetrics.density).toInt()))
         body.addView(header)
         var turnUrlIndex=0
+        var autoClicked=false
         val web=WebView(host).apply {
             setBackgroundColor(MobilePalette.surface)
             settings.javaScriptEnabled=true
@@ -99,11 +100,24 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             settings.allowFileAccess=false
             settings.allowContentAccess=false
             settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            if(automatic) {
+                settings.cacheMode=android.webkit.WebSettings.LOAD_NO_CACHE
+                settings.userAgentString=CaptchaAutoScripts.desktopUserAgent(android.webkit.WebSettings.getDefaultUserAgent(host))
+            }
+            webChromeClient=android.webkit.WebChromeClient()
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
             if(turn || oauthState!=null) {
                 settings.userAgentString=app.qthrone.mobile.bg.carrier.VkRelayLogin.userAgent(android.webkit.WebSettings.getDefaultUserAgent(host),0)
             }
-            val hook=if(turn) VkTurnScripts.INTERCEPTOR else INTERCEPT
+            val hook=if(turn) VkTurnScripts.INTERCEPTOR else CaptchaAutoScripts.intercept
+            if(!turn && oauthState==null && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER))
+                androidx.webkit.WebViewCompat.addWebMessageListener(this,"QThroneCaptcha",
+                    setOf("https://vk.ru","https://*.vk.ru","https://vk.com","https://*.vk.com","https://ok.ru","https://*.ok.ru","https://*.okcdn.ru")) { _,message,origin,_,_ ->
+                    val token=if(allowed(origin.toString())) runCatching { message.data }.getOrNull() else null
+                    if(currentId==id && !token.isNullOrEmpty() && token.length<=16384 && token.none { it=='\n' || it=='\r' }) {
+                        reply(id,token);currentId=null;cleanupWeb?.invoke();sheet.dismiss()
+                    }
+                }
             if(turn && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER))
                 androidx.webkit.WebViewCompat.addWebMessageListener(this,"QThroneVkTurn",
                     setOf("https://vk.ru","https://*.vk.ru","https://vk.com","https://*.vk.com")) { _,message,origin,_,_ ->
@@ -156,6 +170,22 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         val polling=object: Runnable {
             override fun run() {
                 if(currentId!=id) return
+                if(automatic && !autoClicked && web.url?.let(::allowed)==true) {
+                    web.evaluateJavascript(CaptchaAutoScripts.checkbox) { raw ->
+                        if(currentId!=id || autoClicked) return@evaluateJavascript
+                        if(raw=="\"manual\"") {
+                            reply(id,"error:slider detected");currentId=null;cleanupWeb?.invoke();sheet.dismiss()
+                        } else runCatching {
+                            val point=org.json.JSONArray(raw)
+                            val scale=if(web.width>0) web.width/point.getDouble(2).toFloat().coerceAtLeast(1f) else host.resources.displayMetrics.density
+                            val x=point.getDouble(0).toFloat()*scale;val y=point.getDouble(1).toFloat()*scale
+                            autoClicked=true
+                            val now=android.os.SystemClock.uptimeMillis()
+                            android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,x,y,0).also { web.dispatchTouchEvent(it);it.recycle() }
+                            web.postDelayed({ if(currentId==id) android.view.MotionEvent.obtain(now,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0).also { web.dispatchTouchEvent(it);it.recycle() } },100)
+                        }
+                    }
+                }
                 if(turn && web.url?.let(::allowed)==true) web.evaluateJavascript(VkTurnScripts.AUTO_JOIN_TRY,null)
                 if(oauthState==null && web.url?.let(::allowed)==true) web.evaluateJavascript(if(turn) "window.__qthroneTurnServer || null" else "window.__qthroneCaptchaToken || null") { raw ->
                     val token=runCatching { org.json.JSONTokener(raw).nextValue() as? String }.getOrNull()
@@ -208,6 +238,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             if(host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) sheet.show()
         }
         val startUrl=if(turn) VkTurnScripts.joinUrlCandidates(url).first() else url
+        web.onResume()
         val cookiePairs=if(turn || oauthState!=null) app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionCookies().filterKeys(::allowed)
             .flatMap { (address,header) -> header.split(';').map { address to it.trim() }.filter { it.second.isNotEmpty() } } else emptyList()
         if(cookiePairs.isEmpty()) web.loadUrl(startUrl) else {

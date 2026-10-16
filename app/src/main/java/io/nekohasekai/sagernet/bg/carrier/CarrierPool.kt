@@ -17,23 +17,27 @@ object CarrierPool {
     private val probeStartup=NativeProbeStartupGate()
     fun activePlan(key:String):CarrierPlan?=synchronized(entries) { entries[key]?.takeUnless { it.closing }?.plan }
     fun isActive(plan:CarrierPlan)=synchronized(entries) { entries[plan.key]?.let { !it.closing && it.plan===plan }==true }
+    fun recoveryFailure(plan:CarrierPlan):Pair<String,Boolean>?=synchronized(entries) {
+        entries[plan.key]?.takeUnless { it.closing }?.process?.recoveryFailure()
+    }
     class Lease internal constructor(private val release:()->Unit):AutoCloseable {
         private val closed=AtomicBoolean()
         override fun close() { if(closed.compareAndSet(false,true)) release() }
     }
-    suspend fun acquire(plan:CarrierPlan, interactive: Boolean=true,latencyProbe:Boolean=!interactive):Lease {
+    suspend fun acquire(plan:CarrierPlan, interactive: Boolean=true,latencyProbe:Boolean=!interactive,
+        onStatus:(NativeConnectionStage)->Unit={}):Lease {
         if(!interactive && plan.kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT) && activePlan(plan.key)==null) {
             // Do not publish a queued test entry: a user connection must not wait behind it.
             var lease:Lease?=null
             try {
-                return probeStartup.prepare { acquireNow(plan,interactive,latencyProbe).also { lease=it } }
+                return probeStartup.prepare { acquireNow(plan,interactive,latencyProbe,onStatus).also { lease=it } }
             } catch(error:Throwable) {
                 // Timeout/cancellation can win after acquisition but before withTimeout returns.
                 lease?.close()
                 throw error
             }
         }
-        return acquireNow(plan,interactive,latencyProbe)
+        return acquireNow(plan,interactive,latencyProbe,onStatus)
     }
     private suspend fun takeEntry(plan:CarrierPlan,interactive:Boolean,latencyProbe:Boolean):Acquisition {
         while(true) {
@@ -59,7 +63,7 @@ object CarrierPool {
             return choice
         }
     }
-    private suspend fun acquireNow(plan:CarrierPlan,interactive:Boolean,latencyProbe:Boolean):Lease {
+    private suspend fun acquireNow(plan:CarrierPlan,interactive:Boolean,latencyProbe:Boolean,onStatus:(NativeConnectionStage)->Unit):Lease {
         val acquisition=takeEntry(plan,interactive,latencyProbe)
         val entry=acquisition.entry!!
         val owner=acquisition.owner
@@ -85,7 +89,7 @@ object CarrierPool {
                     val privateJson=NativeSessionPolicy.probeConfig(plan.kind,plan.privateJson,interactive,latencyProbe)
                     val started=CarrierProcess.start(plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),
                         java.io.File(context.cacheDir,"carriers"),android.os.Build.VERSION.SDK_INT,
-                        privateJson,plan.port,plan.credentials,allowInteractions=interactive)
+                        privateJson,plan.port,plan.credentials,allowInteractions=interactive,onStatus=onStatus)
                     synchronized(entries) { entry.process=started }
                     entry.ready.complete(started)
                 } catch(error:Throwable) { entry.ready.completeExceptionally(error);throw error }

@@ -21,6 +21,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
     private var command="CAPTCHA_RESULT|"
     private var closed=false
     private var cancelledByUser=false
+    val userCancelled: Boolean @Synchronized get() = cancelledByUser
     @Synchronized fun accept(line: String) {
         if(closed) return
         val turn=line.startsWith("VK_AUTH_REQUIRED|")

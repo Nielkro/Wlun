@@ -30,12 +30,22 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 }
 
 /** Native client owner. Config secrets are removed before provider output enters application logs. */
-class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean) : AutoCloseable {
+class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean,
+    private val onStatus: (NativeConnectionStage) -> Unit) : AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val startupFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
     private val unavailableCall = AtomicBoolean(false)
     private class UnavailableCall:IllegalStateException("VK: выбранный хеш недоступен; звонок не найден")
+    private class TransientStartup:IllegalStateException("Временная ошибка авторизации VK; повторите подключение")
     private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions)
+    private val health=NativeTransportHealth()
+    fun recoveryFailure(): Pair<String,Boolean>? {
+        if(closed.get() || captcha.waiting) return null
+        if(captcha.userCancelled) return "Подтверждение VK отменено" to true
+        startupFailure.get()?.let { return it to true }
+        val exited=try { process.exitValue();true } catch(_:IllegalThreadStateException) { false }
+        return if(exited || health.needsRestart(false,false)) "Транспорт потерял соединение" to false else null
+    }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
@@ -70,18 +80,33 @@ class CarrierProcess private constructor(private val process: Process, private v
             bridgeCredentials: CarrierBridgeCredentials,
             timeoutMs: Long = 60_000,
             allowInteractions: Boolean = true,
+            onStatus: (NativeConnectionStage) -> Unit = {},
             launch: (ProcessBuilder) -> Process = { it.start() },
         ): CarrierProcess {
             val hashes=app.qthrone.mobile.outbound.json.JsonInput.parseObject(privateJson).array("hashes").size
             val attempts=if(kind==CarrierKind.QWDTT) hashes.coerceIn(1,4) else 1
-            for(attempt in 0 until attempts) {
+            val deadline=System.nanoTime()+NativeSessionPolicy.startupTimeoutMs(kind,timeoutMs)*1_000_000
+            var attempt=0
+            var retries=0
+            while(attempt<attempts) {
+                coroutineContext.ensureActive()
+                val remaining=(deadline-System.nanoTime())/1_000_000
+                check(remaining>0) { "Transport client startup timed out" }
                 try {
                     return startOnce(kind,nativeDirectory,privateDirectory,apiLevel,
                         NativeSessionPolicy.rotatedHashes(privateJson,attempt),socksPort,bridgeCredentials,
-                        NativeSessionPolicy.startupTimeoutMs(kind,timeoutMs),allowInteractions,launch)
+                        remaining,allowInteractions,onStatus,launch)
                 } catch(error:UnavailableCall) {
                     if(attempt==attempts-1) throw error
+                    attempt++
+                    runCatching { onStatus(NativeConnectionStage.RECONNECTING) }
                     moe.matsuri.nb4a.utils.CoreLog.write("[Info] [QWDTT] VK call unavailable; trying another configured hash")
+                } catch(error:TransientStartup) {
+                    if(retries>=2) throw error
+                    retries++
+                    runCatching { onStatus(NativeConnectionStage.RECONNECTING) }
+                    moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Retrying transient transport startup ($retries/2)")
+                    delay(retries*2_000L)
                 }
             }
             error("No transport candidate")
@@ -93,6 +118,7 @@ class CarrierProcess private constructor(private val process: Process, private v
             bridgeCredentials: CarrierBridgeCredentials,
             timeoutMs: Long = 60_000,
             allowInteractions: Boolean = true,
+            onStatus: (NativeConnectionStage) -> Unit,
             launch: (ProcessBuilder) -> Process = { it.start() },
         ): CarrierProcess {
             // withContext may discard a successful return when cancellation wins the
@@ -123,12 +149,14 @@ class CarrierProcess private constructor(private val process: Process, private v
                         val child = try { launch(builder) } catch (_: Exception) {
                             throw IllegalStateException("Cannot start transport client")
                         }
-                        val running = CarrierProcess(child, config,allowInteractions)
+                        val running = CarrierProcess(child, config,allowInteractions,onStatus)
                         owner = running
+                        runCatching { onStatus(NativeConnectionStage.AUTHORIZING) }
                         val redactor = CarrierLogRedactor(privateJson, bridgeCredentials)
                         moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Starting native transport")
                         val outputReader=Thread({ runCatching { child.inputStream.bufferedReader().use { input ->
                             input.forEachLine { line ->
+                                runCatching { onStatus(running.health.accept(line)) }
                                 running.captcha.accept(line)
                                 if(NativeSessionPolicy.unavailableCall(line)) running.unavailableCall.set(true)
                                 NativeSessionPolicy.startupFailure(line)?.let { running.startupFailure.compareAndSet(null,it) }
@@ -141,6 +169,9 @@ class CarrierProcess private constructor(private val process: Process, private v
                         while (System.nanoTime() < deadline) {
                             coroutineContext.ensureActive()
                             check(!running.captcha.interactionRequired) { "VK confirmation required; connect this profile before testing" }
+                            check(!running.captcha.userCancelled) { "VK confirmation cancelled" }
+                            running.startupFailure.get()?.let { throw IllegalStateException(it) }
+                            if(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT) && running.health.needsRestart(running.captcha.waiting,true)) throw TransientStartup()
                             val now=System.nanoTime()
                             if(running.captcha.waiting) {
                                 val paused=(now-lastWaitTick).coerceAtMost(interactionBudget)
@@ -152,10 +183,12 @@ class CarrierProcess private constructor(private val process: Process, private v
                                 outputReader.join(200)
                                 running.startupFailure.get()?.let { throw IllegalStateException(it) }
                                 if(kind==CarrierKind.QWDTT && running.unavailableCall.get()) throw UnavailableCall()
+                                if(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT) && running.health.transientFailure) throw TransientStartup()
                                 error(running.startupFailure.get() ?: "Transport client stopped before becoming ready")
                             }
                             if (socksReady(socksPort, bridgeCredentials)) {
                                 moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Native transport ready")
+                                runCatching { onStatus(NativeConnectionStage.CONNECTED) }
                                 return@withContext running
                             }
                             running.startupFailure.get()?.let { throw IllegalStateException(it) }

@@ -33,6 +33,17 @@ import kotlinx.coroutines.withContext
 
 /** Mobile dashboard backed by the existing Room repositories and subscription queue. */
 class MobileHomeFragment : ToolbarFragment() {
+    private var nativeConnection:app.qthrone.mobile.bg.carrier.NativeConnectionStatus.Snapshot?=null
+    private var nativeTest:app.qthrone.mobile.bg.carrier.NativeConnectionStatus.Snapshot?=null
+    private var nativeReceiverRegistered=false
+    private val nativeStatusReceiver=object:android.content.BroadcastReceiver() {
+        override fun onReceive(context:Context,intent:Intent) {
+            val stage=runCatching { app.qthrone.mobile.bg.carrier.NativeConnectionStage.valueOf(intent.getStringExtra("stage").orEmpty()) }.getOrNull() ?: return
+            val snapshot=app.qthrone.mobile.bg.carrier.NativeConnectionStatus.Snapshot(intent.getLongExtra("profileId",0),stage)
+            if(intent.getBooleanExtra("testing",false)) nativeTest=snapshot else nativeConnection=snapshot
+            updateState()
+        }
+    }
     private val blue get() = MobilePalette.accent(requireContext())
     private val surface get() = MobilePalette.surface
     private val muted get() = MobilePalette.muted
@@ -145,6 +156,14 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     override fun onViewCreated(view: View, state: Bundle?) {
         super.onViewCreated(view, state)
+        androidx.core.content.ContextCompat.registerReceiver(requireContext(),nativeStatusReceiver,
+            android.content.IntentFilter(app.qthrone.mobile.bg.carrier.NativeConnectionStatus.action()),requireContext().packageName+".SERVICE",null,
+            androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
+        nativeReceiverRegistered=true
+        viewLifecycleOwner.lifecycleScope.launch {
+            val snapshots=withContext(Dispatchers.IO) { app.qthrone.mobile.bg.carrier.NativeConnectionStatus.read() to app.qthrone.mobile.bg.carrier.NativeConnectionStatus.read(true) }
+            nativeConnection=snapshots.first;nativeTest=snapshots.second;updateState()
+        }
         collapsed.clear()
         collapsed.addAll(requireContext().getSharedPreferences("dashboard",Context.MODE_PRIVATE).getStringSet("collapsedGroups",emptySet()).orEmpty().mapNotNull { it.toLongOrNull() })
         state?.getLongArray("knownGroups")?.let { knownGroups.addAll(it.toList()) }
@@ -188,6 +207,7 @@ class MobileHomeFragment : ToolbarFragment() {
         super.onPause()
     }
     override fun onDestroyView() {
+        if(nativeReceiverRegistered) { requireContext().unregisterReceiver(nativeStatusReceiver);nativeReceiverRegistered=false }
         groupReorder?.cancel();groupReorder=null;profileReorders.values.forEach { it.cancel() };profileReorders.clear();reordering=false
         geoBanner = null; geoStatus = null; geoProgress = null; geoCheck = null
         observer?.let { SagerDatabase.instance.invalidationTracker.removeObserver(it) }
@@ -549,7 +569,23 @@ class MobileHomeFragment : ToolbarFragment() {
             currentCheck?.text=getString(R.string.qmobile_check_connection)
         }
         power?.isEnabled = state != app.qthrone.mobile.bg.BaseService.State.Stopping
-        val description=getString(R.string.qmobile_connect) + ", " + getString(if (state.connected) R.string.qmobile_connected else if (state.canStop) R.string.qmobile_connecting else R.string.qmobile_disconnected)
+        val test=TestSessionClient.state.value
+        val testing=test.running && test.kind==TestSpec.KIND_URL
+        val snapshot=if(testing && !test.testCurrent) nativeTest?.takeIf {
+            test.rows.containsKey(it.profileId) && test.rows[it.profileId]?.phase!=app.qthrone.mobile.ui.test.RowPhase.DONE
+        } else nativeConnection?.takeIf {
+            it.profileId==(if(state.connected) DataStore.currentProfile else DataStore.selectedProxy)
+        }
+        val stage=if(testing && test.testCurrent) null else snapshot?.stage
+        val caption=if(testing || state.canStop || state.connected) getString(when(stage) {
+            app.qthrone.mobile.bg.carrier.NativeConnectionStage.AUTHORIZING -> R.string.qmobile_vk_authorizing
+            app.qthrone.mobile.bg.carrier.NativeConnectionStage.CAPTCHA -> R.string.qmobile_vk_captcha
+            app.qthrone.mobile.bg.carrier.NativeConnectionStage.WAITING_VK -> R.string.qmobile_vk_waiting
+            app.qthrone.mobile.bg.carrier.NativeConnectionStage.RECONNECTING -> R.string.qmobile_reconnecting
+            app.qthrone.mobile.bg.carrier.NativeConnectionStage.PREPARING, app.qthrone.mobile.bg.carrier.NativeConnectionStage.CONNECTING -> R.string.qmobile_connecting
+            else -> if(testing || currentTestArmed) R.string.qmobile_ping_checking else if(state.connected) R.string.qmobile_connected else R.string.qmobile_connecting
+        }) else ""
+        val description=getString(R.string.qmobile_connect) + ", " + caption.ifEmpty { getString(R.string.qmobile_disconnected) }
         if(power?.contentDescription != description) power?.contentDescription=description
         power?.setTextColor(if (state.connected) Color.rgb(128,192,139) else blue)
         (power?.background as? MobilePowerArtwork)?.connected=state.connected
@@ -574,7 +610,7 @@ class MobileHomeFragment : ToolbarFragment() {
             val fontSize=textSize
             (background as? MobilePowerArtwork)?.apply {
                 captionSize=fontSize
-                statusText=getString(if(currentTestArmed) R.string.qmobile_ping_checking else R.string.qmobile_connected)
+                statusText=caption
                 elapsedText=String.format(java.util.Locale.ROOT,"%02d:%02d:%02d",seconds/3600,seconds/60%60,seconds%60)
             }
         }

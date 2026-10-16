@@ -19,6 +19,14 @@ import app.qthrone.core.mobile.StartOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import app.qthrone.mobile.bg.carrier.NativeConnectionStatus
+import app.qthrone.mobile.bg.carrier.NativeConnectionStage
+import app.qthrone.mobile.bg.carrier.CarrierPool
 
 abstract class BoxInstance(
     val profile: ProxyEntity
@@ -29,6 +37,8 @@ abstract class BoxInstance(
     lateinit var box: Instance
 
     private val carrierProcesses = mutableListOf<app.qthrone.mobile.bg.carrier.CarrierPool.Lease>()
+    private var nativeStatus:NativeConnectionStatus.Writer?=null
+    private var nativeWatchdog:Job?=null
 
     val boxOrNull: Instance? get() = if (::box.isInitialized) box else null
 
@@ -79,9 +89,13 @@ abstract class BoxInstance(
             }
         }
         try {
-            for(plan in config.carrierPlans) {
-                carrierProcesses.add(app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan))
+            if(config.carrierPlans.any { it.kind in listOf(app.qthrone.mobile.bg.carrier.CarrierKind.QWDTT,app.qthrone.mobile.bg.carrier.CarrierKind.CSQTT) }) {
+                nativeStatus=NativeConnectionStatus.Writer(profile.id).also { it.update(NativeConnectionStage.PREPARING) }
             }
+            for(plan in config.carrierPlans) {
+                carrierProcesses.add(CarrierPool.acquire(plan,onStatus={ nativeStatus?.update(it) }))
+            }
+            nativeStatus?.update(NativeConnectionStage.CONNECTED)
             loadConfig()
         } catch(error:Throwable) {
             carrierProcesses.asReversed().forEach { it.close() };carrierProcesses.clear()
@@ -127,12 +141,30 @@ abstract class BoxInstance(
             throw error
         }
         CoreRuntime.attachRunning(box, profile.id)
+        if(nativeStatus!=null) nativeWatchdog=CoroutineScope(Dispatchers.IO).launch {
+            while(isActive) {
+                delay(1000)
+                val failure=config.carrierPlans.firstNotNullOfOrNull { CarrierPool.recoveryFailure(it) } ?: continue
+                nativeStatus?.update(NativeConnectionStage.RECONNECTING)
+                if(!failure.second) delay(2_000)
+                withContext(Dispatchers.Main) {
+                    val service=DataStore.baseService
+                    if(service!=null && service.data.proxy===this@BoxInstance && service.data.state==app.qthrone.mobile.bg.BaseService.State.Connected) {
+                        if(failure.second) service.stopRunner(msg=failure.first)
+                        else { Logs.i("Native transport watchdog: reconnecting");app.qthrone.mobile.SagerNet.reloadService() }
+                    }
+                }
+                break
+            }
+        }
         if (deferRuleSets) DeferredRuleSets.afterStart(box, config.coreConfig)
     }
 
     private fun isCustomFullConfig(): Boolean = (profile.outbound as? Custom)?.isFullConfig() == true
 
     override fun close() {
+        nativeWatchdog?.cancel();nativeWatchdog=null
+        nativeStatus?.close();nativeStatus=null
         boxOrNull?.let(CoreRuntime::detachRunning)
         try { boxOrNull?.close() } finally {
             carrierProcesses.asReversed().forEach { it.close() };carrierProcesses.clear()

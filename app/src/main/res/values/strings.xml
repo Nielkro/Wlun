@@ -1894,4 +1894,8 @@
     <string name="provider_routing_proxy_ips">Proxied IPs</string>
     <string name="provider_routing_block_sites">Blocked domains</string>
     <string name="provider_routing_block_ips">Blocked IPs</string>
+    <string name="qmobile_vk_authorizing">VK authorization…</string>
+    <string name="qmobile_vk_captcha">VK confirmation…</string>
+    <string name="qmobile_vk_waiting">Waiting for VK…</string>
+    <string name="qmobile_reconnecting">Reconnecting…</string>
 </resources>

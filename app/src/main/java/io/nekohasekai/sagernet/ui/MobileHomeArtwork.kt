@@ -58,19 +58,21 @@ class MobilePowerArtwork(private val accent: Int) : Drawable() {
         paint.strokeWidth=r*.04f
         paint.color=if(connected) accent else MobilePalette.muted
         val glyph=r*.17f
-        val glyphY=if(connected) cy-r*.2f else cy
+        val glyphY=if(statusText.isNotEmpty()) cy-r*.2f else cy
         canvas.drawArc(RectF(cx-glyph,glyphY-glyph,cx+glyph,glyphY+glyph),-45f,270f,false,paint)
         canvas.drawLine(cx,glyphY-glyph*1.25f,cx,glyphY-glyph*.1f,paint)
-        if(connected) {
+        if(statusText.isNotEmpty()) {
             paint.style=Paint.Style.FILL
             paint.textAlign=Paint.Align.CENTER
             paint.textSize=if(captionSize>0f) captionSize else r*.112f
+            val width=paint.measureText(statusText)
+            if(width>r*1.55f) paint.textSize*=r*1.55f/width
             paint.typeface=Typeface.DEFAULT
             paint.color=MobilePalette.muted
             canvas.drawText(statusText,cx,cy+r*.17f,paint)
             paint.typeface=Typeface.DEFAULT_BOLD
             paint.color=MobilePalette.text
-            canvas.drawText(elapsedText,cx,cy+r*.39f,paint)
+            if(connected) canvas.drawText(elapsedText,cx,cy+r*.39f,paint)
         }
     }
     override fun setAlpha(alpha: Int) { }
