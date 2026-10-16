@@ -4,7 +4,15 @@ enum class NativeConnectionStage { PREPARING, AUTHORIZING, CAPTCHA, WAITING_VK, 
 
 /** Only public lifecycle markers are kept; URLs, hashes and captcha tokens are never status text. */
 internal class NativeTransportHealth(private val clock: () -> Long = { System.nanoTime() / 1_000_000 }) {
-    private var zeroSince = clock()
+    private val startedAt = clock()
+    private var zeroSince = startedAt
+    private var lastStats = startedAt
+    private var everActive = false
+    private var statsSeen = false
+    private var peak = 0
+    private var zeroEventAt = 0L
+    private var serverRestartAt = 0L
+    private var wrapTimeouts = 0
     private var workers: Int? = null
     var transientFailure = false
         private set
@@ -17,7 +25,16 @@ internal class NativeTransportHealth(private val clock: () -> Long = { System.na
         active.find(line)?.groupValues?.get(1)?.toIntOrNull()?.let { count ->
             if (count == 0 && workers != 0) zeroSince = clock()
             workers = count
+            lastStats = clock()
+            statsSeen = true
+            if (count > 0) { everActive = true; wrapTimeouts = 0 }
         }
+        workers?.let { peak = maxOf(peak, it) }
+        // CSQTT's own events, the ones the original app restarts on.
+        if (line.contains("[CSQTT diagnostic] ACTIVE_ZERO")) { workers = 0; zeroEventAt = clock() }
+        if (line.contains("[CSQTT diagnostic] SERVER_RESTART")) serverRestartAt = clock()
+        // A DTLS handshake the server never answers: the password (WRAP key) does not match.
+        if (line.contains("WRAP_AUTH_TIMEOUT", true)) { if ((workers ?: 0) > 0) wrapTimeouts = 0 else wrapTimeouts++ }
         if (line.contains("[READY]") || line.contains("[CSQTT diagnostic] READY")) workers = maxOf(1, workers ?: 0)
         val flood = line.contains("Flood control", true) || Regex("error_code[\\s:=]+9\\b").containsMatchIn(line)
         if (flood || line.contains("captcha", true) || line.contains("капч", true) ||
@@ -36,9 +53,24 @@ internal class NativeTransportHealth(private val clock: () -> Long = { System.na
         return stage
     }
 
+    /** The original watchdog's verdict: three WRAP timeouts and no worker ever up after 30 s. */
+    @Synchronized fun wrongPassword(captchaWaiting: Boolean): Boolean =
+        !captchaWaiting && !everActive && wrapTimeouts >= 3 && clock() - startedAt > 30_000
+
     @Synchronized fun needsRestart(captchaWaiting: Boolean, starting: Boolean): Boolean {
-        if (captchaWaiting) { zeroSince = clock(); return false }
-        if ((workers ?: 0) > 0) { zeroSince = clock(); return false }
+        if (captchaWaiting) { zeroSince = clock(); lastStats = clock(); return false }
+        if (!starting) {
+            // Original CSQTT: a panel restart of the server, or streams dropped from their peak, after 4 s.
+            if (serverRestartAt > 0 && clock() - serverRestartAt >= 4_000) return true
+            if (zeroEventAt > 0 && peak >= 9 && (workers ?: 0) < peak && clock() - zeroEventAt >= 4_000) return true
+            if ((workers ?: 0) >= peak) zeroEventAt = 0
+        }
+        if ((workers ?: 0) > 0) {
+            zeroSince = clock()
+            // Workers report every few seconds; silence means a hung client (STALE_STATS_MS of the original).
+            // Only clients that report statistics (qWDTT) are judged by them.
+            return statsSeen && !starting && clock() - startedAt > 120_000 && clock() - lastStats > 90_000
+        }
         // Like the original Android watchdog: never restart just because no user traffic flows.
         return clock() - zeroSince >= 90_000 &&
             (workers == 0 || (starting && credentialsFailed && transientFailure))
