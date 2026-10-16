@@ -1,5 +1,7 @@
 package app.qthrone.mobile.bg.test
 
+import kotlinx.coroutines.launch
+
 /** Carrier startup has its own deadline; the URL timeout starts only in [measure].
  * Leases keep an already running VPN alive and are released on stop or a partial startup failure. */
 internal suspend fun <P, L : AutoCloseable, R> withPreparedTransports(
@@ -11,5 +13,17 @@ internal suspend fun <P, L : AutoCloseable, R> withPreparedTransports(
         return measure()
     } finally {
         leases.asReversed().forEach { it.close() }
+    }
+}
+
+/** Keep independent native preparations bounded, while a slow one does not block the others. */
+internal suspend fun <P> runIndependentProbes(
+    profiles:List<P>,concurrency:Int,cancelled:()->Boolean,run:suspend (P)->Unit,
+) = kotlinx.coroutines.coroutineScope {
+    val gate=kotlinx.coroutines.sync.Semaphore(concurrency)
+    for(profile in profiles) launch {
+        gate.acquire()
+        try { if(!cancelled()) run(profile) }
+        finally { gate.release() }
     }
 }

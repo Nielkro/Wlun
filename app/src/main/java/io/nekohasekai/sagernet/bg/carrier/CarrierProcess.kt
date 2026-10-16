@@ -33,6 +33,8 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean) : AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val startupFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
+    private val unavailableCall = AtomicBoolean(false)
+    private class UnavailableCall:IllegalStateException("VK: выбранный хеш недоступен; звонок не найден")
     private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions)
 
     override fun close() {
@@ -48,7 +50,14 @@ class CarrierProcess private constructor(private val process: Process, private v
             if(exited) break
             try { Thread.sleep(20) } catch(_:InterruptedException) { Thread.currentThread().interrupt();break }
         }
-        if(!exited) runCatching { process.destroy() }
+        if(!exited) {
+            runCatching { process.destroy() }
+            val terminated=runCatching { process.waitFor(1,java.util.concurrent.TimeUnit.SECONDS) }.getOrDefault(false)
+            if(!terminated) {
+                runCatching { process.destroyForcibly() }
+                runCatching { process.waitFor(1,java.util.concurrent.TimeUnit.SECONDS) }
+            }
+        }
         runCatching { process.inputStream.close() }
         runCatching { process.errorStream.close() }
         config.parentFile?.deleteRecursively()
@@ -56,6 +65,29 @@ class CarrierProcess private constructor(private val process: Process, private v
 
     companion object {
         suspend fun start(
+            kind: CarrierKind, nativeDirectory: File, privateDirectory: File,
+            apiLevel: Int, privateJson: String, socksPort: Int,
+            bridgeCredentials: CarrierBridgeCredentials,
+            timeoutMs: Long = 60_000,
+            allowInteractions: Boolean = true,
+            launch: (ProcessBuilder) -> Process = { it.start() },
+        ): CarrierProcess {
+            val hashes=app.qthrone.mobile.outbound.json.JsonInput.parseObject(privateJson).array("hashes").size
+            val attempts=if(kind==CarrierKind.QWDTT) hashes.coerceIn(1,4) else 1
+            for(attempt in 0 until attempts) {
+                try {
+                    return startOnce(kind,nativeDirectory,privateDirectory,apiLevel,
+                        NativeSessionPolicy.rotatedHashes(privateJson,attempt),socksPort,bridgeCredentials,
+                        NativeSessionPolicy.startupTimeoutMs(kind,timeoutMs),allowInteractions,launch)
+                } catch(error:UnavailableCall) {
+                    if(attempt==attempts-1) throw error
+                    moe.matsuri.nb4a.utils.CoreLog.write("[Info] [QWDTT] VK call unavailable; trying another configured hash")
+                }
+            }
+            error("No transport candidate")
+        }
+
+        private suspend fun startOnce(
             kind: CarrierKind, nativeDirectory: File, privateDirectory: File,
             apiLevel: Int, privateJson: String, socksPort: Int,
             bridgeCredentials: CarrierBridgeCredentials,
@@ -94,6 +126,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                 val outputReader=Thread({ runCatching { child.inputStream.bufferedReader().use { input ->
                     input.forEachLine { line ->
                         running.captcha.accept(line)
+                        if(NativeSessionPolicy.unavailableCall(line)) running.unavailableCall.set(true)
                         NativeSessionPolicy.startupFailure(line)?.let { running.startupFailure.compareAndSet(null,it) }
                         redactor.redact(line)?.let { safe -> moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] $safe") }
                     }
@@ -113,6 +146,8 @@ class CarrierProcess private constructor(private val process: Process, private v
                     val exited = try { child.exitValue(); true } catch (_: IllegalThreadStateException) { false }
                     if(exited) {
                         outputReader.join(200)
+                        running.startupFailure.get()?.let { throw IllegalStateException(it) }
+                        if(kind==CarrierKind.QWDTT && running.unavailableCall.get()) throw UnavailableCall()
                         error(running.startupFailure.get() ?: "Transport client stopped before becoming ready")
                     }
                     if (socksReady(socksPort, bridgeCredentials)) {

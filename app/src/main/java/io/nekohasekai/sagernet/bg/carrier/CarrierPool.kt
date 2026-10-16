@@ -5,47 +5,77 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /** VPN and tests lease the same native session instead of connecting the same device twice. */
 object CarrierPool {
-    private class Entry(val plan:CarrierPlan) {
+    private class Entry(val plan:CarrierPlan,val interactive:Boolean,val latencyProbe:Boolean) {
         val ready=CompletableDeferred<CarrierProcess>()
         var references=0
         var process:CarrierProcess?=null
+        var closing=false
+        val closed=CompletableDeferred<Unit>()
     }
+    private class Acquisition(val entry:Entry?=null,val owner:Boolean=false,val wait:CompletableDeferred<Unit>?=null)
     private val entries=mutableMapOf<String,Entry>()
-    fun activePlan(key:String):CarrierPlan?=synchronized(entries) { entries[key]?.plan }
-    fun isActive(plan:CarrierPlan)=synchronized(entries) { entries[plan.key]?.plan === plan }
+    private val probeStartup=NativeProbeStartupGate()
+    fun activePlan(key:String):CarrierPlan?=synchronized(entries) { entries[key]?.takeUnless { it.closing }?.plan }
+    fun isActive(plan:CarrierPlan)=synchronized(entries) { entries[plan.key]?.let { !it.closing && it.plan===plan }==true }
     class Lease internal constructor(private val release:()->Unit):AutoCloseable {
         private val closed=AtomicBoolean()
         override fun close() { if(closed.compareAndSet(false,true)) release() }
     }
-    suspend fun acquire(plan:CarrierPlan, interactive: Boolean=true):Lease {
-        var owner=false
-        val entry=synchronized(entries) {
-            val existing=entries[plan.key]
-            check(existing==null || existing.plan===plan) { "Native session changed while configuration was being built; retry the test" }
-            check(existing!=null || entries.values.none {
-                NativeSessionPolicy.sharesRemoteSession(it.plan.kind,it.plan.privateJson,plan.kind,plan.privateJson)
-            }) { "Эта сессия уже используется с другими настройками; проверка пропущена, чтобы не прервать туннель" }
-            (existing ?: Entry(plan).also { entries[plan.key]=it;owner=true }).also { it.references++ }
+    suspend fun acquire(plan:CarrierPlan, interactive: Boolean=true,latencyProbe:Boolean=!interactive):Lease {
+        if(!interactive && plan.kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT) && activePlan(plan.key)==null) {
+            // Do not publish a queued test entry: a user connection must not wait behind it.
+            return probeStartup.prepare { acquireNow(plan,interactive,latencyProbe) }
         }
-        fun release() {
-            val process=synchronized(entries) {
-                entry.references--
-                if(entry.references==0 && entries[plan.key]===entry) {
-                    entries.remove(plan.key)
-                    entry.process
-                } else null
+        return acquireNow(plan,interactive,latencyProbe)
+    }
+    private suspend fun takeEntry(plan:CarrierPlan,interactive:Boolean,latencyProbe:Boolean):Acquisition {
+        while(true) {
+            val choice=synchronized(entries) {
+                val existing=entries[plan.key]
+                val waiting=existing?.takeIf { it.closing || (interactive && !it.interactive) || (!latencyProbe && it.latencyProbe) }
+                    ?: entries.values.firstOrNull { it.closing &&
+                        NativeSessionPolicy.sharesRemoteSession(it.plan.kind,it.plan.privateJson,plan.kind,plan.privateJson) }
+                if(waiting!=null) Acquisition(wait=waiting.closed)
+                else {
+                    check(existing==null || existing.plan===plan) { "Native session changed while configuration was being built; retry the test" }
+                    check(existing!=null || entries.values.none {
+                        NativeSessionPolicy.sharesRemoteSession(it.plan.kind,it.plan.privateJson,plan.kind,plan.privateJson)
+                    }) { "Эта сессия уже используется с другими настройками; проверка пропущена, чтобы не прервать туннель" }
+                    val owner=existing==null
+                    val entry=existing ?: Entry(plan,interactive,latencyProbe).also { entries[plan.key]=it }
+                    entry.references++
+                    Acquisition(entry,owner)
+                }
             }
-            process?.close()
+            val wait=choice.wait
+            if(wait!=null) { wait.await();continue }
+            return choice
+        }
+    }
+    private suspend fun acquireNow(plan:CarrierPlan,interactive:Boolean,latencyProbe:Boolean):Lease {
+        val acquisition=takeEntry(plan,interactive,latencyProbe)
+        val entry=acquisition.entry!!
+        val owner=acquisition.owner
+        fun release() {
+            val last=synchronized(entries) {
+                entry.references--
+                (entry.references==0 && entries[plan.key]===entry).also { if(it) entry.closing=true }
+            }
+            if(last) {
+                // Keep the entry until STOP and child cleanup finish. A new launch of
+                // this device must never overlap its previous Go/Rust process.
+                try { entry.process?.close() }
+                finally {
+                    synchronized(entries) { if(entries[plan.key]===entry) entries.remove(plan.key) }
+                    entry.closed.complete(Unit)
+                }
+            }
         }
         try {
             if(owner) {
                 val context=app.qthrone.mobile.ktx.app
                 try {
-                    val privateJson=if(!interactive && plan.kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) {
-                        app.qthrone.mobile.outbound.json.JsonInput.parseObject(plan.privateJson).also {
-                            it["probe_only"]=true;it["interactive_captcha"]=false
-                        }.toCompact()
-                    } else plan.privateJson
+                    val privateJson=NativeSessionPolicy.probeConfig(plan.kind,plan.privateJson,interactive,latencyProbe)
                     val started=CarrierProcess.start(plan.kind,java.io.File(context.applicationInfo.nativeLibraryDir),
                         java.io.File(context.cacheDir,"carriers"),android.os.Build.VERSION.SDK_INT,
                         privateJson,plan.port,plan.credentials,allowInteractions=interactive)

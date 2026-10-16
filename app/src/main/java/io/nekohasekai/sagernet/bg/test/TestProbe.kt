@@ -182,6 +182,7 @@ private const val CHECK_PARALLELISM = 4
  * each, its probes at most [MAX_PARALLEL_PROBES] at a time; results are reported in arrival order, a chunk per wake-up.
  */
 internal abstract class LatencySweep(protected val session: TestSession) {
+    private val probeGate = Semaphore(MAX_PARALLEL_PROBES)
 
     /** Starts the core test of [probe], one of [batch]'s; [emit] and [done] are called on Go threads. */
     protected abstract fun start(
@@ -212,7 +213,7 @@ internal abstract class LatencySweep(protected val session: TestSession) {
         val ids = batch.map { it.id }.filter { it !in left }
         if (ids.isEmpty()) return@coroutineScope
         val results = Channel<ProbeResult>(Channel.UNLIMITED)
-        val gate = Semaphore(MAX_PARALLEL_PROBES)
+        val gate = probeGate
         launch {
             try {
                 runBuild(ids, batch, results, gate)

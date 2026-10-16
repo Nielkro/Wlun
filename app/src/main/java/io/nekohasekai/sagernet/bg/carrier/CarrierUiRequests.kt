@@ -19,7 +19,7 @@ internal object CarrierUiRequests {
             val lock=access.channel.lock()
             try { block() } finally { lock.release() }
         }
-    fun post(id: String,url: String,turn: Boolean=false,tokenState: String?=null,onlyIfIdle: Boolean=false): Boolean {
+    fun post(id: String,url: String,turn: Boolean=false,tokenState: String?=null,onlyIfIdle: Boolean=false,automatic: Boolean=false): Boolean {
         var previousId: String? = null
         val posted = locked {
             val previous=runCatching { JSONObject(String(file().readFully(),Charsets.UTF_8)) }.getOrNull()
@@ -27,7 +27,7 @@ internal object CarrierUiRequests {
                 if(onlyIfIdle) return@locked false
                 previousId=previous.optString("id").takeIf { it.isNotEmpty() && it!=id }
             }
-            val json=JSONObject().put("id",id).put("url",url).put("turn",turn)
+            val json=JSONObject().put("id",id).put("url",url).put("turn",turn).put("automatic",automatic)
                 .put("ownerPid",android.os.Process.myPid())
                 .put("expires",System.currentTimeMillis()+5*60_000L)
             if(tokenState!=null) json.put("tokenState",tokenState)
@@ -71,6 +71,7 @@ internal object CarrierUiRequests {
         Intent(app.packageName+".CAPTCHA_REQUEST").setPackage(app.packageName)
             .putExtra("id",json.getString("id")).putExtra("url",json.getString("url"))
             .putExtra("turn",json.optBoolean("turn"))
+            .putExtra("automatic",json.optBoolean("automatic"))
             .apply { json.optString("tokenState").takeIf { it.isNotEmpty() }?.let { putExtra("tokenState",it) } }
     }.getOrNull() }
     fun clear(id: String) {

@@ -53,7 +53,15 @@ internal class SpeedTestRunner(private val session: TestSession) {
             for ((id, reason) in generated.skipped) session.reportSpeedUnmeasured(id, reason)
             session.ensureSharedXrayAssets(generated.xrayConfig)
             for (probe in TestProbe.plan(generated)) {
-                runProbe(probe.request(), probe.profileIds, probe::profileOf, names, null)
+                try {
+                    withPreparedTransports(probe.carrierPlans,{ plan ->
+                        app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan,session.interactive,latencyProbe=false)
+                    }) { runProbe(probe.request(), probe.profileIds, probe::profileOf, names, null) }
+                } catch(error:CancellationException) { throw error }
+                catch(error:Exception) {
+                    Logs.w(error)
+                    probe.profileIds.forEach { session.reportSpeedUnmeasured(it,session.startFailure(names[it].orEmpty(),error.readableMessage)) }
+                }
             }
         }
     }

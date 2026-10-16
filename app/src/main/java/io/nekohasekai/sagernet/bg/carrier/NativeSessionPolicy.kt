@@ -3,6 +3,31 @@ package app.qthrone.mobile.bg.carrier
 import app.qthrone.mobile.outbound.json.JsonInput
 
 internal object NativeSessionPolicy {
+    fun probeConfig(kind:CarrierKind,privateJson:String,interactive:Boolean,latencyProbe:Boolean=!interactive):String {
+        if((interactive && !latencyProbe) || kind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) return privateJson
+        return JsonInput.parseObject(privateJson).also {
+            // Native auto captcha is allowed, visible prompts are refused by the Android bridge.
+            it["probe_only"]=true;it["interactive_captcha"]=true
+            if(kind==CarrierKind.QWDTT && latencyProbe) it["workers"]=9
+        }.toCompact()
+    }
+
+    fun startupTimeoutMs(kind:CarrierKind,requested:Long):Long =
+        if(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) requested.coerceAtLeast(300_000L) else requested
+    fun unavailableCall(line:String):Boolean = line.contains("Call not found",ignoreCase=true) ||
+        line.contains("error_code=951") || line.contains("error_code:951")
+    fun rotatedHashes(privateJson:String,attempt:Int):String {
+        if(attempt==0) return privateJson
+        val config=JsonInput.parseObject(privateJson)
+        val hashes=config.array("hashes").strings()
+        if(hashes.isEmpty()) return privateJson
+        val offset=attempt%hashes.size
+        config["hashes"]=app.qthrone.mobile.outbound.json.JsonArray().also { array ->
+            (hashes.drop(offset)+hashes.take(offset)).forEach { array.add(it) }
+        }
+        return config.toCompact()
+    }
+
     fun sharesRemoteSession(firstKind:CarrierKind,first:String,secondKind:CarrierKind,second:String):Boolean {
         if(firstKind!=secondKind || firstKind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) return false
         val a=JsonInput.parseObject(first);val b=JsonInput.parseObject(second)

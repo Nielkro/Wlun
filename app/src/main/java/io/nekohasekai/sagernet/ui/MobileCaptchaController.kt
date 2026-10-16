@@ -48,7 +48,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                     show(id,url,true);return
                 }
                 if(!allowed(url)) { reply(id,"error:invalid captcha address");return }
-                show(id,url)
+                show(id,url,automatic=intent.getBooleanExtra("automatic",false))
             }
         }
     }
@@ -69,7 +69,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         host.sendBroadcast(Intent(host.packageName+".CAPTCHA_RESULT").setPackage(host.packageName).putExtra("id",id).putExtra("result",result),host.packageName+".SERVICE")
     }
     @SuppressLint("SetJavaScriptEnabled")
-    private fun show(id: String,url: String,turn: Boolean=false,oauthState: String?=null) {
+    private fun show(id: String,url: String,turn: Boolean=false,oauthState: String?=null,automatic: Boolean=false) {
         if(app.qthrone.mobile.bg.carrier.CarrierUiRequests.pending()?.getStringExtra("id")!=id) return
         val previousSheet=dialog
         cleanupWeb?.invoke()
@@ -167,6 +167,10 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         }
         val fallback=Runnable {
             if(currentId==id && !host.isFinishing) {
+                if(automatic) {
+                    reply(id,"error:timeout");currentId=null;cleanupWeb?.invoke();sheet.dismiss()
+                    return@Runnable
+                }
                 showOnResume=true
                 if(host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) sheet.show()
             }
@@ -177,7 +181,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             cleaned=true
             web.removeCallbacks(polling)
             web.removeCallbacks(fallback)
-            if(currentId==id) { reply(id,"error:cancelled");currentId=null }
+            if(currentId==id) { reply(id,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.dismissal(automatic));currentId=null }
+            if(automatic) (body.parent as? android.view.ViewGroup)?.removeView(body)
             web.stopLoading();web.destroy()
             if(dialog===sheet) dialog=null
             cleanupWeb=null
@@ -187,7 +192,18 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         sheet.setOnDismissListener { cleanup() }
         sheet.setContentView(body)
         // qWDTT first tries an invisible join for 22 seconds, then opens its WebView.
-        if(turn) web.postDelayed(fallback,22_000) else {
+        if(automatic) {
+            // A measured, attached WebView can execute VK's automatic challenge without
+            // taking focus, receiving touches, or displaying a captcha sheet.
+            (body.parent as? android.view.ViewGroup)?.removeView(body)
+            body.alpha=0f
+            body.translationX=-2f*host.resources.displayMetrics.widthPixels
+            body.importantForAccessibility=android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            (host.window.decorView as android.view.ViewGroup).addView(body,
+                android.view.ViewGroup.LayoutParams(host.resources.displayMetrics.widthPixels,
+                    (host.resources.displayMetrics.heightPixels*.65f).toInt()))
+            web.postDelayed(fallback,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS)
+        } else if(turn) web.postDelayed(fallback,22_000) else {
             showOnResume=true
             if(host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) sheet.show()
         }

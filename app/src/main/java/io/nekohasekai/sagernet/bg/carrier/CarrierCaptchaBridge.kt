@@ -17,6 +17,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         private set
     private var receiver: BroadcastReceiver? = null
     private var requestId: String? = null
+    private var pendingPost: Thread? = null
     private var command="CAPTCHA_RESULT|"
     private var closed=false
     private var cancelledByUser=false
@@ -30,7 +31,8 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         else if(fields.size!=4 || target.length>8192) return
         finishRequest()
         command=if(turn) "TURN_CREDS|" else "CAPTCHA_RESULT|"
-        if(cancelledByUser || !allowUi) {
+        val automatic=NativeCaptchaPolicy.automatic(line)
+        if(!NativeCaptchaPolicy.permitted(allowUi,cancelledByUser,automatic)) {
             if(!allowUi) interactionRequired=true
             synchronized(process) { runCatching { process.outputStream.write((command+"error:cancelled\n").toByteArray());process.outputStream.flush() } }
             return
@@ -45,7 +47,24 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         }
         ContextCompat.registerReceiver(app,callback,IntentFilter(app.packageName+".CAPTCHA_RESULT"),app.packageName+".SERVICE",null,ContextCompat.RECEIVER_NOT_EXPORTED)
         receiver=callback
-        if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle)) {
+        if(automatic) {
+            // Native workers can authorize in parallel; one Android WebView owns the UI
+            // request slot at a time. Queue automatic attempts instead of replacing a live request.
+            pendingPost=Thread({
+                val deadline=System.nanoTime()+NativeCaptchaPolicy.AUTOMATIC_QUEUE_MS*1_000_000
+                while(System.nanoTime()<deadline) {
+                    val posted=try {
+                        synchronized(this@CarrierCaptchaBridge) {
+                            if(closed || requestId!=id) return@Thread
+                            CarrierUiRequests.post(id,target,turn,onlyIfIdle=true,automatic=true)
+                        }
+                    } catch(_:Exception) { respond(id,"error:VK confirmation unavailable");return@Thread }
+                    if(posted) return@Thread
+                    try { Thread.sleep(100) } catch(_:InterruptedException) { return@Thread }
+                }
+                respond(id,"error:timeout")
+            },"qThrone-auto-captcha-queue").apply { isDaemon=true;start() }
+        } else if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle || !allowUi)) {
             respond(id,"error:VK confirmation is busy")
         }
     }
@@ -62,6 +81,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         finishRequest()
     }
     private fun finishRequest() {
+        pendingPost?.interrupt();pendingPost=null
         receiver?.let { runCatching { app.unregisterReceiver(it) } }
         receiver=null
         waiting=false

@@ -8,10 +8,8 @@ import app.qthrone.mobile.database.ProxyEntity
 import app.qthrone.mobile.ktx.readableMessage
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.Logs
-import app.qthrone.mobile.bg.carrier.QwdttPing
 import app.qthrone.mobile.bg.carrier.NativeCarrier
 import app.qthrone.mobile.bg.proto.ProbeTimeout
-import app.qthrone.mobile.outbound.types.Qwdtt
 import app.qthrone.core.mobile.Mobile
 import app.qthrone.core.mobile.TestRequest
 import app.qthrone.core.mobile.URLTestHandler
@@ -28,25 +26,12 @@ import java.util.concurrent.atomic.AtomicReference
 internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
 
     override suspend fun run(profiles:List<ProxyEntity>) = coroutineScope {
-        val (nativePing,regular)=profiles.partition { it.type in listOf("qwdtt","csqtt") }
+        val (native,regular)=profiles.partition { it.type in listOf("qwdtt","csqtt") }
         launch { super.run(regular) }
-        // Native profiles run individually: one blocked handshake must not restart a whole batch.
-        for(profile in nativePing) {
-            if(session.cancelled) break
-            val outbound=profile.outbound as Qwdtt
-            if(outbound.type!="qwdtt" || outbound.hashSource!="manual") {
-                super.run(listOf(profile))
-                continue
-            }
-            val result=try {
-                ProbeResult(profile.id,latency=QwdttPing.measure(app,outbound,
-                    timeoutMs=session.options.timeoutMs.toLong().coerceAtLeast(20_000)))
-            } catch(error:CancellationException) { throw error }
-            catch(error:Exception) {
-                Logs.w("qWDTT ping-only failed: ${error.readableMessage}")
-                ProbeResult(profile.id,error=error.readableMessage,measured=false)
-            }
-            report(listOf(result))
+        // Each carrier gets its own HTTP probe: one slow authorization cannot stall a batch.
+        // All probes, including ordinary profiles, share LatencySweep's concurrency limit.
+        runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled }) { profile ->
+            super.run(listOf(profile))
         }
     }
 

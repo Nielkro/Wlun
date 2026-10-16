@@ -5,6 +5,30 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class PreparedTransportProbeTest {
+    @Test fun slowNativePreparationDoesNotBlockOtherProfilesAndConcurrencyIsBounded() = runBlocking {
+        val release=CompletableDeferred<Unit>()
+        val slowStarted=CompletableDeferred<Unit>()
+        val fastDone=CompletableDeferred<Unit>()
+        val active=java.util.concurrent.atomic.AtomicInteger()
+        val peak=java.util.concurrent.atomic.AtomicInteger()
+        var slowFinished=false
+        val sweep=launch {
+            runIndependentProbes(listOf(1,2,3,4),2,{ false }) { id ->
+                val count=active.incrementAndGet();peak.updateAndGet { maxOf(it,count) }
+                try {
+                    if(id==1) { slowStarted.complete(Unit);release.await();slowFinished=true }
+                    else { slowStarted.await();fastDone.complete(Unit) }
+                } finally { active.decrementAndGet() }
+            }
+        }
+        fastDone.await()
+        assertFalse(slowFinished)
+        assertTrue(peak.get()<=2)
+        release.complete(Unit);sweep.join()
+        assertEquals(0,active.get())
+        assertTrue(slowFinished)
+    }
+
     @Test fun coldTransportStartupDoesNotConsumeUrlTimeout() = runBlocking {
         var closed=false
         val result=withPreparedTransports(listOf(1), {

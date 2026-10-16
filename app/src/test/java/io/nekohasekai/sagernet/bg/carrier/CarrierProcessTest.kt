@@ -14,6 +14,85 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
+    @Test fun fiftySequentialProbeProcessesFinishCleanupBeforeTheNextStart() = runBlocking {
+        val root=Files.createTempDirectory("carrier-repeat").toFile()
+        val executor=Executors.newSingleThreadExecutor()
+        try {
+            File(root,"libqwdtt.so").apply { writeText("fixture");setExecutable(true) }
+            val configs=File(root,"configs")
+            ServerSocket(0,2,InetAddress.getByName("127.0.0.1")).use { listener ->
+                listener.soTimeout=3000
+                val server=executor.submit {
+                    repeat(50) {
+                        listener.accept().use { socket ->
+                            socket.soTimeout=3000
+                            DataInputStream(socket.getInputStream()).readFully(ByteArray(3))
+                            socket.getOutputStream().write(byteArrayOf(5,-1))
+                        }
+                        listener.accept().use { socket ->
+                            socket.soTimeout=3000
+                            val input=DataInputStream(socket.getInputStream())
+                            input.readFully(ByteArray(3));socket.getOutputStream().write(byteArrayOf(5,2))
+                            assertEquals(1,input.readUnsignedByte())
+                            input.readFully(ByteArray(input.readUnsignedByte()))
+                            input.readFully(ByteArray(input.readUnsignedByte()))
+                            socket.getOutputStream().write(byteArrayOf(1,0))
+                        }
+                    }
+                }
+                repeat(50) {
+                    assertTrue(configs.listFiles().orEmpty().isEmpty())
+                    val stopped=java.util.concurrent.atomic.AtomicBoolean()
+                    val control=object:java.io.OutputStream() {
+                        override fun write(value:Int) { if(value==10) stopped.set(true) }
+                    }
+                    val owned=CarrierProcess.start(CarrierKind.QWDTT,root,configs,35,"{}",listener.localPort,CarrierBridgeCredentials.fresh()) {
+                        object:Process() {
+                            override fun getOutputStream()=control
+                            override fun getInputStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun waitFor()=0
+                            override fun exitValue():Int { if(!stopped.get()) throw IllegalThreadStateException();return 0 }
+                            override fun destroy() { stopped.set(true) }
+                        }
+                    }
+                    owned.close()
+                    assertTrue(stopped.get())
+                    assertTrue(configs.listFiles().orEmpty().isEmpty())
+                }
+                server.get(5,TimeUnit.SECONDS)
+            }
+        } finally { executor.shutdownNow();root.deleteRecursively() }
+    }
+
+    @Test fun unavailableCallRetriesOtherHashesButServerAuthRefusalStopsImmediately() = runBlocking {
+        val root=Files.createTempDirectory("carrier-hash-fallback").toFile()
+        try {
+            File(root,"libqwdtt.so").apply { writeText("fixture");setExecutable(true) }
+            val privateJson="""{"hashes":["closed","second","third"],"password":"fixture"}"""
+            val attempted=mutableListOf<String>()
+            val configs=File(root,"configs")
+            val error=runCatching {
+                CarrierProcess.start(CarrierKind.QWDTT,root,configs,35,privateJson,12345,CarrierBridgeCredentials.fresh()) { builder ->
+                    val config=app.qthrone.mobile.outbound.json.JsonInput.parseObject(File(builder.command()[2]).readText())
+                    attempted.add(config.array("hashes").strings().first())
+                    val line=if(attempted.size==1) "Call not found (error_code=951)" else "FATAL_AUTH: private-secret"
+                    object:Process() {
+                        override fun getOutputStream()=ByteArrayOutputStream()
+                        override fun getInputStream()=ByteArrayInputStream((line+"\n").toByteArray())
+                        override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                        override fun waitFor()=0
+                        override fun exitValue()=0
+                        override fun destroy() {}
+                    }
+                }
+            }.exceptionOrNull()
+            assertEquals(listOf("closed","second"),attempted)
+            assertEquals(NativeSessionPolicy.startupFailure("FATAL_AUTH:"),error?.message)
+            assertTrue(configs.listFiles().orEmpty().isEmpty())
+        } finally { root.deleteRecursively() }
+    }
+
     @Test fun qwdttAndCsqttExposeServerAuthRefusalInsteadOfStartupTimeout() = runBlocking {
         val root=Files.createTempDirectory("carrier-auth-refusal").toFile()
         try {
