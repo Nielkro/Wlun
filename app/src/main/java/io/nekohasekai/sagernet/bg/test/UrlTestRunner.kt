@@ -18,6 +18,8 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicBoolean
+import app.qthrone.mobile.outbound.types.Qwdtt
 
 /**
  * URL latency tests (runUrlProbe, TestRunner.cpp:159-232): results stream as the core reports them, then a failed
@@ -29,13 +31,36 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         val (native,regular)=profiles.partition { it.type in listOf("qwdtt","csqtt") }
         launch { super.run(regular) }
         // Each carrier gets its own HTTP probe: one slow authorization cannot stall a batch.
-        // All probes, including ordinary profiles, share LatencySweep's concurrency limit.
-        runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled }) { profile ->
+        runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled },{ profile ->
+            (profile.outbound as? Qwdtt)?.let {
+                listOf(it.type,it.server,it.serverPort.toString(),it.deviceId)
+            }
+        }) { profile ->
             super.run(listOf(profile))
         }
     }
 
+    override suspend fun measure(probe: TestProbe, batch: List<ProxyEntity>, emit: (ProbeResult) -> Unit) {
+        val accepting = AtomicBoolean(true)
+        val timeout = ProbeTimeout.effective(session.options.timeoutMs, probe.carrierPlans.isNotEmpty())
+        try {
+            awaitScopedUrlProbe(urlProbeBudgetMs(probe.profileIds.size, session.options.concurrency, timeout)) { done ->
+                startScoped(probe, batch, { if (accepting.get()) emit(it) }, done)
+            }
+        } catch (_: ProbeDeadlineExceeded) {
+            accepting.set(false)
+            Logs.w("HTTP probe deadline exceeded for ${probe.profileIds.size} profiles")
+            probe.profileIds.forEach { emit(ProbeResult(it, error = "HTTP test timed out")) }
+        } finally {
+            accepting.set(false)
+        }
+    }
+
     override fun start(probe: TestProbe, batch: List<ProxyEntity>, emit: (ProbeResult) -> Unit, done: () -> Unit) {
+        startScoped(probe, batch, emit, done)
+    }
+
+    private fun startScoped(probe: TestProbe, batch: List<ProxyEntity>, emit: (ProbeResult) -> Unit, done: () -> Unit): AutoCloseable {
         val request = probe.request().apply {
             url = session.options.url
             timeoutMs = ProbeTimeout.effective(session.options.timeoutMs,probe.carrierPlans.isNotEmpty())
@@ -43,7 +68,8 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         }
         // The probe box closes with the test, so the verdict is asked for up front (TestRunner.cpp:171-176).
         probe.tagsOf(batch.filter { it.isVpnProfile() }.mapTo(HashSet()) { it.id }).forEach(request::addVPNEndpointTag)
-        Mobile.startURLTest(null, CoreRuntime.platform, request, Handler(probe::profileOf, emit, done))
+        val task = Mobile.startScopedURLTest(null, CoreRuntime.platform, request, Handler(probe::profileOf, emit, done))
+        return AutoCloseable { task.cancel() }
     }
 
     override fun report(results: List<ProbeResult>) = session.reportUrl(results)
@@ -74,17 +100,19 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
                 // Match the desktop native-current path: warm one HTTP connection,
                 // then report the second request. Neither request reauthorizes VK.
                 if(nativeCurrent) {
-                    session.awaitCore { done ->
-                        Mobile.startURLTest(running.instance,CoreRuntime.platform,request,
+                    awaitScopedUrlProbe(urlProbeBudgetMs(1, 1, request.timeoutMs)) { done ->
+                        val task = Mobile.startScopedURLTest(running.instance,CoreRuntime.platform,request,
                             Handler({ running.profileId },result::set,done))
+                        AutoCloseable { task.cancel() }
                     }
                     if(result.get().error.isNotEmpty()) return@holding
                 }
-                session.awaitCore { done ->
-                    Mobile.startURLTest(
+                awaitScopedUrlProbe(urlProbeBudgetMs(1, 1, request.timeoutMs)) { done ->
+                    val task = Mobile.startScopedURLTest(
                         running.instance, CoreRuntime.platform, request,
                         Handler({ running.profileId }, result::set, done),
                     )
+                    AutoCloseable { task.cancel() }
                 }
             }
         } catch (e: CancellationException) {

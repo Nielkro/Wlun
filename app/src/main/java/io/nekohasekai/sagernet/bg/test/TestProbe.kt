@@ -30,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap
 internal const val TEST_BATCH_SIZE = 100
 
 /**
- * Probes of one batch running at once (the desktop pool allows 10). Every probe is a whole sing-box, plus Xray when
+ * Probes per lane running at once. Every probe is a whole sing-box, plus Xray when
  * needed, next to the running VPN instance in :bg, and a custom full config brings its own DNS, routes and rule-sets:
  * three keeps the peak around a few hundred MB on 2-4 GB phones while slow probes still overlap.
  */
@@ -182,7 +182,7 @@ private const val CHECK_PARALLELISM = 4
  * each, its probes at most [MAX_PARALLEL_PROBES] at a time; results are reported in arrival order, a chunk per wake-up.
  */
 internal abstract class LatencySweep(protected val session: TestSession) {
-    private val probeGate = Semaphore(MAX_PARALLEL_PROBES)
+    private val probeLanes = ProbeLanes(MAX_PARALLEL_PROBES)
 
     /** Starts the core test of [probe], one of [batch]'s; [emit] and [done] are called on Go threads. */
     protected abstract fun start(
@@ -191,6 +191,10 @@ internal abstract class LatencySweep(protected val session: TestSession) {
 
     /** Persists the measured results and reports every one. */
     protected abstract fun report(results: List<ProbeResult>)
+
+    protected open suspend fun measure(probe: TestProbe, batch: List<ProxyEntity>, emit: (ProbeResult) -> Unit) {
+        session.awaitCore { done -> start(probe, batch, emit, done) }
+    }
 
     /** A candidate the generator rejected (BuildTestConfig: "Skipping invalid config"). */
     protected abstract fun invalid(profileId: Long, reason: String): ProbeResult
@@ -213,10 +217,9 @@ internal abstract class LatencySweep(protected val session: TestSession) {
         val ids = batch.map { it.id }.filter { it !in left }
         if (ids.isEmpty()) return@coroutineScope
         val results = Channel<ProbeResult>(Channel.UNLIMITED)
-        val gate = probeGate
         launch {
             try {
-                runBuild(ids, batch, results, gate)
+                runBuild(ids, batch, results)
             } finally {
                 results.close()
             }
@@ -231,7 +234,7 @@ internal abstract class LatencySweep(protected val session: TestSession) {
     /**
      * One test build over [ids] and its probes. A probe of several profiles whose box cannot start (one config that
      * fails takes the others down) is split in halves, each built and run on its own, down to the profile at fault; a
-     * probe holds its [TestTags], then a [gate] permit, only while it runs, so the halves never wait on what their
+     * probe holds its [TestTags], then a lane permit, only while it runs, so the halves never wait on what their
      * parent holds. The halves' tags never meet; full configs that share a default outbound tag take turns, and since
      * the tags come first, one waiting for its turn holds no permit.
      */
@@ -239,7 +242,6 @@ internal abstract class LatencySweep(protected val session: TestSession) {
         ids: List<Long>,
         batch: List<ProxyEntity>,
         results: Channel<ProbeResult>,
-        gate: Semaphore,
     ) {
         val generated = try {
             CoreConfigs.buildTest(ids)
@@ -261,14 +263,15 @@ internal abstract class LatencySweep(protected val session: TestSession) {
         coroutineScope {
             for (probe in TestProbe.plan(generated)) launch {
                 val failure = TestTags.holding(probe.reportedTags()) {
-                    gate.withPermit { runProbe(probe, batch, results) }
+                    // Cold native authorization must never consume the ordinary profiles' slots.
+                    probeLanes.run(probe.carrierPlans.isNotEmpty()) { runProbe(probe, batch, results) }
                 } ?: return@launch
                 val profileIds = probe.profileIds
                 if (profileIds.size > 1 && !session.cancelled) {
                     Logs.w("Test probe of ${profileIds.size} profiles could not start, testing it in halves: $failure")
                     val half = (profileIds.size + 1) / 2
-                    launch { runBuild(profileIds.subList(0, half), batch, results, gate) }
-                    launch { runBuild(profileIds.subList(half, profileIds.size), batch, results, gate) }
+                    launch { runBuild(profileIds.subList(0, half), batch, results) }
+                    launch { runBuild(profileIds.subList(half, profileIds.size), batch, results) }
                 } else {
                     for (id in profileIds) {
                         val name = batch.firstOrNull { it.id == id }?.displayName().orEmpty()
@@ -292,7 +295,7 @@ internal abstract class LatencySweep(protected val session: TestSession) {
             // CarrierProcess owns the startup deadline; coroutine cancellation still stops preparation.
             withPreparedTransports(probe.carrierPlans,{ plan -> app.qthrone.mobile.bg.carrier.CarrierPool.acquire(plan,
                 session.interactive && session.kind!=TestSpec.KIND_URL) }) {
-                session.awaitCore { done -> start(probe, batch, emit, done) }
+                measure(probe, batch, emit)
             }
         } catch (e: CancellationException) {
             throw e

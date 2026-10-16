@@ -10,10 +10,65 @@ import java.nio.file.Files
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
+    @Test fun cancellationAtReadyDispatcherHandoffClosesTheNativeProcess(): Unit = runBlocking {
+        val root=Files.createTempDirectory("carrier-cancel-ready").toFile()
+        val executor=Executors.newSingleThreadExecutor()
+        val queue=java.util.concurrent.LinkedBlockingQueue<Runnable>()
+        val dispatcher=object:kotlinx.coroutines.CoroutineDispatcher() {
+            override fun dispatch(context:kotlin.coroutines.CoroutineContext,block:Runnable) { queue.add(block) }
+        }
+        try {
+            File(root,"libqwdtt.so").apply { writeText("fixture");setExecutable(true) }
+            val configs=File(root,"configs")
+            val stopped=java.util.concurrent.atomic.AtomicBoolean()
+            ServerSocket(0,2,InetAddress.getByName("127.0.0.1")).use { listener ->
+                listener.soTimeout=5000
+                val server=executor.submit {
+                    listener.accept().use { socket ->
+                        socket.soTimeout=5000
+                        DataInputStream(socket.getInputStream()).readFully(ByteArray(3))
+                        socket.getOutputStream().write(byteArrayOf(5,-1))
+                    }
+                    listener.accept().use { socket ->
+                        socket.soTimeout=5000
+                        val input=DataInputStream(socket.getInputStream())
+                        input.readFully(ByteArray(3));socket.getOutputStream().write(byteArrayOf(5,2))
+                        assertEquals(1,input.readUnsignedByte())
+                        input.readFully(ByteArray(input.readUnsignedByte()))
+                        input.readFully(ByteArray(input.readUnsignedByte()))
+                        socket.getOutputStream().write(byteArrayOf(1,0))
+                    }
+                }
+                val job=kotlinx.coroutines.CoroutineScope(dispatcher).launch {
+                    CarrierProcess.start(CarrierKind.QWDTT,root,configs,35,"{}",listener.localPort,CarrierBridgeCredentials.fresh()) {
+                        object:Process() {
+                            override fun getOutputStream()=object:java.io.OutputStream() {
+                                override fun write(value:Int) { if(value==10) stopped.set(true) }
+                            }
+                            override fun getInputStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun waitFor()=0
+                            override fun exitValue():Int { if(!stopped.get()) throw IllegalThreadStateException();return 0 }
+                            override fun destroy() { stopped.set(true) }
+                        }
+                    }.close()
+                }
+                checkNotNull(queue.poll(5,TimeUnit.SECONDS)).run()
+                // Native readiness succeeded; hold its return on the original dispatcher.
+                val ready=checkNotNull(queue.poll(5,TimeUnit.SECONDS))
+                job.cancel();ready.run();job.join()
+                server.get(5,TimeUnit.SECONDS)
+                assertTrue(stopped.get())
+                assertTrue(configs.listFiles().orEmpty().isEmpty())
+            }
+        } finally { executor.shutdownNow();root.deleteRecursively() }
+    }
+
     @Test fun fiftySequentialProbeProcessesFinishCleanupBeforeTheNextStart(): Unit = runBlocking {
         val root=Files.createTempDirectory("carrier-repeat").toFile()
         val executor=Executors.newSingleThreadExecutor()

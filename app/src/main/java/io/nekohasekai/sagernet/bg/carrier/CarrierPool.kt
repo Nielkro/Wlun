@@ -24,7 +24,14 @@ object CarrierPool {
     suspend fun acquire(plan:CarrierPlan, interactive: Boolean=true,latencyProbe:Boolean=!interactive):Lease {
         if(!interactive && plan.kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT) && activePlan(plan.key)==null) {
             // Do not publish a queued test entry: a user connection must not wait behind it.
-            return probeStartup.prepare { acquireNow(plan,interactive,latencyProbe) }
+            var lease:Lease?=null
+            try {
+                return probeStartup.prepare { acquireNow(plan,interactive,latencyProbe).also { lease=it } }
+            } catch(error:Throwable) {
+                // Timeout/cancellation can win after acquisition but before withTimeout returns.
+                lease?.close()
+                throw error
+            }
         }
         return acquireNow(plan,interactive,latencyProbe)
     }
