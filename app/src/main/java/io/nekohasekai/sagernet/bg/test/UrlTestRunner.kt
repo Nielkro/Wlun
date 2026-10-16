@@ -28,9 +28,10 @@ import app.qthrone.mobile.outbound.types.Qwdtt
 internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
 
     override suspend fun run(profiles:List<ProxyEntity>) = coroutineScope {
-        val (native,regular)=profiles.partition { it.type in listOf("qwdtt","csqtt") }
+        val (native,regular)=profiles.partition { it.type in NATIVE_TYPES }
         launch { super.run(regular) }
-        // Each carrier gets its own HTTP probe: one slow authorization cannot stall a batch.
+        // Each carrier gets its own HTTP probe: one slow authorization cannot stall a batch,
+        // and one unreachable room cannot fail the shared box of its neighbours.
         runIndependentProbes(native,MAX_PARALLEL_PROBES,{ session.cancelled },{ profile ->
             (profile.outbound as? Qwdtt)?.probeSessionKey()
         }) { profile ->
@@ -81,7 +82,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
             session.reportCurrentUrl(ProbeResult(0L, error = ERROR_NOT_RUNNING))
             return
         }
-        val nativeCurrent=ProfileManager.getProfile(running.profileId)?.type in listOf("qwdtt","csqtt")
+        val nativeCurrent=ProfileManager.getProfile(running.profileId)?.type in NATIVE_TYPES
         val request = TestRequest().apply {
             testCurrent = true
             url = session.options.url
@@ -155,5 +156,8 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
     companion object {
         /** The core's errInstanceNotRunning text. */
         const val ERROR_NOT_RUNNING = "instance is not running"
+
+        /** Profiles backed by a native client process instead of a sing-box outbound. */
+        val NATIVE_TYPES = listOf("qwdtt","csqtt","openflux","olcrtc")
     }
 }
