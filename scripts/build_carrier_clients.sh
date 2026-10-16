@@ -54,6 +54,7 @@ cp "$SOURCE/openflux/LICENSE" "$OUT/OpenFlux-LICENSE"
 CSQTT=71712b07dbabe16fa43f5a248dc69e1ab9f3a270
 fetch_source "$SOURCE/csqtt" https://github.com/amurcanov/csqtt.git "$CSQTT"
 python3 "$SOURCE/qThrone/script/prepare_csqtt.py" "$SOURCE/csqtt"
+python3 "$ROOT/scripts/prepare_mobile_csqtt.py" "$SOURCE/csqtt"
 rustup toolchain install 1.97.1 --profile minimal
 rustup target add --toolchain 1.97.1 "$RUST"
 cargo +1.97.1 install cargo-ndk --version 4.1.2 --locked --root "$RUNNER_TEMP/qthrone-cargo-tools"

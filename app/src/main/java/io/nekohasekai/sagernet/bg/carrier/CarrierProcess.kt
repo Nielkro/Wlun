@@ -43,6 +43,7 @@ class CarrierProcess private constructor(private val process: Process, private v
         if(closed.get() || captcha.waiting) return null
         if(captcha.userCancelled) return "Подтверждение VK отменено" to true
         startupFailure.get()?.let { return it to true }
+        if(health.wrongPassword(false)) return WRONG_PASSWORD to true
         val exited=try { process.exitValue();true } catch(_:IllegalThreadStateException) { false }
         return if(exited || health.needsRestart(false,false)) "Транспорт потерял соединение" to false else null
     }
@@ -74,6 +75,8 @@ class CarrierProcess private constructor(private val process: Process, private v
     }
 
     companion object {
+        private const val WRONG_PASSWORD="Неверный пароль подключения или несовместимый WRAP: сервер не отвечает на рукопожатие"
+
         suspend fun start(
             kind: CarrierKind, nativeDirectory: File, privateDirectory: File,
             apiLevel: Int, privateJson: String, socksPort: Int,
@@ -93,8 +96,11 @@ class CarrierProcess private constructor(private val process: Process, private v
                 val remaining=(deadline-System.nanoTime())/1_000_000
                 check(remaining>0) { "Transport client startup timed out" }
                 try {
+                    var launchJson=NativeSessionPolicy.rotatedHashes(privateJson,attempt)
+                    // Every launch is a new epoch on the server, as in the original app; a retry included.
+                    if(kind==CarrierKind.CSQTT) launchJson=CsqttEpoch.apply(launchJson,CsqttEpoch.reserve(),CsqttEpoch.salt())
                     return startOnce(kind,nativeDirectory,privateDirectory,apiLevel,
-                        NativeSessionPolicy.rotatedHashes(privateJson,attempt),socksPort,bridgeCredentials,
+                        launchJson,socksPort,bridgeCredentials,
                         remaining,allowInteractions,onStatus,launch)
                 } catch(error:UnavailableCall) {
                     if(attempt==attempts-1) throw error
@@ -147,7 +153,11 @@ class CarrierProcess private constructor(private val process: Process, private v
                             .directory(nativeDirectory).redirectErrorStream(true)
                         builder.environment()["XDG_CACHE_HOME"] = privateDirectory.absolutePath
                         // The original CSQTT app caps the Rust client's worker pool the same way.
-                        if (kind == CarrierKind.CSQTT) builder.environment()["RAYON_NUM_THREADS"] = "2"
+                        if (kind == CarrierKind.CSQTT) {
+                            builder.environment()["RAYON_NUM_THREADS"] = "2"
+                            // Lifecycle events (stream count, panel restarts) for the watchdog; no addresses or hashes.
+                            builder.environment()["CSQTT_DIAGNOSTICS"] = "1"
+                        }
                         val child = try { launch(builder) } catch (_: Exception) {
                             throw IllegalStateException("Cannot start transport client")
                         }
@@ -173,6 +183,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                             check(!running.captcha.interactionRequired) { "VK confirmation required; connect this profile before testing" }
                             check(!running.captcha.userCancelled) { "VK confirmation cancelled" }
                             running.startupFailure.get()?.let { throw IllegalStateException(it) }
+                            if(running.health.wrongPassword(running.captcha.waiting)) throw IllegalStateException(WRONG_PASSWORD)
                             if(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT) && running.health.needsRestart(running.captcha.waiting,true)) throw TransientStartup()
                             val now=System.nanoTime()
                             if(running.captcha.waiting) {
