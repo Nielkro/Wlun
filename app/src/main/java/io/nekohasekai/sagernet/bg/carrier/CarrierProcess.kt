@@ -146,6 +146,8 @@ class CarrierProcess private constructor(private val process: Process, private v
                         val builder = ProcessBuilder(executable.absolutePath, kind.configFlag, config.absolutePath)
                             .directory(nativeDirectory).redirectErrorStream(true)
                         builder.environment()["XDG_CACHE_HOME"] = privateDirectory.absolutePath
+                        // The original CSQTT app caps the Rust client's worker pool the same way.
+                        if (kind == CarrierKind.CSQTT) builder.environment()["RAYON_NUM_THREADS"] = "2"
                         val child = try { launch(builder) } catch (_: Exception) {
                             throw IllegalStateException("Cannot start transport client")
                         }

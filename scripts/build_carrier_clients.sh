@@ -40,15 +40,16 @@ cp "$SOURCE/qThrone/qwdtt/LICENSE" "$OUT/qWDTT-LICENSE"
 OLC=f3ad8fb7c0d0fa981423f83269526fa94077c23d
 fetch_source "$SOURCE/olcrtc" https://github.com/openlibrecommunity/olcrtc.git "$OLC"
 mkdir -p "$SOURCE/olcrtc/cmd/qthrone-olcrtc"
-cp "$SOURCE/qThrone/script/olcrtc/"*.go "$SOURCE/olcrtc/cmd/qthrone-olcrtc/"
-python3 "$ROOT/scripts/secure_carrier_wrappers.py" olcrtc "$SOURCE/olcrtc"
+cp "$ROOT/carriers/olcrtc/"*.go "$SOURCE/olcrtc/cmd/qthrone-olcrtc/"
+(cd "$SOURCE/olcrtc"; GOOS= GOARCH= CGO_ENABLED=0 go test -count=1 ./cmd/qthrone-olcrtc)
 (cd "$SOURCE/olcrtc"; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libolcrtc.so" ./cmd/qthrone-olcrtc)
 cp "$SOURCE/olcrtc/LICENSE" "$OUT/OLCRTC-LICENSE"
-FLUX=74cac6d47bf4c27947348ee957538a2c0728a485
+# The client runs through OpenFlux's own mobile package, as the original Android app does.
+FLUX=edcf77a1848a72370cfba9f346d3b897b61e7e7d
 fetch_source "$SOURCE/openflux" https://github.com/p1neappleXpress/OpenFlux.git "$FLUX"
-cp "$SOURCE/qThrone/script/openflux/"*.go "$SOURCE/openflux/"
-python3 "$ROOT/scripts/secure_carrier_wrappers.py" openflux "$SOURCE/openflux"
-(cd "$SOURCE/openflux"; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libopenflux.so" .)
+mkdir -p "$SOURCE/openflux/mobile/cmd/qthrone-openflux"
+cp "$ROOT/carriers/openflux/"*.go "$SOURCE/openflux/mobile/cmd/qthrone-openflux/"
+(cd "$SOURCE/openflux/mobile"; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libopenflux.so" ./cmd/qthrone-openflux)
 cp "$SOURCE/openflux/LICENSE" "$OUT/OpenFlux-LICENSE"
 CSQTT=71712b07dbabe16fa43f5a248dc69e1ab9f3a270
 fetch_source "$SOURCE/csqtt" https://github.com/amurcanov/csqtt.git "$CSQTT"
