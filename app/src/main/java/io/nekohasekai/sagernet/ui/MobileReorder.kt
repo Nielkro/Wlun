@@ -15,6 +15,9 @@ internal class MobileReorder(
     private val active: (Boolean) -> Unit,
     private val save: (List<Long>) -> Unit,
     private val compatible: (Long, Long) -> Boolean = { _, _ -> true },
+    // Lets the owner shrink tall items (expanded subscriptions) for the gesture and restore them afterwards.
+    private val prepare: (View) -> Unit = {},
+    private val release: (View) -> Unit = {},
 ) {
     private val ids=linkedMapOf<View,Long>()
     private var source: View?=null
@@ -67,6 +70,7 @@ internal class MobileReorder(
             source=item;accepted=false
             handle.parent.requestDisallowInterceptTouchEvent(true)
             active(true)
+            prepare(item)
             item.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             // Animate before taking the platform drag shadow; keep the original slot occupied.
             item.animate().scaleX(1.025f).scaleY(1.025f).setDuration(90).withEndAction {
@@ -138,6 +142,7 @@ internal class MobileReorder(
             }
         }
         children().forEach { it.animate().cancel();it.translationY=0f }
+        release(item)
         item.visibility=View.VISIBLE
         item.scaleX=1.025f;item.scaleY=1.025f
         item.animate().scaleX(1f).scaleY(1f).setDuration(120).start()

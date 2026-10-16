@@ -14,6 +14,7 @@ import android.view.ViewGroup
 import android.widget.*
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnPreDraw
 import androidx.lifecycle.lifecycleScope
 import app.qthrone.mobile.ui.MobileAlertDialogBuilder as MaterialAlertDialogBuilder
 import app.qthrone.mobile.bg.test.TestSpec
@@ -88,6 +89,20 @@ class MobileHomeFragment : ToolbarFragment() {
                 }
             } finally { reordering=false;refresh() }
         }
+    }
+    /**
+     * An expanded subscription can be taller than the screen; dragging it then hides everything
+     * and leaves no visible place to drop. Fold every group to its header while a group moves,
+     * keeping the dragged header under the finger, and unfold to the saved state afterwards.
+     */
+    private fun setGroupRowsCompact(column: LinearLayout, scroll: ScrollView, item: View, compact: Boolean) {
+        val before=item.top-scroll.scrollY
+        groupViews.forEach { (id,entry) ->
+            val box=entry.second as? LinearLayout ?: return@forEach
+            if(box.childCount==0) return@forEach
+            box.getChildAt(box.childCount-1).visibility=if(compact || id in collapsed) View.GONE else View.VISIBLE
+        }
+        column.doOnPreDraw { scroll.scrollTo(0,(item.top-before).coerceAtLeast(0)) }
     }
     private val latencyViews=mutableMapOf<Long,FrameLayout>()
     private val collapsed = mutableSetOf<Long>()
@@ -364,7 +379,9 @@ class MobileHomeFragment : ToolbarFragment() {
             val anchorOffset=(anchor?.top ?: 0)-serverScroll.scrollY
             val groupDrag=groupReorder ?: MobileReorder(serverColumn,serverScroll,
                 { reordering=it },{ saveReorder(null,it) },
-                { first,second -> (first in pinnedGroups())==(second in pinnedGroups()) }).also { groupReorder=it }
+                { first,second -> (first in pinnedGroups())==(second in pinnedGroups()) },
+                { item -> setGroupRowsCompact(serverColumn,serverScroll,item,true) },
+                { item -> setGroupRowsCompact(serverColumn,serverScroll,item,false) }).also { groupReorder=it }
             val desired=mutableListOf<View>()
             val liveIds=groups.flatMap { it.second }.map { it.id }.toSet()
             latencyViews.keys.retainAll(liveIds); profileRows.keys.retainAll(liveIds)
