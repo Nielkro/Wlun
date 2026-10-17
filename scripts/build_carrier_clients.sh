@@ -51,6 +51,26 @@ mkdir -p "$SOURCE/openflux/mobile/cmd/qthrone-openflux"
 cp "$ROOT/carriers/openflux/"*.go "$SOURCE/openflux/mobile/cmd/qthrone-openflux/"
 (cd "$SOURCE/openflux/mobile"; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libopenflux.so" ./cmd/qthrone-openflux)
 cp "$SOURCE/openflux/LICENSE" "$OUT/OpenFlux-LICENSE"
+# DNSTT and VayDNS: VayDNS's client library (DNSTT in its wire compatibility mode).
+VAYDNS=a0ff70110d5e96686ab8f4c8e1c44cd09be07a75
+fetch_source "$SOURCE/vaydns" https://github.com/net2share/vaydns.git "$VAYDNS"
+mkdir -p "$SOURCE/vaydns/cmd/qthrone-dnstun"
+cp "$ROOT/carriers/dnstun/"*.go "$SOURCE/vaydns/cmd/qthrone-dnstun/"
+(cd "$SOURCE/vaydns"; go get github.com/shadowsocks/go-shadowsocks2@v0.1.5; go build -trimpath -buildmode=pie -ldflags='-s -w' -o "$OUT/libdnstun.so" ./cmd/qthrone-dnstun)
+cp "$SOURCE/vaydns/COPYING" "$OUT/VayDNS-LICENSE"
+MASTERDNS=acbf1c61f90786f41b975d2e2f616afbce292b29
+fetch_source "$SOURCE/masterdns" https://github.com/masterking32/MasterDnsVPN.git "$MASTERDNS"
+mkdir -p "$SOURCE/masterdns/cmd/qthrone-masterdns"
+cp "$ROOT/carriers/masterdns/"*.go "$SOURCE/masterdns/cmd/qthrone-masterdns/"
+(cd "$SOURCE/masterdns"; go build -trimpath -buildmode=pie -ldflags='-s -w' -o "$OUT/libmasterdns.so" ./cmd/qthrone-masterdns)
+cp "$SOURCE/masterdns/LICENSE" "$OUT/MasterDnsVPN-LICENSE"
+# S3 Bypass: the fedarisha protocol of Fedarisha/Xray-core-fedarisha, which the original app runs.
+FEDARISHA=a04f4c09972b2aa7d6255197732c1c20e3fdc8a1
+fetch_source "$SOURCE/fedarisha" https://github.com/Fedarisha/Xray-core-fedarisha.git "$FEDARISHA"
+mkdir -p "$SOURCE/fedarisha/main/qthrone-s3bypass"
+cp "$ROOT/carriers/s3bypass/"*.go "$SOURCE/fedarisha/main/qthrone-s3bypass/"
+(cd "$SOURCE/fedarisha"; go build -trimpath -buildmode=pie -ldflags='-s -w -buildid= -checklinkname=0' -o "$OUT/libs3bypass.so" ./main/qthrone-s3bypass)
+cp "$SOURCE/fedarisha/LICENSE" "$OUT/Xray-fedarisha-LICENSE"
 CSQTT=71712b07dbabe16fa43f5a248dc69e1ab9f3a270
 fetch_source "$SOURCE/csqtt" https://github.com/amurcanov/csqtt.git "$CSQTT"
 python3 "$SOURCE/qThrone/script/prepare_csqtt.py" "$SOURCE/csqtt"
@@ -63,7 +83,17 @@ export CARGO_TARGET_DIR="$SOURCE/rust-build"
 (cd "$SOURCE/csqtt/rust-client"; cargo +1.97.1 ndk -t "$ABI" -P 26 build --release --locked)
 cp "$CARGO_TARGET_DIR/$RUST/release/client" "$OUT/libcsqtt_transport.so"
 cp "$SOURCE/csqtt/LICENSE" "$OUT/CSQTT-LICENSE"
-printf 'qThrone %s\nolcRTC %s\nOpenFlux %s\nCSQTT %s\nAndroid ABI %s\nCSQTT minimum API 26\n' "$REF" "$OLC" "$FLUX" "$CSQTT" "$ABI" > "$OUT/SOURCES.txt"
+# Slipstream: slipstream-rust with picoquic and vendored OpenSSL; the mobile client listens on a private Unix socket.
+SLIPSTREAM=7de506b222c83ae97a19a618e33fe26899af1bd5
+fetch_source "$SOURCE/slipstream" https://github.com/Mygod/slipstream-rust.git "$SLIPSTREAM"
+git -C "$SOURCE/slipstream" submodule update -q --init --recursive --depth 1
+python3 "$ROOT/scripts/prepare_mobile_slipstream.py" "$SOURCE/slipstream"
+(cd "$SOURCE/slipstream"; ANDROID_ABI="$ABI" ANDROID_PLATFORM=android-24 PICOQUIC_BUILD_DIR="$SOURCE/picoquic-$ABI" \
+  cargo +1.97.1 ndk -t "$ABI" -P 24 build --release --locked -p slipstream-client --features openssl-vendored,picoquic-minimal-build)
+cp "$CARGO_TARGET_DIR/$RUST/release/slipstream-client" "$OUT/libslipstream.so"
+cp "$SOURCE/slipstream/LICENSE" "$OUT/Slipstream-LICENSE"
+printf 'qThrone %s\nolcRTC %s\nOpenFlux %s\nCSQTT %s\nVayDNS %s\nMasterDnsVPN %s\nXray-core-fedarisha %s\nslipstream-rust %s\nAndroid ABI %s\nCSQTT minimum API 26\n' \
+  "$REF" "$OLC" "$FLUX" "$CSQTT" "$VAYDNS" "$MASTERDNS" "$FEDARISHA" "$SLIPSTREAM" "$ABI" > "$OUT/SOURCES.txt"
 (cd "$OUT"; sha256sum *.so > SHA256SUMS)
 for binary in "$OUT/"*.so; do
   test -s "$binary"
