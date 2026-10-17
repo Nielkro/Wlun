@@ -1,6 +1,6 @@
 # qThroneMobile
 
-Android-клиент на ядрах [sing-box](https://github.com/SagerNet/sing-box) и [Xray](https://github.com/XTLS/Xray-core). Начинал разрабатываться как форк [ThroneForAndroid](https://github.com/throneproj/ThroneForAndroid), сейчас это самостоятельный проект.
+Android-клиент на ядрах [sing-box](https://github.com/SagerNet/sing-box) и [Xray](https://github.com/XTLS/Xray-core). Начинал разрабатываться как форк [ThroneForAndroid](https://github.com/throneproj/ThroneForAndroid), сейчас развивается как самостоятельный проект.
 
 Помимо стандартных протоколов sing-box и Xray поддерживает qWDTT, CSQTT, olcRTC, OpenFlux, DNSTT, VayDNS, SlipStream, MasterDNS и S3 Bypass - с подписками, тестом пинга и раздельной маршрутизацией.
 
