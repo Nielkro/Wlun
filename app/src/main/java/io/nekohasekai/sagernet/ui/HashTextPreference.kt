@@ -18,7 +18,8 @@ class HashTextPreference(context: Context) : EditTextPreference(context) {
         val base=originalTitle ?: title.toString().also { originalTitle=it }
         val label=when(status) {
             null, "В очереди", "Проверяется…", "Остановлено" -> null
-            "TURN доступен" -> "доступен"
+            "TURN доступен", "Звонок доступен" -> "доступен"
+            "Не удалось проверить", "Нет ответа проверки" -> "не проверен"
             else -> "недоступен"
         }
         title=if(label==null) base else SpannableString("$base $label").apply {

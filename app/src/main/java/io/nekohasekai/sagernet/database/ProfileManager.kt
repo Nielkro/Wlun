@@ -120,7 +120,7 @@ object ProfileManager {
 
     /** ProfilesRepo::AddProfile: appended to group [groupId], the current group when it is not a group id (<= 0). */
     private fun applyNativeDefaults(outbound: Outbound) {
-        if(outbound is app.qthrone.mobile.outbound.types.Qwdtt && outbound.type == "qwdtt" && !outbound.hashSourceChosen) {
+        if(outbound is app.qthrone.mobile.outbound.types.Qwdtt && outbound.type in listOf("qwdtt","csqtt") && !outbound.hashSourceChosen) {
             outbound.hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
             outbound.hashSourceChosen = true
         }

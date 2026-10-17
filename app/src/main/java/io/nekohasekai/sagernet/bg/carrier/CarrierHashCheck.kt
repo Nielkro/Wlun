@@ -26,6 +26,50 @@ class CarrierHashCheck : AutoCloseable {
         watchdog?.interrupt()
     }
 
+    /**
+     * CSQTT's own check, as its original app runs it: `--validate-vk-hashes` asks VK for an anonymous
+     * token of each call, one after another, without TURN credentials or a captcha.
+     */
+    fun runCsqtt(context: Context, hashes: List<Pair<Int, String>>, onUpdate: (Int, String) -> Unit) {
+        if (hashes.isEmpty() || stopped.get()) return
+        require(hashes.all { it.second.matches(Regex("[A-Za-z0-9_-]{16,512}")) }) { "Некорректный хеш VK" }
+        val binary = File(context.applicationInfo.nativeLibraryDir, "libcsqtt_transport.so")
+        check(binary.canExecute()) { "Бинарный клиент не найден" }
+        val child = ProcessBuilder(binary.absolutePath, "--validate-vk-hashes", "--vk", hashes.joinToString(",") { it.second },
+            "--fingerprint", "firefox", "--client-ids", "8202606,6287487")
+            .directory(context.cacheDir).redirectErrorStream(true)
+            .apply { environment()["LD_LIBRARY_PATH"] = context.applicationInfo.nativeLibraryDir }
+            .start()
+        process = child
+        if (stopped.get()) { close(); return }
+        hashes.forEach { onUpdate(it.first, "Проверяется…") }
+        val finished = mutableSetOf<Int>()
+        // The original allows 75 s for the whole list.
+        val killer = Thread({
+            try { if (!child.waitFor(75, java.util.concurrent.TimeUnit.SECONDS)) child.destroyForcibly() }
+            catch (_: InterruptedException) { }
+        }, "qThrone-csqtt-hash-check-timeout").apply { isDaemon = true }
+        watchdog = killer
+        killer.start()
+        try {
+            child.inputStream.bufferedReader().use { reader ->
+                while (!stopped.get()) {
+                    val line = reader.readLine() ?: break
+                    val result = runCatching { org.json.JSONObject(line.substringAfter("HASH_CHECK:", "")) }.getOrNull() ?: continue
+                    val slots = hashes.filter { it.second == result.optString("hash") }.map { it.first }
+                    // VK's messages can echo the call link: only the verdict is shown.
+                    val status = when (result.optString("status")) {
+                        "valid" -> "Звонок доступен"
+                        "invalid" -> "Звонок закрыт или хеш недействителен"
+                        else -> "Не удалось проверить"
+                    }
+                    slots.forEach { finished.add(it); onUpdate(it, status) }
+                }
+            }
+            if (!stopped.get()) hashes.filter { it.first !in finished }.forEach { onUpdate(it.first, "Нет ответа проверки") }
+        } finally { close() }
+    }
+
     fun run(context: Context, hashes: List<Pair<Int, String>>, captchaMode: String,
             anonPath: String, dns: String, deviceId: String, onUpdate: (Int, String) -> Unit) {
         if (hashes.isEmpty() || stopped.get()) return

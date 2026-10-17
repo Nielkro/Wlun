@@ -14,8 +14,8 @@ class Csqtt:Qwdtt() {
         val copy=obj.copy();copy["type"]="qwdtt"
         if(!copy.contains("turn_tcp")) copy["turn_tcp"]=false
         if(!super.parseFromJson(copy)) return false
-        // qWDTT account automation is not the CSQTT call lifecycle; retain manual hashes.
-        hashSource="manual";hashSourceChosen=true
+        // "auto" takes call hashes from the qWDTT account binding; CSQTT still joins those calls
+        // anonymously. CSQTT's own account login is never used: it gets VK accounts banned.
         hashes=obj.array("hashes").strings().take(6).map { it.trim().replace(Regex("^(?:https?://)?(?:m\\.)?vk\\.(?:com|ru)/call/join/",RegexOption.IGNORE_CASE),"").substringBefore('?').substringBefore('#').trimEnd('/') }.filter { it.isNotEmpty() }
         workers=(if(obj.contains("workers")) obj.int("workers") else 18).coerceIn(9,((if(hashSource == "auto") 6 else hashes.size.coerceIn(1,6))*27).coerceAtMost(126))/9*9
         return obfs in listOf("audio","video") && vkAnonPath in listOf("vkcalls","legacy") && captchaMode in listOf("auto","wv","rjs")

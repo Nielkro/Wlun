@@ -20,10 +20,12 @@ class CarrierPlan private constructor(
             val identity=(profile as app.qthrone.mobile.outbound.Outbound).exportToJson().also { it.remove("name");it.remove("tag") }.toCompact()
             val key=java.security.MessageDigest.getInstance("SHA-256").digest(identity.toByteArray()).joinToString("") { "%02x".format(it.toInt() and 255) }
             CarrierPool.activePlan(key)?.let { return it }
-            val runtimeProfile = if(profile is Qwdtt && profile.type == "qwdtt" && profile.hashSource == "auto") {
+            val runtimeProfile = if(profile is Qwdtt && profile.hashSource == "auto") {
                 val copy = app.qthrone.mobile.outbound.OutboundFactory.newByType(profile.type) as Qwdtt
                 check(copy.parseFromJson(profile.exportToJson()))
-                copy.hashes = profile.hashes.ifEmpty { VkRelayAccount.hashes(((profile.workers+26)/27).coerceIn(1,4)) }
+                // Calls come from the qWDTT account binding for both clients; one hash serves 27 workers.
+                copy.hashes = if(profile.type == "csqtt") VkRelayAccount.hashes(((profile.workers+26)/27).coerceIn(1,6))
+                    else profile.hashes.ifEmpty { VkRelayAccount.hashes(((profile.workers+26)/27).coerceIn(1,4)) }
                 copy.hashSource = "manual"
                 copy
             } else profile
