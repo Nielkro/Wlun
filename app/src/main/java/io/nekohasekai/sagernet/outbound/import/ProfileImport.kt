@@ -171,10 +171,13 @@ object ProfileImport {
                     if(profile!=null) produce(profile) else log("Invalid S3 Bypass configuration")
                     return
                 }
-                if (doc.contains("outbounds") && hasXrayOutbound(doc.array("outbounds"))) {
+                // Like the desktop: an Xray config with its own routing, DNS or balancing runs verbatim,
+                // a bare outbounds list becomes one profile per outbound.
+                if (doc.contains("outbounds") && hasXrayOutbound(doc.array("outbounds")) &&
+                        listOf("routing","dns","observatory","burstObservatory","policy","reverse","fakedns").any(doc::contains)) {
                     produce(Custom.fromXrayFullConfig(doc)); return
                 }
-                if (doc.contains("outbounds") && (doc.contains("route") || doc.contains("inbounds") ||
+                if (doc.contains("outbounds") && !hasXrayOutbound(doc.array("outbounds")) && (doc.contains("route") || doc.contains("inbounds") ||
                         doc.array("outbounds").filterIsInstance<JsonObject>().any { it.string("type") in listOf("selector","urltest") })) {
                     produce(Custom().apply { subtype=Custom.CUSTOM_FULL_CONFIG;config=text;name=doc.string("remarks").ifEmpty { doc.string("tag") } })
                     return
@@ -412,7 +415,13 @@ object ProfileImport {
          * Parser::link (SubscriptionParser.cpp:591-621): [overrideName] only reaches a link of a wireguard scheme
          * (json:// and throne://add/ match no scheme).
          */
-        private fun link(line: String, depth: Int, overrideName: String) {
+        private fun link(item: String, depth: Int, overrideName: String) {
+            var line = item
+            // Bot exports wrap qWDTT share links in Markdown code spans.
+            if (line.length >= 2 && line.first() == '`' && line.last() == '`') {
+                val unwrapped = line.substring(1, line.length - 1).trim()
+                if (OutboundFactory.typeForScheme(unwrapped) == "qwdtt") line = unwrapped
+            }
             if (line.startsWith("json://",ignoreCase=true) || line.startsWith("throne://add/",ignoreCase=true)) {
                 val payload=OutboundFactory.decodeJsonLink(line,line.startsWith("throne://add/",ignoreCase=true))
                 if(payload==null) log("Invalid JSON profile link")

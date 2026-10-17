@@ -139,7 +139,9 @@ object OutboundFactory {
     /** typeForScheme (SubscriptionParser.cpp:69-76): case-sensitive prefix match. */
     @JvmStatic
     fun typeForScheme(link: String): String? {
-        for (p in PROTOCOLS) for (scheme in p.schemes) if (link.startsWith(scheme)) return p.type
+        // The desktop reads qWDTT and CSQTT schemes in any letter case.
+        for (p in PROTOCOLS) for (scheme in p.schemes)
+            if (link.startsWith(scheme, ignoreCase = p.type == "qwdtt" || p.type == "csqtt")) return p.type
         return null
     }
 
@@ -231,7 +233,10 @@ object OutboundFactory {
         val profileType = typeForScheme(line) ?: return null
         val outbound = if (line.startsWith("vless://") && useXrayVless(line, preference)) newByType("xrayvless")
         else newByType(profileType)
-        if (!outbound.parseFromLink(line)) return null
+        // QWDTT:// or Csqtt:// reach the model with the scheme it parses.
+        val scheme = PROTOCOLS.first { it.type == profileType }.schemes.firstOrNull { line.startsWith(it, ignoreCase = true) }
+        val link = if (scheme != null && profileType in listOf("qwdtt", "csqtt")) scheme + line.substring(scheme.length) else line
+        if (!outbound.parseFromLink(link)) return null
         return outbound
     }
 }
