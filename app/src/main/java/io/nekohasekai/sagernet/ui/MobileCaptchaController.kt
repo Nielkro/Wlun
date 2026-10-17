@@ -205,10 +205,16 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                 if(host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) sheet.show()
             }
         }
+        // Like the original manual WebView: after a minute the client no longer waits for this answer.
+        val expiry=android.os.Handler(android.os.Looper.getMainLooper())
+        val expire=Runnable {
+            if(currentId==id) { reply(id,"error:timeout");currentId=null;cleanupWeb?.invoke();sheet.dismiss() }
+        }
         var cleaned=false
         val cleanup: () -> Unit = {
           if(!cleaned) {
             cleaned=true
+            expiry.removeCallbacks(expire)
             web.removeCallbacks(polling)
             web.removeCallbacks(fallback)
             if(currentId==id) { reply(id,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.dismissal(automatic));currentId=null }
@@ -234,6 +240,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                     (host.resources.displayMetrics.heightPixels*.65f).toInt()))
             web.postDelayed(fallback,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS)
         } else if(turn) web.postDelayed(fallback,22_000) else {
+            if(oauthState==null) expiry.postDelayed(expire,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.VISIBLE_TIMEOUT_MS)
             showOnResume=true
             if(host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) sheet.show()
         }

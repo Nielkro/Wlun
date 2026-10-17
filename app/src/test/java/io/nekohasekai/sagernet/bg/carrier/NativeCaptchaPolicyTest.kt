@@ -17,6 +17,6 @@ class NativeCaptchaPolicyTest {
         assertEquals("error:timeout",NativeCaptchaPolicy.dismissal(true))
         assertEquals("error:cancelled",NativeCaptchaPolicy.dismissal(false))
         assertEquals(10_000L,NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS)
-        assertTrue(NativeCaptchaPolicy.AUTOMATIC_QUEUE_MS+NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS<120_000L)
+        assertEquals(60_000L,NativeCaptchaPolicy.VISIBLE_TIMEOUT_MS)
     }
 }

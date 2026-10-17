@@ -19,6 +19,8 @@ internal class NativeTransportHealth(private val clock: () -> Long = { System.na
     var credentialsFailed = false
         private set
     private var stage = NativeConnectionStage.PREPARING
+    private val captchaFailure = Regex("капча не решена|ошибка решения капчи|автоцепочка не прошла|captcha (?:chain )?failed|captcha attempts exhausted|webview captcha (?:failed|timed out)", RegexOption.IGNORE_CASE)
+    private val captchaSolved = Regex("Smart Captcha решена|решила капчу|решил капчу|Капча решена|solve succeeded", RegexOption.IGNORE_CASE)
     private val active = Regex("(?:Активных:\\s*|\\bactive=)([0-9]+)", RegexOption.IGNORE_CASE)
 
     @Synchronized fun accept(line: String): NativeConnectionStage {
@@ -37,14 +39,18 @@ internal class NativeTransportHealth(private val clock: () -> Long = { System.na
         if (line.contains("WRAP_AUTH_TIMEOUT", true)) { if ((workers ?: 0) > 0) wrapTimeouts = 0 else wrapTimeouts++ }
         if (line.contains("[READY]") || line.contains("[CSQTT diagnostic] READY")) workers = maxOf(1, workers ?: 0)
         val flood = line.contains("Flood control", true) || Regex("error_code[\\s:=]+9\\b").containsMatchIn(line)
-        if (flood || line.contains("captcha", true) || line.contains("капч", true) ||
+        // Only a failed solve counts, like the original app: "капча решена" lines are progress.
+        val captchaFailed = captchaFailure.containsMatchIn(line)
+        if (flood || captchaFailed ||
             line.contains("timed out", true) || line.contains("timeout", true) ||
             line.contains("connection reset", true) || line.contains("network is unreachable", true)) transientFailure = true
         if (line.contains("Ошибка кредов", true)) credentialsFailed = true
         stage = when {
             (workers ?: 0) > 0 -> NativeConnectionStage.CONNECTED
             flood -> NativeConnectionStage.WAITING_VK
-            line.startsWith("CAPTCHA_SOLVE|") || line.contains("решение капчи", true) -> NativeConnectionStage.CAPTCHA
+            line.startsWith("CAPTCHA_SOLVE|") || line.contains("Решаю VK Smart Captcha") ||
+                line.contains("решение капчи", true) -> NativeConnectionStage.CAPTCHA
+            captchaSolved.containsMatchIn(line) -> NativeConnectionStage.AUTHORIZING
             line.contains("Запрос кредов", true) || line.contains("VK Auth", true) -> NativeConnectionStage.AUTHORIZING
             line.contains("TURN TCP") || line.contains("TURN UDP") || line.contains("Креды OK") -> NativeConnectionStage.CONNECTING
             workers == 0 -> NativeConnectionStage.RECONNECTING

@@ -6,7 +6,8 @@ p = root / "creds.go"
 s = p.read_text(encoding="utf-8")
 start = "func requestWebViewCaptcha(streamID int, captchaErr *VkCaptchaError, mode string, timeout time.Duration) (string, error) {"
 assert s.count(start) == 1
-s = s.replace(start, start + '\n\tif runtime.GOOS == "android" {\n\t\tif desktopProbeOnly && !desktopInteractiveProbe { return "", errCaptchaInteractionRequired }\n\t\ttimeout = captchaSelectedWebViewTimeout\n\t}')
+# The original per-mode timeouts stay: auto 10 s, manual 60 s, selected 120 s.
+s = s.replace(start, start + '\n\tif runtime.GOOS == "android" && desktopProbeOnly && !desktopInteractiveProbe {\n\t\treturn "", errCaptchaInteractionRequired\n\t}')
 s = s.replace("if desktopBridgeMode {", 'if desktopBridgeMode && runtime.GOOS != "android" {', 1)
 if '"runtime"' not in s:
     s = s.replace("import (", 'import (\n\t"runtime"', 1)

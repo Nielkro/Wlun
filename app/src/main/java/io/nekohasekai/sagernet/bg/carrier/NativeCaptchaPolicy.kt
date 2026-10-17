@@ -2,7 +2,8 @@ package app.qthrone.mobile.bg.carrier
 
 internal object NativeCaptchaPolicy {
     const val AUTOMATIC_TIMEOUT_MS = 10_000L
-    const val AUTOMATIC_QUEUE_MS = 45_000L
+    /** The original manual WebView closes itself after a minute; the client stops waiting too. */
+    const val VISIBLE_TIMEOUT_MS = 60_000L
     fun dismissal(automatic:Boolean):String = if(automatic) "error:timeout" else "error:cancelled"
     fun automatic(line:String):Boolean {
         val fields=line.split('|',limit=4)

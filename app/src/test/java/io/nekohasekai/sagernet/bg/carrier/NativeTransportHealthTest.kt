@@ -68,4 +68,13 @@ class NativeTransportHealthTest {
         assertNotNull(NativeSessionPolicy.startupFailure("Клиент и сервер CSQTT несовместимы"))
         assertNull(NativeSessionPolicy.startupFailure("error_code=9 Flood control"))
     }
+    @Test fun solvedCaptchaIsProgressAndOnlyAFailedSolveIsTransient() {
+        val health=NativeTransportHealth { 0L }
+        assertEquals(NativeConnectionStage.CAPTCHA,health.accept("[КАПЧА] Решаю VK Smart Captcha автоматически (v2, попыток=2)..."))
+        assertEquals(NativeConnectionStage.AUTHORIZING,health.accept("[STREAM 1] [КАПЧА] AUTO: Go v2 решил капчу"))
+        health.accept("[STREAM 1] [КАПЧА] WBV: auto solve succeeded")
+        assertFalse(health.transientFailure)
+        health.accept("[STREAM 2] [КАПЧА] AUTO: автоцепочка не прошла, открыт ручной WebView")
+        assertTrue(health.transientFailure)
+    }
 }

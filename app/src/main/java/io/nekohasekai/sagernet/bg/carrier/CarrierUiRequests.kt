@@ -29,7 +29,7 @@ internal object CarrierUiRequests {
             }
             val json=JSONObject().put("id",id).put("url",url).put("turn",turn).put("automatic",automatic)
                 .put("ownerPid",android.os.Process.myPid())
-                .put("expires",System.currentTimeMillis()+5*60_000L)
+                .put("expires",System.currentTimeMillis()+if(automatic) NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS else 5*60_000L)
             if(tokenState!=null) json.put("tokenState",tokenState)
             val store=file();val out=store.startWrite()
             try { out.write(json.toString().toByteArray(Charsets.UTF_8));store.finishWrite(out) }
@@ -40,7 +40,8 @@ internal object CarrierUiRequests {
         previousId?.let { app.sendBroadcast(Intent(app.packageName+".CAPTCHA_RESULT").setPackage(app.packageName)
             .putExtra("id",it).putExtra("result","error:superseded"),app.packageName+".SERVICE") }
         pending()?.let { app.sendBroadcast(it,app.packageName+".SERVICE") }
-        runCatching {
+        // Hidden attempts never notify: only a request the user must answer does.
+        if(!automatic) runCatching {
             if(android.os.Build.VERSION.SDK_INT>=33 && androidx.core.content.ContextCompat.checkSelfPermission(app,
                 android.Manifest.permission.POST_NOTIFICATIONS)!=android.content.pm.PackageManager.PERMISSION_GRANTED) return@runCatching
             val processes=app.getSystemService(android.app.ActivityManager::class.java).runningAppProcesses

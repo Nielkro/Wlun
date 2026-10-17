@@ -49,20 +49,25 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         ContextCompat.registerReceiver(app,callback,IntentFilter(app.packageName+".CAPTCHA_RESULT"),app.packageName+".SERVICE",null,ContextCompat.RECEIVER_NOT_EXPORTED)
         receiver=callback
         if(automatic) {
-            // Native workers can authorize in parallel; one Android WebView owns the UI
-            // request slot at a time. Queue automatic attempts instead of replacing a live request.
+            // Several profiles can ask at once; one hidden WebView runs at a time. The client
+            // waits 10 s for an automatic attempt (as in the original app), so a queued attempt
+            // gets the rest of those 10 s and the answer is "timeout" once they are spent.
             pendingPost=Thread({
-                val deadline=System.nanoTime()+NativeCaptchaPolicy.AUTOMATIC_QUEUE_MS*1_000_000
-                while(System.nanoTime()<deadline) {
-                    val posted=try {
-                        synchronized(this@CarrierCaptchaBridge) {
-                            if(closed || requestId!=id) return@Thread
-                            CarrierUiRequests.post(id,target,turn,onlyIfIdle=true,automatic=true)
-                        }
-                    } catch(_:Exception) { respond(id,"error:VK confirmation unavailable");return@Thread }
-                    if(posted) return@Thread
-                    try { Thread.sleep(100) } catch(_:InterruptedException) { return@Thread }
-                }
+                val deadline=System.nanoTime()+NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS*1_000_000
+                try {
+                    var posted=false
+                    while(!posted && System.nanoTime()<deadline) {
+                        posted=try {
+                            synchronized(this@CarrierCaptchaBridge) {
+                                if(closed || requestId!=id) return@Thread
+                                CarrierUiRequests.post(id,target,turn,onlyIfIdle=true,automatic=true)
+                            }
+                        } catch(_:Exception) { respond(id,"error:VK confirmation unavailable");return@Thread }
+                        if(!posted) Thread.sleep(100)
+                    }
+                    val left=(deadline-System.nanoTime())/1_000_000
+                    if(left>0) Thread.sleep(left)
+                } catch(_:InterruptedException) { return@Thread }
                 respond(id,"error:timeout")
             },"qThrone-auto-captcha-queue").apply { isDaemon=true;start() }
         } else if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle || !allowUi)) {
