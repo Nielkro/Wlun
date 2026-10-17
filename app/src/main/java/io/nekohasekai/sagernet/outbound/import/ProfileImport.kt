@@ -152,7 +152,9 @@ object ProfileImport {
             // Process heterogeneous arrays independently; one native transport must not hide its neighbours.
             if (doc is JsonArray) {
                 for (item in doc) {
-                    if (item is JsonObject) json(item, item.toCompact(),jsonDepth+1) else log("Invalid profile JSON item")
+                    // As on the desktop, each Xray config in an array is self-contained and runs verbatim.
+                    if (item is JsonObject && xraySubType(item) == XraySubType.OutboundInJson) Custom.fromXrayFullConfig(item)?.let(::produce)
+                    else if (item is JsonObject) json(item, item.toCompact(),jsonDepth+1) else log("Invalid profile JSON item")
                 }
                 return
             }
