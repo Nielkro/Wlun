@@ -10,7 +10,9 @@ import java.util.UUID
 
 /** Private, same-app messages; captcha addresses and tokens never enter logs. */
 class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdle: Boolean = false,
-    private val allowUi: Boolean = true): AutoCloseable {
+    private val allowUi: Boolean = true,
+    /** Whose original WebView to follow: qWDTT and CSQTT differ in user agent and cookie handling. */
+    private val client: String = "qwdtt"): AutoCloseable {
     @Volatile var waiting=false
         private set
     @Volatile var interactionRequired=false
@@ -60,7 +62,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
                         posted=try {
                             synchronized(this@CarrierCaptchaBridge) {
                                 if(closed || requestId!=id) return@Thread
-                                CarrierUiRequests.post(id,target,turn,onlyIfIdle=true,automatic=true)
+                                CarrierUiRequests.post(id,target,turn,onlyIfIdle=true,automatic=true,client=client)
                             }
                         } catch(_:Exception) { respond(id,"error:VK confirmation unavailable");return@Thread }
                         if(!posted) Thread.sleep(100)
@@ -70,7 +72,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
                 } catch(_:InterruptedException) { return@Thread }
                 respond(id,"error:timeout")
             },"qThrone-auto-captcha-queue").apply { isDaemon=true;start() }
-        } else if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle || !allowUi)) {
+        } else if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle || !allowUi,client=client)) {
             respond(id,"error:VK confirmation is busy")
         }
     }

@@ -48,7 +48,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                     show(id,url,true);return
                 }
                 if(!allowed(url)) { reply(id,"error:invalid captcha address");return }
-                show(id,url,automatic=intent.getBooleanExtra("automatic",false))
+                show(id,url,automatic=intent.getBooleanExtra("automatic",false),csqtt=intent.getStringExtra("client")=="csqtt")
             }
         }
     }
@@ -69,7 +69,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         host.sendBroadcast(Intent(host.packageName+".CAPTCHA_RESULT").setPackage(host.packageName).putExtra("id",id).putExtra("result",result),host.packageName+".SERVICE")
     }
     @SuppressLint("SetJavaScriptEnabled")
-    private fun show(id: String,url: String,turn: Boolean=false,oauthState: String?=null,automatic: Boolean=false) {
+    private fun show(id: String,url: String,turn: Boolean=false,oauthState: String?=null,automatic: Boolean=false,csqtt: Boolean=false) {
         if(app.qthrone.mobile.bg.carrier.CarrierUiRequests.pending()?.getStringExtra("id")!=id) return
         val previousSheet=dialog
         cleanupWeb?.invoke()
@@ -102,10 +102,10 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             settings.allowFileAccess=false
             settings.allowContentAccess=false
             settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            if(automatic) {
-                settings.cacheMode=android.webkit.WebSettings.LOAD_NO_CACHE
+            if(automatic) settings.cacheMode=android.webkit.WebSettings.LOAD_NO_CACHE
+            // The original qWDTT app shows both its captcha WebViews as desktop Chrome; CSQTT keeps the WebView's own agent.
+            if(!turn && oauthState==null && !csqtt)
                 settings.userAgentString=CaptchaAutoScripts.desktopUserAgent(android.webkit.WebSettings.getDefaultUserAgent(host))
-            }
             webChromeClient=android.webkit.WebChromeClient()
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
             if(turn || oauthState!=null) {
@@ -262,8 +262,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         web.onResume()
         val cookiePairs=if(turn || oauthState!=null) app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionCookies().filterKeys(::allowed)
             .flatMap { (address,header) -> header.split(';').map { address to it.trim() }.filter { it.second.isNotEmpty() } } else emptyList()
-        // The original clears VK's captcha cookies before every visible captcha; the account binding keeps its own.
-        val stale=if(!automatic && !turn && oauthState==null) captchaCookieHosts.flatMap { address ->
+        // Original qWDTT clears VK's captcha cookies before every visible captcha (CSQTT does not); the account binding keeps its own.
+        val stale=if(!automatic && !turn && oauthState==null && !csqtt) captchaCookieHosts.flatMap { address ->
             android.webkit.CookieManager.getInstance().getCookie(address).orEmpty().split(';')
                 .map { it.substringBefore('=').trim() }.filter { it.isNotEmpty() }.map { address to "$it=; Max-Age=0; Path=/" }
         } else emptyList()

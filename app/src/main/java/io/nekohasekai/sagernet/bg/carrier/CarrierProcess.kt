@@ -35,14 +35,14 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 }
 
 /** Native client owner. Config secrets are removed before provider output enters application logs. */
-class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean,
+class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean, kind: CarrierKind,
     private val onStatus: (NativeConnectionStage) -> Unit) : AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val startupFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
     private val unavailableCall = AtomicBoolean(false)
     private class UnavailableCall:IllegalStateException("VK: выбранный хеш недоступен; звонок не найден")
     private class TransientStartup:IllegalStateException("Временная ошибка авторизации VK; повторите подключение")
-    private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions)
+    private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions,client=if(kind==CarrierKind.CSQTT) "csqtt" else "qwdtt")
     private val health=NativeTransportHealth()
     fun recoveryFailure(): Pair<String,Boolean>? {
         if(closed.get() || captcha.waiting) return null
@@ -169,7 +169,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                         val child = try { launch(builder) } catch (_: Exception) {
                             throw IllegalStateException("Cannot start transport client")
                         }
-                        val running = CarrierProcess(child, config,allowInteractions,onStatus)
+                        val running = CarrierProcess(child, config,allowInteractions,kind,onStatus)
                         owner = running
                         runCatching { onStatus(NativeConnectionStage.AUTHORIZING) }
                         val redactor = CarrierLogRedactor(privateJson, bridgeCredentials)
