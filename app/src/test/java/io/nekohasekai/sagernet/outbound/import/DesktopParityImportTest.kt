@@ -24,4 +24,10 @@ class DesktopParityImportTest {
         val routed = ProfileImport.parse(bare.dropLast(1) + ""","routing":{"rules":[]}}""")
         assertEquals(Custom.CUSTOM_XRAY_FULL_CONFIG, (routed.outbounds.single() as Custom).subtype)
     }
+
+    @Test fun singBoxConfigWithRoutingSplitsIntoServers() {
+        val body = """{"inbounds":[{"type":"mixed","listen_port":2080}],"outbounds":[{"type":"selector","tag":"select","outbounds":["v","h"]},{"type":"vless","tag":"v","server":"192.0.2.1","server_port":443,"uuid":"bf000d23-0752-40b4-affe-68f7707a9661"},{"type":"hysteria2","tag":"h","server":"192.0.2.2","server_port":443,"password":"p"},{"type":"direct","tag":"direct"}],"route":{"final":"select"}}"""
+        val result = ProfileImport.parse(body)
+        assertEquals(result.messages.toString(), listOf("vless", "hysteria"), result.outbounds.map { it.type })
+    }
 }

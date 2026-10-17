@@ -177,11 +177,8 @@ object ProfileImport {
                         listOf("routing","dns","observatory","burstObservatory","policy","reverse","fakedns").any(doc::contains)) {
                     produce(Custom.fromXrayFullConfig(doc)); return
                 }
-                if (doc.contains("outbounds") && !hasXrayOutbound(doc.array("outbounds")) && (doc.contains("route") || doc.contains("inbounds") ||
-                        doc.array("outbounds").filterIsInstance<JsonObject>().any { it.string("type") in listOf("selector","urltest") })) {
-                    produce(Custom().apply { subtype=Custom.CUSTOM_FULL_CONFIG;config=text;name=doc.string("remarks").ifEmpty { doc.string("tag") } })
-                    return
-                }
+                // A sing-box config becomes one profile per outbound and endpoint, as on the desktop:
+                // its route and groups would replace the app's own routing.
                 MasterDnsFiles.fromJson(doc)?.let { config ->
                     val outbound=OutboundFactory.newByType("masterdns")
                     if(outbound.parseFromJson(config)) produce(outbound) else log("Invalid MasterDNS profile")
