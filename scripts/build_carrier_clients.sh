@@ -91,7 +91,7 @@ python3 "$ROOT/scripts/prepare_mobile_slipstream.py" "$SOURCE/slipstream"
 # pkg-config would hand picotls the runner's own brotli; the Android build goes without it.
 mkdir -p "$SOURCE/no-pkgconfig"
 (cd "$SOURCE/slipstream"; ANDROID_ABI="$ABI" ANDROID_PLATFORM=android-24 PICOQUIC_BUILD_DIR="$SOURCE/picoquic-$ABI" \
-  PKG_CONFIG_LIBDIR="$SOURCE/no-pkgconfig" PKG_CONFIG_PATH= \
+  PKG_CONFIG_LIBDIR="$SOURCE/no-pkgconfig" PKG_CONFIG_PATH= QTHRONE_ANDROID_CC="$CC" \
   cargo +1.97.1 ndk -t "$ABI" -P 24 build --release --locked -p slipstream-client --features openssl-vendored,picoquic-minimal-build)
 cp "$CARGO_TARGET_DIR/$RUST/release/slipstream-client" "$OUT/libslipstream.so"
 cp "$SOURCE/slipstream/LICENSE" "$OUT/Slipstream-LICENSE"

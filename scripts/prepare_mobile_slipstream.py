@@ -58,3 +58,15 @@ patch("streams/io_tasks.rs", [
 patch("streams/command_dispatch.rs", [
     ("            let _ = stream.set_nodelay(true);\n", ""),
 ])
+
+# cargo-ndk points RUST_ANDROID_GRADLE_CC at a clang without a target, so the FFI's
+# own C files came out for the build machine; use the ABI's NDK clang instead.
+cc = checkout / "crates/slipstream-ffi/build/cc.rs"
+source = cc.read_text(encoding="utf-8")
+old = '''            env::var("RUST_ANDROID_GRADLE_CC")
+                .or_else(|_| env::var("CC"))'''
+if source.count(old) != 1:
+    raise SystemExit("slipstream-ffi compiler lookup changed; update prepare_mobile_slipstream.py")
+cc.write_text(source.replace(old, '''            env::var("QTHRONE_ANDROID_CC")
+                .or_else(|_| env::var("RUST_ANDROID_GRADLE_CC"))
+                .or_else(|_| env::var("CC"))'''), encoding="utf-8", newline="\n")
