@@ -1,5 +1,6 @@
 package app.qthrone.mobile.ui.profile
 
+import app.qthrone.mobile.outbound.types.VkCallHash
 import android.os.Bundle
 import android.text.InputType
 import android.widget.Toast
@@ -351,7 +352,8 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             }
             if(preference is EditTextPreference) preference.dialogTitle = preference.title
             preference.setOnPreferenceChangeListener { _, next ->
-                val text=next.toString()
+                // A full VK call link pasted into a hash field keeps only its hash, as in the original apps.
+                val text=if(path.startsWith("hash_") && path!="hash_source") VkCallHash.strip(next.toString()) else next.toString()
                 if(key == "hash_source" && text == "auto" && (editingOutbound.type !in listOf("qwdtt","csqtt") || !app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() || app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink())) return@setOnPreferenceChangeListener false
                 val range=optionLimits[path.removePrefix("options.")]
                 if(value is Number && text.toLongOrNull()==null) return@setOnPreferenceChangeListener false
@@ -367,7 +369,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     }
                 }
                 refreshEditors()
-                true
+                if(text!=next.toString()) { (preference as EditTextPreference).text=text;false } else true
             }
             if(path in listOf("go_dns","dns")) (preference as AnchoredTextPreference).onSelect = { anchor ->
                 val values=(if(path=="go_dns") listOf("yandex","cloudflare","google","doh-yandex","doh-cloudflare","doh-google")
@@ -409,7 +411,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 showResults();unlockHashes()
             } else {
                 val hashes=fields.keys.filter { it.startsWith("hash_") && it!="hash_source" }.mapNotNull { path ->
-                    DataStore.profileCacheStore.getString(cache(path))?.trim()?.takeIf { it.isNotEmpty() }?.let { path.removePrefix("hash_").toInt() to it }
+                    DataStore.profileCacheStore.getString(cache(path))?.let(VkCallHash::strip)?.takeIf { it.isNotEmpty() }?.let { path.removePrefix("hash_").toInt() to it }
                 }
                 if(hashes.any { !it.second.matches(Regex("[A-Za-z0-9_-]{16,512}")) }) {
                     Toast.makeText(this@NativeTransportSettingsActivity,"Некорректный хеш VK",Toast.LENGTH_SHORT).show()

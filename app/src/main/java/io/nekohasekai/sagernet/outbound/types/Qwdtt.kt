@@ -44,9 +44,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         password=if(obj.contains("password")) obj.string("password") else obj.string("pass")
         val h=if(obj.contains("hashes")) "hashes" else "vkHashes"
         val items=if(obj.isArray(h)) obj.array(h).strings() else listOf(obj.string(h))
-        hashes=items.flatMap { it.split(Regex("[,\\s]+")) }.map { value ->
-            if(value.startsWith("https://") || value.startsWith("http://")) LinkParser.parse(value).path.substringAfterLast('/') else value
-        }.filter { it.isNotBlank() }.distinct().take(4)
+        hashes=items.flatMap { it.split(Regex("[,\\s]+")) }.map(VkCallHash::strip).filter { it.isNotBlank() }.distinct().take(4)
         mode=when(val m=obj.string("mode").lowercase()) { "raw","rawtun" -> "raw"; "","wg","vpn","socks" -> "wg"; else -> m }
         rawPort=if(obj.contains("raw_port")) obj.int("raw_port") else 56003
         workers=if(obj.contains("workers")) obj.int("workers") else if(obj.contains("workersPerHash")) obj.int("workersPerHash") else 9
