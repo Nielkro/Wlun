@@ -9,6 +9,7 @@
 <string name="qmobile_socks_user">SOCKS5 логин</string>
 <string name="qmobile_socks_pass">SOCKS5 пароль</string>
 <string name="qmobile_socks_reset">Сбросить логин и пароль</string>
+<string name="qmobile_file">Добавить из файла</string>
 <string name="qmobile_manual">Ручной ввод</string>
 <string name="qmobile_paste_json">Вставить JSON</string>
 <string name="qmobile_copy_json">Копировать JSON</string>

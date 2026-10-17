@@ -4,18 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.provider.OpenableColumns
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
 import app.qthrone.mobile.R
 import app.qthrone.mobile.SagerNet
-import app.qthrone.mobile.database.ProfileManager
-import app.qthrone.mobile.ktx.Logs
-import app.qthrone.mobile.ktx.readableMessage
 import app.qthrone.mobile.ktx.snackbar
 import app.qthrone.mobile.ktx.startFilesForResult
-import app.qthrone.mobile.outbound.Outbound
 import app.qthrone.mobile.ui.ConfigurationFragment
 import app.qthrone.mobile.ui.ScannerActivity
 import app.qthrone.mobile.ui.SubscribeFlows
@@ -32,7 +27,6 @@ import app.qthrone.mobile.ui.profile.MieruSettingsActivity
 import app.qthrone.mobile.ui.profile.NaiveSettingsActivity
 import app.qthrone.mobile.ui.profile.OpenConnectSettingsActivity
 import app.qthrone.mobile.ui.profile.OpenVpnSettingsActivity
-import app.qthrone.mobile.ui.profile.ProfileTextImport
 import app.qthrone.mobile.ui.profile.SSHSettingsActivity
 import app.qthrone.mobile.ui.profile.ShadowTLSSettingsActivity
 import app.qthrone.mobile.ui.profile.ShadowsocksSettingsActivity
@@ -45,7 +39,6 @@ import app.qthrone.mobile.ui.profile.VMessSettingsActivity
 import app.qthrone.mobile.ui.profile.VlessSettingsActivity
 import app.qthrone.mobile.ui.profile.WireGuardSettingsActivity
 import app.qthrone.mobile.ui.profile.XrayVlessSettingsActivity
-import java.util.zip.ZipInputStream
 
 /** The "+" menu: scan, clipboard, file and the new-profile editors. Imports go to the current tab's group. */
 class ProfileImports(private val host: ConfigurationFragment) {
@@ -85,43 +78,7 @@ class ProfileImports(private val host: ConfigurationFragment) {
         }
     }
 
-    /** importFromFiles for a text file; a zip (Android extra) holds one document per entry (WireGuard / OpenVPN). */
-    private fun importFile(uri: Uri) {
-        val groupId = host.currentGroupId
-        val activity = host.requireActivity()
-        val resolver = activity.contentResolver
-        host.launchIo {
-            try {
-                val fileName = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
-                    if (it.moveToFirst()) it.getString(0) else null
-                }
-                if (fileName?.endsWith(".zip", true) != true) {
-                    host.onUi { SubscribeFlows.importUri(activity, uri, groupId) }
-                    return@launchIo
-                }
-                val outbounds = mutableListOf<Outbound>()
-                ZipInputStream(resolver.openInputStream(uri)!!).use { zip ->
-                    while (true) {
-                        val entry = zip.nextEntry ?: break
-                        if (entry.isDirectory) continue
-                        outbounds.addAll(ProfileTextImport.parse(zip.bufferedReader().readText()))
-                        zip.closeEntry()
-                    }
-                }
-                if (outbounds.isEmpty()) {
-                    host.onUi { snackbar(R.string.no_proxies_found_in_file).show() }
-                } else {
-                    ProfileManager.addProfileBatch(outbounds, groupId)
-                    host.onUi {
-                        snackbar(resources.getQuantityString(R.plurals.added, outbounds.size, outbounds.size)).show()
-                    }
-                }
-            } catch (e: Exception) {
-                Logs.w(e)
-                host.onUi { snackbar(e.readableMessage).show() }
-            }
-        }
-    }
+    private fun importFile(uri: Uri) = SubscribeFlows.importFile(host.requireActivity(), uri, host.currentGroupId)
 
     private fun editorFor(itemId: Int): Class<*>? = when (itemId) {
         R.id.action_new_auto_selector -> AutoSelectorSettingsActivity::class.java

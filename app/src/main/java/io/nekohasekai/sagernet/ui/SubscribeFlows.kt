@@ -12,6 +12,9 @@ import app.qthrone.mobile.R
 import app.qthrone.mobile.databinding.LayoutRouteRemotePromptBinding
 import app.qthrone.mobile.group.SubscriptionClient
 import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.ProfileManager
+import app.qthrone.mobile.outbound.Outbound
+import app.qthrone.mobile.ui.profile.ProfileTextImport
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.onMainDispatcher
@@ -21,6 +24,7 @@ import app.qthrone.mobile.outbound.link.Base64Strict
 import app.qthrone.mobile.ui.route.RouteImports
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
+import java.util.zip.ZipInputStream
 
 /**
  * The desktop's import entry points (mainwindow_deeplink.cpp): pasted, scanned or shared text
@@ -123,6 +127,33 @@ object SubscribeFlows {
     }
 
     /** A file opened or shared from outside that is not a backup: its text is imported like pasted text (importFromFiles). */
+    /** importFromFiles: a text file goes through [importUri]; a zip holds one document per entry (WireGuard / OpenVPN). */
+    fun importFile(activity: FragmentActivity, uri: Uri, gid: Long = -1L) {
+        if (!displayName(uri).endsWith(".zip", true)) { importUri(activity, uri, gid); return }
+        runOnDefaultDispatcher {
+            val message = try {
+                val outbounds = mutableListOf<Outbound>()
+                ZipInputStream(app.contentResolver.openInputStream(uri)!!).use { zip ->
+                    while (true) {
+                        val entry = zip.nextEntry ?: break
+                        if (entry.isDirectory) continue
+                        outbounds.addAll(ProfileTextImport.parse(zip.bufferedReader().readText()))
+                        zip.closeEntry()
+                    }
+                }
+                if (outbounds.isEmpty()) activity.getString(R.string.no_proxies_found_in_file)
+                else {
+                    ProfileManager.addProfileBatch(outbounds, gid)
+                    activity.resources.getQuantityString(R.plurals.added, outbounds.size, outbounds.size)
+                }
+            } catch (e: Exception) {
+                Logs.w(e)
+                e.readableMessage
+            }
+            onMainDispatcher { notify(activity, message) }
+        }
+    }
+
     fun importUri(activity: FragmentActivity, uri: Uri, gid: Long = -1L) {
         runOnDefaultDispatcher {
             val name = displayName(uri)

@@ -657,6 +657,9 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun testMenu(ids: LongArray, label: String, gid: Long, wholeGroup: Boolean=false) {
         TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label,sortGroupId=if(wholeGroup) gid else 0L),gid)
     }
+    private val importFile = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) SubscribeFlows.importFile(requireActivity(), uri)
+    }
     private fun importClipboard() {
         val clip = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val value = clip.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(requireContext())?.toString()
@@ -760,6 +763,7 @@ class MobileHomeFragment : ToolbarFragment() {
         popup.menu.add(getString(R.string.grp_add_subscription)).setOnMenuItemClickListener { addSubscription();true }
         popup.menu.add(getString(R.string.qmobile_clipboard)).setOnMenuItemClickListener { importClipboard(); true }
         popup.menu.add(getString(R.string.qmobile_qr)).setOnMenuItemClickListener { startActivity(Intent(requireContext(), ScannerActivity::class.java)); true }
+        popup.menu.add(getString(R.string.qmobile_file)).setOnMenuItemClickListener { importFile.launch("*/*");true }
         popup.menu.add(getString(R.string.qmobile_manual)).setOnMenuItemClickListener { manualProfile();true }
         popup.menu.add(getString(R.string.qmobile_paste_json)).setOnMenuItemClickListener { importClipboard();true }
         popup.menu.add(getString(R.string.qmobile_copy_json)).setOnMenuItemClickListener {

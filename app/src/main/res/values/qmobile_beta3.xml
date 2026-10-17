@@ -10,6 +10,7 @@
 <string name="qmobile_socks_user">SOCKS5 username</string>
 <string name="qmobile_socks_pass">SOCKS5 password</string>
 <string name="qmobile_socks_reset">Reset username and password</string>
+<string name="qmobile_file">Add from file</string>
 <string name="qmobile_manual">Manual input</string>
 <string name="qmobile_paste_json">Paste JSON</string>
 <string name="qmobile_copy_json">Copy JSON</string>

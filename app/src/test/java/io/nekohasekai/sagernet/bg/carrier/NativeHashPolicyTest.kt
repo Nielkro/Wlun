@@ -124,4 +124,24 @@ class NativeHashPolicyTest {
             assertEquals(NativeHashPolicy.subscriptionIdentity(old),NativeHashPolicy.subscriptionIdentity(incoming))
         }
     }
+    @Test fun userSlotsSurviveRefreshAndTheSubscriptionOnlyReplacesItsOwnCount() {
+        for(type in listOf("qwdtt","csqtt")) {
+            fun profile(vararg hashes:String)=(if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()).apply {
+                name="Example";server="192.0.2.1";password="fixture";hashSource="manual";this.hashes=hashes.toList()
+            }
+            // The subscription gives one hash; the user adds three of their own.
+            var stored=profile("sub-1","user-2","user-3","user-4")
+            var incoming=profile("sub-1")
+            NativeHashPolicy.preserve(incoming,listOf(stored))
+            assertEquals(listOf("sub-1","user-2","user-3","user-4"),incoming.hashes)
+            // The subscription now gives two: they replace the first two slots, the user's rest stays.
+            stored=incoming;incoming=profile("sub-new-1","sub-new-2")
+            NativeHashPolicy.preserve(incoming,listOf(stored))
+            assertEquals(listOf("sub-new-1","sub-new-2","user-3","user-4"),incoming.hashes)
+            // A subscription without hashes leaves every slot to the user.
+            stored=incoming;incoming=profile()
+            NativeHashPolicy.preserve(incoming,listOf(stored))
+            assertEquals(listOf("sub-new-1","sub-new-2","user-3","user-4"),incoming.hashes)
+        }
+    }
 }
