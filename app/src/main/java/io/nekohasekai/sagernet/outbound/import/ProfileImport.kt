@@ -118,6 +118,14 @@ object ProfileImport {
                 return
             }
 
+            if (text.contains("ENCRYPTION_KEY") && text.contains("DOMAINS")) {
+                MasterDnsFiles.fromToml(text)?.let { config ->
+                    val outbound=OutboundFactory.newByType("masterdns")
+                    if(outbound.parseFromJson(config)) produce(outbound) else log("Invalid MasterDnsVPN configuration")
+                    return
+                }
+            }
+
             if (looksLikeOvpnConfig(text)) {
                 openVpnFile(text)
                 return
@@ -169,6 +177,11 @@ object ProfileImport {
                 if (doc.contains("outbounds") && (doc.contains("route") || doc.contains("inbounds") ||
                         doc.array("outbounds").filterIsInstance<JsonObject>().any { it.string("type") in listOf("selector","urltest") })) {
                     produce(Custom().apply { subtype=Custom.CUSTOM_FULL_CONFIG;config=text;name=doc.string("remarks").ifEmpty { doc.string("tag") } })
+                    return
+                }
+                MasterDnsFiles.fromJson(doc)?.let { config ->
+                    val outbound=OutboundFactory.newByType("masterdns")
+                    if(outbound.parseFromJson(config)) produce(outbound) else log("Invalid MasterDNS profile")
                     return
                 }
                 val type=doc.string("type").lowercase()

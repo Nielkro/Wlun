@@ -2,6 +2,7 @@ package app.qthrone.mobile.ui
 
 import app.qthrone.mobile.group.ProviderLinks
 import app.qthrone.mobile.route.ProviderRouting
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.widget.Toast
@@ -25,6 +26,7 @@ import app.qthrone.mobile.ui.route.RouteImports
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 import java.util.zip.ZipInputStream
+import com.king.zxing.util.CodeUtils
 
 /**
  * The desktop's import entry points (mainwindow_deeplink.cpp): pasted, scanned or shared text
@@ -129,7 +131,9 @@ object SubscribeFlows {
     /** A file opened or shared from outside that is not a backup: its text is imported like pasted text (importFromFiles). */
     /** importFromFiles: a text file goes through [importUri]; a zip holds one document per entry (WireGuard / OpenVPN). */
     fun importFile(activity: FragmentActivity, uri: Uri, gid: Long = -1L) {
-        if (!displayName(uri).endsWith(".zip", true)) { importUri(activity, uri, gid); return }
+        val name = displayName(uri)
+        if (isImage(uri, name)) { importQrImage(activity, uri, name, gid); return }
+        if (!name.endsWith(".zip", true)) { importUri(activity, uri, gid); return }
         runOnDefaultDispatcher {
             val message = try {
                 val outbounds = mutableListOf<Outbound>()
@@ -151,6 +155,28 @@ object SubscribeFlows {
                 e.readableMessage
             }
             onMainDispatcher { notify(activity, message) }
+        }
+    }
+
+    private val imageExtensions = listOf(".png", ".jpg", ".jpeg", ".bmp", ".gif", ".webp")
+
+    private fun isImage(uri: Uri, name: String) =
+        imageExtensions.any { name.endsWith(it, true) } || app.contentResolver.getType(uri)?.startsWith("image/") == true
+
+    /** A QR code image, like the desktop's file import: the code's text is imported as if pasted. */
+    private fun importQrImage(activity: FragmentActivity, uri: Uri, name: String, gid: Long) {
+        runOnDefaultDispatcher {
+            val text = try {
+                val bitmap = app.contentResolver.openInputStream(uri)!!.use { BitmapFactory.decodeStream(it) }
+                bitmap?.let { CodeUtils.parseCodeResult(it)?.text }?.takeIf { it.isNotBlank() }
+            } catch (e: Exception) {
+                Logs.w(e)
+                null
+            }
+            onMainDispatcher {
+                if (text == null) notify(activity, activity.getString(R.string.grp_file_not_readable, name))
+                else if (!activity.isFinishing && !activity.isDestroyed) importText(activity, text, gid)
+            }
         }
     }
 
