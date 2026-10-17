@@ -7,6 +7,7 @@ import (
 	"errors"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/sagernet/sing/common/auth"
 	M "github.com/sagernet/sing/common/metadata"
@@ -44,6 +45,41 @@ func TestHTTPSFallbackWithBlockedUDPAndReset(t *testing.T) {
 	client.Close()
 	err = client.HealthCheck(t.Context())
 	require.ErrorIs(t, err, net.ErrClosed)
+}
+
+// silentUDPDialer sends QUIC into a socket that never answers, as when DPI
+// drops UDP without an error.
+type silentUDPDialer struct {
+	N.Dialer
+	sink *net.UDPConn
+}
+
+func (d silentUDPDialer) DialContext(ctx context.Context, network string, server M.Socksaddr) (net.Conn, error) {
+	if network == N.NetworkUDP {
+		return net.DialUDP("udp", nil, d.sink.LocalAddr().(*net.UDPAddr))
+	}
+	return d.Dialer.DialContext(ctx, network, server)
+}
+
+func TestHTTPSFallbackJoinsWhileQUICIsSilent(t *testing.T) {
+	serverTLS, clientTLS := generateTestTLSPair(t)
+	s := newTestSetupWith(t, &testServerTLSConfig{config: serverTLS}, &testClientTLSConfig{config: clientTLS}, new(N.DefaultDialer))
+	sink, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
+	require.NoError(t, err)
+	t.Cleanup(func() { sink.Close() })
+	clientTLS = clientTLS.Clone()
+	clientTLS.NextProtos = []string{"h3"}
+	client, err := NewClient(ClientOptions{Ctx: t.Context(), Detour: silentUDPDialer{new(N.DefaultDialer), sink}, Server: s.client.server,
+		Auth: auth.User{Username: "test", Password: "test"}, TLSConfig: &testClientTLSConfig{config: clientTLS}, QUIC: true})
+	require.NoError(t, err)
+	t.Cleanup(func() { client.Close() })
+	transport := client.roundTripper.(*httpsFallbackTransport)
+	started := time.Now()
+	stream := openLiveTCP(t, client, []byte("HTTP/2 after the fallback delay"))
+	defer stream.Close()
+	require.Same(t, transport.https.roundTripper, transport.selected)
+	require.GreaterOrEqual(t, time.Since(started), fallbackDelay)
+	require.Less(t, time.Since(started), 5*fallbackDelay)
 }
 
 func TestHTTPSFallbackKeepsWorkingQUIC(t *testing.T) {
