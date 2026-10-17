@@ -9,7 +9,19 @@ transport, QUIC and resolver handling are untouched.
 from pathlib import Path
 import sys
 
-root = Path(sys.argv[1]) / "crates/slipstream-client/src"
+checkout = Path(sys.argv[1])
+root = checkout / "crates/slipstream-client/src"
+
+# The NDK toolchain limits library lookups to its sysroot; the vendored
+# OpenSSL that picoquic links against is built outside of it.
+script = checkout / "scripts/build_picoquic.sh"
+source = script.read_text(encoding="utf-8")
+marker = '  CMAKE_ARGS+=("-DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FILE}")\n'
+if source.count(marker) != 1:
+    raise SystemExit("build_picoquic.sh changed; update prepare_mobile_slipstream.py")
+script.write_text(source.replace(marker, marker +
+    '  CMAKE_ARGS+=("-DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=BOTH" "-DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=BOTH" "-DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=BOTH")\n'),
+    encoding="utf-8", newline="\n")
 
 
 def patch(name, replacements):

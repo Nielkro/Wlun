@@ -4,7 +4,9 @@ import app.qthrone.mobile.outbound.json.JsonInput
 import app.qthrone.mobile.outbound.json.JsonObject
 import app.qthrone.mobile.outbound.link.Base64Strict
 import app.qthrone.mobile.outbound.link.LinkParser
+import app.qthrone.mobile.outbound.types.DnsTunnel
 import app.qthrone.mobile.outbound.types.Http
+import app.qthrone.mobile.outbound.types.S3Bypass
 import app.qthrone.mobile.outbound.types.Shadowsocks
 import app.qthrone.mobile.outbound.types.Socks
 import java.util.concurrent.ConcurrentHashMap
@@ -30,7 +32,7 @@ object OutboundFactory {
     /** Every factory string of OutboundFactory.cpp:35-61 (R2 Р В РІР‚в„ўР вЂ™Р’В§A). */
     @JvmField
     val ALL_TYPES: List<String> = listOf(
-        "qwdtt", "csqtt", "openflux", "olcrtc", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
+        "qwdtt", "csqtt", "openflux", "olcrtc", "dnstt", "vaydns", "slipstream", "masterdns", "s3bypass", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
         "tuic", "juicity", "trusttunnel", "anytls", "mieru", "snell", "shadowtls", "wireguard", "masque", "openvpn",
         "openconnect", "tailscale", "ssh", "custom", "extracore", "naive", "direct",
     )
@@ -59,6 +61,11 @@ object OutboundFactory {
         "socks" to { Socks() },
         "http" to { Http() },
         "shadowsocks" to { Shadowsocks() },
+        "dnstt" to { DnsTunnel("dnstt") },
+        "vaydns" to { DnsTunnel("vaydns") },
+        "slipstream" to { DnsTunnel("slipstream") },
+        "masterdns" to { DnsTunnel("masterdns") },
+        "s3bypass" to { S3Bypass() },
     )
 
     private val registry = ConcurrentHashMap<String, () -> Outbound>()
@@ -101,6 +108,12 @@ object OutboundFactory {
     val PROTOCOLS: List<Protocol> = listOf(
         Protocol("openflux", listOf("openflux://"), listOf("openflux"), emptyList()),
         Protocol("olcrtc", listOf("olcrtc://"), listOf("olcrtc"), emptyList()),
+        // One model reads every DNS tunnel link and takes its transport from it.
+        Protocol("dnstt", listOf("dnst://", "slipnet://", "masterdns://"), listOf("dnstt"), emptyList()),
+        Protocol("vaydns", emptyList(), listOf("vaydns"), emptyList()),
+        Protocol("slipstream", emptyList(), listOf("slipstream"), emptyList()),
+        Protocol("masterdns", emptyList(), listOf("masterdns"), emptyList()),
+        Protocol("s3bypass", emptyList(), listOf("s3bypass"), emptyList()),
         Protocol("csqtt", listOf("csqtt://"), listOf("csqtt"), emptyList()),
         Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config", "wdtt://"), listOf("qwdtt"), emptyList()),
         Protocol("socks", listOf("socks5://", "socks4://", "socks4a://", "socks://"), listOf("socks"), listOf("socks5")),

@@ -16,6 +16,11 @@ enum class CarrierKind(val executable: String, val configFlag: String, val minim
     CSQTT("libqwdtt.so", "-csqtt-config", 26),
     OPENFLUX("libopenflux.so", "--qthrone-config", 24),
     OLCRTC("libolcrtc.so", "--qthrone-config", 24),
+    DNSTT("libdnstun.so", "--qthrone-config", 24),
+    VAYDNS("libdnstun.so", "--qthrone-config", 24),
+    SLIPSTREAM("libdnstun.so", "--qthrone-config", 24),
+    MASTERDNS("libmasterdns.so", "--qthrone-config", 24),
+    S3BYPASS("libs3bypass.so", "--qthrone-config", 24),
 }
 
 /** Per-launch credentials, deliberately without a generated toString() containing secrets. */
@@ -139,6 +144,9 @@ class CarrierProcess private constructor(private val process: Process, private v
                     check(executable.isFile && executable.canExecute()) { "Transport client is not installed" }
                     if (kind == CarrierKind.CSQTT) {
                         check(File(nativeDirectory, "libcsqtt_transport.so").canExecute()) { "CSQTT transport client is not installed" }
+                    }
+                    if (kind == CarrierKind.SLIPSTREAM) {
+                        check(File(nativeDirectory, "libslipstream.so").canExecute()) { "Slipstream transport client is not installed" }
                     }
                     check(privateDirectory.isDirectory || privateDirectory.mkdirs()) { "Private transport directory unavailable" }
                     val sessionDirectory=File(privateDirectory,"session-"+UUID.randomUUID().toString())

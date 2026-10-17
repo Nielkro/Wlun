@@ -820,7 +820,8 @@ class MobileHomeFragment : ToolbarFragment() {
             isFillViewport=true;isVerticalScrollBarEnabled=false
             addView(protocols,ViewGroup.LayoutParams(-1,-2))
         },LinearLayout.LayoutParams(-1,0,1f))
-        val nativeTypes = listOf("qwdtt" to "qWDTT", "csqtt" to "CSQTT", "openflux" to "OpenFlux", "olcrtc" to "olcRTC")
+        val nativeTypes = listOf("qwdtt" to "qWDTT", "csqtt" to "CSQTT", "openflux" to "OpenFlux", "olcrtc" to "olcRTC",
+            "masterdns" to "MasterDNS", "vaydns" to "VayDNS", "dnstt" to "DNSTT", "slipstream" to "SlipStream", "s3bypass" to "S3 Bypass")
         // Keep the same editors and localized labels as the original manual-entry menu.
         val originalTypes = listOf(
             "autoselector" to R.string.action_auto_selector,

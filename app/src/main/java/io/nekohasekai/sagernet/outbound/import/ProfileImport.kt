@@ -157,6 +157,12 @@ object ProfileImport {
                     else -> null
                 }
                 if (items != null) { json(items, items.toCompact(),jsonDepth+1); return }
+                // The S3 Bypass app's configuration: Xray with the fedarisha outbound our Xray core does not have.
+                if (doc.array("outbounds").any { it is JsonObject && it.string("protocol")=="fedarisha" }) {
+                    val profile=app.qthrone.mobile.outbound.types.S3Bypass.fromXrayConfig(doc)
+                    if(profile!=null) produce(profile) else log("Invalid S3 Bypass configuration")
+                    return
+                }
                 if (doc.contains("outbounds") && hasXrayOutbound(doc.array("outbounds"))) {
                     produce(Custom.fromXrayFullConfig(doc)); return
                 }
@@ -166,7 +172,8 @@ object ProfileImport {
                     return
                 }
                 val type=doc.string("type").lowercase()
-                if (type in listOf("qwdtt","wdtt","csqtt","openflux","olcrtc","chain","autoselector","custom","xrayvless")) {
+                if (type in listOf("qwdtt","wdtt","csqtt","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass",
+                        "chain","autoselector","custom","xrayvless")) {
                     val outbound=OutboundFactory.newByType(type)
                     if(outbound.parseFromJson(doc)) produce(outbound) else log("Invalid $type profile")
                     return

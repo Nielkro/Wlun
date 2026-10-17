@@ -12,8 +12,12 @@ internal object NativeSessionPolicy {
         }.toCompact()
     }
 
-    fun startupTimeoutMs(kind:CarrierKind,requested:Long):Long =
-        if(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) requested.coerceAtLeast(300_000L) else requested
+    fun startupTimeoutMs(kind:CarrierKind,requested:Long):Long = when(kind) {
+        CarrierKind.QWDTT,CarrierKind.CSQTT -> requested.coerceAtLeast(300_000L)
+        // DNS tunnels measure MTU and handshake query by query; S3 Bypass waits for the bucket.
+        CarrierKind.DNSTT,CarrierKind.VAYDNS,CarrierKind.SLIPSTREAM,CarrierKind.MASTERDNS,CarrierKind.S3BYPASS -> requested.coerceAtLeast(120_000L)
+        else -> requested
+    }
     private val callErrorCode=Regex("error_code[\\s]*[:=][\\s]*[\"']?([0-9]+)",RegexOption.IGNORE_CASE)
     fun unavailableCall(line:String):Boolean {
         val code=callErrorCode.find(line)?.groupValues?.get(1)?.toIntOrNull()
