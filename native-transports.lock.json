@@ -1,36 +1,44 @@
 {
-  "build_commit": "7522fa7de9710e05e0dc2a70ae90ae3565aa415d",
+  "build_commit": "b24e8b126afa9c9c39fa5d4b7a384a97f463757b",
   "core_commit": "93e4873c56c2285f647d0146a0df9c088f122910",
   "archives": [
     {
       "abi": "armeabi-v7a",
-      "name": "qthrone-transports-7522fa7d-armeabi-v7a.tar.gz",
-      "sha256": "8cfdf4c1781bda648457543d2a870e09ae030e2ca941e127906fe1c5363cd67e",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-7522fa7d-armeabi-v7a.tar.gz"
+      "name": "qthrone-transports-b24e8b12-armeabi-v7a.tar.gz",
+      "sha256": "2a54754df3898a3651d5673d13e4d76c1138067ced2069d429c86f60fdff65f2",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-b24e8b12-armeabi-v7a.tar.gz"
     },
     {
       "abi": "arm64-v8a",
-      "name": "qthrone-transports-7522fa7d-arm64-v8a.tar.gz",
-      "sha256": "6b8aa276491f90b8acab4b4dc1485aca14ea98f4ecf001eb5e18bdbee6a17968",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-7522fa7d-arm64-v8a.tar.gz"
+      "name": "qthrone-transports-b24e8b12-arm64-v8a.tar.gz",
+      "sha256": "80cc9c2a9ca17e55823bcb44ec1c5a58ccab65c33799ac74049e52a030c67e6b",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-b24e8b12-arm64-v8a.tar.gz"
     },
     {
       "abi": "x86_64",
-      "name": "qthrone-transports-7522fa7d-x86_64.tar.gz",
-      "sha256": "06e11b09a52ad33c5d4685b82aa6190c34ca4570114a62d0aff2774ba4cf66a4",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-7522fa7d-x86_64.tar.gz"
+      "name": "qthrone-transports-b24e8b12-x86_64.tar.gz",
+      "sha256": "8c3ed20b1b8e5d0e9242390103016a67b33c1c52d63c8865218a2b278851756a",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-b24e8b12-x86_64.tar.gz"
     }
   ],
   "inputs": {
-    "scripts/build_carrier_clients.sh": "853f371dec4509f5d02c40730ecf3629786d8f1720e16c73a4193749343da458",
-    "scripts/prepare_android_captcha.py": "1423df4d10a14127ce19347563f5e7a4a4f1e272b77fa6c1105debe1eeec8534",
+    "scripts/build_carrier_clients.sh": "b289bdc5f842de0333136711fb89a787d51e087ba03f8d5ee1e0e07e20322b2e",
+    "scripts/prepare_android_captcha.py": "b64ad3952201540d1dd24e314365c3d169d46be148e76f960c6050e6676eb674",
     "scripts/prepare_mobile_csqtt.py": "5b275c431eb5a668be1c88cc52ce36d95aec005acc93265e7febcd86c75062e6",
+    "scripts/prepare_mobile_slipstream.py": "f185704e15a324f77635c02011ffdd78d680e4a7bef45595bf06769e1baa621c",
     "carriers/openflux/main.go": "b9e94cb4e8242bf626433869c526d7c6b4512e9811616e4831618c94bbd711e4",
     "carriers/olcrtc/main.go": "cbaeae54189b1594a4bf1976170396b6e707e609e73d844a76d5ae2ed79d340d",
     "carriers/olcrtc/main_test.go": "e31129143ae483f955b813902731741834b094d2f5a626b51a9303098d9456fb",
-    "carriers/olcrtc/integration_test.go": "c4c08af66123c2dd4b5a2c64f3c9e20a4f5d3e7c389cfe2ef5cfe432e8c823c8"
+    "carriers/olcrtc/integration_test.go": "c4c08af66123c2dd4b5a2c64f3c9e20a4f5d3e7c389cfe2ef5cfe432e8c823c8",
+    "carriers/dnstun/backend.go": "83fad3c7108fcff420ad33f962944c9294584f8edc4129c12874d9567cdcffd5",
+    "carriers/dnstun/main.go": "abd4a85d7ee7c01bd31e744dea43c2445e7d26dea3cbbabc936e65634904d0f6",
+    "carriers/dnstun/slipstream.go": "510c2d018b6ee17f6828d6e82d58210a58bfad81a6706268c644b4f16e478292",
+    "carriers/dnstun/socks.go": "3403b057215d03aeb701be21cac3047f855a6a96a50841b5b27f2c00ed95d9d7",
+    "carriers/dnstun/tunnel.go": "14934adea51d82e3a7dc8f6bdc6a8e6d111580320a449b30eae8d00df30cd50b",
+    "carriers/masterdns/main.go": "abdcf31f1b0e075bea21ecd49b547707c699cca607d45b42ee1284019153b9ff",
+    "carriers/s3bypass/main.go": "57955f59a8d240cde2d63eeafaa1458b4c8f4f3ce1361a8fed627cf207fb1e49"
   }
 }
