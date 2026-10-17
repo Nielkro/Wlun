@@ -6,7 +6,7 @@ import app.qthrone.mobile.outbound.json.jsonObjectOf
 /** MasterDnsVPN's own client configuration and WhiteDNS's profile file, as the desktop reads them (SubscriptionParser.cpp). */
 object MasterDnsFiles {
     private fun profile(domains: String, key: String, method: Int, label: String): JsonObject? {
-        val list = domains.split(Regex("[,\s\"\[\]]+")).filter { it.isNotEmpty() }
+        val list = domains.split(Regex("""[,\s"\[\]]+""")).filter { it.isNotEmpty() }
         if (list.isEmpty() || key.isBlank()) return null
         return jsonObjectOf("type" to "masterdns", "name" to label, "domain" to list.joinToString(","),
             "mkey" to key.trim(), "encryption" to method)
