@@ -23,6 +23,9 @@ object NativeHashPolicy {
             if (it.hashSource == "manual") incoming.hashes = mergeSlots(incoming.hashes,it.hashes,
                 if(incoming.type=="csqtt") 6 else 4)
             incoming.workers=preservedWorkers(it.workers,workerLimit(it),workerLimit(incoming))
+            // WG/RAW and TURN over TCP/UDP are the user's choice, kept like hashes and workers.
+            incoming.mode=it.mode
+            incoming.turnTcp=it.turnTcp
         }
     }
     fun workerLimit(profile:Qwdtt):Int {

@@ -13,7 +13,8 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
     init { serverPort=56000 }
     var password=""
     var hashes:List<String> = emptyList()
-    var mode="raw"
+    // The original app starts in WG mode with TURN over TCP.
+    var mode="wg"
     var hashSource="manual"
     var hashSourceChosen=false
     var rawPort=56003
@@ -46,7 +47,7 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         hashes=items.flatMap { it.split(Regex("[,\\s]+")) }.map { value ->
             if(value.startsWith("https://") || value.startsWith("http://")) LinkParser.parse(value).path.substringAfterLast('/') else value
         }.filter { it.isNotBlank() }.distinct().take(4)
-        mode=when(val m=obj.string("mode").lowercase()) { "","raw","rawtun" -> "raw"; "wg","vpn","socks" -> "wg"; else -> m }
+        mode=when(val m=obj.string("mode").lowercase()) { "raw","rawtun" -> "raw"; "","wg","vpn","socks" -> "wg"; else -> m }
         rawPort=if(obj.contains("raw_port")) obj.int("raw_port") else 56003
         workers=if(obj.contains("workers")) obj.int("workers") else if(obj.contains("workersPerHash")) obj.int("workersPerHash") else 9
         workers=workers.coerceIn(9,(if(hashSource == "auto") 4 else hashes.size.coerceIn(1,4))*27)/9*9

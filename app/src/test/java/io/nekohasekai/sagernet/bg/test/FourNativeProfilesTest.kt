@@ -30,8 +30,8 @@ class FourNativeProfilesTest {
     }
 
     @Test fun rawQueueUsesRawPortAndCsqttUsesItsActualPeerPort() {
-        val first=Qwdtt().apply { server="192.0.2.1";serverPort=56000;rawPort=56003;deviceId="fixture" }
-        val second=Qwdtt().apply { server=first.server;serverPort=56001;rawPort=56003;deviceId="fixture" }
+        val first=Qwdtt().apply { server="192.0.2.1";serverPort=56000;rawPort=56003;deviceId="fixture";mode="raw" }
+        val second=Qwdtt().apply { server=first.server;serverPort=56001;rawPort=56003;deviceId="fixture";mode="raw" }
         assertEquals(first.probeSessionKey(),second.probeSessionKey())
         second.rawPort=56004
         assertNotEquals(first.probeSessionKey(),second.probeSessionKey())

@@ -1,5 +1,7 @@
 package app.qthrone.mobile.deploy
 
+import app.qthrone.mobile.bg.carrier.NativeHashPolicy
+import app.qthrone.mobile.group.DeviceDetails
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.bg.carrier.VkRelayAccount
 import com.jcraft.jsch.*
@@ -107,6 +109,8 @@ object DeployEngine {
                 }
                 upload("/tmp/deploy.sh",entry("assets/deploy.sh"))
                 if(!uninstall) {
+                    // As in the original apps a new server is bound to this phone's own identity.
+                    if(server["installed"]!="true") server.set("deviceId",ownDeviceId())
                     update(30,"Передача файлов на VPS")
                     val binary=entry(binaryName)
                     if(server.kind == "qwdtt") require(DeployProtocol.safeQwdttServer(binary)) { "Устаревший сервер qWDTT: требуется сборка для wdtt0 и /etc/wdtt" }
@@ -136,8 +140,8 @@ object DeployEngine {
             val json = JSONObject().put("type",server.kind).put("name",server["name"]).put("server",server["host"]).put("server_port",server.port("peerPort"))
                 .put("password",server["password"]).put("device_id",server["deviceId"]).put("hashes",org.json.JSONArray())
                 .put("hash_source",if(server.kind == "qwdtt" && VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) "auto" else "manual")
-            if(server.kind == "qwdtt") json.put("mode","raw").put("raw_port",server.port("rawPort"))
-            val config=DeployConfig.link(json)
+            if(server.kind == "qwdtt") json.put("raw_port",server.port("rawPort"))
+            val config=DeployConfig.link(json,ownDeviceId())
             server.recordInstallation(config);DeployStore.save(server)
             state.value = state.value.copy(config=config)
         } else {
@@ -200,4 +204,6 @@ object DeployEngine {
             return channel.exitStatus to output.toString()
         } finally { channel.disconnect() }
     }
+    private fun ownDeviceId(): String =
+        NativeHashPolicy.defaultDeviceId(DeviceDetails.get().hwid)
 }

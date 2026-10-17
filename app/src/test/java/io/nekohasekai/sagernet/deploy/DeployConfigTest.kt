@@ -12,30 +12,42 @@ class DeployConfigTest {
         .put("password",if(kind=="qwdtt") "secret+&!" else "secret123")
         .put("device_id","stable-deployed-owner").put("hashes",org.json.JSONArray())
 
-    @Test fun qwdttLinkImportsPasswordsPortsAndAutoModeWithoutInventedHashes() {
-        val data=config("qwdtt").put("hash_source","auto").put("raw_port",56123)
-        val link=DeployConfig.link(data)
-        val parsed=Qwdtt()
+    private fun keys(link: String)=link.substringAfter('?').split('&').map { it.substringBefore('=') }
+
+    @Test fun qwdttLinkMatchesTheOriginalAdminLink() {
+        val link=DeployConfig.link(config("qwdtt"),"stable-deployed-owner")
         assertTrue(link.startsWith("qwdtt://config?"))
+        assertEquals(listOf("name","peer","hashes","workers","port","pass"),keys(link))
+        assertTrue(link.contains("&workers=18&port=9000&"))
+        val parsed=Qwdtt()
         assertTrue(parsed.parseFromLink(link))
         assertEquals("2001:db8::1",parsed.server)
+        assertEquals(56000,parsed.serverPort)
         assertEquals("VPS + test",parsed.name)
         assertEquals("secret+&!",parsed.password)
-        assertEquals(56123,parsed.rawPort)
-        assertEquals("auto",parsed.hashSource)
-        assertEquals("stable-deployed-owner",parsed.deviceId)
+        assertEquals(18,parsed.workers)
+        assertEquals("wg",parsed.mode)
         assertTrue(parsed.hashes.isEmpty())
     }
-    @Test fun csqttLinkImportsWithoutHashesAndKeepsDeployedDeviceIdentity() {
-        val link=DeployConfig.link(config("csqtt"))
+    @Test fun csqttLinkMatchesTheOriginalPanelLink() {
+        val link=DeployConfig.link(config("csqtt"),"stable-deployed-owner")
+        assertTrue(link.startsWith("csqtt://connect?v=2&host="))
+        assertEquals(listOf("v","host","peer","password"),keys(link))
         val parsed=Csqtt()
-        assertTrue(link.startsWith("csqtt://connect?"))
         assertTrue(parsed.parseFromLink(link))
         assertEquals("2001:db8::1",parsed.server)
         assertEquals(46000,parsed.serverPort)
         assertEquals("secret123",parsed.password)
-        assertEquals("stable-deployed-owner",parsed.deviceId)
         assertTrue(parsed.hashes.isEmpty())
+    }
+    @Test fun serversBoundToAnotherIdentityKeepItInTheLink() {
+        for(kind in listOf("qwdtt","csqtt")) {
+            val link=DeployConfig.link(config(kind),"this-phone")
+            assertTrue(link.endsWith("&device_id=stable-deployed-owner"))
+            val parsed=if(kind=="csqtt") Csqtt() else Qwdtt()
+            assertTrue(parsed.parseFromLink(link))
+            assertEquals("stable-deployed-owner",parsed.deviceId)
+        }
     }
     @Test fun legacySavedJsonDisplaysAsAnImportableLink() {
         val data=config("qwdtt")

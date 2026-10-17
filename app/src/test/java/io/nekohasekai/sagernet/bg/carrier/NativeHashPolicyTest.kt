@@ -103,4 +103,25 @@ class NativeHashPolicyTest {
         NativeHashPolicy.preserve(incoming,listOf(profile(),profile().apply { hashSource = "auto" }))
         assertFalse(incoming.hashSourceChosen)
     }
+    @Test fun newProfilesStartLikeTheOriginalAppsAndRefreshKeepsTheUsersModeAndTransport() {
+        val qwdtt=Qwdtt();assertTrue(qwdtt.parseFromJson(app.qthrone.mobile.outbound.json.JsonInput.parseObject("""{"type":"qwdtt","peer":"192.0.2.1:56000","password":"fixture"}""")))
+        assertEquals("wg",qwdtt.mode);assertTrue(qwdtt.turnTcp)
+        val csqtt=app.qthrone.mobile.outbound.types.Csqtt()
+        assertTrue(csqtt.parseFromJson(app.qthrone.mobile.outbound.json.JsonInput.parseObject("""{"type":"csqtt","server":"192.0.2.1","server_port":46000,"password":"fixture","hashes":["exampleHash123456789"]}""")))
+        assertFalse(csqtt.turnTcp)
+        for(type in listOf("qwdtt","csqtt")) {
+            val old=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+            old.name="Example";old.server="192.0.2.1";old.password="fixture";old.hashes=listOf("user_hash_123456789")
+            old.mode="raw";old.turnTcp=type=="csqtt";old.workers=27
+            val incoming=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt() else Qwdtt()
+            incoming.name="Example";incoming.server=old.server;incoming.password=old.password
+            incoming.mode="wg";incoming.turnTcp=type!="csqtt";incoming.workers=9
+            NativeHashPolicy.preserve(incoming,listOf(old))
+            assertEquals("raw",incoming.mode)
+            assertEquals(old.turnTcp,incoming.turnTcp)
+            assertEquals(27,incoming.workers)
+            assertEquals(listOf("user_hash_123456789"),incoming.hashes)
+            assertEquals(NativeHashPolicy.subscriptionIdentity(old),NativeHashPolicy.subscriptionIdentity(incoming))
+        }
+    }
 }
