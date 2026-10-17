@@ -90,6 +90,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         body.addView(header)
         var turnUrlIndex=0
         var autoClicked=false
+        var clickedAt=0L
+        val fail: (String) -> Unit = { result -> if(currentId==id) { reply(id,result);currentId=null;cleanupWeb?.invoke();sheet.dismiss() } }
         val web=WebView(host).apply {
             setBackgroundColor(MobilePalette.surface)
             settings.javaScriptEnabled=true
@@ -170,27 +172,37 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         val polling=object: Runnable {
             override fun run() {
                 if(currentId!=id) return
-                if(automatic && !autoClicked && web.url?.let(::allowed)==true) {
+                val onCaptcha=web.url?.let(::allowed)==true
+                if(automatic && onCaptcha && !autoClicked) {
                     web.evaluateJavascript(CaptchaAutoScripts.checkbox) { raw ->
                         if(currentId!=id || autoClicked) return@evaluateJavascript
-                        if(raw=="\"manual\"") {
-                            reply(id,"error:slider detected");currentId=null;cleanupWeb?.invoke();sheet.dismiss()
-                        } else runCatching {
-                            val point=org.json.JSONArray(raw)
-                            val scale=if(web.width>0) web.width/point.getDouble(2).toFloat().coerceAtLeast(1f) else host.resources.displayMetrics.density
-                            val x=point.getDouble(0).toFloat()*scale;val y=point.getDouble(1).toFloat()*scale
+                        if(raw=="\"manual\"") fail("error:slider detected")
+                        else runCatching { org.json.JSONArray(raw) }.getOrNull()?.takeIf { it.length()==5 }?.let { label ->
                             autoClicked=true
-                            val now=android.os.SystemClock.uptimeMillis()
-                            android.view.MotionEvent.obtain(now,now,android.view.MotionEvent.ACTION_DOWN,x,y,0).also { web.dispatchTouchEvent(it);it.recycle() }
-                            web.postDelayed({ if(currentId==id) android.view.MotionEvent.obtain(now,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,x,y,0).also { web.dispatchTouchEvent(it);it.recycle() } },100)
+                            web.postDelayed({ if(currentId==id) { touch(web,label);clickedAt=android.os.SystemClock.uptimeMillis() } },CaptchaAutoScripts.clickDelayMs())
                         }
                     }
                 }
-                if(turn && web.url?.let(::allowed)==true) web.evaluateJavascript(VkTurnScripts.AUTO_JOIN_TRY,null)
-                if(oauthState==null && web.url?.let(::allowed)==true) web.evaluateJavascript(if(turn) "window.__qthroneTurnServer || null" else "window.__qthroneCaptchaToken || null") { raw ->
+                // As the original: for about five seconds after the click a slider means a manual captcha.
+                if(automatic && onCaptcha && clickedAt>0 && android.os.SystemClock.uptimeMillis()-clickedAt<=5_400)
+                    web.evaluateJavascript(CaptchaAutoScripts.sliderAfterClick) { raw -> if(raw=="true") fail("error:slider detected") }
+                if(turn && onCaptcha) web.evaluateJavascript(VkTurnScripts.AUTO_JOIN_TRY,null)
+                if(turn && onCaptcha) web.evaluateJavascript("window.__qthroneTurnServer || null") { raw ->
                     val token=runCatching { org.json.JSONTokener(raw).nextValue() as? String }.getOrNull()
-                    val result=if(turn && token!=null) VkTurnPayload.encode(url,token) else token
+                    val result=token?.let { VkTurnPayload.encode(url,it) }
                     if(!result.isNullOrEmpty() && currentId==id) { reply(id,result);currentId=null;cleanupWeb?.invoke();sheet.dismiss() }
+                }
+                if(!turn && oauthState==null && onCaptcha) web.evaluateJavascript(CaptchaAutoScripts.state) { raw ->
+                    if(currentId!=id) return@evaluateJavascript
+                    val state=runCatching { org.json.JSONObject(org.json.JSONTokener(raw).nextValue() as String) }.getOrNull() ?: return@evaluateJavascript
+                    val token=state.optString("token").takeIf { !state.isNull("token") && it.isNotEmpty() }
+                    when {
+                        token!=null -> if(token.length<=16384 && token.none(Char::isISOControl)) { reply(id,token);currentId=null;cleanupWeb?.invoke();sheet.dismiss() }
+                        state.optString("failure")=="slider" && automatic -> fail("error:slider detected")
+                        state.optString("failure")=="error" -> fail("error:VK captcha error")
+                        // VK's own cross: the user declined, as the original's "cancel and stop".
+                        state.optBoolean("dismissed") && !automatic -> sheet.dismiss()
+                    }
                 }
                 web.postDelayed(this,400)
             }
@@ -226,6 +238,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         }
         cleanupWeb=cleanup
         sheet.setOnDismissListener { cleanup() }
+        // In the original only an explicit close declines a visible captcha; back or a swipe does not.
+        if(!automatic && !turn && oauthState==null) sheet.setCancelable(false)
         sheet.setContentView(body)
         // qWDTT first tries an invisible join for 22 seconds, then opens its WebView.
         if(automatic) {
@@ -248,7 +262,17 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         web.onResume()
         val cookiePairs=if(turn || oauthState!=null) app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionCookies().filterKeys(::allowed)
             .flatMap { (address,header) -> header.split(';').map { address to it.trim() }.filter { it.second.isNotEmpty() } } else emptyList()
-        if(cookiePairs.isEmpty()) web.loadUrl(startUrl) else {
+        // The original clears VK's captcha cookies before every visible captcha; the account binding keeps its own.
+        val stale=if(!automatic && !turn && oauthState==null) captchaCookieHosts.flatMap { address ->
+            android.webkit.CookieManager.getInstance().getCookie(address).orEmpty().split(';')
+                .map { it.substringBefore('=').trim() }.filter { it.isNotEmpty() }.map { address to "$it=; Max-Age=0; Path=/" }
+        } else emptyList()
+        if(stale.isNotEmpty()) {
+            val pending=java.util.concurrent.atomic.AtomicInteger(stale.size)
+            for((address,cookie) in stale) android.webkit.CookieManager.getInstance().setCookie(address,cookie) {
+                if(pending.decrementAndGet()==0 && currentId==id && !cleaned) { android.webkit.CookieManager.getInstance().flush();web.loadUrl(startUrl) }
+            }
+        } else if(cookiePairs.isEmpty()) web.loadUrl(startUrl) else {
             val pending=java.util.concurrent.atomic.AtomicInteger(cookiePairs.size)
             for((address,cookie) in cookiePairs) android.webkit.CookieManager.getInstance().setCookie(address,cookie) {
                 if(pending.decrementAndGet()==0 && currentId==id && !cleaned) {
@@ -260,7 +284,26 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         web.postDelayed(polling,400)
     }
     override fun close() { val sheet=dialog;cleanupWeb?.invoke();sheet?.dismiss();host.lifecycle.removeObserver(lifecycleObserver);runCatching { host.unregisterReceiver(receiver) } }
+    /** The original's touch: a random point in the label, pressure 0.5-0.9, held 80-180 ms, released with a slight drift. */
+    private fun touch(web: WebView,label: org.json.JSONArray) {
+        val random=kotlin.random.Random
+        val scale=if(web.width>0) web.width/label.getDouble(4).toFloat().coerceAtLeast(1f) else host.resources.displayMetrics.density
+        val x=(label.getDouble(0)+label.getDouble(2)*(0.15+random.nextDouble()*0.7)).toFloat()*scale
+        val y=(label.getDouble(1)+label.getDouble(3)*(0.25+random.nextDouble()*0.5)).toFloat()*scale
+        val density=host.resources.displayMetrics.density
+        val down=android.os.SystemClock.uptimeMillis()
+        android.view.MotionEvent.obtain(down,down,android.view.MotionEvent.ACTION_DOWN,x,y,0.5f+random.nextFloat()*0.4f,1f,0,1f,1f,0,0).also {
+            it.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;web.dispatchTouchEvent(it);it.recycle()
+        }
+        web.postDelayed({
+            android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),android.view.MotionEvent.ACTION_UP,
+                x+(random.nextFloat()*2f-1f)*density,y+(random.nextFloat()-0.5f)*density,0f,1f,0,1f,1f,0,0).also {
+                it.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;web.dispatchTouchEvent(it);it.recycle()
+            }
+        },80L+random.nextLong(0,100))
+    }
     private companion object {
+        val captchaCookieHosts=listOf("https://id.vk.ru","https://id.vk.com","https://vk.ru","https://vk.com")
         // Capture only the captcha API's success field, without exposing a Java interface to page frames.
         val INTERCEPT="""(() => {
           if(window.__qthroneCaptchaHook) return; window.__qthroneCaptchaHook=true;

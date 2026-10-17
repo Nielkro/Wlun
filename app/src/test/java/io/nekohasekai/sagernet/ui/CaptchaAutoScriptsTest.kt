@@ -10,4 +10,10 @@ class CaptchaAutoScriptsTest {
         assertFalse(agent.contains("Android"))
         assertFalse(agent.contains("Mobile"))
     }
+    @Test fun hiddenAttemptKeepsTheOriginalPacingAndSliderSignals() {
+        repeat(200) { assertTrue(CaptchaAutoScripts.clickDelayMs() in 1_070L..1_879L) }
+        assertTrue(CaptchaAutoScripts.intercept.contains("show_captcha_type==='slider'"))
+        assertTrue(CaptchaAutoScripts.sliderAfterClick.contains("SwipeButton-module__track"))
+        assertTrue(CaptchaAutoScripts.intercept.contains("ModalCardBase-module__dismiss"))
+    }
 }
