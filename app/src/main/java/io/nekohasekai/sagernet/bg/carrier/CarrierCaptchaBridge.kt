@@ -29,13 +29,17 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         if(closed) return
         val turn=line.startsWith("VK_AUTH_REQUIRED|")
         if(!turn && !line.startsWith("CAPTCHA_SOLVE|")) return
-        val fields=line.split('|',limit=4)
+        // WDTT Plus numbers its requests: CAPTCHA_SOLVE|id|mode|uri|token, answered as CAPTCHA_RESULT|id|value.
+        val numbered=!turn && client=="wdttplus"
+        val fields=if(numbered) line.split('|',limit=5).let { listOf(it[0])+it.drop(2) } else line.split('|',limit=4)
+        val nativeId=if(numbered) line.split('|',limit=3).getOrNull(1).orEmpty() else ""
         val target=if(turn) fields.getOrNull(1).orEmpty() else fields.getOrNull(2).orEmpty()
         if(turn) { if(!target.matches(Regex("[A-Za-z0-9_-]{16,512}"))) return }
-        else if(fields.size!=4 || target.length>8192) return
+        else if(fields.size!=4 || target.length>8192 || (numbered && !nativeId.matches(Regex("[A-Za-z0-9_.:-]{1,128}")))) return
         finishRequest()
-        command=if(turn) "TURN_CREDS|" else "CAPTCHA_RESULT|"
-        val automatic=NativeCaptchaPolicy.automatic(line)
+        command=if(turn) "TURN_CREDS|" else if(numbered) "CAPTCHA_RESULT|$nativeId|" else "CAPTCHA_RESULT|"
+        val automatic=NativeCaptchaPolicy.automatic(fields.joinToString("|"))
+        val automaticTimeout=NativeCaptchaPolicy.automaticTimeout(client)
         if(!NativeCaptchaPolicy.permitted(allowUi,cancelledByUser,automatic)) {
             if(!allowUi) interactionRequired=true
             synchronized(process) { runCatching { process.outputStream.write((command+"error:cancelled\n").toByteArray());process.outputStream.flush() } }
@@ -56,7 +60,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
             // waits 10 s for an automatic attempt (as in the original app), so a queued attempt
             // gets the rest of those 10 s and the answer is "timeout" once they are spent.
             pendingPost=Thread({
-                val deadline=System.nanoTime()+NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS*1_000_000
+                val deadline=System.nanoTime()+automaticTimeout*1_000_000
                 try {
                     var posted=false
                     while(!posted && System.nanoTime()<deadline) {

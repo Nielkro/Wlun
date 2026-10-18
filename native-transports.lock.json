@@ -1,31 +1,31 @@
 {
-  "build_commit": "b24e8b126afa9c9c39fa5d4b7a384a97f463757b",
+  "build_commit": "6a76da6466a65fd32ed81e6ca0f39b79d74ad794",
   "core_commit": "93e4873c56c2285f647d0146a0df9c088f122910",
   "archives": [
     {
       "abi": "armeabi-v7a",
-      "name": "qthrone-transports-b24e8b12-armeabi-v7a.tar.gz",
-      "sha256": "2a54754df3898a3651d5673d13e4d76c1138067ced2069d429c86f60fdff65f2",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-b24e8b12-armeabi-v7a.tar.gz"
+      "name": "qthrone-transports-6a76da64-armeabi-v7a.tar.gz",
+      "sha256": "6cde0b0e353cb3324a487bacdb437f83a241d13d81d338a9eafdd22126c708e7",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nWDTT-Plus f706ccd373685bbde20cae33b2b7f400e8335ecc\nAndroid ABI armeabi-v7a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-6a76da64-armeabi-v7a.tar.gz"
     },
     {
       "abi": "arm64-v8a",
-      "name": "qthrone-transports-b24e8b12-arm64-v8a.tar.gz",
-      "sha256": "80cc9c2a9ca17e55823bcb44ec1c5a58ccab65c33799ac74049e52a030c67e6b",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-b24e8b12-arm64-v8a.tar.gz"
+      "name": "qthrone-transports-6a76da64-arm64-v8a.tar.gz",
+      "sha256": "22536a8086f7a2c9130a6d52cb1bb859e4448f1eb9fb1b742de2bba222753525",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nWDTT-Plus f706ccd373685bbde20cae33b2b7f400e8335ecc\nAndroid ABI arm64-v8a\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-6a76da64-arm64-v8a.tar.gz"
     },
     {
       "abi": "x86_64",
-      "name": "qthrone-transports-b24e8b12-x86_64.tar.gz",
-      "sha256": "8c3ed20b1b8e5d0e9242390103016a67b33c1c52d63c8865218a2b278851756a",
-      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
-      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-b24e8b12-x86_64.tar.gz"
+      "name": "qthrone-transports-6a76da64-x86_64.tar.gz",
+      "sha256": "0897c5dd71634667106506d87a749b0113d9092df5e6e1dc6d44902106fa0095",
+      "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nolcRTC f3ad8fb7c0d0fa981423f83269526fa94077c23d\nOpenFlux edcf77a1848a72370cfba9f346d3b897b61e7e7d\nCSQTT 71712b07dbabe16fa43f5a248dc69e1ab9f3a270\nVayDNS a0ff70110d5e96686ab8f4c8e1c44cd09be07a75\nMasterDnsVPN acbf1c61f90786f41b975d2e2f616afbce292b29\nXray-core-fedarisha a04f4c09972b2aa7d6255197732c1c20e3fdc8a1\nslipstream-rust 7de506b222c83ae97a19a618e33fe26899af1bd5\nWDTT-Plus f706ccd373685bbde20cae33b2b7f400e8335ecc\nAndroid ABI x86_64\nCSQTT minimum API 26\n",
+      "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-transports-6a76da64-x86_64.tar.gz"
     }
   ],
   "inputs": {
-    "scripts/build_carrier_clients.sh": "b289bdc5f842de0333136711fb89a787d51e087ba03f8d5ee1e0e07e20322b2e",
+    "scripts/build_carrier_clients.sh": "d3383465543c6a7490b4df70d95831d5e75361091d757950342dbbccbb3ea6ce",
     "scripts/prepare_android_captcha.py": "b64ad3952201540d1dd24e314365c3d169d46be148e76f960c6050e6676eb674",
     "scripts/prepare_mobile_csqtt.py": "5b275c431eb5a668be1c88cc52ce36d95aec005acc93265e7febcd86c75062e6",
     "scripts/prepare_mobile_slipstream.py": "f185704e15a324f77635c02011ffdd78d680e4a7bef45595bf06769e1baa621c",

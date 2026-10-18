@@ -31,6 +31,8 @@ object NativeHashPolicy {
     fun workerLimit(profile:Qwdtt):Int {
         val slots=if(profile.type=="csqtt") 6 else 4
         val hashes=if(profile.hashSource=="auto") slots else profile.hashes.size.coerceIn(1,slots)
+        // WDTT Plus groups 9 workers each up to 108 whatever the hash count.
+        if(profile.type=="wdttplus") return 108
         return (hashes*27).coerceAtMost(if(profile.type=="csqtt") 126 else 108)
     }
     fun preservedWorkers(previous:Int,previousLimit:Int,currentLimit:Int):Int =

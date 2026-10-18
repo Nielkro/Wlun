@@ -21,6 +21,8 @@ enum class CarrierKind(val executable: String, val configFlag: String, val minim
     SLIPSTREAM("libdnstun.so", "--qthrone-config", 24),
     MASTERDNS("libmasterdns.so", "--qthrone-config", 24),
     S3BYPASS("libs3bypass.so", "--qthrone-config", 24),
+    // WDTT Plus takes flags and its secrets as START_CONFIG on stdin, as its own app starts it.
+    WDTTPLUS("libwdttplus.so", "", 24),
 }
 
 /** Per-launch credentials, deliberately without a generated toString() containing secrets. */
@@ -42,7 +44,7 @@ class CarrierProcess private constructor(private val process: Process, private v
     private val unavailableCall = AtomicBoolean(false)
     private class UnavailableCall:IllegalStateException("VK: выбранный хеш недоступен; звонок не найден")
     private class TransientStartup:IllegalStateException("Временная ошибка авторизации VK; повторите подключение")
-    private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions,client=if(kind==CarrierKind.CSQTT) "csqtt" else "qwdtt")
+    private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions,client=when(kind) { CarrierKind.CSQTT -> "csqtt"; CarrierKind.WDTTPLUS -> "wdttplus"; else -> "qwdtt" })
     private val health=NativeTransportHealth()
     fun recoveryFailure(): Pair<String,Boolean>? {
         if(closed.get() || captcha.waiting) return null
@@ -157,8 +159,14 @@ class CarrierProcess private constructor(private val process: Process, private v
                         check(config.setReadable(false, false) && config.setWritable(false, false)
                             && config.setReadable(true, true) && config.setWritable(true, true)) { "Cannot protect transport configuration" }
                         config.writeText(privateJson, Charsets.UTF_8)
-                        val builder = ProcessBuilder(executable.absolutePath, kind.configFlag, config.absolutePath)
-                            .directory(nativeDirectory).redirectErrorStream(true)
+                        val launchConfig = if (kind == CarrierKind.WDTTPLUS) org.json.JSONObject(privateJson) else null
+                        val command = if (launchConfig != null) {
+                            val args = launchConfig.getJSONArray("args")
+                            listOf(executable.absolutePath) + (0 until args.length()).map { args.getString(it) }
+                        } else listOf(executable.absolutePath, kind.configFlag, config.absolutePath)
+                        val builder = ProcessBuilder(command)
+                            .directory(if (launchConfig != null) sessionDirectory else nativeDirectory).redirectErrorStream(true)
+                        if (launchConfig != null) builder.environment()["LD_LIBRARY_PATH"] = nativeDirectory.absolutePath
                         builder.environment()["XDG_CACHE_HOME"] = privateDirectory.absolutePath
                         // The original CSQTT app caps the Rust client's worker pool the same way.
                         if (kind == CarrierKind.CSQTT) {
@@ -171,6 +179,12 @@ class CarrierProcess private constructor(private val process: Process, private v
                         }
                         val running = CarrierProcess(child, config,allowInteractions,kind,onStatus)
                         owner = running
+                        if (launchConfig != null) {
+                            val start = android.util.Base64.encodeToString(launchConfig.getJSONObject("start").toString().toByteArray(Charsets.UTF_8),
+                                android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)
+                            val line = "START_CONFIG|" + start + '\n'
+                            synchronized(child) { child.outputStream.write(line.toByteArray(Charsets.UTF_8)); child.outputStream.flush() }
+                        }
                         runCatching { onStatus(NativeConnectionStage.AUTHORIZING) }
                         val redactor = CarrierLogRedactor(privateJson, bridgeCredentials)
                         moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Starting native transport")

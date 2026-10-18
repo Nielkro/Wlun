@@ -30,7 +30,7 @@ internal object CarrierUiRequests {
             }
             val json=JSONObject().put("id",id).put("url",url).put("turn",turn).put("automatic",automatic).put("client",client)
                 .put("ownerPid",android.os.Process.myPid())
-                .put("expires",System.currentTimeMillis()+if(automatic) NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS else 5*60_000L)
+                .put("expires",System.currentTimeMillis()+if(automatic) NativeCaptchaPolicy.automaticTimeout(client) else 5*60_000L)
             if(tokenState!=null) json.put("tokenState",tokenState)
             val store=file();val out=store.startWrite()
             try { out.write(json.toString().toByteArray(Charsets.UTF_8));store.finishWrite(out) }

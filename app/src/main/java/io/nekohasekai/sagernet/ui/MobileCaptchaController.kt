@@ -48,7 +48,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                     show(id,url,true);return
                 }
                 if(!allowed(url)) { reply(id,"error:invalid captcha address");return }
-                show(id,url,automatic=intent.getBooleanExtra("automatic",false),csqtt=intent.getStringExtra("client")=="csqtt")
+                show(id,url,automatic=intent.getBooleanExtra("automatic",false),client=intent.getStringExtra("client") ?: "qwdtt")
             }
         }
     }
@@ -69,7 +69,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         host.sendBroadcast(Intent(host.packageName+".CAPTCHA_RESULT").setPackage(host.packageName).putExtra("id",id).putExtra("result",result),host.packageName+".SERVICE")
     }
     @SuppressLint("SetJavaScriptEnabled")
-    private fun show(id: String,url: String,turn: Boolean=false,oauthState: String?=null,automatic: Boolean=false,csqtt: Boolean=false) {
+    private fun show(id: String,url: String,turn: Boolean=false,oauthState: String?=null,automatic: Boolean=false,client: String="qwdtt") {
+        val plus=client=="wdttplus"
         if(app.qthrone.mobile.bg.carrier.CarrierUiRequests.pending()?.getStringExtra("id")!=id) return
         val previousSheet=dialog
         cleanupWeb?.invoke()
@@ -91,6 +92,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         var turnUrlIndex=0
         var autoClicked=false
         var clickedAt=0L
+        var settleAt=0L
+        var probes=0
         val fail: (String) -> Unit = { result -> if(currentId==id) { reply(id,result);currentId=null;cleanupWeb?.invoke();sheet.dismiss() } }
         val web=WebView(host).apply {
             setBackgroundColor(MobilePalette.surface)
@@ -103,8 +106,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             settings.allowContentAccess=false
             settings.mixedContentMode=android.webkit.WebSettings.MIXED_CONTENT_NEVER_ALLOW
             if(automatic) settings.cacheMode=android.webkit.WebSettings.LOAD_NO_CACHE
-            // The original qWDTT app shows both its captcha WebViews as desktop Chrome; CSQTT keeps the WebView's own agent.
-            if(!turn && oauthState==null && !csqtt)
+            // The original qWDTT app shows both its captcha WebViews as desktop Chrome; CSQTT and WDTT Plus keep the WebView's own agent.
+            if(!turn && oauthState==null && client=="qwdtt")
                 settings.userAgentString=CaptchaAutoScripts.desktopUserAgent(android.webkit.WebSettings.getDefaultUserAgent(host))
             webChromeClient=android.webkit.WebChromeClient()
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
@@ -173,7 +176,24 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             override fun run() {
                 if(currentId!=id) return
                 val onCaptcha=web.url?.let(::allowed)==true
-                if(automatic && onCaptcha && !autoClicked) {
+                // WDTT Plus: after the page settles, up to 16 probes 350 ms apart, then its watchdogs after the click.
+                if(plus && automatic && onCaptcha && !autoClicked) {
+                    val now=android.os.SystemClock.uptimeMillis()
+                    if(settleAt==0L) settleAt=now+CaptchaAutoScripts.wdttPlusSettleMs()
+                    if(now>=settleAt) web.evaluateJavascript(CaptchaAutoScripts.wdttPlusCheckbox) { raw ->
+                        if(currentId!=id || autoClicked) return@evaluateJavascript
+                        if(raw=="\"manual\"") { fail("error:slider_detected");return@evaluateJavascript }
+                        val target=runCatching { org.json.JSONArray(raw) }.getOrNull()?.takeIf { it.length()==6 }
+                        if(target==null) { if(++probes>=16) fail("error:checkbox_not_found");return@evaluateJavascript }
+                        autoClicked=true
+                        web.postDelayed({ if(currentId==id) {
+                            touchWdttPlus(web,target);clickedAt=android.os.SystemClock.uptimeMillis()
+                            web.postDelayed({ if(currentId==id) web.evaluateJavascript("!!window.__qthroneCheckSent") { sent -> if(sent!="true") fail("error:auto_check_not_sent") } },3_500)
+                            web.postDelayed({ fail("error:auto_no_result") },8_000)
+                        } },CaptchaAutoScripts.wdttPlusThinkMs())
+                    }
+                }
+                if(!plus && automatic && onCaptcha && !autoClicked) {
                     web.evaluateJavascript(CaptchaAutoScripts.checkbox) { raw ->
                         if(currentId!=id || autoClicked) return@evaluateJavascript
                         if(raw=="\"manual\"") fail("error:slider detected")
@@ -185,7 +205,8 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                 }
                 // As the original: for about five seconds after the click a slider means a manual captcha.
                 if(automatic && onCaptcha && clickedAt>0 && android.os.SystemClock.uptimeMillis()-clickedAt<=5_400)
-                    web.evaluateJavascript(CaptchaAutoScripts.sliderAfterClick) { raw -> if(raw=="true") fail("error:slider detected") }
+                    web.evaluateJavascript(if(plus) CaptchaAutoScripts.wdttPlusSliderAfterClick else CaptchaAutoScripts.sliderAfterClick) { raw ->
+                        if(raw=="true") fail(if(plus) "error:slider_detected" else "error:slider detected") }
                 if(turn && onCaptcha) web.evaluateJavascript(VkTurnScripts.AUTO_JOIN_TRY,null)
                 if(turn && onCaptcha) web.evaluateJavascript("window.__qthroneTurnServer || null") { raw ->
                     val token=runCatching { org.json.JSONTokener(raw).nextValue() as? String }.getOrNull()
@@ -198,7 +219,9 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                     val token=state.optString("token").takeIf { !state.isNull("token") && it.isNotEmpty() }
                     when {
                         token!=null -> if(token.length<=16384 && token.none(Char::isISOControl)) { reply(id,token);currentId=null;cleanupWeb?.invoke();sheet.dismiss() }
-                        state.optString("failure")=="slider" && automatic -> fail("error:slider detected")
+                        // WDTT Plus gives up on a BOT or ERROR verdict at once, as its hidden WebView does.
+                        plus && automatic && state.optString("status").uppercase() in listOf("BOT","ERROR_LIMIT","ERROR") -> fail("error:captcha_check_"+state.optString("status"))
+                        state.optString("failure")=="slider" && automatic -> fail(if(plus) "error:slider_detected" else "error:slider detected")
                         state.optString("failure")=="error" -> fail("error:VK captcha error")
                         // VK's own cross: the user declined, as the original's "cancel and stop".
                         state.optBoolean("dismissed") && !automatic -> sheet.dismiss()
@@ -252,9 +275,9 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             (host.window.decorView as android.view.ViewGroup).addView(body,
                 android.view.ViewGroup.LayoutParams(host.resources.displayMetrics.widthPixels,
                     (host.resources.displayMetrics.heightPixels*.65f).toInt()))
-            web.postDelayed(fallback,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.AUTOMATIC_TIMEOUT_MS)
+            web.postDelayed(fallback,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.automaticTimeout(client))
         } else if(turn) web.postDelayed(fallback,22_000) else {
-            if(oauthState==null) expiry.postDelayed(expire,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.VISIBLE_TIMEOUT_MS)
+            if(oauthState==null) expiry.postDelayed(expire,app.qthrone.mobile.bg.carrier.NativeCaptchaPolicy.visibleTimeout(client))
             showOnResume=true
             if(host.lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)) sheet.show()
         }
@@ -263,7 +286,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         val cookiePairs=if(turn || oauthState!=null) app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionCookies().filterKeys(::allowed)
             .flatMap { (address,header) -> header.split(';').map { address to it.trim() }.filter { it.second.isNotEmpty() } } else emptyList()
         // Original qWDTT clears VK's captcha cookies before every visible captcha (CSQTT does not); the account binding keeps its own.
-        val stale=if(!automatic && !turn && oauthState==null && !csqtt) captchaCookieHosts.flatMap { address ->
+        val stale=if(!automatic && !turn && oauthState==null && client=="qwdtt") captchaCookieHosts.flatMap { address ->
             android.webkit.CookieManager.getInstance().getCookie(address).orEmpty().split(';')
                 .map { it.substringBefore('=').trim() }.filter { it.isNotEmpty() }.map { address to "$it=; Max-Age=0; Path=/" }
         } else emptyList()
@@ -301,6 +324,25 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
                 it.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;web.dispatchTouchEvent(it);it.recycle()
             }
         },80L+random.nextLong(0,100))
+    }
+    /** WDTT Plus's touch: the checkbox square, a small move, held 150-320 ms. */
+    private fun touchWdttPlus(web: WebView,target: org.json.JSONArray) {
+        val random=kotlin.random.Random
+        val scale=if(web.width>0) web.width/target.getDouble(5).toFloat().coerceAtLeast(1f) else host.resources.displayMetrics.density
+        val left=target.getDouble(1).toFloat();val top=target.getDouble(2).toFloat()
+        val width=target.getDouble(3).toFloat();val height=target.getDouble(4).toFloat()
+        val cssX=if(target.getString(0)=="icon") left+width*(0.25f+random.nextFloat()*0.5f)
+            else left+(height*(0.35f+random.nextFloat()*0.3f)).coerceAtMost(width*0.35f)
+        val cssY=top+height*(0.25f+random.nextFloat()*0.5f)
+        val x=cssX*scale;val y=cssY*scale;val density=host.resources.displayMetrics.density
+        val pressure=0.5f+random.nextFloat()*0.4f
+        val down=android.os.SystemClock.uptimeMillis()
+        fun send(action:Int,px:Float,py:Float,p:Float) = android.view.MotionEvent.obtain(down,android.os.SystemClock.uptimeMillis(),action,px,py,p,1f,0,1f,1f,0,0).also {
+            it.source=android.view.InputDevice.SOURCE_TOUCHSCREEN;web.dispatchTouchEvent(it);it.recycle()
+        }
+        send(android.view.MotionEvent.ACTION_DOWN,x,y,pressure)
+        web.postDelayed({ send(android.view.MotionEvent.ACTION_MOVE,x+(random.nextFloat()*1.6f-0.8f)*density,y+(random.nextFloat()*1.2f-0.6f)*density,pressure) },70L+random.nextLong(0,90))
+        web.postDelayed({ send(android.view.MotionEvent.ACTION_UP,x+(random.nextFloat()*2f-1f)*density,y+(random.nextFloat()-0.5f)*density,0f) },150L+random.nextLong(0,170))
     }
     private companion object {
         val captchaCookieHosts=listOf("https://id.vk.ru","https://id.vk.com","https://vk.ru","https://vk.com")

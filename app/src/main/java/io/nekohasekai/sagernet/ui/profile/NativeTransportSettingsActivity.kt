@@ -59,7 +59,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
     }
 
     override fun Outbound.init() {
-        if(this is app.qthrone.mobile.outbound.types.Qwdtt && type in listOf("qwdtt","csqtt") && DataStore.editingId == 0L && !hashSourceChosen) {
+        if(this is app.qthrone.mobile.outbound.types.Qwdtt && type in listOf("qwdtt","csqtt","wdttplus") && DataStore.editingId == 0L && !hashSourceChosen) {
             hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
         }
         document = exportToJson().copy()
@@ -122,6 +122,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         val order = when(type) {
             "qwdtt" -> listOf("name","server","server_port","mode","password","hash_source") + (1..4).map { "hash_$it" } + listOf("raw_port","workers","turn_tcp","vk_anon_path","captcha_mode","obfs","go_dns","device_id")
             "csqtt" -> listOf("name","server","server_port","password","hash_source") + (1..6).map { "hash_$it" } + listOf("workers","turn_tcp","vk_anon_path","captcha_mode","obfs","device_id")
+            "wdttplus" -> listOf("name","server","server_port","wg_port","local_port","password","hash_source") + (1..4).map { "hash_$it" } + listOf("workers","captcha_mode","device_id")
             "openflux" -> listOf("name","secret") + openFluxKinds.map { "transport_$it" } + listOf("context")
             "dnstt" -> listOf("name","domain","pubkey","resolvers") + backendFields
             "vaydns" -> listOf("name","domain","pubkey","resolvers","record_type","dnstt_compat","clientid_size","idle_timeout","keepalive") + backendFields
@@ -131,7 +132,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 listOf("pollIntervalMs","writeIntervalMs","idleTimeoutSec","maxFileSizeBytes").map { "tuning.$it" }
             else -> listOf("name","provider","transport","room","key","token","channel","dns","device_id") + optionDefaults.keys.map { "options.$it" }
         }
-        if(type in listOf("qwdtt","csqtt")) {
+        if(type in listOf("qwdtt","csqtt","wdttplus")) {
             val hashes=document.array("hashes").strings()
             for(i in 1..if(type=="csqtt") 6 else 4) {
                 fields["hash_$i"]=hashes.getOrElse(i-1) { "" }
@@ -180,7 +181,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 else -> text
             }
         }
-        if(type in listOf("qwdtt","csqtt")) {
+        if(type in listOf("qwdtt","csqtt","wdttplus")) {
             result["hashes"]=JsonArray.of(*fields.keys.filter { it.startsWith("hash_") && it != "hash_source" }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.toTypedArray())
         }
         if(type=="olcrtc") {
@@ -237,7 +238,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         val labels = mapOf("tag" to "Название", "name" to "Название", "server" to "Адрес сервера",
             "server_port" to "Порт сервера", "password" to "Пароль", "hashes" to "Хэши VK",
             "hash_source" to "Источник хешей", "workers" to "Воркеры", "turn_tcp" to "Транспорт TURN", "mode" to "Режим",
-            "raw_port" to "Порт RAW", "obfs" to "Маскировка", "go_dns" to "DNS VK",
+            "raw_port" to "Порт RAW", "wg_port" to "Порт WG", "local_port" to "Локальный порт", "obfs" to "Маскировка", "go_dns" to "DNS VK",
             "device_id" to "Идентификатор устройства", "vk_anon_path" to "Авторизация VK", "captcha_mode" to "Режим капчи",
             "secret" to "Секрет", "context" to "Контекст", "codec" to "Кодек",
             "negotiate" to "Согласование транспорта", "transports" to "Транспорты (JSON)",
@@ -280,9 +281,9 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             checkButton.isVisible=!automatic
             checkButton.isEnabled=hashCheck!=null || fields.keys.any { it.startsWith("hash_") && it!="hash_source" && !DataStore.profileCacheStore.getString(cache(it)).isNullOrBlank() }
             editors["raw_port"]?.isEnabled=DataStore.profileCacheStore.getString(cache("mode"))!="wg"
-            if(editingOutbound.type in listOf("qwdtt","csqtt")) {
+            if(editingOutbound.type in listOf("qwdtt","csqtt","wdttplus")) {
                 val count=editors.keys.filter { it.startsWith("hash_") && it != "hash_source" }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.distinct().size.coerceAtLeast(1)
-                val max=if(automatic) { if(editingOutbound.type=="csqtt") 126 else 108 } else (count*27).coerceAtMost(if(editingOutbound.type=="csqtt") 126 else 108)
+                val max=if(automatic || editingOutbound.type=="wdttplus") { if(editingOutbound.type=="csqtt") 126 else 108 } else (count*27).coerceAtMost(if(editingOutbound.type=="csqtt") 126 else 108)
                 (editors["workers"] as? ListPreference)?.apply {
                     entries=(9..max step 9).map(Int::toString).toTypedArray();entryValues=entries
                     val selected=(DataStore.profileCacheStore.getString(cache("workers"))?.toIntOrNull() ?: 9).coerceIn(9,max)/9*9
@@ -308,7 +309,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                     setOnPreferenceChangeListener { _, next -> DataStore.profileCacheStore.putString(cache(path), next.toString()); true }
                 }
                 choices.containsKey(key) || key=="workers" -> SimpleMenuPreference(requireContext()).apply {
-                    if(key == "hash_source") optionEnabled = { index -> index != 1 || (editingOutbound.type in listOf("qwdtt","csqtt") && app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() && !app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink()) }
+                    if(key == "hash_source") optionEnabled = { index -> index != 1 || (editingOutbound.type in listOf("qwdtt","csqtt","wdttplus") && app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() && !app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink()) }
                     entryValues = (choices[key] ?: listOf("9")).toTypedArray()
                     entries = (captions[key] ?: choices[key] ?: listOf("9")).toTypedArray()
                     this.value=DataStore.profileCacheStore.getString(cache(path))
@@ -354,7 +355,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             preference.setOnPreferenceChangeListener { _, next ->
                 // A full VK call link pasted into a hash field keeps only its hash, as in the original apps.
                 val text=if(path.startsWith("hash_") && path!="hash_source") VkCallHash.strip(next.toString()) else next.toString()
-                if(key == "hash_source" && text == "auto" && (editingOutbound.type !in listOf("qwdtt","csqtt") || !app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() || app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink())) return@setOnPreferenceChangeListener false
+                if(key == "hash_source" && text == "auto" && (editingOutbound.type !in listOf("qwdtt","csqtt","wdttplus") || !app.qthrone.mobile.bg.carrier.VkRelayAccount.linked() || app.qthrone.mobile.bg.carrier.VkRelayAccount.needsRelink())) return@setOnPreferenceChangeListener false
                 val range=optionLimits[path.removePrefix("options.")]
                 if(value is Number && text.toLongOrNull()==null) return@setOnPreferenceChangeListener false
                 if(range!=null && text.toIntOrNull()?.let { it in range }!=true) return@setOnPreferenceChangeListener false
@@ -431,6 +432,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                             withContext(Dispatchers.IO) {
                                 // Each client checks its hashes its own way, as its original app does.
                                 if(editingOutbound.type=="csqtt") session.runCsqtt(this@NativeTransportSettingsActivity,hashes,update)
+                                else if(editingOutbound.type=="wdttplus") session.runWdttPlus(this@NativeTransportSettingsActivity,hashes,captchaMode,update)
                                 else session.run(this@NativeTransportSettingsActivity,hashes,captchaMode,anonPath,dns,deviceId,update)
                             }
                         } catch(error: kotlinx.coroutines.CancellationException) { throw error }

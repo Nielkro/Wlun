@@ -17,6 +17,9 @@ internal object HashCheckProtocol {
             "captcha" -> "Нужна капча VK"
             "limited" -> "VK ограничил частоту запросов"
             "network" -> "Не достучались по сети/DNS"
+            "full" -> "Звонок переполнен"
+            "blocked" -> "VK закрыл доступ к звонку"
+            "auth_required" -> "Нужен вход в VK"
             else -> "Диагностика не удалась"
         },true)
     }

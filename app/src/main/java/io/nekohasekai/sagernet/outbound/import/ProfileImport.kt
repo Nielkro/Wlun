@@ -187,7 +187,7 @@ object ProfileImport {
                     return
                 }
                 val type=doc.string("type").lowercase()
-                if (type in listOf("qwdtt","wdtt","csqtt","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass",
+                if (type in listOf("qwdtt","wdtt","csqtt","wdttplus","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass",
                         "chain","autoselector","custom","xrayvless")) {
                     val outbound=OutboundFactory.newByType(type)
                     if(outbound.parseFromJson(doc)) produce(outbound) else log("Invalid $type profile")

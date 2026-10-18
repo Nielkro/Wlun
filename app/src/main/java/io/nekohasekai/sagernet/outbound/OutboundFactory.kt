@@ -32,7 +32,7 @@ object OutboundFactory {
     /** Every factory string of OutboundFactory.cpp:35-61 (R2 Р В РІР‚в„ўР вЂ™Р’В§A). */
     @JvmField
     val ALL_TYPES: List<String> = listOf(
-        "qwdtt", "csqtt", "openflux", "olcrtc", "dnstt", "vaydns", "slipstream", "masterdns", "s3bypass", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
+        "qwdtt", "csqtt", "wdttplus", "openflux", "olcrtc", "dnstt", "vaydns", "slipstream", "masterdns", "s3bypass", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
         "tuic", "juicity", "trusttunnel", "anytls", "mieru", "snell", "shadowtls", "wireguard", "masque", "openvpn",
         "openconnect", "tailscale", "ssh", "custom", "extracore", "naive", "direct",
     )
@@ -66,6 +66,7 @@ object OutboundFactory {
         "slipstream" to { DnsTunnel("slipstream") },
         "masterdns" to { DnsTunnel("masterdns") },
         "s3bypass" to { S3Bypass() },
+        "wdttplus" to { WdttPlus() },
     )
 
     private val registry = ConcurrentHashMap<String, () -> Outbound>()
@@ -115,7 +116,9 @@ object OutboundFactory {
         Protocol("masterdns", emptyList(), listOf("masterdns"), emptyList()),
         Protocol("s3bypass", emptyList(), listOf("s3bypass"), emptyList()),
         Protocol("csqtt", listOf("csqtt://"), listOf("csqtt"), emptyList()),
-        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config", "wdtt://"), listOf("qwdtt"), emptyList()),
+        // Every wdtt:// link runs on the WDTT Plus client: connect?v=1 is WDTT Plus, the older form plain WDTT.
+        Protocol("wdttplus", listOf("wdtt://"), listOf("wdttplus"), emptyList()),
+        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config"), listOf("qwdtt"), emptyList()),
         Protocol("socks", listOf("socks5://", "socks4://", "socks4a://", "socks://"), listOf("socks"), listOf("socks5")),
         Protocol("http", listOf("http://", "https://"), listOf("http"), listOf("http")),
         Protocol("shadowsocks", listOf("ss://"), listOf("shadowsocks"), listOf("ss")),
@@ -141,7 +144,7 @@ object OutboundFactory {
     fun typeForScheme(link: String): String? {
         // The desktop reads qWDTT and CSQTT schemes in any letter case.
         for (p in PROTOCOLS) for (scheme in p.schemes)
-            if (link.startsWith(scheme, ignoreCase = p.type == "qwdtt" || p.type == "csqtt")) return p.type
+            if (link.startsWith(scheme, ignoreCase = p.type in listOf("qwdtt", "csqtt", "wdttplus"))) return p.type
         return null
     }
 
@@ -235,7 +238,7 @@ object OutboundFactory {
         else newByType(profileType)
         // QWDTT:// or Csqtt:// reach the model with the scheme it parses.
         val scheme = PROTOCOLS.first { it.type == profileType }.schemes.firstOrNull { line.startsWith(it, ignoreCase = true) }
-        val link = if (scheme != null && profileType in listOf("qwdtt", "csqtt")) scheme + line.substring(scheme.length) else line
+        val link = if (scheme != null && profileType in listOf("qwdtt", "csqtt", "wdttplus")) scheme + line.substring(scheme.length) else line
         if (!outbound.parseFromLink(link)) return null
         return outbound
     }

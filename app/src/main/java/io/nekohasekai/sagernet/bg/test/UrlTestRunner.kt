@@ -31,7 +31,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
     override suspend fun run(profiles:List<ProxyEntity>) = coroutineScope {
         val (all,regular)=profiles.partition { it.type in NATIVE_TYPES }
         // qWDTT and CSQTT both ask VK for credentials: one budget for the two, so a sweep stays below VK's limits.
-        val (vk,native)=all.partition { it.type in listOf("qwdtt","csqtt") }
+        val (vk,native)=all.partition { it.type in listOf("qwdtt","csqtt","wdttplus") }
         launch { super.run(regular) }
         launch {
             runIndependentProbes(vk,MAX_PARALLEL_PROBES,{ session.cancelled },{ (it.outbound as? Qwdtt)?.probeSessionKey() }) { profile ->
@@ -179,7 +179,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         const val ERROR_NOT_RUNNING = "instance is not running"
 
         /** Profiles backed by a native client process instead of a sing-box outbound. */
-        val NATIVE_TYPES = listOf("qwdtt","csqtt","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass")
+        val NATIVE_TYPES = listOf("qwdtt","csqtt","wdttplus","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass")
 
         /** Credentials, an automatic VK check and the handshake; the original app allows 20 s without a check. */
         const val QWDTT_PING_TIMEOUT_MS = 60_000L
