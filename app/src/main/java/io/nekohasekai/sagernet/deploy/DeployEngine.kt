@@ -4,6 +4,7 @@ import app.qthrone.mobile.bg.carrier.NativeHashPolicy
 import app.qthrone.mobile.group.DeviceDetails
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.bg.carrier.VkRelayAccount
+import app.qthrone.mobile.outbound.types.WdttPlus
 import com.jcraft.jsch.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -208,7 +209,7 @@ object DeployEngine {
                 "printf 'ADMIN_SOCKET=%s\n' \"\$([ -S /run/wdtt/admin.sock ] && echo 1 || echo 0)\""),60_000).second
             require(verify.contains("SERVICE=active")) { "Служба wdtt не запустилась" }
             require(verify.contains("ADMIN_SOCKET=1")) { "Сервер не открыл канал управления" }
-            val link = app.qthrone.mobile.outbound.types.WdttPlus().apply {
+            val link = WdttPlus().apply {
                 this.server = server["host"]; serverPort = server.port("peerPort"); wgPort = server.port("wgPort"); localPort = server.port("localPort")
                 password = server["password"]; name = server["name"].ifBlank { "WDTT Plus" }
             }.exportToLink()
