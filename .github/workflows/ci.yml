@@ -32,6 +32,24 @@ jobs:
           name: Wlun-debug
           path: app/build/outputs/apk/oss/debug/*.apk
           if-no-files-found: error
+      - name: Upload debug APK (arm64-v8a)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Wlun-debug-arm64-v8a
+          path: app/build/outputs/apk/oss/debug/*arm64-v8a*.apk
+          if-no-files-found: error
+      - name: Upload debug APK (armeabi-v7a)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Wlun-debug-armeabi-v7a
+          path: app/build/outputs/apk/oss/debug/*armeabi-v7a*.apk
+          if-no-files-found: error
+      - name: Upload debug APK (x86_64)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Wlun-debug-x86_64
+          path: app/build/outputs/apk/oss/debug/*x86_64*.apk
+          if-no-files-found: error
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7

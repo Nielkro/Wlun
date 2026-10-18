@@ -55,11 +55,35 @@ jobs:
       - name: Release assets
         if: steps.version.outputs.skip != 'true'
         run: python3 buildScript/release_assets.py app/build/outputs/apk/oss/release dist preview
-      - name: Upload artifact
+      - name: Upload arm64-v8a APK
         if: steps.version.outputs.skip != 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: Wlun-${{ steps.version.outputs.tag }}
-          path: dist/
+          name: Wlun-${{ steps.version.outputs.tag }}-arm64-v8a
+          path: dist/*arm64-v8a*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload armeabi-v7a APK
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Wlun-${{ steps.version.outputs.tag }}-armeabi-v7a
+          path: dist/*armeabi-v7a*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload x86_64 APK
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Wlun-${{ steps.version.outputs.tag }}-x86_64
+          path: dist/*x86_64*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload universal APK
+        if: steps.version.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Wlun-${{ steps.version.outputs.tag }}-universal
+          path: dist/*universal*.apk
           if-no-files-found: error
           retention-days: 14
