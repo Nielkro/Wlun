@@ -29,14 +29,7 @@ class DeployProtocolTest {
         assertEquals("'\$(id); rm -rf /'",DeployProtocol.quote("\$(id); rm -rf /"))
     }
 
-    @Test fun wdttPlusDataChoosesTheDeployStep() {
-        fun probe(db: Int,unit: Int,bin: Int) = "WDTT_DB=$db\nWDTT_UNIT=$unit\nWDTT_BIN=$bin\n"
-        assertEquals(DeployProtocol.WdttPlusData.None,DeployProtocol.wdttPlusData(probe(0,1,1)))
-        assertEquals(DeployProtocol.WdttPlusData.Installed,DeployProtocol.wdttPlusData(probe(1,1,1)))
-        // After deploy.sh uninstall: the data stays, the service and server are gone.
-        assertEquals(DeployProtocol.WdttPlusData.DataOnly,DeployProtocol.wdttPlusData(probe(1,0,0)))
-        assertEquals(DeployProtocol.WdttPlusData.Partial,DeployProtocol.wdttPlusData(probe(1,1,0)))
-        assertEquals(DeployProtocol.WdttPlusData.None,DeployProtocol.wdttPlusData("sudo: error"))
+    @Test fun wdttPlusMarkerOutputIsExact() {
         assertFalse(DeployProtocol.wdttPlusMarked("WDTT_PRESERVED_MARKER=readyx"))
         assertTrue(DeployProtocol.wdttPlusMarked("log\nWDTT_PRESERVED_MARKER=ready\n"))
     }

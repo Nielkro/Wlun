@@ -16,7 +16,10 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 
-data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false,val configCleared: Boolean = false,val stopping: Boolean = false)
+data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false,val configCleared: Boolean = false,val stopping: Boolean = false,val question: DeployQuestion? = null)
+
+/** A choice the running operation needs from the user; the answer is an option index or -1. */
+data class DeployQuestion(val title: String,val message: String,val options: List<String>)
 
 object DeployEngine {
     val state = MutableStateFlow(DeployState())
@@ -27,17 +30,22 @@ object DeployEngine {
     @Volatile private var socket: java.net.Socket? = null
     @Volatile private var download: okhttp3.Call? = null
     @Volatile private var trustReply: CompletableDeferred<Boolean>? = null
+    @Volatile private var questionReply: CompletableDeferred<Int>? = null
+    @Volatile private var rolledBack = false
     fun approveHost(approved: Boolean) { trustReply?.complete(approved) }
+    fun answer(choice: Int) { questionReply?.complete(choice) }
     /** Blocking SSH, SFTP and download calls ignore coroutine cancellation, so each is broken off here. */
     fun cancel() {
         if(!state.value.running || state.value.stopping) return
         state.update { it.copy(stopping=true,step="Остановка…") }
         log("Остановка по запросу…")
-        job?.cancel();trustReply?.complete(false);download?.cancel()
+        job?.cancel();trustReply?.complete(false);questionReply?.complete(-1);download?.cancel()
         scope.launch { session?.disconnect();runCatching { socket?.close() } }
     }
-    fun start(server: DeployServer, uninstall: Boolean) {
+    /** [removeData] chooses WDTT Plus's full removal over keeping /etc/wdtt; other protocols ignore it. */
+    fun start(server: DeployServer, uninstall: Boolean, removeData: Boolean = false) {
         if(state.value.running) return
+        rolledBack = false
         val copy = DeployServer(JSONObject(server.json.toString()))
         if(copy["manualPorts"] != "true") {
             copy["peerPort"]=if(copy.kind=="csqtt") "46000" else "56000";copy["localPort"]="9000"
@@ -45,21 +53,27 @@ object DeployEngine {
         }
         state.value = DeployState(server.id,true,0,"Подключение",config=server["config"])
         job = scope.launch {
-            try { run(copy,uninstall) }
+            try { run(copy,uninstall,removeData) }
             catch(e: Exception) {
                 // Breaking off a blocking call surfaces as its own error; after Stop it is the stop, not a failure.
                 if(e is CancellationException || state.value.stopping) {
-                    log("Операция остановлена. Уже выполненные на VPS шаги не откатываются: при необходимости запустите установку или удаление заново.")
+                    log(if(rolledBack) "Операция остановлена. Изменения на VPS отменены, прежнее состояние восстановлено."
+                        else "Операция остановлена. Уже выполненные на VPS шаги не откатываются: при необходимости запустите установку или удаление заново.")
                     update(state.value.percent,"Операция остановлена")
                 } else { log("Ошибка: "+redact(copy,e.message ?: e.javaClass.simpleName));update(state.value.percent,"Ошибка установки или SSH") }
                 if(e is CancellationException) throw e
             }
-            finally { session?.disconnect();session = null;runCatching { socket?.close() };socket = null;download = null;state.update { it.copy(running=false,stopping=false,trust="") } }
+            finally { session?.disconnect();session = null;runCatching { socket?.close() };socket = null;download = null;state.update { it.copy(running=false,stopping=false,trust="",question=null) } }
         }
     }
     // Stop writes from the UI thread while the job logs, so these changes are atomic.
     private fun update(percent: Int,step: String) { state.update { it.copy(percent=percent,step=step) } }
     private fun log(line: String) { state.update { it.copy(logs=(it.logs+line+"\n").takeLast(200_000)) } }
+    private suspend fun ask(title: String,message: String,vararg options: String): Int {
+        val reply = CompletableDeferred<Int>();questionReply = reply
+        state.update { it.copy(question=DeployQuestion(title,message,options.toList())) }
+        try { return reply.await() } finally { questionReply = null;state.update { it.copy(question=null) } }
+    }
     private fun redact(server: DeployServer,text: String): String {
         var result = text
         for(key in listOf("sshPassword","key","keyPassword","sudoPassword","password","webPassword","botToken","adminToken")) {
@@ -70,8 +84,8 @@ object DeployEngine {
     }
     fun quote(value: String) = DeployProtocol.quote(value)
     private fun root(command: String): String = "if [ \"\$(id -u)\" = 0 ]; then bash -c ${quote(command)}; else sudo -S -p '' bash -c ${quote(command)}; fi"
-    private suspend fun run(server: DeployServer,uninstall: Boolean) {
-        server.validate(!uninstall)
+    /** [stoppable] lets Stop break the handshake; a recovery connection after Stop must not be. */
+    private suspend fun connect(server: DeployServer,stoppable: Boolean): Session {
         val jsch = JSch()
         val key = server["key"].toByteArray()
         if(server["auth"] == "key") jsch.addIdentity("qThrone",key,null,server["keyPassword"].takeIf { it.isNotEmpty() }?.toByteArray())
@@ -97,9 +111,9 @@ object DeployEngine {
             override fun getHostKey(host: String?,type: String?): Array<HostKey> = emptyArray()
         }
         val ssh = jsch.getSession(server["user"],server["host"],server.port("sshPort"))
-        session = ssh
+        if(stoppable) session = ssh
         ssh.setSocketFactory(object : SocketFactory {
-            override fun createSocket(host: String,port: Int) = java.net.Socket().also { socket = it;if(state.value.stopping) it.close() }.apply { connect(java.net.InetSocketAddress(host,port),30_000) }
+            override fun createSocket(host: String,port: Int) = java.net.Socket().also { if(stoppable) { socket = it;if(state.value.stopping) it.close() } }.apply { connect(java.net.InetSocketAddress(host,port),30_000) }
             override fun getInputStream(socket: java.net.Socket) = socket.getInputStream()
             override fun getOutputStream(socket: java.net.Socket) = socket.getOutputStream()
         })
@@ -107,11 +121,16 @@ object DeployEngine {
         ssh.setConfig("PreferredAuthentications",if(server["auth"] == "key") "publickey" else "password,keyboard-interactive")
         if(server["auth"] != "key") ssh.setPassword(server["sshPassword"])
         ssh.setServerAliveInterval(15000);ssh.setServerAliveCountMax(4)
-        currentCoroutineContext().ensureActive()
+        if(stoppable) currentCoroutineContext().ensureActive()
         ssh.connect(30_000)
-        currentCoroutineContext().ensureActive()
+        if(stoppable) currentCoroutineContext().ensureActive()
+        return ssh
+    }
+    private suspend fun run(server: DeployServer,uninstall: Boolean,removeData: Boolean) {
+        server.validate(!uninstall)
+        val ssh = connect(server,stoppable=true)
         val machine = exec(ssh,server,"uname -m",30_000).second.trim()
-        if(server.kind == "wdttplus") { runWdttPlus(ssh,server,uninstall,machine);return }
+        if(server.kind == "wdttplus") { runWdttPlus(ssh,server,uninstall,removeData,machine);return }
         val source = if(server.kind == "qwdtt") Pair("https://github.com/makriq-org/qwdtt/releases/download/v1.4.4/qWDTT_v1.4.4.apk","ff5b2d1f265b0c4253cdf54ebf1f8a5d64afd1424086aa8b8be754b5c14df6a7")
             else Pair("https://github.com/amurcanov/csqtt/releases/download/v2.1.9/CSQTT-universal.apk","49771d60a53d731452f3301e53dbe6bdee9142876e6b295dbf88f59f0b5aaf82")
         update(5,"Загрузка официального установщика")
@@ -178,87 +197,214 @@ object DeployEngine {
         update(100,if(uninstall) "Удаление завершено" else "Установка завершена")
     }
     /**
-     * WDTT Plus, as its app deploys: the pinned official APK's deploy.sh and server go to a private
-     * staging folder; a new server gets passwords.json with the main password, an existing one is
-     * updated in place keeping its data. WDTT_INSTALL_RESULT=success, the service and the admin
-     * socket confirm the install.
+     * WDTT Plus, as its app's performDeploy: root and ownership checks, a persistent server copy and a
+     * rollback copy before an update, the prepared passwords.json, deploy.sh under the update lock, then
+     * the binary hash, service, admin socket and preserved clients are verified; a failed update is rolled back.
      */
-    private suspend fun runWdttPlus(ssh: Session,server: DeployServer,uninstall: Boolean,machine: String) {
-        require(machine == "x86_64" || machine == "amd64" || uninstall) { "Официальный сервер WDTT Plus собран только для x86_64" }
-        update(5,"Загрузка официального установщика")
+    private suspend fun runWdttPlus(ssh: Session,server: DeployServer,uninstall: Boolean,removeData: Boolean,machine: String) {
+        val ops = wdttPlusOps(ssh,server)
+        update(3,"Проверяю root-права...");ops.verifyRootAccess()
+        if(uninstall) { uninstallWdttPlus(ops,server,if(removeData) ServerUninstallMode.RemoveAll else ServerUninstallMode.PreserveData);return }
+        require(machine == "x86_64" || machine == "amd64") { "Официальный сервер WDTT Plus собран только для x86_64" }
+        resolveEarlierWdttPlusUpdate(ops,server)
+        update(4,"Проверяю владельца установки...")
+        val ownership = ops.ownership().let { found ->
+            if(found != DeploymentOwnership.UnknownExisting || !ops.hasUnmarkedQthroneData()) return@let found
+            require(ask("Данные WDTT Plus без службы","На VPS остались данные WDTT Plus (клиенты, ключи WireGuard) без службы и сервера: так их оставляло удаление в qThrone 1.8.1 и раньше. " +
+                "Если это ваш сервер, данные будут отмечены как сохранённые и подхвачены установкой.","Сохранить данные и установить") == 0) { "Установка отменена: данные на VPS не подтверждены" }
+            ops.adoptUnmarkedQthroneData()
+            ops.ownership()
+        }
+        val mode = when(ownership) {
+            DeploymentOwnership.NoInstall -> DeployMode.FreshInstall
+            DeploymentOwnership.IncompleteAndroidDeploy -> {
+                // WDTT Plus offers only a full reset for an incomplete Android install.
+                require(ask("Неполная установка WDTT Plus","На VPS осталась неполная установка WDTT Plus. Её можно только сбросить: /etc/wdtt, служба и сервер будут удалены, затем сервер установится заново. Перед сбросом создаётся страховочная копия.",
+                    "Сбросить и установить") == 0) { "Установка отменена: неполную установку можно только сбросить" }
+                DeployMode.ResetAll
+            }
+            // The standalone installer and unknown installs are refused below with WDTT Plus's messages.
+            else -> DeployMode.PreserveData
+        }
+        assertDeploymentMayBeUpdated(ownership,mode)
+        if(ownership == DeploymentOwnership.AndroidDeploy) { update(5,"Создаю постоянную копию перед деплоем...");createPersistentSafetyBackup(server) }
+        update(6,"Загрузка официального установщика")
         val apk = artifact("https://github.com/Ivan4537/WDTT-Plus/releases/download/v20/WDTT-Plus-v20-arm64-v8a-release.apk",
             "918cc7ab477247ebdaca030c13c0d689ca1a9f59152217f8edf0484a943da0e3")
-        val staging = exec(ssh,server,"mktemp -d /tmp/wdtt-plus-deploy.XXXXXX",30_000).second.trim().lines().last()
-        require(staging.matches(Regex("""/tmp/wdtt-plus-deploy\.[A-Za-z0-9]+"""))) { "Не удалось подготовить временный каталог" }
-        try {
-            exec(ssh,server,"chmod 700 ${quote(staging)}",30_000)
-            val data = DeployProtocol.wdttPlusData(exec(ssh,server,root(DeployProtocol.WDTT_PLUS_PROBE),30_000).second)
-            val existing = data != DeployProtocol.WdttPlusData.None
-            require(uninstall || data != DeployProtocol.WdttPlusData.Partial) {
-                "На VPS неполная установка WDTT Plus: есть только служба или только сервер. Удалите сервис с VPS и повторите установку"
+        val (script,binary) = ZipFile(apk).use { zip ->
+            fun entry(name: String): ByteArray {
+                val item = zip.getEntry(name) ?: error("Нет файла установщика $name")
+                require(item.size in 1..30_000_000)
+                return zip.getInputStream(item).use { it.readBytes() }
             }
+            entry("assets/deploy.sh") to entry("assets/server")
+        }
+        require(!unsafeLegacyWdttPlusServer(binary)) { "server asset выглядит устаревшим: найдено wg0 или /etc/wireguard без /etc/wdtt и wdtt0" }
+        val expectedServerSha256 = java.security.MessageDigest.getInstance("SHA-256").digest(binary).joinToString("") { "%02x".format(it.toInt() and 255) }
+        val desiredDns = normalizedDeployDns(server["dns"].ifBlank { "1.1.1.1" })
+        val ports = "${server.port("peerPort")},${server.port("wgPort")},${server.port("localPort")}"
+        val attemptId = java.util.UUID.randomUUID().toString()
+        var preparationStarted = false
+        var rollbackPrepared = false
+        var installationVerified = false
+        var preservedDbJson: String? = null
+        var staging: String? = null
+        try {
+            var currentDbJsonForDeploy: String? = null
+            if(mode == DeployMode.PreserveData || (mode == DeployMode.ResetAll && ownership in setOf(DeploymentOwnership.AndroidDeploy,
+                    DeploymentOwnership.PreservedAndroidData,DeploymentOwnership.IncompleteAndroidDeploy))) {
+                update(26,"Проверка сохранённых данных...")
+                fun validated(json: String) = json.also {
+                    if(ownership == DeploymentOwnership.IncompleteAndroidDeploy) validatePasswordsDbStructure(JSONObject(it))
+                    else validatePasswordsDbForPreserving(JSONObject(it),server["password"])
+                }
+                var currentDbJson = ops.readRemotePasswordsJson()?.let(::validated)
+                if(mode == DeployMode.PreserveData && currentDbJson == null) throw IllegalStateException(
+                    "обновление с сохранением остановлено: на сервере нет passwords.json; создание пустой базы вместо неизвестного состояния запрещено")
+                preparationStarted = true
+                update(28,"Создаю страховочную копию...")
+                ops.prepareServerUpdateRollback(attemptId)
+                rollbackPrepared = true
+                // The first read was preflight only. The daemon has now flushed and stopped: use this stable database.
+                currentDbJson = ops.readRemotePasswordsJson()?.let(::validated)
+                if(mode == DeployMode.PreserveData && currentDbJson == null) throw IllegalStateException("После подготовки копии база сервера не найдена; обновление остановлено")
+                currentDbJsonForDeploy = currentDbJson
+                if(mode == DeployMode.PreserveData) preservedDbJson = currentDbJson
+                if(ownership == DeploymentOwnership.PreservedAndroidData) ops.markPreservedAndroidData()
+            }
+            val database = prepareDeployDatabaseJson(if(mode == DeployMode.PreserveData) currentDbJsonForDeploy else null,
+                server["password"],"","",desiredDns,ports)
+            update(32,"Загрузка на сервер...")
+            val dir = exec(ssh,server,"mktemp -d /tmp/wdtt-plus-deploy.XXXXXX",30_000,quiet=true).second.trim().lines().last()
+            require(dir.matches(Regex("""/tmp/wdtt-plus-deploy\.[A-Za-z0-9]+"""))) { "Не удалось подготовить временный каталог" }
+            staging = dir
+            exec(ssh,server,"chmod 700 ${quote(dir)}",30_000,quiet=true)
             val sftp = ssh.openChannel("sftp") as ChannelSftp
             sftp.connect(30_000)
             try {
-                fun upload(path: String,bytes: ByteArray) { sftp.put(bytes.inputStream(),path);sftp.chmod(384,path) }
-                ZipFile(apk).use { zip ->
-                    fun entry(name: String): ByteArray {
-                        val item = zip.getEntry(name) ?: error("Нет файла установщика $name")
-                        require(item.size in 1..30_000_000)
-                        return zip.getInputStream(item).use { it.readBytes() }
-                    }
-                    update(30,"Передача файлов на VPS")
-                    upload("$staging/deploy.sh",entry("assets/deploy.sh"))
-                    if(!uninstall) {
-                        upload("$staging/server",entry("assets/server"))
-                        if(!existing) upload("$staging/passwords.json",JSONObject().put("main_password",server["password"]).put("admin_id","")
-                            .put("bot_token","").put("passwords",JSONObject()).put("devices",JSONObject())
-                            .put("dns",server["dns"]).put("default_ports","${server.port("peerPort")},${server.port("wgPort")},${server.port("localPort")}")
-                            .put("max_passwords",50).toString().toByteArray())
-                    }
-                }
+                fun upload(path: String,bytes: ByteArray,permissions: Int) { sftp.put(bytes.inputStream(),path);sftp.chmod(permissions,path) }
+                upload("$dir/deploy.sh",script,384)
+                upload("$dir/server",binary,448)
+                upload("$dir/passwords.json",database.toByteArray(),384)
             } finally { sftp.disconnect() }
-            // As WDTT Plus does: data left without the service and server is marked, or deploy.sh refuses to preserve it.
-            if(uninstall && existing) {
-                if(!DeployProtocol.wdttPlusMarked(exec(ssh,server,root(DeployProtocol.WDTT_PLUS_MARK_PRESERVED),30_000).second))
-                    log("Предупреждение: не удалось отметить данные /etc/wdtt как сохранённые; при повторной установке проверка повторится.")
-            } else if(data == DeployProtocol.WdttPlusData.DataOnly) {
-                update(40,"Защищаю сохранённые данные")
-                require(DeployProtocol.wdttPlusMarked(exec(ssh,server,root(DeployProtocol.WDTT_PLUS_MARK_PRESERVED),30_000).second)) {
-                    "Не удалось отметить сохранённые данные /etc/wdtt: нет passwords.json или wg-keys.dat, либо это символические ссылки. Установка не запущена"
-                }
-            } else if(data == DeployProtocol.WdttPlusData.Installed) {
-                // A marker left by an uninstall that failed midway would make deploy.sh refuse the running install.
-                exec(ssh,server,root("rm -f /etc/wdtt/.android-deploy-preserved"),30_000)
+            if(mode == DeployMode.ResetAll) {
+                update(40,"Сброс старых данных...")
+                require(ops.ownership() == ownership) { "состояние установки изменилось после проверки; сброс остановлен" }
+                assertDeploymentMayBeUpdated(ownership,DeployMode.ResetAll)
+                ops.execChecked(serverUpdateApplyGuardScript("wdtt_stop_service; pkill -x wdtt-server 2>/dev/null || true; rm -rf /etc/wdtt; " +
+                    "rm -f /etc/systemd/system/wdtt.service /usr/local/bin/wdtt-server; systemctl daemon-reload",attemptId),30_000L)
             }
-            update(45,if(uninstall) "Удаление" else if(existing) "Обновление с сохранением данных" else "Установка и запуск сервиса")
-            val command = if(uninstall) "bash ${quote("$staging/deploy.sh")} uninstall"
-                else "env WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_SSH_PORT=${server.port("sshPort")} " +
-                    "WDTT_INSTALL_MODE=${if(existing) "preserve" else "fresh"} WDTT_PRESERVE_DATA=${if(existing) 1 else 0} " +
-                    (if(server["dns"].isNotBlank()) "WDTT_DNS=${quote(server["dns"])} " else "") +
-                    "WDTT_STAGED_SERVER=${quote("$staging/server")} " +
-                    (if(!existing) "WDTT_STAGED_DB=${quote("$staging/passwords.json")} " else "") +
-                    "bash ${quote("$staging/deploy.sh")}"
-            val result = exec(ssh,server,root(command),30*60_000L)
-            require(result.first == 0) { "Установщик завершился с кодом ${result.first}" }
-            if(uninstall) {
-                server.recordUninstall();DeployStore.save(server)
-                state.update { it.copy(config="",configCleared=true) }
-                update(100,"Удаление завершено");return
+            update(45,when(mode) { DeployMode.PreserveData -> "Обновление с сохранением данных"; DeployMode.ResetAll -> "Сброс и установка"; else -> "Установка и запуск сервиса" })
+            val installCommand = "env WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_SSH_PORT=${server.port("sshPort")} " +
+                "WDTT_INSTALL_MODE=${when(mode) { DeployMode.FreshInstall -> "fresh"; DeployMode.PreserveData -> "preserve"; DeployMode.ResetAll -> "reset" }} " +
+                "WDTT_PRESERVE_DATA=${if(mode == DeployMode.PreserveData) 1 else 0} " +
+                "WDTT_STAGED_SERVER=${quote("$dir/server")} WDTT_STAGED_DB=${quote("$dir/passwords.json")} " +
+                "bash ${quote("$dir/deploy.sh")}"
+            val (code,output) = exec(ssh,server,rootCommand(if(rollbackPrepared) serverUpdateApplyGuardScript(installCommand,attemptId)
+                else serverUpdateShellContext()+"\nwdtt_lock\n"+installCommand),30*60_000L)
+            if(code != 0 || Regex("^error:",RegexOption.MULTILINE).containsMatchIn(output))
+                throw IllegalStateException("Серверная операция не завершена:\n"+serverUpdateFailureDetail(output))
+            check(markerValue(output,"WDTT_INSTALL_RESULT") == "success") { "не удалось подтвердить установку: нет итогового подтверждения скрипта" }
+            update(92,"Проверяю установку...")
+            val missing = wdttPlusInstallMissing(ops.exec(WDTT_PLUS_VERIFY_INSTALL,20_000L),expectedServerSha256)
+            check(missing.isEmpty()) { "скрипт завершился, но проверка не прошла: $missing" }
+            val updatedDbJson = ops.readRemotePasswordsJson() ?: throw IllegalStateException("после обновления не найдена база passwords.json")
+            validatePasswordsDbStructure(JSONObject(updatedDbJson))
+            preservedDbJson?.let { validatePreservedServerState(it,updatedDbJson) }
+            installationVerified = true
+            if(rollbackPrepared) {
+                // Data, binary identity and service have been verified; a cleanup failure must not revert a working server.
+                rollbackPrepared = false
+                runCatching { ops.cleanupServerUpdateRollback(attemptId) }
+                    .onFailure { log("Сервер обновлён. Очистка страховочной копии не завершена: ${redact(server,it.message.orEmpty())}") }
             }
-            require(DeployProtocol.successful("wdttplus",result.first,result.second)) { "Установщик не подтвердил запуск сервиса" }
-            val verify = exec(ssh,server,root("sleep 2; printf 'SERVICE=%s\n' \"\$(systemctl is-active wdtt 2>/dev/null || true)\"; " +
-                "printf 'ADMIN_SOCKET=%s\n' \"\$([ -S /run/wdtt/admin.sock ] && echo 1 || echo 0)\""),60_000).second
-            require(verify.contains("SERVICE=active")) { "Служба wdtt не запустилась" }
-            require(verify.contains("ADMIN_SOCKET=1")) { "Сервер не открыл канал управления" }
             val link = WdttPlus().apply {
                 this.server = server["host"]; serverPort = server.port("peerPort"); wgPort = server.port("wgPort"); localPort = server.port("localPort")
                 password = server["password"]; name = server["name"].ifBlank { "WDTT Plus" }
             }.exportToLink()
             server.recordInstallation(link);DeployStore.save(server)
             state.update { it.copy(config=link) }
-            update(100,if(existing) "Обновление завершено" else "Установка завершена")
-        } finally { runCatching { exec(ssh,server,"rm -rf ${quote(staging)}",30_000) } }
+            update(100,if(mode == DeployMode.PreserveData) "Обновление завершено" else "Установка завершена")
+        } catch(e: Exception) {
+            if(preparationStarted && !installationVerified) withContext(NonCancellable) { recoverWdttPlus(ssh,server,attemptId) }
+            throw e
+        } finally {
+            staging?.let { dir -> withContext(NonCancellable) { if(ssh.isConnected) runCatching {
+                exec(ssh,server,rootCommand("rm -f -- ${quote("$dir/deploy.sh")} ${quote("$dir/server")} ${quote("$dir/passwords.json")}; rmdir -- ${quote(dir)}"),10_000,quiet=true)
+            } } }
+        }
+    }
+    /** One recovery connection after a failed or stopped update, as WDTT Plus's recoverServerUpdateAfterFailure. */
+    private suspend fun recoverWdttPlus(ssh: Session,server: DeployServer,attemptId: String) {
+        log("Восстанавливаю прежнее состояние сервера…")
+        runCatching {
+            val recovery = if(ssh.isConnected) ssh else connect(server,stoppable=false)
+            try { wdttPlusOps(recovery,server).recoverServerUpdateAfterFailure(attemptId) } finally { if(recovery !== ssh) recovery.disconnect() }
+        }.onSuccess { rolledBack = true;log("Прежнее состояние WDTT Plus восстановлено.") }
+            .onFailure { log("Откат не выполнен: ${redact(server,it.message.orEmpty())}. При следующей установке приложение предложит восстановить прежнее состояние.") }
+    }
+    /** A rollback copy left by an earlier attempt blocks the update until the user resolves it, as in WDTT Plus. */
+    private suspend fun resolveEarlierWdttPlusUpdate(ops: WdttPlusDeployOps,server: DeployServer) {
+        val title = "Незавершённое обновление WDTT Plus"
+        val intro = "На сервере остались данные предыдущей попытки обновления WDTT Plus. "
+        val action = when(val state = ops.inspectServerUpdateRollback()) {
+            ServerUpdateRollbackState.None -> return
+            ServerUpdateRollbackState.PreparationIncomplete -> ServerUpdateRollbackAction.CancelPreparation.takeIf {
+                ask(title,intro+"Подготовка страховочной копии была прервана до замены сервера. Можно восстановить прежнее состояние службы и сохранить незавершённую копию отдельно. Настройки и бинарник не заменяются.",
+                    "Восстановить работу и сохранить копию отдельно") == 0 }
+            ServerUpdateRollbackState.Committed -> ServerUpdateRollbackAction.KeepCurrentAndDeleteBackup.takeIf {
+                ask(title,intro+"Обновление было подтверждено, но удаление страховочной копии не завершилось. Приложение проверит рабочую установку перед удалением только этой копии.",
+                    "Проверить сервер и удалить копию") == 0 }
+            is ServerUpdateRollbackState.PreparedValid -> when(ask(title,intro+"Копия проверена и готова к восстановлению. Если текущая установка уже полностью работает, можно удалить только эту копию: " +
+                    "приложение сначала проверит бинарник, конфигурацию, unit и активную службу.","Восстановить прежнее состояние","Текущее работает — удалить копию")) {
+                0 -> ServerUpdateRollbackAction.RestorePrevious
+                1 -> ServerUpdateRollbackAction.KeepCurrentAndDeleteBackup
+                else -> null
+            }
+            is ServerUpdateRollbackState.PreparedCorrupted -> {
+                check(state.diagnostic == "missing or unsafe state") { "Страховочная копия неполная или не прошла проверку: ${state.diagnostic}. Нужна ручная проверка сервера по SSH" }
+                ServerUpdateRollbackAction.ArchiveLegacyPreparation.takeIf {
+                    ask(title,intro+"Страховочная копия неполная. Если сервер работает, приложение может проверить установку и сохранить старую копию отдельно, не удаляя её.",
+                        "Проверить сервер и сохранить копию отдельно") == 0 }
+            }
+            is ServerUpdateRollbackState.UnknownState -> error("Состояние страховочной копии не распознано: ${state.diagnostic}. Обычный деплой заблокирован до ручной проверки по SSH")
+        } ?: error("Установка отменена: сначала нужно разобраться с копией прошлого обновления")
+        update(4,"Обрабатываю копию прошлого обновления...")
+        log(ops.resolveServerUpdateRollback(action,server["password"]))
+    }
+    /** WDTT Plus's createPersistentSafetyBackup: an old server without backups keeps only the rollback copy. */
+    private suspend fun createPersistentSafetyBackup(server: DeployServer) {
+        try { runInterruptible { WdttPlusAdmin(server).createBackup("pre_deploy") } }
+        catch(e: Exception) {
+            if(e is CancellationException) throw e
+            val message = e.message.orEmpty().lowercase()
+            if(listOf("не поддерживает","неизвестная admin-команда","admin_socket_unavailable","старый wdtt-server").any { it in message })
+                log("Постоянная копия недоступна на прежней версии сервера; страховочная копия обновления остаётся включённой.")
+            else throw IllegalStateException("не удалось создать обязательную серверную копию перед изменением: ${e.message}",e)
+        }
+    }
+    /** WDTT Plus's performUninstall: its own steps and their verification, keeping or removing /etc/wdtt. */
+    private suspend fun uninstallWdttPlus(ops: WdttPlusDeployOps,server: DeployServer,mode: ServerUninstallMode) {
+        update(12,"Проверяю владельца установки...")
+        ops.assertAndroidDeployMayManageServer("удаления")
+        if(mode == ServerUninstallMode.PreserveData) { update(16,"Защищаю сохраняемые данные...");ops.markPreservedAndroidData() }
+        wdttPlusUninstallSteps(mode,server.port("sshPort"),server.port("peerPort"),server.port("wgPort")).forEachIndexed { index,(step,command) ->
+            update(22+index*16,step);ops.exec(command,15_000L)
+        }
+        update(94,"Проверяю результат...")
+        require(wdttPlusUninstallVerified(ops.exec(wdttPlusUninstallProbe(mode),15_000L),mode)) {
+            "удаление завершилось не полностью; проверьте состояние сервера и повторите операцию"
+        }
+        server.recordUninstall();DeployStore.save(server)
+        state.update { it.copy(config="",configCleared=true) }
+        update(100,if(mode == ServerUninstallMode.PreserveData) "Удаление завершено, данные сохранены" else "Удаление завершено, данные удалены")
+    }
+    private fun wdttPlusOps(ssh: Session,server: DeployServer) = WdttPlusDeployOps { command,timeout ->
+        exec(ssh,server,command,timeout,quiet=true).let { (code,output) -> when {
+            code < 0 -> output.trimEnd()+"\nerror: SSH channel closed before exit status\n"
+            code != 0 -> output.trimEnd()+"\nerror: remote command exited with code $code\n"
+            else -> output
+        } }
     }
 
     private suspend fun artifact(url: String,sha: String): File {
@@ -286,7 +432,8 @@ object DeployEngine {
             return target
         } catch(e: Exception) { target.delete();throw e }
     }
-    private suspend fun exec(ssh: Session,server: DeployServer,command: String,timeout: Long): Pair<Int,String> {
+    /** [quiet] keeps a command's output, such as a base64 copy of passwords.json, out of the console. */
+    private suspend fun exec(ssh: Session,server: DeployServer,command: String,timeout: Long,quiet: Boolean = false): Pair<Int,String> {
         val channel=ssh.openChannel("exec") as ChannelExec
         channel.setCommand("$command 2>&1")
         channel.setInputStream((server["sudoPassword"].ifBlank { server["sshPassword"] }+"\n").byteInputStream())
@@ -306,14 +453,14 @@ object DeployEngine {
                         val line=redact(server,pending.substringBefore('\n'));pending=pending.substringAfter('\n')
                         val stage=DeployProtocol.progress(server.kind,line)
                         if(stage!=null) state.update { it.copy(percent=stage.first,step=stage.second,installerProgress=true) }
-                        else log(line)
+                        else if(!quiet) log(line)
                     }
                     if(output.length>1_000_000) output.delete(0,output.length-1_000_000)
                 }
                 if(channel.isClosed && input.available()==0) break
                 delay(100)
             }
-            if(pending.isNotBlank()) log(redact(server,pending))
+            if(pending.isNotBlank() && !quiet) log(redact(server,pending))
             return channel.exitStatus to output.toString()
         } finally { channel.disconnect() }
     }

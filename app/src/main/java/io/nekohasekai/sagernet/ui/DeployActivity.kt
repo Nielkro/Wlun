@@ -31,6 +31,7 @@ class DeployActivity : ThemedActivity() {
         set(value) { editorState.server=value;editorState.baseline=value?.editSignature() }
     fun hasChanges() = server?.editSignature()!=editorState.baseline
     private var shownTrust = ""
+    private var shownQuestion: DeployQuestion? = null
     private var shownConfig = ""
     private var wasRunning = false
     val kind get() = intent.getStringExtra("kind").orEmpty().takeIf { it in listOf("qwdtt","csqtt","wdttplus") } ?: "qwdtt"
@@ -95,6 +96,15 @@ class DeployActivity : ThemedActivity() {
                             .setNegativeButton(android.R.string.cancel) { _,_ -> DeployEngine.approveHost(false) }
                             .setOnCancelListener { DeployEngine.approveHost(false) }.show()
                     }
+                    val question=state.question
+                    if(question!=null && question!==shownQuestion) {
+                        shownQuestion=question
+                        MobileAlertDialogBuilder(this@DeployActivity).setTitle(question.title).setMessage(question.message).apply {
+                            question.options.getOrNull(0)?.let { setPositiveButton(it) { _,_ -> DeployEngine.answer(0) } }
+                            question.options.getOrNull(1)?.let { setNeutralButton(it) { _,_ -> DeployEngine.answer(1) } }
+                        }.setNegativeButton(android.R.string.cancel) { _,_ -> DeployEngine.answer(-1) }
+                            .setOnCancelListener { DeployEngine.answer(-1) }.show()
+                    }
                 }
             }
         }
@@ -121,8 +131,13 @@ class DeployActivity : ThemedActivity() {
         if(DeployEngine.state.value.running) { Toast.makeText(this,"Дождитесь завершения текущей операции",Toast.LENGTH_SHORT).show();return }
         val valid=runCatching { target.validate(!uninstall) }
         if(valid.isFailure) { MobileAlertDialogBuilder(this).setMessage(valid.exceptionOrNull()?.message).setPositiveButton(android.R.string.ok,null).show();return }
-        fun run() { DeployEngine.start(target,uninstall);shownConfig="";shownTrust="";showConsole() }
-        if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${title(kind)} на ${target["host"]}.")
+        fun run(removeData: Boolean = false) { DeployEngine.start(target,uninstall,removeData);shownConfig="";shownTrust="";showConsole() }
+        // WDTT Plus removes the service either keeping /etc/wdtt (clients, keys) for a later install or with it.
+        if(uninstall && kind=="wdttplus") MobileAlertDialogBuilder(this).setTitle("Удалить WDTT Plus с VPS?")
+            .setMessage("Сервис будет удалён с ${target["host"]}. Можно сохранить данные (клиентов, ключи WireGuard) для повторной установки или удалить их вместе с сервисом.")
+            .setPositiveButton("Сохранить данные") { _,_ -> run(false) }.setNeutralButton("Удалить всё") { _,_ -> run(true) }
+            .setNegativeButton(android.R.string.cancel,null).show()
+        else if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${title(kind)} на ${target["host"]}.")
             .setPositiveButton("Удалить") { _,_ -> run() }.setNegativeButton(android.R.string.cancel,null).show()
         else run()
     }

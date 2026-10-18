@@ -15,21 +15,6 @@ object DeployProtocol {
     }
     fun quote(value: String) = "'"+value.replace("'","'\"'\"'")+"'"
 
-    /** What a VPS holds before a WDTT Plus deploy; `deploy.sh uninstall` keeps /etc/wdtt, leaving [DataOnly]. */
-    enum class WdttPlusData { None, Installed, DataOnly, Partial }
-    const val WDTT_PLUS_PROBE = "[ -s /etc/wdtt/passwords.json ] && echo WDTT_DB=1 || echo WDTT_DB=0; " +
-        "[ -e /etc/systemd/system/wdtt.service ] && echo WDTT_UNIT=1 || echo WDTT_UNIT=0; " +
-        "[ -e /usr/local/bin/wdtt-server ] && echo WDTT_BIN=1 || echo WDTT_BIN=0"
-    fun wdttPlusData(probe: String): WdttPlusData {
-        fun has(name: String) = Regex("""(?m)^$name=1\s*$""").containsMatchIn(probe)
-        val unit=has("WDTT_UNIT");val bin=has("WDTT_BIN")
-        return when {
-            !has("WDTT_DB") -> WdttPlusData.None
-            unit && bin -> WdttPlusData.Installed
-            !unit && !bin -> WdttPlusData.DataOnly
-            else -> WdttPlusData.Partial
-        }
-    }
     /**
      * WDTT Plus's markPreservedAndroidData: lets deploy.sh preserve data that has no service or server beside it.
      * Each check is wrapped: set -e ignores a failure left of &&, so the original marks even without wg-keys.dat.

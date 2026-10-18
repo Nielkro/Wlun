@@ -137,7 +137,10 @@ class WdttPlusAdmin(private val server: DeployServer) {
     fun configureBackups(enabled: Boolean, intervalHours: Int, retention: Int): JSONObject =
         call(listOf("backup-configure", "--enabled", enabled.toString(), "--interval-hours", intervalHours.coerceIn(6, 168).toString(),
             "--retention", retention.coerceIn(2, 90).toString()), 120_000).optJSONObject("backup_status") ?: JSONObject()
-    fun createBackup(): JSONObject = call(listOf("backup-create", "--reason", "manual"), 180_000).optJSONObject("backup_status") ?: JSONObject()
+    fun createBackup(reason: String = "manual"): JSONObject {
+        require(reason in setOf("manual", "pre_deploy", "pre_restore")) { "Некорректная причина резервной копии" }
+        return call(listOf("backup-create", "--reason", reason), 180_000).optJSONObject("backup_status") ?: JSONObject()
+    }
     fun verifyBackup(id: String): JSONObject = call(listOf("backup-verify", "--id", id), 120_000).optJSONObject("backup") ?: JSONObject()
     fun deleteBackup(id: String): JSONObject = call(listOf("backup-delete", "--id", id, "--confirm", "УДАЛИТЬ"), 120_000).optJSONObject("backup_status") ?: JSONObject()
     fun exportBackup(id: String): JSONObject = call(listOf("backup-export", "--id", id), 180_000).optJSONObject("backup_document") ?: JSONObject()
