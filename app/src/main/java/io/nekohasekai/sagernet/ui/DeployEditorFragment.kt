@@ -37,6 +37,10 @@ open class DeployEditorFragment : Fragment() {
     private var configCopy: ImageButton?=null
     private var configExpanded=true
     private var displayedConfig=""
+    private var configQr: ImageView?=null
+    private var legacyRow: LinearLayout?=null
+    private var legacyText: TextView?=null
+    private var shownQr=""
     private var saveAction: android.view.MenuItem?=null
     private var openSwipe: MobileSwipeTile?=null
     private var listLoad: Job?=null
@@ -332,6 +336,27 @@ open class DeployEditorFragment : Fragment() {
         configRow.addView(well,LinearLayout.LayoutParams(0,-2,1f))
         configRow.addView(configCopy,LinearLayout.LayoutParams(dp(44),dp(44)))
         configBody.addView(configRow)
+        // As after a deploy in the original apps: the QR code and, for qWDTT, the legacy wdtt:// link too.
+        configQr=ImageView(requireContext()).apply { visibility=View.GONE;contentDescription="QR-код подключения" }
+        configBody.addView(LinearLayout(requireContext()).apply {
+            gravity=android.view.Gravity.CENTER;setPadding(0,dp(14),0,dp(4));addView(configQr,LinearLayout.LayoutParams(dp(220),dp(220)))
+        })
+        legacyText=TextView(requireContext()).apply { setTextColor(MobilePalette.text);typeface=android.graphics.Typeface.MONOSPACE;textSize=12f;maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END }
+        legacyRow=LinearLayout(requireContext()).apply {
+            orientation=LinearLayout.VERTICAL;setPadding(0,dp(10),0,0);visibility=View.GONE
+            addView(TextView(requireContext()).apply { text="Ссылка WDTT (легаси)";textSize=12f;setTextColor(MobilePalette.muted) })
+            addView(LinearLayout(requireContext()).apply {
+                gravity=android.view.Gravity.CENTER_VERTICAL
+                addView(legacyText,LinearLayout.LayoutParams(0,-2,1f))
+                addView(ImageButton(requireContext()).apply {
+                    setImageResource(R.drawable.ic_mobile_copy_outline);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
+                    background=null;setPadding(dp(12),dp(12),dp(12),dp(12));contentDescription="Скопировать ссылку WDTT"
+                    MobileFeedback.apply(this,circle=true)
+                    setOnClickListener { legacyText?.text?.toString()?.takeIf { it.isNotBlank() }?.let { app.qthrone.mobile.SagerNet.trySetPrimaryClip(it) } }
+                },LinearLayout.LayoutParams(dp(44),dp(44)))
+            })
+        }
+        configBody.addView(legacyRow)
         expand();render(DeployEngine.state.value)
     }
     private fun expand() {
@@ -358,6 +383,16 @@ open class DeployEditorFragment : Fragment() {
         val configLabel=displayedConfig.ifBlank { "Конфиг появится после успешной установки" }
         if(configText?.text?.toString()!=configLabel) configText?.text=configLabel
         configCopy?.visibility=if(displayedConfig.isBlank()) View.GONE else View.VISIBLE
+        if(displayedConfig!=shownQr) {
+            shownQr=displayedConfig
+            configQr?.visibility=if(displayedConfig.isBlank()) View.GONE else View.VISIBLE
+            if(displayedConfig.isNotBlank()) configQr?.setImageBitmap(app.qthrone.mobile.widget.QrBitmap.encode(displayedConfig,dp(220)))
+        }
+        val legacy=if(s!=null && s.kind=="qwdtt" && displayedConfig.isNotBlank()) runCatching {
+            app.qthrone.mobile.deploy.QwdttAdmin.links(s,s["name"].ifBlank { s["password"] },s["password"],emptyList()).second
+        }.getOrNull() else null
+        legacyRow?.visibility=if(legacy==null) View.GONE else View.VISIBLE
+        if(legacy!=null && legacyText?.text?.toString()!=legacy) legacyText?.text=legacy
         status?.text=if(relevant) state.step+(if(state.running && !state.installerProgress && state.percent in 45..99) "" else " · "+state.percent+"%") else "Готово к подключению"
         val logs="$ "+(s?.kind ?: "deploy")+" deploy\n"+(if(relevant) state.logs.ifBlank { "Ожидание подключения к VPS…" } else "Ожидание подключения к VPS…")
         if(output?.text?.toString()!=logs) {
@@ -381,6 +416,6 @@ open class DeployEditorFragment : Fragment() {
         if(this::body.isInitialized) editable(body)
         operations.forEach { it.isEnabled=!state.running }
     }
-    override fun onDestroyView() { output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configText=null;configCopy=null;saveAction=null;openSwipe=null;operations.clear();super.onDestroyView() }
+    override fun onDestroyView() { output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configText=null;configCopy=null;configQr=null;legacyRow=null;legacyText=null;shownQr="";saveAction=null;openSwipe=null;operations.clear();super.onDestroyView() }
 }
 

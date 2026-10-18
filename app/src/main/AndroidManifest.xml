@@ -71,6 +71,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Start">
         <activity android:name=".ui.DeployActivity" android:exported="false" />
+        <activity android:name=".ui.ServerActivity" android:exported="false" />
+        <activity android:name=".ui.QwdttAccessActivity" android:exported="false" />
         <activity android:name=".ui.VkRelayActivity" android:exported="false" />
         <activity android:name=".ui.ProviderRoutingActivity" android:exported="false" />
         <activity

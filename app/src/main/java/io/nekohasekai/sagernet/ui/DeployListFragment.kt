@@ -74,6 +74,8 @@ class DeployListFragment : Fragment() {
     }
 
     private fun open(id: String?) {
+        // A saved server opens on its actions, as in the original apps; a new one goes to the editor.
+        if (id != null) { startActivity(Intent(requireContext(), ServerActivity::class.java).putExtra("server", id)); return }
         startActivity(Intent(requireContext(), DeployActivity::class.java).putExtra("kind", kind)
             .putExtra("editServer", id).putExtra("directEditor", true)
             .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION),
