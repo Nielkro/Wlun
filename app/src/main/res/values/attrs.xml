@@ -2,10 +2,14 @@
 
 <resources>
     <attr name="accentOrTextSecondary" format="color" />
+    <attr name="accentOrTextPrimary" format="color" />
     <attr name="primaryOrTextSecondary" format="color" />
     <attr name="primaryOrTextPrimary" format="color" />
     <attr name="selectedColorPrimary" format="color" />
     <attr name="whiteOrTextPrimary" format="color" />
+    <attr name="colorMaterial100" format="color" />
+    <attr name="colorMaterial300" format="color" />
+    <attr name="fabColorBackground" format="color" />
     <!-- Text of the dialog buttons: primaryOrTextPrimary, a lighter tone at night where that is unreadable -->
     <attr name="dialogButtonColor" format="color" />
     <!-- Tinted elevated surface of the raised cards (routes, groups); each theme tints it towards its primary -->
