@@ -112,7 +112,7 @@ internal class ServerUi(private val context: Context) {
     fun qrRow(link: String, size: Int = 168) = LinearLayout(context).apply {
         gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(10), 0, 0)
         addView(LinearLayout(context).apply {
-            setPadding(dp(12), dp(12), dp(12), dp(12)); background = well()
+            setPadding(dp(12), dp(12), dp(12), dp(12)); background = well(); gravity = Gravity.CENTER_HORIZONTAL
             addView(qr(link, size), LinearLayout.LayoutParams(dp(size), dp(size)))
         }, LinearLayout.LayoutParams(0, -2, 1f))
         addView(copyButton("Скопировать QR-код") { copyQr(link) }, LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
@@ -135,7 +135,9 @@ internal class ServerUi(private val context: Context) {
         file.outputStream().use { framed.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
         val uri = androidx.core.content.FileProvider.getUriForFile(context, app.qthrone.mobile.BuildConfig.APPLICATION_ID + ".cache", file)
         val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
-        clipboard.setPrimaryClip(android.content.ClipData.newUri(context.contentResolver, "QR-код", uri))
+        // The picture for apps that paste images, the link itself for text paste and the home screen's clipboard import.
+        clipboard.setPrimaryClip(android.content.ClipData(android.content.ClipDescription("QR-код", arrayOf("image/png", "text/plain")),
+            android.content.ClipData.Item(link, null, uri)))
         true
     }.getOrDefault(false)
 

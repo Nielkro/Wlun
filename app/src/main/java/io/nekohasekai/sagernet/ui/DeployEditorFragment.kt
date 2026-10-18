@@ -237,6 +237,8 @@ open class DeployEditorFragment : Fragment() {
         row(body) { r ->
             operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
             operations+=button(r,"Удалить сервис с VPS",R.drawable.ic_mobile_delete,true) { host.start(true) }
+            // Both take the taller one's height when the longer title wraps.
+            operations.takeLast(2).forEach { it.layoutParams.height=LinearLayout.LayoutParams.MATCH_PARENT }
         }
         val access=card()
         field(access,s,"name","Название сервера")
@@ -359,7 +361,8 @@ open class DeployEditorFragment : Fragment() {
         progress?.progress=if(relevant) state.percent else 0
         progress?.isIndeterminate=relevant && state.running && !state.installerProgress && state.percent in 45..99
         stop?.apply {
-            isEnabled=relevant && state.running
+            isEnabled=relevant && state.running && !state.stopping
+            text=if(relevant && state.stopping) "Останавливаю…" else "Остановить"
             alpha=if(isEnabled) 1f else .45f
             setTextColor(if(isEnabled) MobilePalette.accent(requireContext()) else MobilePalette.muted)
         }

@@ -52,8 +52,6 @@ internal data class SshCredentials(
         get() = privateKey.isNotBlank() || (allowPasswordAuthentication && password.isNotBlank())
 }
 
-private enum class SshRoutePolicy { SAFE_READ_ONLY_DIRECT, SERVER_MUTATION_DIRECT_ONLY }
-
 /** The WDTT Plus server being managed; its session reuses the host key pinned at deploy. */
 internal class OutboundSshTarget(val admin: WdttPlusAdmin, val server: DeployServer) {
     val host: String get() = server["host"]
@@ -61,15 +59,10 @@ internal class OutboundSshTarget(val admin: WdttPlusAdmin, val server: DeploySer
     val pass: String get() = if (server["user"] == "root") "" else server["sudoPassword"].ifBlank { server["sshPassword"] }
     val port: Int get() = server.port("sshPort")
     val mainPassword: String get() = server["password"]
-    val credentials: SshCredentials get() = SshCredentials(pass)
 }
 
 private fun createCriticalSshSession(target: OutboundSshTarget): Session = target.admin.session()
 private fun createSafeReadOnlySshSession(target: OutboundSshTarget): Session = target.admin.session()
-
-@Suppress("UNUSED_PARAMETER")
-private fun createSshSession(host: String, user: String, credentials: SshCredentials, port: Int, routePolicy: SshRoutePolicy): Session =
-    throw UnsupportedOperationException("the managed server always uses its pinned session")
 
 /**
  * The second VPS is typed in for this one operation; WDTT Plus does not pin its key either.
@@ -3406,23 +3399,13 @@ private suspend fun installOrRepairFreeWarp(
     mtu: Int
 ): String = runRootScript(context, target, buildFreeWarpInstallScript(mtu), timeout = CMD_TIMEOUT)
 
-private suspend fun checkFreeWarp(
+internal suspend fun checkFreeWarp(
     target: OutboundSshTarget,
     restartOnFailure: Boolean
 ): String = withContext(Dispatchers.IO) {
     var session: Session? = null
     try {
-        session = createSshSession(
-            host = target.host,
-            user = target.user,
-            credentials = target.credentials,
-            port = target.port,
-            routePolicy = if (restartOnFailure) {
-                SshRoutePolicy.SERVER_MUTATION_DIRECT_ONLY
-            } else {
-                SshRoutePolicy.SAFE_READ_ONLY_DIRECT
-            },
-        )
+        session = if (restartOnFailure) createCriticalSshSession(target) else createSafeReadOnlySshSession(target)
         val ssh = SSHClient(session, target.pass)
         val restart = if (restartOnFailure) "1" else "0"
         val script = shellScript(

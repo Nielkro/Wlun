@@ -8,6 +8,7 @@ import app.qthrone.mobile.outbound.types.WdttPlus
 import com.jcraft.jsch.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -15,16 +16,24 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipFile
 
-data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false,val configCleared: Boolean = false)
+data class DeployState(val serverId: String = "",val running: Boolean = false,val percent: Int = 0,val step: String = "",val logs: String = "",val config: String = "",val trust: String = "",val installerProgress: Boolean = false,val configCleared: Boolean = false,val stopping: Boolean = false)
 
 object DeployEngine {
     val state = MutableStateFlow(DeployState())
     private val scope = CoroutineScope(SupervisorJob()+Dispatchers.IO)
     private var job: Job? = null
-    private var session: Session? = null
-    private var trustReply: CompletableDeferred<Boolean>? = null
+    @Volatile private var session: Session? = null
+    @Volatile private var download: okhttp3.Call? = null
+    @Volatile private var trustReply: CompletableDeferred<Boolean>? = null
     fun approveHost(approved: Boolean) { trustReply?.complete(approved) }
-    fun cancel() { job?.cancel();session?.disconnect();trustReply?.complete(false) }
+    /** Blocking SSH, SFTP and download calls ignore coroutine cancellation, so each is broken off here. */
+    fun cancel() {
+        if(!state.value.running || state.value.stopping) return
+        state.update { it.copy(stopping=true,step="Остановка…") }
+        log("Остановка по запросу…")
+        job?.cancel();trustReply?.complete(false);download?.cancel()
+        scope.launch { session?.disconnect() }
+    }
     fun start(server: DeployServer, uninstall: Boolean) {
         if(state.value.running) return
         val copy = DeployServer(JSONObject(server.json.toString()))
@@ -35,13 +44,20 @@ object DeployEngine {
         state.value = DeployState(server.id,true,0,"Подключение",config=server["config"])
         job = scope.launch {
             try { run(copy,uninstall) }
-            catch(e: CancellationException) { update(0,"Операция остановлена");throw e }
-            catch(e: Exception) { log("Ошибка: "+redact(copy,e.message ?: e.javaClass.simpleName));update(state.value.percent,"Ошибка установки или SSH") }
-            finally { session?.disconnect();session = null;state.value = state.value.copy(running=false,trust="") }
+            catch(e: Exception) {
+                // Breaking off a blocking call surfaces as its own error; after Stop it is the stop, not a failure.
+                if(e is CancellationException || state.value.stopping) {
+                    log("Операция остановлена. Уже выполненные на VPS шаги не откатываются: при необходимости запустите установку или удаление заново.")
+                    update(state.value.percent,"Операция остановлена")
+                } else { log("Ошибка: "+redact(copy,e.message ?: e.javaClass.simpleName));update(state.value.percent,"Ошибка установки или SSH") }
+                if(e is CancellationException) throw e
+            }
+            finally { session?.disconnect();session = null;download = null;state.update { it.copy(running=false,stopping=false,trust="") } }
         }
     }
-    private fun update(percent: Int,step: String) { state.value = state.value.copy(percent=percent,step=step) }
-    private fun log(line: String) { state.value = state.value.copy(logs=(state.value.logs+line+"\n").takeLast(200_000)) }
+    // Stop writes from the UI thread while the job logs, so these changes are atomic.
+    private fun update(percent: Int,step: String) { state.update { it.copy(percent=percent,step=step) } }
+    private fun log(line: String) { state.update { it.copy(logs=(it.logs+line+"\n").takeLast(200_000)) } }
     private fun redact(server: DeployServer,text: String): String {
         var result = text
         for(key in listOf("sshPassword","key","keyPassword","sudoPassword","password","webPassword","botToken","adminToken")) {
@@ -64,9 +80,9 @@ object DeployEngine {
                 val expected = server["hostKey"]
                 if(expected.isNotBlank()) return if(expected == fingerprint) HostKeyRepository.OK else HostKeyRepository.CHANGED
                 val reply = CompletableDeferred<Boolean>();trustReply = reply
-                state.value = state.value.copy(trust=fingerprint)
+                state.update { it.copy(trust=fingerprint) }
                 val accepted = runBlocking { withTimeoutOrNull(120_000) { reply.await() } } == true
-                state.value = state.value.copy(trust="");trustReply = null
+                state.update { it.copy(trust="") };trustReply = null
                 if(!accepted) return HostKeyRepository.CHANGED
                 server["hostKey"] = fingerprint;DeployStore.save(server)
                 return HostKeyRepository.OK
@@ -84,7 +100,9 @@ object DeployEngine {
         ssh.setConfig("PreferredAuthentications",if(server["auth"] == "key") "publickey" else "password,keyboard-interactive")
         if(server["auth"] != "key") ssh.setPassword(server["sshPassword"])
         ssh.setServerAliveInterval(15000);ssh.setServerAliveCountMax(4)
+        currentCoroutineContext().ensureActive()
         ssh.connect(30_000)
+        currentCoroutineContext().ensureActive()
         val machine = exec(ssh,server,"uname -m",30_000).second.trim()
         if(server.kind == "wdttplus") { runWdttPlus(ssh,server,uninstall,machine);return }
         val source = if(server.kind == "qwdtt") Pair("https://github.com/makriq-org/qwdtt/releases/download/v1.4.4/qWDTT_v1.4.4.apk","ff5b2d1f265b0c4253cdf54ebf1f8a5d64afd1424086aa8b8be754b5c14df6a7")
@@ -145,10 +163,10 @@ object DeployEngine {
             if(server.kind == "qwdtt") json.put("raw_port",server.port("rawPort"))
             val config=DeployConfig.link(json,ownDeviceId())
             server.recordInstallation(config);DeployStore.save(server)
-            state.value = state.value.copy(config=config)
+            state.update { it.copy(config=config) }
         } else {
             server.recordUninstall();DeployStore.save(server)
-            state.value=state.value.copy(config="",configCleared=true)
+            state.update { it.copy(config="",configCleared=true) }
         }
         update(100,if(uninstall) "Удаление завершено" else "Установка завершена")
     }
@@ -201,7 +219,7 @@ object DeployEngine {
             require(result.first == 0) { "Установщик завершился с кодом ${result.first}" }
             if(uninstall) {
                 server.recordUninstall();DeployStore.save(server)
-                state.value=state.value.copy(config="",configCleared=true)
+                state.update { it.copy(config="",configCleared=true) }
                 update(100,"Удаление завершено");return
             }
             require(DeployProtocol.successful("wdttplus",result.first,result.second)) { "Установщик не подтвердил запуск сервиса" }
@@ -214,7 +232,7 @@ object DeployEngine {
                 password = server["password"]; name = server["name"].ifBlank { "WDTT Plus" }
             }.exportToLink()
             server.recordInstallation(link);DeployStore.save(server)
-            state.value = state.value.copy(config=link)
+            state.update { it.copy(config=link) }
             update(100,if(existing) "Обновление завершено" else "Установка завершена")
         } finally { runCatching { exec(ssh,server,"rm -rf ${quote(staging)}",30_000) } }
     }
@@ -230,7 +248,9 @@ object DeployEngine {
         target.delete()
         val http = OkHttpClient.Builder().callTimeout(5,TimeUnit.MINUTES).build()
         try {
-            http.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            val call=http.newCall(Request.Builder().url(url).build());download=call
+            currentCoroutineContext().ensureActive()
+            call.execute().use { response ->
                 check(response.isSuccessful) { "Не удалось загрузить установщик: HTTP ${response.code}" }
                 val body=response.body ?: error("Пустой установщик");val total=body.contentLength()
                 body.byteStream().use { input -> target.outputStream().use { output ->
@@ -261,7 +281,7 @@ object DeployEngine {
                     while(pending.contains('\n')) {
                         val line=redact(server,pending.substringBefore('\n'));pending=pending.substringAfter('\n')
                         val stage=DeployProtocol.progress(server.kind,line)
-                        if(stage!=null) state.value=state.value.copy(percent=stage.first,step=stage.second,installerProgress=true)
+                        if(stage!=null) state.update { it.copy(percent=stage.first,step=stage.second,installerProgress=true) }
                         else log(line)
                     }
                     if(output.length>1_000_000) output.delete(0,output.length-1_000_000)
