@@ -59,6 +59,19 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
         return server.isNotEmpty() && serverPort in 1..65535 && rawPort in 1..65535 && mode in listOf("raw","wg")
     }
     override fun parseFromLink(link:String):Boolean {
+        // WDTT Plus: wdtt://connect?v=1&host&dtls&wg&local&password&hashes[&name][&max_workers].
+        if(link.startsWith("wdtt://connect?",true)) {
+            val url=LinkParser.parse("wdtt://connect?"+link.substring(15))
+            if(!url.isValid) return false
+            val q=url.query
+            if(q.valueFully("v")!="1") return false
+            val host=q.valueFully("host");val port=q.valueFully("dtls").toIntOrNull() ?: return false
+            if(host.isBlank() || port !in 1..65535) return false
+            val obj=jsonObjectOf("type" to "qwdtt","peer" to Hosts.displayAddress(host,port),"password" to q.valueFully("password"),
+                "hashes" to q.valueFully("hashes"),"tag" to if(q.has("name")) q.valueFully("name") else (url.fragment ?: ""))
+            if(q.has("max_workers")) obj["workers"]=q.valueFully("max_workers").toIntOrNull() ?: return false
+            return parseFromJson(obj)
+        }
         if(link.startsWith("wdtt://",true)) {
             val value=link.substring(7);val parts=value.substringBefore('#').split(':')
             if(parts.size !in 5..6) return false
