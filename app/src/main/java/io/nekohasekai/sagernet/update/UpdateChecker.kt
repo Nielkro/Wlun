@@ -27,6 +27,7 @@ object UpdateChecker {
 
     const val REPOSITORY = "ttrroyy/qThroneMobile"
     const val RELEASES_PAGE = "https://github.com/$REPOSITORY/releases"
+    private const val RELEASES_API = "https://api.github.com/repos/$REPOSITORY/releases?per_page=20"
     private const val MANIFEST = "wlun-update.json"
     private const val FALLBACK_MANIFEST = "qthrone-update.json"
     private const val LEGACY_MANIFEST = "throne-update.json"
