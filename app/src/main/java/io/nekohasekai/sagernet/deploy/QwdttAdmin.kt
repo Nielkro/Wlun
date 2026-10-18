@@ -75,8 +75,11 @@ class QwdttAdmin(private val server: DeployServer) {
         downBytes = o.optLong("down_bytes", 0L), upBytes = o.optLong("up_bytes", 0L), activeDevices = o.optInt("active_devices", 0),
     )
 
-    fun list(): List<Access> = call("/admin/passwords", null).optJSONArray("passwords")
-        ?.let { a -> (0 until a.length()).map { parse(a.getJSONObject(it)) } }.orEmpty()
+    fun list(): List<Access> = subscriptions(call("/admin/passwords", null).optJSONArray("passwords")
+        ?.let { a -> (0 until a.length()).map { parse(a.getJSONObject(it)) } }.orEmpty())
+
+    /** Subscriptions only: the deploy's own password is the server owner's unlimited access, not a user. */
+    internal fun subscriptions(all: List<Access>) = all.filterNot { it.password.isNotEmpty() && it.password == server["password"] }
 
     fun create(label: String, hashes: List<String>, days: Int, maxDevices: Int): Access = parse(call("/admin/passwords",
         buildMap {

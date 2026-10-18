@@ -216,12 +216,10 @@ class WdttPlusClientsActivity : ThemedActivity() {
     private fun details(access: WdttPlusAdmin.Access) = sheet(access.title) { body, sheet ->
         val current = state ?: return@sheet
         admin.link(access, current)?.let { link ->
-            body.addView(LinearLayout(this).apply { gravity = Gravity.CENTER; setPadding(0, ui.dp(16), 0, ui.dp(8)); addView(ui.qr(link), LinearLayout.LayoutParams(ui.dp(220), ui.dp(220))) })
             body.addView(ui.linkRow("Ссылка WDTT Plus", link))
+            body.addView(ui.qrRow(link))
         } ?: body.addView(ui.text("Ссылка появится после добавления VK-хеша", 13f, MobilePalette.muted))
-        body.addView(ui.gap(12))
-        body.addView(ui.text("Пароль", 12f, MobilePalette.muted))
-        body.addView(ui.text(access.password, 16f, bold = true, mono = true).apply { setTextIsSelectable(true) })
+        body.addView(ui.linkRow("Пароль", access.password, lines = 1))
         body.addView(LinearLayout(this).apply {
             setPadding(0, ui.dp(14), 0, 0)
             addView(ui.stat("Истекает", expires(access)), LinearLayout.LayoutParams(0, -2, 1f))

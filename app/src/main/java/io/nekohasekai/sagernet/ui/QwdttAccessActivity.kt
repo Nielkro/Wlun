@@ -197,15 +197,10 @@ class QwdttAccessActivity : ThemedActivity() {
             addView(ui.iconButton(R.drawable.ic_mobile_edit, "Изменить") { sheet.dismiss(); form(access) }, LinearLayout.LayoutParams(ui.dp(44), ui.dp(44)))
         })
         val (qwdtt, wdtt) = admin.links(access)
-        body.addView(LinearLayout(this).apply {
-            gravity = Gravity.CENTER; setPadding(0, ui.dp(16), 0, ui.dp(8))
-            addView(ui.qr(qwdtt), LinearLayout.LayoutParams(ui.dp(220), ui.dp(220)))
-        })
         body.addView(ui.linkRow("Ссылка qWDTT", qwdtt))
+        body.addView(ui.qrRow(qwdtt))
         body.addView(ui.linkRow("Ссылка WDTT (легаси)", wdtt))
-        body.addView(ui.gap(12))
-        body.addView(ui.text("Пароль", 12f, MobilePalette.muted))
-        body.addView(ui.text(access.password, 16f, bold = true, mono = true).apply { setTextIsSelectable(true) })
+        body.addView(ui.linkRow("Пароль", access.password, lines = 1))
         body.addView(LinearLayout(this).apply {
             setPadding(0, ui.dp(14), 0, 0)
             addView(ui.stat("Истекает", expires(access)), LinearLayout.LayoutParams(0, -2, 1f))

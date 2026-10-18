@@ -33,14 +33,10 @@ open class DeployEditorFragment : Fragment() {
     private var configCard: View?=null
     private var configDetails: View?=null
     private var configArrow: ImageView?=null
-    private var configText: TextView?=null
-    private var configCopy: ImageButton?=null
+    private var configBox: LinearLayout?=null
     private var configExpanded=true
     private var displayedConfig=""
-    private var configQr: ImageView?=null
-    private var legacyRow: LinearLayout?=null
-    private var legacyText: TextView?=null
-    private var shownQr=""
+    private var shownConfig: String?=null
     private var saveAction: android.view.MenuItem?=null
     private var openSwipe: MobileSwipeTile?=null
     private var listLoad: Job?=null
@@ -203,7 +199,7 @@ open class DeployEditorFragment : Fragment() {
         listLoad?.cancel()
         body.removeAllViews();host.toolbar.menu.clear();operations.clear();saveAction=null;openSwipe=null
         output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null
-        consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configText=null;configCopy=null;displayedConfig=""
+        consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configBox=null;shownConfig=null;displayedConfig=""
         val s=host.server
         host.toolbar.title=if(s==null) "Деплой "+DeployActivity.title(host.kind) else "Управление сервером"
         if(s==null) {
@@ -273,13 +269,8 @@ open class DeployEditorFragment : Fragment() {
             }
         }
         if(s.kind=="csqtt") {
+            // The web panel opens from the server menu («Панель сервера»).
             switch(access,s,"docker","Установить в Docker")
-            button(body,"Открыть веб-панель",R.drawable.ic_mobile_globe) {
-                runCatching {
-                    require(s["host"].isNotBlank());val address=s["host"].let { if(it.contains(':')) "[$it]" else it }
-                    startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse("https://"+address+":"+s.port("webPort"))))
-                }.onFailure { Toast.makeText(context,"Укажите адрес сервера",Toast.LENGTH_SHORT).show() }
-            }
         }
         val console=card();consoleCard=console.parent as View
         toggle=disclosure(console,"Консоль") { expanded=!expanded;expand() };consoleHeader=toggle?.parent as? View
@@ -319,48 +310,8 @@ open class DeployEditorFragment : Fragment() {
         val config=card();configCard=config.parent as View
         configArrow=disclosure(config,DeployActivity.title(s.kind)+" конфиг") { configExpanded=!configExpanded;expand() }
         val configBody=column();config.addView(configBody);configDetails=configBody
-        val well=column().apply {
-            setPadding(dp(12),dp(8),dp(12),dp(12))
-            background=android.graphics.drawable.GradientDrawable().apply {
-                setColor(androidx.core.graphics.ColorUtils.blendARGB(MobilePalette.surface,android.graphics.Color.BLACK,.14f));cornerRadius=dp(12).toFloat()
-            }
-        }
-        configCopy=ImageButton(requireContext()).apply {
-            setImageResource(R.drawable.ic_mobile_copy_outline);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
-            background=null;setPadding(dp(12),dp(12),dp(12),dp(12));contentDescription="Скопировать конфиг"
-            MobileFeedback.apply(this,circle=true)
-            setOnClickListener { if(displayedConfig.isNotBlank()) app.qthrone.mobile.SagerNet.trySetPrimaryClip(displayedConfig) }
-        }
-        configText=TextView(requireContext()).apply { setTextColor(MobilePalette.text);typeface=android.graphics.Typeface.MONOSPACE;textSize=12f;setTextIsSelectable(true) }
-        val configRow=LinearLayout(requireContext()).apply { gravity=android.view.Gravity.CENTER_VERTICAL }
-        well.addView(ScrollView(requireContext()).apply {
-            isVerticalScrollBarEnabled=false;isHorizontalScrollBarEnabled=false;overScrollMode=View.OVER_SCROLL_NEVER
-            addView(configText)
-        },LinearLayout.LayoutParams(-1,dp(60)))
-        configRow.addView(well,LinearLayout.LayoutParams(0,-2,1f))
-        configRow.addView(configCopy,LinearLayout.LayoutParams(dp(44),dp(44)))
-        configBody.addView(configRow)
-        // As after a deploy in the original apps: the QR code and, for qWDTT, the legacy wdtt:// link too.
-        configQr=ImageView(requireContext()).apply { visibility=View.GONE;contentDescription="QR-код подключения" }
-        configBody.addView(LinearLayout(requireContext()).apply {
-            gravity=android.view.Gravity.CENTER;setPadding(0,dp(14),0,dp(4));addView(configQr,LinearLayout.LayoutParams(dp(220),dp(220)))
-        })
-        legacyText=TextView(requireContext()).apply { setTextColor(MobilePalette.text);typeface=android.graphics.Typeface.MONOSPACE;textSize=12f;maxLines=1;ellipsize=android.text.TextUtils.TruncateAt.END }
-        legacyRow=LinearLayout(requireContext()).apply {
-            orientation=LinearLayout.VERTICAL;setPadding(0,dp(10),0,0);visibility=View.GONE
-            addView(TextView(requireContext()).apply { text="Ссылка WDTT (легаси)";textSize=12f;setTextColor(MobilePalette.muted) })
-            addView(LinearLayout(requireContext()).apply {
-                gravity=android.view.Gravity.CENTER_VERTICAL
-                addView(legacyText,LinearLayout.LayoutParams(0,-2,1f))
-                addView(ImageButton(requireContext()).apply {
-                    setImageResource(R.drawable.ic_mobile_copy_outline);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
-                    background=null;setPadding(dp(12),dp(12),dp(12),dp(12));contentDescription="Скопировать ссылку WDTT"
-                    MobileFeedback.apply(this,circle=true)
-                    setOnClickListener { legacyText?.text?.toString()?.takeIf { it.isNotBlank() }?.let { app.qthrone.mobile.SagerNet.trySetPrimaryClip(it) } }
-                },LinearLayout.LayoutParams(dp(44),dp(44)))
-            })
-        }
-        configBody.addView(legacyRow)
+        // The same share blocks as every server screen: the link, its QR code and, for qWDTT, the legacy wdtt:// link.
+        configBox=column().also { configBody.addView(it) }
         expand();render(DeployEngine.state.value)
     }
     private fun expand() {
@@ -384,19 +335,21 @@ open class DeployEditorFragment : Fragment() {
             else if(state.config.isNotBlank()) s["config"]=state.config
         }
         displayedConfig=DeployConfig.display(s?.get("config").orEmpty())
-        val configLabel=displayedConfig.ifBlank { "Конфиг появится после успешной установки" }
-        if(configText?.text?.toString()!=configLabel) configText?.text=configLabel
-        configCopy?.visibility=if(displayedConfig.isBlank()) View.GONE else View.VISIBLE
-        if(displayedConfig!=shownQr) {
-            shownQr=displayedConfig
-            configQr?.visibility=if(displayedConfig.isBlank()) View.GONE else View.VISIBLE
-            if(displayedConfig.isNotBlank()) configQr?.setImageBitmap(app.qthrone.mobile.widget.QrBitmap.encode(displayedConfig,dp(220)))
-        }
         val legacy=if(s!=null && s.kind=="qwdtt" && displayedConfig.isNotBlank()) runCatching {
             app.qthrone.mobile.deploy.QwdttAdmin.links(s,s["name"].ifBlank { s["password"] },s["password"],emptyList()).second
         }.getOrNull() else null
-        legacyRow?.visibility=if(legacy==null) View.GONE else View.VISIBLE
-        if(legacy!=null && legacyText?.text?.toString()!=legacy) legacyText?.text=legacy
+        val shown=displayedConfig+" "+legacy.orEmpty()
+        if(configBox!=null && shown!=shownConfig) {
+            shownConfig=shown
+            val ui=ServerUi(requireContext())
+            configBox?.removeAllViews()
+            if(displayedConfig.isBlank()) configBox?.addView(ui.text("Конфиг появится после успешной установки",14f,MobilePalette.muted))
+            else {
+                configBox?.addView(ui.linkRow(null,displayedConfig,lines=4))
+                configBox?.addView(ui.qrRow(displayedConfig))
+                if(legacy!=null) configBox?.addView(ui.linkRow("Ссылка WDTT (легаси)",legacy))
+            }
+        }
         status?.text=if(relevant) state.step+(if(state.running && !state.installerProgress && state.percent in 45..99) "" else " · "+state.percent+"%") else "Готово к подключению"
         val logs="$ "+(s?.kind ?: "deploy")+" deploy\n"+(if(relevant) state.logs.ifBlank { "Ожидание подключения к VPS…" } else "Ожидание подключения к VPS…")
         if(output?.text?.toString()!=logs) {
@@ -420,6 +373,6 @@ open class DeployEditorFragment : Fragment() {
         if(this::body.isInitialized) editable(body)
         operations.forEach { it.isEnabled=!state.running }
     }
-    override fun onDestroyView() { output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configText=null;configCopy=null;configQr=null;legacyRow=null;legacyText=null;shownQr="";saveAction=null;openSwipe=null;operations.clear();super.onDestroyView() }
+    override fun onDestroyView() { output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null;consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configBox=null;shownConfig=null;saveAction=null;openSwipe=null;operations.clear();super.onDestroyView() }
 }
 

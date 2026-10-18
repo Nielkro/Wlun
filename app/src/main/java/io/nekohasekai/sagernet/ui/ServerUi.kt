@@ -88,24 +88,56 @@ internal class ServerUi(private val context: Context) {
         addView(text(label, 12f, MobilePalette.muted)); addView(text(value, 15f, bold = true).apply { setPadding(0, dp(2), 0, 0) })
     }
 
-    /** A labelled share link with a copy button. */
-    fun linkRow(label: String, value: String) = column().apply {
+    /** The copy button every share block ends with. */
+    fun copyButton(description: String, copy: () -> Unit) = iconButton(R.drawable.ic_mobile_copy_outline, description) {
+        if (copy()) android.widget.Toast.makeText(context, "Скопировано", android.widget.Toast.LENGTH_SHORT).show()
+    }.apply { imageTintList = ColorStateList.valueOf(accent) }
+
+    /** A share link in the dark well with a copy button, the same block for every server kind. */
+    fun linkRow(label: String?, value: String, lines: Int = 2) = column().apply {
         setPadding(0, dp(10), 0, 0)
-        addView(text(label, 12f, MobilePalette.muted))
+        if (label != null) addView(text(label, 12f, MobilePalette.muted).apply { setPadding(0, 0, 0, dp(6)) })
         addView(LinearLayout(context).apply {
             gravity = Gravity.CENTER_VERTICAL
-            addView(text(value, 13f, mono = true).apply { maxLines = 1; ellipsize = android.text.TextUtils.TruncateAt.END }, LinearLayout.LayoutParams(0, -2, 1f))
-            addView(iconButton(R.drawable.ic_mobile_copy_outline, "Скопировать: $label") { app.qthrone.mobile.SagerNet.trySetPrimaryClip(value) },
-                LinearLayout.LayoutParams(dp(44), dp(44)))
+            addView(text(value, 12f, mono = true).apply {
+                maxLines = lines; ellipsize = android.text.TextUtils.TruncateAt.END; setTextIsSelectable(true)
+                setPadding(dp(12), dp(10), dp(12), dp(10)); background = well()
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(copyButton("Скопировать: ${label ?: "ссылку"}") { app.qthrone.mobile.SagerNet.trySetPrimaryClip(value) },
+                LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
         })
     }
 
-    fun qr(link: String, size: Int = 220) = ImageView(context).apply {
-        val pixels = dp(size)
-        setImageBitmap(app.qthrone.mobile.widget.QrBitmap.encode(link, pixels)); contentDescription = "QR-код подключения"
-        setPadding(dp(12), dp(12), dp(12), dp(12))
-        background = GradientDrawable().apply { setColor(android.graphics.Color.WHITE); cornerRadius = dp(18).toFloat() }
+    /** The QR code in the same well, on the left, with a button that copies it as a picture. */
+    fun qrRow(link: String, size: Int = 168) = LinearLayout(context).apply {
+        gravity = Gravity.CENTER_VERTICAL; setPadding(0, dp(10), 0, 0)
+        addView(LinearLayout(context).apply {
+            setPadding(dp(12), dp(12), dp(12), dp(12)); background = well()
+            addView(qr(link, size), LinearLayout.LayoutParams(dp(size), dp(size)))
+        }, LinearLayout.LayoutParams(0, -2, 1f))
+        addView(copyButton("Скопировать QR-код") { copyQr(link) }, LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
     }
+
+    fun qr(link: String, size: Int = 220) = ImageView(context).apply {
+        setImageBitmap(app.qthrone.mobile.widget.QrBitmap.encode(link, dp(size))); contentDescription = "QR-код подключения"
+        setPadding(dp(8), dp(8), dp(8), dp(8))
+        background = GradientDrawable().apply { setColor(android.graphics.Color.WHITE); cornerRadius = dp(12).toFloat() }
+    }
+
+    /** Puts the QR picture on the clipboard through the app's cache FileProvider (cache/qr only). */
+    fun copyQr(link: String): Boolean = runCatching {
+        val dir = java.io.File(context.cacheDir, "qr").apply { mkdirs() }
+        val file = java.io.File(dir, "qr.png")
+        val bitmap = app.qthrone.mobile.widget.QrBitmap.encode(link, 720)
+        val framed = android.graphics.Bitmap.createBitmap(bitmap.width + 80, bitmap.height + 80, android.graphics.Bitmap.Config.ARGB_8888).apply {
+            android.graphics.Canvas(this).apply { drawColor(android.graphics.Color.WHITE); drawBitmap(bitmap, 40f, 40f, null) }
+        }
+        file.outputStream().use { framed.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+        val uri = androidx.core.content.FileProvider.getUriForFile(context, app.qthrone.mobile.BuildConfig.APPLICATION_ID + ".cache", file)
+        val clipboard = context.getSystemService(android.content.ClipboardManager::class.java)
+        clipboard.setPrimaryClip(android.content.ClipData.newUri(context.contentResolver, "QR-код", uri))
+        true
+    }.getOrDefault(false)
 
     fun bytes(value: Long): String = when {
         value >= 1L shl 30 -> String.format("%.2f ГБ", value / (1L shl 30).toDouble())

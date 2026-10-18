@@ -73,3 +73,14 @@ class WdttPlusExitTest {
         assertEquals("p1", access.title)
     }
 }
+
+class QwdttSubscriptionsTest {
+    private fun access(password: String) = QwdttAdmin.Access(password, "", "", 1, emptyList(), 0, false, 0, 0, 0)
+
+    @Test fun ownerPasswordIsNotListedAsAUser() {
+        val server = DeployServer.create("qwdtt").apply { set("password", "owner") }
+        val shown = QwdttAdmin(server).subscriptions(listOf(access("owner"), access("alice"), access("bob")))
+        assertEquals(listOf("alice", "bob"), shown.map { it.password })
+        assertEquals(1, QwdttAdmin(DeployServer.create("qwdtt").apply { set("password", "") }).subscriptions(listOf(access(""))).size)
+    }
+}
