@@ -4301,6 +4301,7 @@ private suspend fun installWireGuardExitVps(
         try { currentSession?.disconnect() } catch (_: Exception) {}
         try { foreignSession?.disconnect() } catch (_: Exception) {}
     }
+}
 
 private val wireGuardOutboundModes = setOf("wireguard_vps", "warp_free", "imported_wg")
 
