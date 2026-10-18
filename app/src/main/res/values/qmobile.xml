@@ -24,7 +24,7 @@
 <string name="qmobile_speed">Speed test</string>
 <string name="qmobile_tests">Testing</string>
 <string name="qmobile_stop">Stop</string>
-<color name="qmobile_launcher_background">#00000000</color>
+<color name="qmobile_launcher_background">@color/penik_background</color>
 <string name="qmobile_routing">Split routing</string>
 <string name="qmobile_route_default">Default traffic destination</string>
 <string name="qmobile_route_add">Add a rule</string>

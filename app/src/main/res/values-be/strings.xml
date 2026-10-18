@@ -1341,7 +1341,7 @@
     <string name="update_reason_no_manifest">рэліз не мае маніфесту абнаўлення</string>
     <string name="update_restart_note">Злучэнне спыняецца падчас замены праграмы і аднаўляецца пасля абнаўлення.</string>
     <string name="update_size">Памер: %s</string>
-    <string name="update_up_to_date">qThrone абноўлены</string>
+    <string name="update_up_to_date">Wlun абноўлены</string>
     <string name="update_verifying">Праверка абнаўлення…</string>
     <string name="use_dns_object">Выкарыстоўваць карыстальніцкі аб\'ект DNS</string>
     <string name="use_dns_object_sum">Замяніць увесь раздзел DNS ніжэйшым аб\'ектам</string>

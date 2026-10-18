@@ -150,4 +150,38 @@
     <color name="dialog_button_brown">@color/material_brown_500</color>
     <color name="dialog_button_blue_grey">@color/material_blue_grey_500</color>
 
+    <color name="fab_color_progress">@color/material_light_black</color>
+    <color name="dropdown_color_background">@color/white</color>
+    <color name="dropdown_color_selected">#EEEEEE</color>
+
+    <!-- Exslav / Penik Design System Colors -->
+    <color name="penik_background">#0D0D12</color>
+    <color name="penik_panel">#13131A</color>
+    <color name="penik_panel_secondary">#1A1A24</color>
+    <color name="penik_border">#252535</color>
+    <color name="penik_border_light">#2E2E42</color>
+    <color name="penik_accent">#5B6EF5</color>
+    <color name="penik_accent_hover">#4A5DE4</color>
+    <color name="penik_accent_light">#7A8AF8</color>
+    <color name="penik_text_primary">#EEEEF5</color>
+    <color name="penik_text_muted">#7B7B9B</color>
+    <color name="penik_success">#4EC97A</color>
+    <color name="penik_danger">#F05A5A</color>
+    <color name="penik_warning">#F5A623</color>
+
+    <!-- Wlun Design System Colors -->
+    <color name="wlun_background">#0D0D12</color>
+    <color name="wlun_panel">#13131A</color>
+    <color name="wlun_panel_secondary">#1A1A24</color>
+    <color name="wlun_border">#252535</color>
+    <color name="wlun_border_light">#2E2E42</color>
+    <color name="wlun_accent">#5B6EF5</color>
+    <color name="wlun_accent_hover">#4A5DE4</color>
+    <color name="wlun_accent_light">#7A8AF8</color>
+    <color name="wlun_text_primary">#EEEEF5</color>
+    <color name="wlun_text_muted">#7B7B9B</color>
+    <color name="wlun_success">#4EC97A</color>
+    <color name="wlun_danger">#F05A5A</color>
+    <color name="wlun_warning">#F5A623</color>
+
 </resources>

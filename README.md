@@ -1,4 +1,4 @@
-# qThroneMobile
+# Wlun
 
 Android-клиент на ядрах [sing-box](https://github.com/SagerNet/sing-box) и [Xray](https://github.com/XTLS/Xray-core). Форк [ThroneForAndroid](https://github.com/throneproj/ThroneForAndroid).
 

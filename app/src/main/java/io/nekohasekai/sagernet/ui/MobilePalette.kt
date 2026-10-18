@@ -9,11 +9,11 @@ import com.google.android.material.color.MaterialColors
 object MobilePalette {
     val oled get() = DataStore.amoledTheme && Theme.usingNightMode()
     val light get() = !oled && !Theme.usingNightMode()
-    val background get() = if (oled) Color.BLACK else if (light) Color.rgb(236,237,239) else Color.rgb(30,30,30)
-    val surface get() = if (oled) Color.rgb(15,15,15) else if (light) Color.rgb(248,249,250) else Color.rgb(49,51,54)
-    val toolbar get() = if (oled) Color.BLACK else if (light) Color.rgb(231,233,235) else Color.rgb(34,35,37)
-    val text get() = if (light) Color.rgb(39,44,48) else Color.rgb(231,234,237)
-    val muted get() = if (light) Color.rgb(100,110,119) else Color.rgb(173,182,191)
-    fun accent(context: Context) = if (!DataStore.useSystemTheme && DataStore.appTheme == Theme.CYAN) Color.rgb(87,190,229)
-        else MaterialColors.getColor(context, androidx.appcompat.R.attr.colorAccent, Color.rgb(87,190,229))
+    val background get() = if (oled) Color.BLACK else if (light) Color.rgb(236,237,239) else Color.rgb(13,13,18)
+    val surface get() = if (oled) Color.rgb(13,13,18) else if (light) Color.rgb(248,249,250) else Color.rgb(19,19,26)
+    val toolbar get() = if (oled) Color.BLACK else if (light) Color.rgb(231,233,235) else Color.rgb(19,19,26)
+    val text get() = if (light) Color.rgb(39,44,48) else Color.rgb(238,238,245)
+    val muted get() = if (light) Color.rgb(100,110,119) else Color.rgb(123,123,155)
+    fun accent(context: Context) = if (!DataStore.useSystemTheme && DataStore.appTheme == Theme.INDIGO) Color.rgb(91,110,245)
+        else MaterialColors.getColor(context, androidx.appcompat.R.attr.colorAccent, Color.rgb(91,110,245))
 }

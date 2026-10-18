@@ -1473,7 +1473,7 @@
     <string name="update_channel_stable">Kanal: rilis stabil</string>
     <string name="update_channel_beta">Kanal: rilis stabil dan prarilis</string>
     <string name="update_checking">Memeriksa pembaruan…</string>
-    <string name="update_up_to_date">qThrone sudah terbaru</string>
+    <string name="update_up_to_date">Wlun sudah terbaru</string>
     <string name="update_check_failed">Tidak dapat memeriksa pembaruan</string>
     <string name="update_current_version">Versi saat ini: %s</string>
     <string name="update_new_version">Versi baru: %s</string>

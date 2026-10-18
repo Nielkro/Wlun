@@ -1345,7 +1345,7 @@
     <string name="update_reason_no_manifest">у релізі немає маніфесту оновлення</string>
     <string name="update_restart_note">Під час заміни застосунку з’єднання переривається й відновлюється після оновлення.</string>
     <string name="update_size">Розмір: %s</string>
-    <string name="update_up_to_date">qThrone оновлено до останньої версії</string>
+    <string name="update_up_to_date">Wlun оновлено до останньої версії</string>
     <string name="update_verifying">Перевірка оновлення…</string>
     <string name="use_dns_object">Використовувати власний об’єкт DNS</string>
     <string name="use_dns_object_sum">Замінити весь розділ DNS об’єктом нижче</string>

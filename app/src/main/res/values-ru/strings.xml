@@ -536,7 +536,7 @@
     <string name="backup_error_nothing">Эта резервная копия не содержит данных для восстановления.</string>
     <string name="backup_error_version">Неподдерживаемая версия формата резервной копии: %d.\nВозможно, она создана более новой версией приложения.</string>
     <string name="backup_failed">Не удалось создать резервную копию: %s</string>
-    <string name="backup_local_summary">Резервные копии используют формат qThrone Desktop (.thrbackup): их восстанавливает любое из приложений. Учётные данные WebDAV остаются на этом устройстве.</string>
+    <string name="backup_local_summary">Резервные копии используют формат Wlun Desktop (.thrbackup): их восстанавливает любое из приложений. Учётные данные WebDAV остаются на этом устройстве.</string>
     <string name="backup_open_label">Восстановить резервную копию Throne</string>
     <string name="backup_part_otp">OTP-профили (на Android не восстанавливаются)</string>
     <string name="backup_part_profiles">Профили (группы и прокси)</string>
@@ -564,7 +564,7 @@
     <string name="backup_warn_moved_profiles">%d профилей с отсутствующей группой перемещены в другую группу.</string>
     <string name="backup_warn_orphan_rules">Пропущено %d правил отсутствующих маршрутизирующих профилей.</string>
     <string name="backup_warn_orphan_tabs">Удалено %d позиций вкладок без группы.</string>
-    <string name="backup_warn_raw_routes">%d необработанных маршрутизирующих профилей из qThrone Desktop сохранены только для чтения; Android не может их использовать.</string>
+    <string name="backup_warn_raw_routes">%d необработанных маршрутизирующих профилей из Wlun Desktop сохранены только для чтения; Android не может их использовать.</string>
     <string name="backup_warn_rows_skipped">Пропущено %1$d недопустимых строк из %2$s.</string>
     <string name="backup_warn_unlisted_profiles">%d профилей, отсутствовавших в списке группы, добавлены в конец.</string>
     <string name="backup_warn_untabbed_groups">%d групп без позиции вкладки добавлены в конец.</string>
@@ -831,7 +831,7 @@
     <string name="listen_port">Порт прослушивания</string>
     <string name="location_settings">Настройки местоположения</string>
     <string name="log_buffer_size">Размер буфера журнала (КБ)</string>
-    <string name="log_crash_title">qThrone аварийно завершился</string>
+    <string name="log_crash_title">Wlun аварийно завершился</string>
     <string name="log_export_failed">Не удалось экспортировать журнал: %s</string>
     <string name="log_hide_destinations">Скрывать назначения</string>
     <string name="log_hide_sensitive">Скрывать конфиденциальные данные</string>
@@ -1045,9 +1045,9 @@
     <string name="route_profile_url_hint">https://… (ссылка throne://route, base64 или JSON)</string>
     <string name="route_profiles">Маршрутизирующие профили</string>
     <string name="route_profiles_sum">Создание, редактирование, импорт и загрузка маршрутизирующих профилей</string>
-    <string name="route_raw_not_usable">Необработанные маршрутизирующие профили из qThrone Desktop нельзя использовать на Android.</string>
-    <string name="route_raw_notice">Этот необработанный маршрутизирующий профиль создан в qThrone Desktop. Он сохранён без изменений, чтобы резервные копии вернули его на рабочий стол; Android не может его редактировать или использовать.</string>
-    <string name="route_raw_summary">Исходный (qThrone Desktop) · только чтение</string>
+    <string name="route_raw_not_usable">Необработанные маршрутизирующие профили из Wlun Desktop нельзя использовать на Android.</string>
+    <string name="route_raw_notice">Этот необработанный маршрутизирующий профиль создан в Wlun Desktop. Он сохранён без изменений, чтобы резервные копии вернули его на рабочий стол; Android не может его редактировать или использовать.</string>
+    <string name="route_raw_summary">Исходный (Wlun Desktop) · только чтение</string>
     <string name="route_raw_view">Просмотр</string>
     <string name="route_refresh_repo">Обновить список репозиториев</string>
     <string name="route_remote_add_prompt">Добавить эти удалённые маршрутизирующие профили?</string>
@@ -1159,7 +1159,7 @@
     <string name="settings_appearance">Внешний вид</string>
     <string name="settings_appearance_sum">Тема, язык, список профилей, уведомления</string>
     <string name="settings_backup">Резервное копирование и восстановление</string>
-    <string name="settings_backup_sum">Файлы .thrbackup, общие с qThrone Desktop, локальные и WebDAV</string>
+    <string name="settings_backup_sum">Файлы .thrbackup, общие с Wlun Desktop, локальные и WebDAV</string>
     <string name="settings_core">Ядро</string>
     <string name="settings_core_sum">Журналирование, статистика, Clash API, безопасность, NTP</string>
     <string name="settings_dns">DNS</string>
@@ -1383,7 +1383,7 @@
     <string name="update_reason_no_manifest">в релизе нет манифеста обновления</string>
     <string name="update_restart_note">Во время замены приложения соединение прерывается и возобновляется после обновления.</string>
     <string name="update_size">Размер: %s</string>
-    <string name="update_up_to_date">qThrone обновлён до последней версии</string>
+    <string name="update_up_to_date">Wlun обновлён до последней версии</string>
     <string name="update_verifying">Проверка обновления…</string>
     <string name="use_dns_object">Использовать пользовательский объект DNS</string>
     <string name="use_dns_object_sum">Заменить весь раздел DNS объектом ниже</string>
@@ -1753,7 +1753,7 @@
     <string name="exit_ip_summary_location">Выходной IP: %1$s (%2$s)</string>
     <string name="provider_routing_title">Маршрутизация подписки</string>
     <string name="provider_routing_use">Использовать Маршрутизацию %1$s</string>
-    <string name="provider_routing_use_summary">Если выключено, используются общие настройки маршрутизации qThrone.</string>
+    <string name="provider_routing_use_summary">Если выключено, используются общие настройки маршрутизации Wlun.</string>
     <string name="provider_routing_profile">Профиль маршрутизации</string>
     <string name="provider_routing_global">По умолчанию через прокси</string>
     <string name="provider_routing_fake_dns">FakeDNS</string>

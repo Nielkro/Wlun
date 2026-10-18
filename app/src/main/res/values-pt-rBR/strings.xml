@@ -1469,7 +1469,7 @@
     <string name="update_channel_stable">Canal: versões estáveis</string>
     <string name="update_channel_beta">Canal: versões estáveis e pré-lançamento</string>
     <string name="update_checking">Buscando atualizações…</string>
-    <string name="update_up_to_date">O qThrone está atualizado</string>
+    <string name="update_up_to_date">O Wlun está atualizado</string>
     <string name="update_check_failed">Não foi possível buscar atualizações</string>
     <string name="update_current_version">Versão atual: %s</string>
     <string name="update_new_version">Nova versão: %s</string>

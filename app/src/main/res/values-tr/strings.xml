@@ -1475,7 +1475,7 @@
     <string name="update_channel_stable">Kanal: kararlı sürümler</string>
     <string name="update_channel_beta">Kanal: kararlı ve ön sürümler</string>
     <string name="update_checking">Güncellemeler denetleniyor…</string>
-    <string name="update_up_to_date">qThrone güncel</string>
+    <string name="update_up_to_date">Wlun güncel</string>
     <string name="update_check_failed">Güncellemeler denetlenemedi</string>
     <string name="update_current_version">Mevcut sürüm: %s</string>
     <string name="update_new_version">Yeni sürüm: %s</string>
