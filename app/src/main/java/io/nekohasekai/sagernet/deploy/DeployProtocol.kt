@@ -30,11 +30,14 @@ object DeployProtocol {
             else -> WdttPlusData.Partial
         }
     }
-    /** WDTT Plus's markPreservedAndroidData: lets deploy.sh preserve data that has no service or server beside it. */
+    /**
+     * WDTT Plus's markPreservedAndroidData: lets deploy.sh preserve data that has no service or server beside it.
+     * Each check is wrapped: set -e ignores a failure left of &&, so the original marks even without wg-keys.dat.
+     */
     const val WDTT_PLUS_MARK_PRESERVED = "set -e; " +
-        "[ -d /etc/wdtt ] && [ ! -L /etc/wdtt ]; " +
-        "[ -f /etc/wdtt/passwords.json ] && [ ! -L /etc/wdtt/passwords.json ]; " +
-        "[ -f /etc/wdtt/wg-keys.dat ] && [ ! -L /etc/wdtt/wg-keys.dat ]; " +
+        "{ [ -d /etc/wdtt ] && [ ! -L /etc/wdtt ]; } || exit 1; " +
+        "{ [ -f /etc/wdtt/passwords.json ] && [ ! -L /etc/wdtt/passwords.json ]; } || exit 1; " +
+        "{ [ -f /etc/wdtt/wg-keys.dat ] && [ ! -L /etc/wdtt/wg-keys.dat ]; } || exit 1; " +
         "printf '%s\\n' 'Preserved by WDTT Plus Android deploy' > /etc/wdtt/.android-deploy-preserved.new; " +
         "chmod 600 /etc/wdtt/.android-deploy-preserved.new; " +
         "mv -f /etc/wdtt/.android-deploy-preserved.new /etc/wdtt/.android-deploy-preserved; " +
