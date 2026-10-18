@@ -28,4 +28,41 @@ class DeployProtocolTest {
         assertEquals("'a'\"'\"'b'",DeployProtocol.quote("a'b"))
         assertEquals("'\$(id); rm -rf /'",DeployProtocol.quote("\$(id); rm -rf /"))
     }
+
+    @Test fun wdttPlusDataChoosesTheDeployStep() {
+        fun probe(db: Int,unit: Int,bin: Int) = "WDTT_DB=$db\nWDTT_UNIT=$unit\nWDTT_BIN=$bin\n"
+        assertEquals(DeployProtocol.WdttPlusData.None,DeployProtocol.wdttPlusData(probe(0,1,1)))
+        assertEquals(DeployProtocol.WdttPlusData.Installed,DeployProtocol.wdttPlusData(probe(1,1,1)))
+        // After deploy.sh uninstall: the data stays, the service and server are gone.
+        assertEquals(DeployProtocol.WdttPlusData.DataOnly,DeployProtocol.wdttPlusData(probe(1,0,0)))
+        assertEquals(DeployProtocol.WdttPlusData.Partial,DeployProtocol.wdttPlusData(probe(1,1,0)))
+        assertEquals(DeployProtocol.WdttPlusData.None,DeployProtocol.wdttPlusData("sudo: error"))
+        assertFalse(DeployProtocol.wdttPlusMarked("WDTT_PRESERVED_MARKER=readyx"))
+        assertTrue(DeployProtocol.wdttPlusMarked("log\nWDTT_PRESERVED_MARKER=ready\n"))
+    }
+
+    /** Runs the marker command on a temporary /etc/wdtt; bash is on CI, the test is skipped where it is absent. */
+    @Test fun wdttPlusPreservedMarkerIsWrittenOnlyForRealDataFiles() {
+        val bash=listOf("/bin/bash","/usr/bin/bash").firstOrNull { java.io.File(it).canExecute() }
+        org.junit.Assume.assumeNotNull(bash)
+        fun run(prepare: (java.io.File)->Unit): Pair<String,java.io.File> {
+            val dir=java.io.File(kotlin.io.path.createTempDirectory("wdtt").toFile(),"wdtt").apply { mkdirs() }
+            prepare(dir)
+            val process=ProcessBuilder(bash!!,"-c",DeployProtocol.WDTT_PLUS_MARK_PRESERVED.replace("/etc/wdtt",dir.path)).redirectErrorStream(true).start()
+            val output=process.inputStream.bufferedReader().readText();process.waitFor()
+            return output to java.io.File(dir,".android-deploy-preserved")
+        }
+        val (ok,marker)=run { java.io.File(it,"passwords.json").writeText("{}");java.io.File(it,"wg-keys.dat").writeText("k") }
+        assertTrue(ok,DeployProtocol.wdttPlusMarked(ok))
+        // deploy.sh accepts the marker only as exactly this line (grep -Fqx).
+        assertEquals("Preserved by WDTT Plus Android deploy\n",marker.readText())
+        assertFalse(java.io.File(marker.parentFile,".android-deploy-preserved.new").exists())
+        val (noKeys,noKeysMarker)=run { java.io.File(it,"passwords.json").writeText("{}") }
+        assertFalse(DeployProtocol.wdttPlusMarked(noKeys));assertFalse(noKeysMarker.exists())
+        val (link,linkMarker)=run {
+            java.io.File(it,"wg-keys.dat").writeText("k")
+            java.nio.file.Files.createSymbolicLink(java.io.File(it,"passwords.json").toPath(),java.io.File(it,"wg-keys.dat").toPath())
+        }
+        assertFalse(DeployProtocol.wdttPlusMarked(link));assertFalse(linkMarker.exists())
+    }
 }

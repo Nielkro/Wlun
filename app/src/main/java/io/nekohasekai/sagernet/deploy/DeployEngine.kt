@@ -192,7 +192,11 @@ object DeployEngine {
         require(staging.matches(Regex("""/tmp/wdtt-plus-deploy\.[A-Za-z0-9]+"""))) { "Не удалось подготовить временный каталог" }
         try {
             exec(ssh,server,"chmod 700 ${quote(staging)}",30_000)
-            val existing = exec(ssh,server,root("[ -s /etc/wdtt/passwords.json ] && echo WDTT_DB=1 || echo WDTT_DB=0"),30_000).second.contains("WDTT_DB=1")
+            val data = DeployProtocol.wdttPlusData(exec(ssh,server,root(DeployProtocol.WDTT_PLUS_PROBE),30_000).second)
+            val existing = data != DeployProtocol.WdttPlusData.None
+            require(uninstall || data != DeployProtocol.WdttPlusData.Partial) {
+                "На VPS неполная установка WDTT Plus: есть только служба или только сервер. Удалите сервис с VPS и повторите установку"
+            }
             val sftp = ssh.openChannel("sftp") as ChannelSftp
             sftp.connect(30_000)
             try {
@@ -214,6 +218,19 @@ object DeployEngine {
                     }
                 }
             } finally { sftp.disconnect() }
+            // As WDTT Plus does: data left without the service and server is marked, or deploy.sh refuses to preserve it.
+            if(uninstall && existing) {
+                if(!DeployProtocol.wdttPlusMarked(exec(ssh,server,root(DeployProtocol.WDTT_PLUS_MARK_PRESERVED),30_000).second))
+                    log("Предупреждение: не удалось отметить данные /etc/wdtt как сохранённые; при повторной установке проверка повторится.")
+            } else if(data == DeployProtocol.WdttPlusData.DataOnly) {
+                update(40,"Защищаю сохранённые данные")
+                require(DeployProtocol.wdttPlusMarked(exec(ssh,server,root(DeployProtocol.WDTT_PLUS_MARK_PRESERVED),30_000).second)) {
+                    "Не удалось отметить сохранённые данные /etc/wdtt: нет passwords.json или wg-keys.dat, либо это символические ссылки. Установка не запущена"
+                }
+            } else if(data == DeployProtocol.WdttPlusData.Installed) {
+                // A marker left by an uninstall that failed midway would make deploy.sh refuse the running install.
+                exec(ssh,server,root("rm -f /etc/wdtt/.android-deploy-preserved"),30_000)
+            }
             update(45,if(uninstall) "Удаление" else if(existing) "Обновление с сохранением данных" else "Установка и запуск сервиса")
             val command = if(uninstall) "bash ${quote("$staging/deploy.sh")} uninstall"
                 else "env WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_SSH_PORT=${server.port("sshPort")} " +
