@@ -39,7 +39,7 @@ class WdttPlusExitActivity : ThemedActivity() {
     private lateinit var exit: WdttPlusExit
     private var snapshot: OutboundServerSnapshot? = null
     private var busy = false
-    private var action = ""
+    private var running = ""
     private var step = ""
     private var result = ""
     private var failed = false
@@ -87,7 +87,7 @@ class WdttPlusExitActivity : ThemedActivity() {
      */
     private fun run(label: String, preflight: Boolean = false, action: suspend () -> String) {
         if (busy || !this::exit.isInitialized) return
-        busy = true; action = label; step = ""; result = ""; failed = false; render()
+        busy = true; running = label; step = ""; result = ""; failed = false; render()
         val onProgress: (Float, String) -> Unit = { _, text -> runOnUiThread { step = text; render() } }
         lifecycleScope.launch {
             val outcome = withContext(Dispatchers.IO + DeployManager.progress.asContextElement(onProgress)) {
@@ -127,7 +127,7 @@ class WdttPlusExitActivity : ThemedActivity() {
                 .apply { layoutParams = LinearLayout.LayoutParams(-1, -2).apply { topMargin = ui.dp(8) } })
         })
         if (busy || result.isNotEmpty()) body.addView(ui.card().apply {
-            addView(ui.text(action, 16f, bold = true))
+            addView(ui.text(running, 16f, bold = true))
             if (busy) {
                 addView(ProgressBar(context).apply { isIndeterminate = true })
                 if (step.isNotEmpty()) addView(ui.text(step, 14f, MobilePalette.muted))

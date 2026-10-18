@@ -19,6 +19,16 @@ import java.util.Locale
  */
 
 private const val CMD_TIMEOUT = 900000L
+internal const val WGCF_VERSION = "2.2.32"
+private const val WGCF_LINUX_AMD64_SHA256 = "2ff97f2201972ce582a424455d50a3719a380eef0cd1f3144f7779348e122a2c"
+private const val WGCF_LINUX_AMD64_URL =
+    "https://github.com/ViRb3/wgcf/releases/download/v$WGCF_VERSION/wgcf_${WGCF_VERSION}_linux_amd64"
+private const val WGCF_LATEST_RELEASE_API = "https://api.github.com/repos/ViRb3/wgcf/releases/latest"
+internal const val THREEPROXY_VERSION = "0.9.7"
+private const val THREEPROXY_SOURCE_SHA256 =
+    "efe862ef8b7c0ddf7b1c45d6b5d72f0b7cd0a3c54447419c7f1bd2239a06fc30"
+private const val THREEPROXY_SOURCE_URL =
+    "https://github.com/3proxy/3proxy/archive/refs/tags/$THREEPROXY_VERSION.tar.gz"
 
 /** Progress of the running operation goes to the screen that started it. */
 internal object DeployManager {
