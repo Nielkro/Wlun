@@ -512,6 +512,7 @@ internal fun standaloneInstallerOwnershipProbeScript(pathPrefix: String = ""): S
       printf 'WDTT_INSTALL_TRACE=0\n'
     fi
 """.trimIndent()
+}
 
 internal fun deploymentOwnershipFromProbe(output: String): DeploymentOwnership {
     val requiredMarkers = listOf(
