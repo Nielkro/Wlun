@@ -37,6 +37,12 @@ PY
 python3 "$ROOT/scripts/prepare_android_captcha.py" "$SOURCE/qThrone/qwdtt"
 (cd "$SOURCE/qThrone/qwdtt"; gofmt -w creds.go csqtt_bridge.go bridge_config.go vk_account.go; go build -trimpath -buildmode=pie -ldflags='-s -w -checklinkname=0' -o "$OUT/libqwdtt.so" .)
 cp "$SOURCE/qThrone/qwdtt/LICENSE" "$OUT/qWDTT-LICENSE"
+# WDTT Plus: its own native client, built as its Gradle task builds libclient.so.
+WDTTPLUS=f706ccd373685bbde20cae33b2b7f400e8335ecc
+fetch_source "$SOURCE/wdttplus" https://github.com/Ivan4537/WDTT-Plus.git "$WDTTPLUS"
+(cd "$SOURCE/wdttplus/go_client"; go build -buildvcs=false -trimpath -buildmode=pie \
+  -ldflags='-s -w -checklinkname=0 -linkmode=external -extldflags=-Wl,-z,max-page-size=16384' -o "$OUT/libwdttplus.so" .)
+cp "$SOURCE/wdttplus/LICENSE" "$OUT/WDTT-Plus-LICENSE"
 OLC=f3ad8fb7c0d0fa981423f83269526fa94077c23d
 fetch_source "$SOURCE/olcrtc" https://github.com/openlibrecommunity/olcrtc.git "$OLC"
 mkdir -p "$SOURCE/olcrtc/cmd/qthrone-olcrtc"
@@ -95,8 +101,8 @@ mkdir -p "$SOURCE/no-pkgconfig"
   cargo +1.97.1 ndk -t "$ABI" -P 24 build --release --locked -p slipstream-client --features openssl-vendored,picoquic-minimal-build)
 cp "$CARGO_TARGET_DIR/$RUST/release/slipstream-client" "$OUT/libslipstream.so"
 cp "$SOURCE/slipstream/LICENSE" "$OUT/Slipstream-LICENSE"
-printf 'qThrone %s\nolcRTC %s\nOpenFlux %s\nCSQTT %s\nVayDNS %s\nMasterDnsVPN %s\nXray-core-fedarisha %s\nslipstream-rust %s\nAndroid ABI %s\nCSQTT minimum API 26\n' \
-  "$REF" "$OLC" "$FLUX" "$CSQTT" "$VAYDNS" "$MASTERDNS" "$FEDARISHA" "$SLIPSTREAM" "$ABI" > "$OUT/SOURCES.txt"
+printf 'qThrone %s\nolcRTC %s\nOpenFlux %s\nCSQTT %s\nVayDNS %s\nMasterDnsVPN %s\nXray-core-fedarisha %s\nslipstream-rust %s\nWDTT-Plus %s\nAndroid ABI %s\nCSQTT minimum API 26\n' \
+  "$REF" "$OLC" "$FLUX" "$CSQTT" "$VAYDNS" "$MASTERDNS" "$FEDARISHA" "$SLIPSTREAM" "$WDTTPLUS" "$ABI" > "$OUT/SOURCES.txt"
 (cd "$OUT"; sha256sum *.so > SHA256SUMS)
 for binary in "$OUT/"*.so; do
   test -s "$binary"

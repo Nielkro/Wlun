@@ -27,7 +27,7 @@ for item in lock['archives']:
         assert hashlib.sha256(files[name]).hexdigest() == digest
     assert set(name for name in files if name.endswith('.so')) == {
         'libqwdtt.so', 'libolcrtc.so', 'libopenflux.so', 'libcsqtt_transport.so',
-        'libdnstun.so', 'libmasterdns.so', 'libs3bypass.so', 'libslipstream.so'}
+        'libdnstun.so', 'libmasterdns.so', 'libs3bypass.so', 'libslipstream.so', 'libwdttplus.so'}
     for name, data in files.items():
         if name.endswith('.so'):
             output = root / 'deployment/carriers' / item['abi'] / name
