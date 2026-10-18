@@ -655,7 +655,7 @@ class MobileHomeFragment : ToolbarFragment() {
         }
     }
     private fun testMenu(ids: LongArray, label: String, gid: Long, wholeGroup: Boolean=false) {
-        TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label,sortGroupId=if(wholeGroup) gid else 0L),gid)
+        TestSessionClient.start(TestSpec(TestSpec.KIND_URL, profileIds=ids,scopeLabel=label,sortGroupId=if(wholeGroup) gid else 0L, url=DataStore.testUrl),gid)
     }
     private val importFile = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) SubscribeFlows.importFile(requireActivity(), uri)

@@ -41,7 +41,7 @@ constructor(
             it.rootView.findViewById<LinearLayout>(R.id.timeout_layout)?.isVisible = true
 
             it.rootView.findViewById<android.widget.Button>(R.id.btn_preset_cloudflare)?.setOnClickListener { _ ->
-                it.setText("http://cp.cloudflare.com/generate_204")
+                it.setText("https://cp.cloudflare.com/generate_204")
             }
             it.rootView.findViewById<android.widget.Button>(R.id.btn_preset_google)?.setOnClickListener { _ ->
                 it.setText("http://www.google.com/generate_204")

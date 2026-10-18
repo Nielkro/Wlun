@@ -43,7 +43,7 @@
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
                     android:textSize="11sp"
-                    android:text="Cloudflare (~40 ms)"
+                    android:text="Happ / Cloudflare (500 ms)"
                     android:layout_marginEnd="4dp" />
 
                 <com.google.android.material.button.MaterialButton

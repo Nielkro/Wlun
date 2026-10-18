@@ -126,7 +126,7 @@ object TestSessionClient {
         prepare(m) {
             val group = GroupRepo.get(groupId)
             val ids = if (group == null) emptyList() else ProfileManager.memberIds(groupId)
-            TestSpec(kind, ids.toLongArray(), scopeLabel = group?.displayName().orEmpty(),sortGroupId=groupId)
+            TestSpec(kind, ids.toLongArray(), scopeLabel = group?.displayName().orEmpty(), sortGroupId = groupId, url = DataStore.testUrl)
         }
         return true
     }
@@ -141,7 +141,7 @@ object TestSessionClient {
             } else {
                 app.getString(R.string.test_panel_scope_selected, ids.size)
             }
-            TestSpec(kind, ids.toLongArray(), scopeLabel = label)
+            TestSpec(kind, ids.toLongArray(), scopeLabel = label, url = DataStore.testUrl)
         }
         return true
     }
@@ -155,7 +155,7 @@ object TestSessionClient {
             val runningId = ProfileManager.runningProfileId()
             TestSpec(
                 kind, if (runningId > 0) longArrayOf(runningId) else LongArray(0), testCurrent = true,
-                scopeLabel = label,
+                scopeLabel = label, url = DataStore.testUrl
             )
         }
         return true
