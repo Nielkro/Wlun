@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import androidx.core.content.ContextCompat
+import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import java.util.UUID
 
@@ -70,7 +71,7 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
                     val left=(deadline-System.nanoTime())/1_000_000
                     if(left>0) Thread.sleep(left)
                 } catch(_:InterruptedException) { return@Thread }
-                respond(id,"error:timeout")
+                try { respond(id,"error:timeout") } catch(error:Exception) { Logs.w(error) }
             },"qThrone-auto-captcha-queue").apply { isDaemon=true;start() }
         } else if (!CarrierUiRequests.post(id,target,turn,onlyIfIdle=onlyIfUiIdle || !allowUi,client=client)) {
             respond(id,"error:VK confirmation is busy")
@@ -89,7 +90,8 @@ class CarrierCaptchaBridge(private val process: Process, private val onlyIfUiIdl
         finishRequest()
     }
     private fun finishRequest() {
-        pendingPost?.interrupt();pendingPost=null
+        // The queue thread answers the timeout itself: interrupting it there broke the file lock below.
+        pendingPost?.takeIf { it !== Thread.currentThread() }?.interrupt();pendingPost=null
         receiver?.let { runCatching { app.unregisterReceiver(it) } }
         receiver=null
         waiting=false

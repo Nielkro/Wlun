@@ -4,6 +4,7 @@ import android.content.Intent
 import android.util.AtomicFile
 import androidx.core.app.NotificationCompat
 import app.qthrone.mobile.R
+import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ui.MainActivity
 import java.io.File
@@ -77,10 +78,11 @@ internal object CarrierUiRequests {
             .apply { json.optString("tokenState").takeIf { it.isNotEmpty() }?.let { putExtra("tokenState",it) } }
     }.getOrNull() }
     fun clear(id: String) {
-        val cleared=locked { runCatching {
+        // Called while a request finishes on any thread; a failed lock must never end the VPN process.
+        val cleared=runCatching { locked { runCatching {
             if(JSONObject(String(file().readFully(),Charsets.UTF_8)).getString("id")!=id) false
             else { file().delete();true }
-        }.getOrDefault(false) }
+        }.getOrDefault(false) } }.onFailure { Logs.w(it) }.getOrDefault(false)
         if(cleared) app.getSystemService(android.app.NotificationManager::class.java).cancel(notificationId)
     }
 }
