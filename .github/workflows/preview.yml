@@ -1,5 +1,5 @@
-name: qThroneMobile preview
-run-name: qThroneMobile preview
+name: Wlun preview
+run-name: Wlun preview
 on:
   workflow_dispatch:
 concurrency:
@@ -59,7 +59,7 @@ jobs:
         if: steps.version.outputs.skip != 'true'
         uses: actions/upload-artifact@v7
         with:
-          name: Throne-${{ steps.version.outputs.tag }}
+          name: Wlun-${{ steps.version.outputs.tag }}
           path: dist/
           if-no-files-found: error
           retention-days: 14

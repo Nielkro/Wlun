@@ -27,8 +27,8 @@ object UpdateChecker {
 
     const val REPOSITORY = "ttrroyy/qThroneMobile"
     const val RELEASES_PAGE = "https://github.com/$REPOSITORY/releases"
-    private const val RELEASES_API = "https://api.github.com/repos/$REPOSITORY/releases?per_page=20"
-    private const val MANIFEST = "qthrone-update.json"
+    private const val MANIFEST = "wlun-update.json"
+    private const val FALLBACK_MANIFEST = "qthrone-update.json"
     private const val LEGACY_MANIFEST = "throne-update.json"
     private const val MAX_MANIFESTS = 5
     private const val MAX_MANIFEST_BYTES = 256 * 1024
@@ -85,15 +85,15 @@ object UpdateChecker {
         val candidates = fetchReleases(context, client)
             .filter { release -> allowBeta || !release.prerelease }
             .mapNotNull { release -> Semver.parse(release.tag)?.let { release to it } }
-            .filter { (release, version) -> release.assets.any { it.name == MANIFEST || it.name == LEGACY_MANIFEST } || installed == null || Semver.compare(version, installed) > 0 }
+            .filter { (release, version) -> release.assets.any { it.name == MANIFEST || it.name == FALLBACK_MANIFEST || it.name == LEGACY_MANIFEST } || installed == null || Semver.compare(version, installed) > 0 }
             .sortedWith { a, b -> Semver.compare(b.second, a.second) }
             .map { it.first }
         if (candidates.isEmpty()) return Result.UpToDate
 
         var best: Pair<Release, JSONObject>? = null
-        for (release in candidates.filter { r -> r.assets.any { it.name == MANIFEST || it.name == LEGACY_MANIFEST } }.take(MAX_MANIFESTS)) {
+        for (release in candidates.filter { r -> r.assets.any { it.name == MANIFEST || it.name == FALLBACK_MANIFEST || it.name == LEGACY_MANIFEST } }.take(MAX_MANIFESTS)) {
             val manifest = try {
-                fetchManifest(client, release.assets.firstOrNull { it.name == MANIFEST } ?: release.assets.first { it.name == LEGACY_MANIFEST })
+                fetchManifest(client, release.assets.firstOrNull { it.name == MANIFEST } ?: release.assets.firstOrNull { it.name == FALLBACK_MANIFEST } ?: release.assets.first { it.name == LEGACY_MANIFEST })
             } catch (e: Exception) {
                 Logs.w("Update manifest of ${release.tag}: ${e.readableMessage}")
                 continue

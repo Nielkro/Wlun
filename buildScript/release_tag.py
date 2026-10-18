@@ -34,7 +34,7 @@ if __name__ == "__main__":
     # retain the dotted version; compact multi-digit tags sort above legacy tags.
     tag = f"v{key[0]}.{key[1]}.{key[2]}" + (f"-{stage}{'.' if key[4] < 10 else ''}{key[4]}" if stage else "")
     if os.environ.get("PUBLISH") == "true":
-        req = urllib.request.Request("https://api.github.com/repos/" + os.environ["GITHUB_REPOSITORY"] + "/releases?per_page=100", headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "User-Agent": "qThrone-release"})
+        req = urllib.request.Request("https://api.github.com/repos/" + os.environ["GITHUB_REPOSITORY"] + "/releases?per_page=100", headers={"Authorization": "Bearer " + os.environ["GH_TOKEN"], "User-Agent": "Wlun-release"})
         with urllib.request.urlopen(req, timeout=30) as response:
             releases = json.load(response)
         for release in releases:
@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 continue
             if key <= version_key(release["tag_name"]):
                 raise SystemExit("Increase VERSION_NAME above published release " + release["tag_name"])
-            asset = next((a for a in release.get("assets", []) if a["name"] == "qthrone-update.json"), None)
+            asset = next((a for a in release.get("assets", []) if a["name"] in ("wlun-update.json", "qthrone-update.json")), None)
             if asset:
                 with urllib.request.urlopen(asset["browser_download_url"], timeout=30) as response:
                     previous = json.load(response)

@@ -162,6 +162,7 @@ def main():
         "signerSha256": manifest["signerSha256"],
         "assets": assets,
     }
+    (dist / "wlun-update.json").write_text(json.dumps(update, indent=2) + "\n", newline="\n")
     (dist / "qthrone-update.json").write_text(json.dumps(update, indent=2) + "\n", newline="\n")
     print(json.dumps(update, indent=2))
 

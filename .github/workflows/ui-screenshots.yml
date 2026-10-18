@@ -1,5 +1,5 @@
-name: qThroneMobile UI
-run-name: qThroneMobile UI
+name: Wlun UI
+run-name: Wlun UI
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +10,7 @@ on:
       artifact_name:
         description: APK artifact to test (debug or signed release)
         required: true
-        default: qThroneMobile-debug
+        default: Wlun-debug
       full_ui:
         description: Capture every settings screen before the VPN checks
         type: boolean
@@ -78,7 +78,7 @@ jobs:
       - name: Download UI regression tests
         uses: actions/download-artifact@v8
         with:
-          name: qThroneMobile-security-tests
+          name: Wlun-security-tests
           path: ui-regression-apk
           run-id: ${{ inputs.build_run }}
           github-token: ${{ github.token }}
@@ -108,6 +108,6 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always()
         with:
-          name: qThroneMobile-ui-screenshots
+          name: Wlun-ui-screenshots
           path: ui-screenshots/
           if-no-files-found: error

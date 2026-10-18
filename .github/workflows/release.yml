@@ -1,16 +1,9 @@
-name: qThroneMobile release
-run-name: qThroneMobile release
+name: Wlun release
+run-name: Wlun release
 on:
-  # Explicitly authorized fallback releases when the local GitHub API is unavailable.
   push:
     tags:
-      - 'v1.3.8-beta.6'
-      - 'v1.3.8-beta.7'
-      - 'v1.3.8-beta.8'
-      - 'v1.3.8-beta.9'
-      - 'v1.3.8-beta.10'
-      - 'v1.3.8-beta10'
-      - 'v1.3.8'
+      - 'v*'
   workflow_dispatch:
     inputs:
       publish:
@@ -59,7 +52,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: qThroneMobile-release-test-reports
+          name: Wlun-release-test-reports
           path: app/build/reports/tests/
           if-no-files-found: ignore
       - name: Release assets
@@ -68,7 +61,7 @@ jobs:
         if: ${{ github.event_name != 'push' && !inputs.publish }}
         uses: actions/upload-artifact@v7
         with:
-          name: qThroneMobile-${{ steps.version.outputs.tag }}
+          name: Wlun-${{ steps.version.outputs.tag }}
           path: dist/
           if-no-files-found: error
           retention-days: 14

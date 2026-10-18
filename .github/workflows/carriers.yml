@@ -1,5 +1,5 @@
-name: qThroneMobile transports
-run-name: qThroneMobile transports
+name: Wlun transports
+run-name: Wlun transports
 on:
   workflow_dispatch:
 permissions:
@@ -29,6 +29,6 @@ jobs:
       - name: Upload native clients and provenance
         uses: actions/upload-artifact@v7
         with:
-          name: qThrone-carriers-${{ matrix.abi }}
+          name: Wlun-carriers-${{ matrix.abi }}
           path: deployment/carriers/${{ matrix.abi }}/
           if-no-files-found: error

@@ -1,5 +1,5 @@
-name: qThroneMobile CI
-run-name: qThroneMobile CI
+name: Wlun CI
+run-name: Wlun CI
 on:
   push:
     branches:
@@ -29,19 +29,19 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
-          name: qThroneMobile-debug
+          name: Wlun-debug
           path: app/build/outputs/apk/oss/debug/*.apk
           if-no-files-found: error
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: qThroneMobile-test-reports
+          name: Wlun-test-reports
           path: app/build/reports/tests/
           if-no-files-found: ignore
       - name: Upload regression test APK
         uses: actions/upload-artifact@v7
         with:
-          name: qThroneMobile-security-tests
+          name: Wlun-security-tests
           path: app/build/outputs/apk/androidTest/oss/debug/*.apk
           if-no-files-found: error
