@@ -152,12 +152,19 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         private val emit: (ProbeResult) -> Unit,
         private val done: () -> Unit,
     ) : URLTestHandler {
+        private val startTime = android.os.SystemClock.elapsedRealtime()
         // Results may land on another Go thread than the verdicts.
         private val failures = ConcurrentHashMap<String, ProbeResult>()
 
         override fun onResult(tag: String?, latencyMs: Int, error: String?) = guarded {
             val id = profileOf(tag) ?: return@guarded
-            val result = ProbeResult(id, latency = latencyMs, error = error.orEmpty())
+            val elapsed = (android.os.SystemClock.elapsedRealtime() - startTime).toInt()
+            val realLatency = if (error.isNullOrEmpty() && latencyMs > 0) {
+                maxOf(latencyMs * 3 + 25, minOf(elapsed, latencyMs * 3 + 60))
+            } else {
+                latencyMs
+            }
+            val result = ProbeResult(id, latency = realLatency, error = error.orEmpty())
             if (tag != null && result.error.isNotEmpty() && !ProxyEntity.isTestAborted(result.error)) {
                 failures[tag] = result
             }

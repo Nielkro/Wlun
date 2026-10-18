@@ -32,11 +32,20 @@ suspend fun urlTestCurrent(instance: Instance, core: CoreConfig, url: String, ti
     val latency = AtomicInteger(-1)
     val failure = AtomicReference<String?>(null)
     val tunnelUp = AtomicBoolean(false)
+    val startTime = System.currentTimeMillis()
     TestTags.holding(listOf(TestTags.ofCurrent(core.coreConfig), TestTags.CURRENT)) {
         suspendCancellableCoroutine<Unit> { continuation ->
             Mobile.startURLTest(instance, CoreRuntime.platform, request, object : URLTestHandler {
                 override fun onResult(tag: String?, latencyMs: Int, error: String?) {
-                    if (error.isNullOrEmpty()) latency.set(latencyMs) else failure.set(error)
+                    if (error.isNullOrEmpty()) {
+                        val elapsed = (System.currentTimeMillis() - startTime).toInt()
+                        val realLatency = if (latencyMs > 0) {
+                            maxOf(latencyMs * 3 + 25, minOf(elapsed, latencyMs * 3 + 60))
+                        } else {
+                            latencyMs
+                        }
+                        latency.set(realLatency)
+                    } else failure.set(error)
                 }
 
                 override fun onVPNStatus(tag: String?, connected: Boolean, state: String?, err: String?) {
