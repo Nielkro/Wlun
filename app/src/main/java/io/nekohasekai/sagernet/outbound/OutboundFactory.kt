@@ -7,6 +7,7 @@ import app.qthrone.mobile.outbound.link.LinkParser
 import app.qthrone.mobile.outbound.types.DnsTunnel
 import app.qthrone.mobile.outbound.types.Http
 import app.qthrone.mobile.outbound.types.S3Bypass
+import app.qthrone.mobile.outbound.types.WdttPlus
 import app.qthrone.mobile.outbound.types.Shadowsocks
 import app.qthrone.mobile.outbound.types.Socks
 import java.util.concurrent.ConcurrentHashMap

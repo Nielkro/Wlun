@@ -153,8 +153,8 @@ class VkRelayActivity : ThemedActivity() {
             preferenceScreen.addPreference(account);VkRelayPreferences.bind(this,account)
             val deploy = PreferenceCategory(requireContext()).apply { title = "Управление серверами" }
             preferenceScreen.addPreference(deploy)
-            for(kind in listOf("qwdtt","csqtt")) deploy.addPreference(Preference(requireContext()).apply {
-                title = "Деплой " + if(kind == "qwdtt") "qWDTT" else "CSQTT"
+            for(kind in listOf("qwdtt","csqtt","wdttplus")) deploy.addPreference(Preference(requireContext()).apply {
+                title = "Деплой " + DeployActivity.title(kind)
                 setIcon(R.drawable.ic_mobile_core);widgetLayoutResource=R.layout.qmobile_preference_arrow
                 fragment=DeployListFragment::class.java.name
                 extras.putString("kind",kind)

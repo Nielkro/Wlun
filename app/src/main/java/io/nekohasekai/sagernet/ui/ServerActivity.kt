@@ -14,6 +14,7 @@ import app.qthrone.mobile.R
 import app.qthrone.mobile.deploy.DeployServer
 import app.qthrone.mobile.deploy.DeployStore
 import app.qthrone.mobile.deploy.QwdttAdmin
+import app.qthrone.mobile.deploy.WdttPlusAdmin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -85,6 +86,16 @@ class ServerActivity : ThemedActivity() {
                 val host = server["host"].let { if (it.contains(':') && !it.startsWith('[')) "[$it]" else it }
                 startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://$host:" + server["webPort"])))
             })
+            "wdttplus" -> listOf(
+                Triple("Клиенты и сервер", "Пароли, хеши, устройства, сроки и настройки сервера", R.drawable.ic_mobile_people) to WdttPlusClientsActivity::class.java,
+                Triple("Выходной IP и прокси", "Прокси, WARP, WireGuard или второй сервер для выхода", R.drawable.ic_hardware_router) to WdttPlusExitActivity::class.java,
+                Triple("Резервные копии и перенос", "Расписание, проверка и выгрузка копий", R.drawable.ic_mobile_backup) to WdttPlusBackupsActivity::class.java,
+            ).forEach { (tile, screen) ->
+                body.addView(ui.tile(tile.first, tile.second, tile.third) {
+                    if (WdttPlusAdmin(server).available) startActivity(Intent(this, screen).putExtra("server", server.id))
+                    else Toast.makeText(this, "Доступно после установки сервера из приложения", Toast.LENGTH_LONG).show()
+                }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = ui.dp(8) })
+            }
         }
         body.addView(ui.gap(10))
         body.addView(ui.tile("Управление сервером", "SSH, порты, обновление и переустановка", R.drawable.ic_mobile_settings) {

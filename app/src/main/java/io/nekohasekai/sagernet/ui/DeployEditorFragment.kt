@@ -183,8 +183,11 @@ open class DeployEditorFragment : Fragment() {
     }
     private fun secrets(s: DeployServer) {
         val c=column().apply { setPadding(dp(20),dp(8),dp(20),dp(16)) }
-        field(c,s,"password","Пароль туннеля",secret=true)
-        if(s.kind=="qwdtt") {
+        field(c,s,"password",if(s.kind=="wdttplus") "Главный пароль" else "Пароль туннеля",secret=true)
+        if(s.kind=="wdttplus") {
+            heading(c,"DNS для клиентов (необязательно)")
+            field(c,s,"dns","DNS через запятую")
+        } else if(s.kind=="qwdtt") {
             heading(c,"Telegram-бот (необязательно)")
             field(c,s,"adminId","ID администратора",number=true);field(c,s,"botToken","Токен бота",secret=true)
         } else {
@@ -192,7 +195,7 @@ open class DeployEditorFragment : Fragment() {
             field(c,s,"webUser","Логин WEB");field(c,s,"webPassword","Пароль WEB",secret=true)
         }
         heading(c,"SSH");field(c,s,"sshPort","Порт SSH",number=true)
-        MobileAlertDialogBuilder(requireContext()).setTitle(if(s.kind=="qwdtt") "Секреты деплоя" else "Авторизация")
+        MobileAlertDialogBuilder(requireContext()).setTitle(if(s.kind=="csqtt") "Авторизация" else "Секреты деплоя")
             .setView(ScrollView(requireContext()).apply { addView(c) }).setPositiveButton("Готово",null).show()
     }
     fun build() {
@@ -202,7 +205,7 @@ open class DeployEditorFragment : Fragment() {
         output=null;logScroll=null;status=null;progress=null;stop=null;consoleCard=null;details=null;toggle=null
         consoleHeader=null;configCard=null;configDetails=null;configArrow=null;configText=null;configCopy=null;displayedConfig=""
         val s=host.server
-        host.toolbar.title=if(s==null) "Деплой "+(if(host.kind=="qwdtt") "qWDTT" else "CSQTT") else "Управление сервером"
+        host.toolbar.title=if(s==null) "Деплой "+DeployActivity.title(host.kind) else "Управление сервером"
         if(s==null) {
             listLoad=viewLifecycleOwner.lifecycleScope.launch {
                 val result=withContext(Dispatchers.IO) { runCatching { DeployStore.savedServers().filter { it.kind==host.kind } } }
@@ -262,7 +265,8 @@ open class DeployEditorFragment : Fragment() {
         if(s.kind=="qwdtt") row(access) { r -> field(r,s,"dns1","DNS 1",pair=true);field(r,s,"dns2","DNS 2",pair=true) }
         switch(access,s,"manualPorts","Ручное управление портами",true)
         if(s["manualPorts"]=="true") {
-            row(access) { r -> field(r,s,"peerPort","Порт туннеля",number=true,pair=true);field(r,s,if(s.kind=="qwdtt") "wgPort" else "webPort",if(s.kind=="qwdtt") "Порт WG" else "Порт WEB",number=true,pair=true) }
+            row(access) { r -> field(r,s,"peerPort","Порт туннеля",number=true,pair=true);field(r,s,if(s.kind=="csqtt") "webPort" else "wgPort",if(s.kind=="csqtt") "Порт WEB" else "Порт WG",number=true,pair=true) }
+            if(s.kind=="wdttplus") field(access,s,"localPort","Локальный порт клиента",number=true)
             if(s.kind=="qwdtt") {
                 row(access) { r -> field(r,s,"rawPort","Порт RAW",number=true,pair=true);field(r,s,"directPort","Прямой порт",number=true,pair=true) }
                 field(access,s,"adminPort","Порт админ-панели",number=true)
@@ -313,7 +317,7 @@ open class DeployEditorFragment : Fragment() {
             (layoutParams as LinearLayout.LayoutParams).apply { topMargin=dp(12);bottomMargin=dp(6);height=dp(48) }
         }
         val config=card();configCard=config.parent as View
-        configArrow=disclosure(config,if(s.kind=="qwdtt") "qWDTT конфиг" else "CSQTT конфиг") { configExpanded=!configExpanded;expand() }
+        configArrow=disclosure(config,DeployActivity.title(s.kind)+" конфиг") { configExpanded=!configExpanded;expand() }
         val configBody=column();config.addView(configBody);configDetails=configBody
         val well=column().apply {
             setPadding(dp(12),dp(8),dp(12),dp(12))

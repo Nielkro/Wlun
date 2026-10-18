@@ -33,7 +33,7 @@ class DeployActivity : ThemedActivity() {
     private var shownTrust = ""
     private var shownConfig = ""
     private var wasRunning = false
-    val kind get() = intent.getStringExtra("kind").orEmpty().takeIf { it in listOf("qwdtt","csqtt") } ?: "qwdtt"
+    val kind get() = intent.getStringExtra("kind").orEmpty().takeIf { it in listOf("qwdtt","csqtt","wdttplus") } ?: "qwdtt"
     private val keyPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if(uri != null) lifecycleScope.launch {
             val text = withContext(Dispatchers.IO) { runCatching {
@@ -122,10 +122,13 @@ class DeployActivity : ThemedActivity() {
         val valid=runCatching { target.validate(!uninstall) }
         if(valid.isFailure) { MobileAlertDialogBuilder(this).setMessage(valid.exceptionOrNull()?.message).setPositiveButton(android.R.string.ok,null).show();return }
         fun run() { DeployEngine.start(target,uninstall);shownConfig="";shownTrust="";showConsole() }
-        if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${if(kind=="qwdtt") "qWDTT" else "CSQTT"} на ${target["host"]}.")
+        if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${title(kind)} на ${target["host"]}.")
             .setPositiveButton("Удалить") { _,_ -> run() }.setNegativeButton(android.R.string.cancel,null).show()
         else run()
     }
     private fun showConsole() { screen()?.revealConsole() }
     class Screen : DeployEditorFragment()
+    companion object {
+        fun title(kind: String) = when(kind) { "csqtt" -> "CSQTT"; "wdttplus" -> "WDTT Plus"; else -> "qWDTT" }
+    }
 }

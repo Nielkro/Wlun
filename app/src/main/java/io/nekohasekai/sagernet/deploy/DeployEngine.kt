@@ -28,7 +28,7 @@ object DeployEngine {
         if(state.value.running) return
         val copy = DeployServer(JSONObject(server.json.toString()))
         if(copy["manualPorts"] != "true") {
-            copy["peerPort"]=if(copy.kind=="qwdtt") "56000" else "46000"
+            copy["peerPort"]=if(copy.kind=="csqtt") "46000" else "56000";copy["localPort"]="9000"
             copy["wgPort"]="56001";copy["directPort"]="56002";copy["rawPort"]="56003";copy["adminPort"]="56002";copy["webPort"]="46002"
         }
         state.value = DeployState(server.id,true,0,"Подключение",config=server["config"])
@@ -85,6 +85,7 @@ object DeployEngine {
         ssh.setServerAliveInterval(15000);ssh.setServerAliveCountMax(4)
         ssh.connect(30_000)
         val machine = exec(ssh,server,"uname -m",30_000).second.trim()
+        if(server.kind == "wdttplus") { runWdttPlus(ssh,server,uninstall,machine);return }
         val source = if(server.kind == "qwdtt") Pair("https://github.com/makriq-org/qwdtt/releases/download/v1.4.4/qWDTT_v1.4.4.apk","ff5b2d1f265b0c4253cdf54ebf1f8a5d64afd1424086aa8b8be754b5c14df6a7")
             else Pair("https://github.com/amurcanov/csqtt/releases/download/v2.1.9/CSQTT-universal.apk","49771d60a53d731452f3301e53dbe6bdee9142876e6b295dbf88f59f0b5aaf82")
         update(5,"Загрузка официального установщика")
@@ -150,6 +151,73 @@ object DeployEngine {
         }
         update(100,if(uninstall) "Удаление завершено" else "Установка завершена")
     }
+    /**
+     * WDTT Plus, as its app deploys: the pinned official APK's deploy.sh and server go to a private
+     * staging folder; a new server gets passwords.json with the main password, an existing one is
+     * updated in place keeping its data. WDTT_INSTALL_RESULT=success, the service and the admin
+     * socket confirm the install.
+     */
+    private suspend fun runWdttPlus(ssh: Session,server: DeployServer,uninstall: Boolean,machine: String) {
+        require(machine == "x86_64" || machine == "amd64" || uninstall) { "Официальный сервер WDTT Plus собран только для x86_64" }
+        update(5,"Загрузка официального установщика")
+        val apk = artifact("https://github.com/Ivan4537/WDTT-Plus/releases/download/v20/WDTT-Plus-v20-arm64-v8a-release.apk",
+            "918cc7ab477247ebdaca030c13c0d689ca1a9f59152217f8edf0484a943da0e3")
+        val staging = exec(ssh,server,"mktemp -d /tmp/wdtt-plus-deploy.XXXXXX",30_000).second.trim().lines().last()
+        require(staging.matches(Regex("""/tmp/wdtt-plus-deploy\.[A-Za-z0-9]+"""))) { "Не удалось подготовить временный каталог" }
+        try {
+            exec(ssh,server,"chmod 700 ${quote(staging)}",30_000)
+            val existing = exec(ssh,server,root("[ -s /etc/wdtt/passwords.json ] && echo WDTT_DB=1 || echo WDTT_DB=0"),30_000).second.contains("WDTT_DB=1")
+            val sftp = ssh.openChannel("sftp") as ChannelSftp
+            sftp.connect(30_000)
+            try {
+                fun upload(path: String,bytes: ByteArray) { sftp.put(bytes.inputStream(),path);sftp.chmod(384,path) }
+                ZipFile(apk).use { zip ->
+                    fun entry(name: String): ByteArray {
+                        val item = zip.getEntry(name) ?: error("Нет файла установщика $name")
+                        require(item.size in 1..30_000_000)
+                        return zip.getInputStream(item).use { it.readBytes() }
+                    }
+                    update(30,"Передача файлов на VPS")
+                    upload("$staging/deploy.sh",entry("assets/deploy.sh"))
+                    if(!uninstall) {
+                        upload("$staging/server",entry("assets/server"))
+                        if(!existing) upload("$staging/passwords.json",JSONObject().put("main_password",server["password"]).put("admin_id","")
+                            .put("bot_token","").put("passwords",JSONObject()).put("devices",JSONObject())
+                            .put("dns",server["dns"]).put("default_ports","${server.port("peerPort")},${server.port("wgPort")},${server.port("localPort")}")
+                            .put("max_passwords",50).toString().toByteArray())
+                    }
+                }
+            } finally { sftp.disconnect() }
+            update(45,if(uninstall) "Удаление" else if(existing) "Обновление с сохранением данных" else "Установка и запуск сервиса")
+            val command = if(uninstall) "bash ${quote("$staging/deploy.sh")} uninstall"
+                else "env WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_SSH_PORT=${server.port("sshPort")} " +
+                    "WDTT_INSTALL_MODE=${if(existing) "preserve" else "fresh"} WDTT_PRESERVE_DATA=${if(existing) 1 else 0} " +
+                    (if(server["dns"].isNotBlank()) "WDTT_DNS=${quote(server["dns"])} " else "") +
+                    "WDTT_STAGED_SERVER=${quote("$staging/server")} " +
+                    (if(!existing) "WDTT_STAGED_DB=${quote("$staging/passwords.json")} " else "") +
+                    "bash ${quote("$staging/deploy.sh")}"
+            val result = exec(ssh,server,root(command),30*60_000L)
+            require(result.first == 0) { "Установщик завершился с кодом ${result.first}" }
+            if(uninstall) {
+                server.recordUninstall();DeployStore.save(server)
+                state.value=state.value.copy(config="",configCleared=true)
+                update(100,"Удаление завершено");return
+            }
+            require(DeployProtocol.successful("wdttplus",result.first,result.second)) { "Установщик не подтвердил запуск сервиса" }
+            val verify = exec(ssh,server,root("sleep 2; printf 'SERVICE=%s\n' \"\$(systemctl is-active wdtt 2>/dev/null || true)\"; " +
+                "printf 'ADMIN_SOCKET=%s\n' \"\$([ -S /run/wdtt/admin.sock ] && echo 1 || echo 0)\""),60_000).second
+            require(verify.contains("SERVICE=active")) { "Служба wdtt не запустилась" }
+            require(verify.contains("ADMIN_SOCKET=1")) { "Сервер не открыл канал управления" }
+            val link = app.qthrone.mobile.outbound.types.WdttPlus().apply {
+                this.server = server["host"]; serverPort = server.port("peerPort"); wgPort = server.port("wgPort"); localPort = server.port("localPort")
+                password = server["password"]; name = server["name"].ifBlank { "WDTT Plus" }
+            }.exportToLink()
+            server.recordInstallation(link);DeployStore.save(server)
+            state.value = state.value.copy(config=link)
+            update(100,if(existing) "Обновление завершено" else "Установка завершена")
+        } finally { runCatching { exec(ssh,server,"rm -rf ${quote(staging)}",30_000) } }
+    }
+
     private suspend fun artifact(url: String,sha: String): File {
         val target = File(app.cacheDir,"deploy-$sha.apk")
         fun digest(file: File): String {

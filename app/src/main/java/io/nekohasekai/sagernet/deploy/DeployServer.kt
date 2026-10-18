@@ -35,16 +35,23 @@ class DeployServer(val json: JSONObject) {
         require(get("user").matches(Regex("[A-Za-z0-9_.-]+"))) { "Укажите логин SSH" }
     }
     fun validate(install: Boolean) {
-        require(kind in listOf("qwdtt","csqtt"))
+        require(kind in listOf("qwdtt","csqtt","wdttplus"))
         validateAddress()
         for(key in listOf("sshPort","peerPort")) port(key)
-        if(kind == "qwdtt") { port("wgPort"); port("rawPort"); port("adminPort"); port("directPort") } else port("webPort")
+        when(kind) {
+            "qwdtt" -> { port("wgPort"); port("rawPort"); port("adminPort"); port("directPort") }
+            "wdttplus" -> { port("wgPort"); port("localPort") }
+            else -> port("webPort")
+        }
         if(get("auth") == "key") require(get("key").isNotBlank()) { "Загрузите SSH-ключ" }
         else require(get("sshPassword").isNotBlank()) { "Введите пароль SSH" }
         if(!install) return
         require(get("password").isNotBlank() && get("password").none { it == '|' }) { "Задайте пароль туннеля" }
         for(key in listOf("password","webUser","webPassword","botToken")) require(get(key).none { it == '\n' || it == '\r' || it == '\u0000' })
-        if(kind == "csqtt") require(get("webUser").matches(Regex("[A-Za-z0-9]+")) && get("webPassword").matches(Regex("[A-Za-z0-9]+"))) { "Логин и пароль панели: латиница и цифры" }
+        if(kind == "wdttplus") {
+            require(get("password").length in 8..256) { "Главный пароль: от 8 до 256 символов" }
+            require(get("dns").isBlank() || get("dns").matches(Regex("[0-9a-fA-F:.,]{1,255}"))) { "DNS: адреса через запятую" }
+        } else if(kind == "csqtt") require(get("webUser").matches(Regex("[A-Za-z0-9]+")) && get("webPassword").matches(Regex("[A-Za-z0-9]+"))) { "Логин и пароль панели: латиница и цифры" }
         else {
             require(get("adminId").all(Char::isDigit))
             for(key in listOf("dns1","dns2")) require(get(key).split('.').let { it.size == 4 && it.all { part -> part.toIntOrNull()?.let { it in 0..255 } == true } }) { "DNS должен быть IPv4-адресом" }
@@ -53,7 +60,7 @@ class DeployServer(val json: JSONObject) {
     companion object {
         fun create(kind: String) = DeployServer(JSONObject().put("id",java.util.UUID.randomUUID().toString()).put("kind",kind)).apply {
             set("name","");set("user","root");set("auth","password");set("sshPort","22")
-            set("peerPort",if(kind == "qwdtt") "56000" else "46000")
+            set("peerPort",if(kind == "csqtt") "46000" else "56000");set("localPort","9000");set("dns","")
             set("wgPort","56001");set("directPort","56002");set("rawPort","56003");set("adminPort","56002");set("webPort","46002")
             set("dns1","1.1.1.1");set("dns2","1.0.0.1");set("deviceId",java.util.UUID.randomUUID().toString())
             set("adminToken",java.util.UUID.randomUUID().toString()+java.util.UUID.randomUUID().toString())

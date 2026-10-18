@@ -13,7 +13,7 @@ object DeployConfig {
      */
     fun link(config: JSONObject, ownDeviceId: String? = null): String {
         val kind=config.getString("type")
-        require(kind in listOf("qwdtt","csqtt"))
+        require(kind in listOf("qwdtt","csqtt"))  // WDTT Plus stores its wdtt://connect link itself
         val url=LinkBuilder(kind).apply { host=if(kind=="qwdtt") "config" else "connect";plusAsEscape=true }
         if(kind=="qwdtt") {
             // qwdtt://config?name&peer&hashes&workers=18&port=9000&pass, as the original admin tab builds it.
