@@ -18,7 +18,8 @@ class WdttPlusLinkTest {
         assertEquals("Home", profile.name)
         assertEquals(36, profile.workers)
         val again = WdttPlus().apply { assertTrue(parseFromLink(profile.exportToLink())) }
-        assertEquals(profile.exportToJson().toCompact(), again.exportToJson().toCompact())
+        // The device id is per install and never travels in a link.
+        assertEquals(profile.exportToJson().also { it.remove("device_id") }.toCompact(), again.exportToJson().also { it.remove("device_id") }.toCompact())
     }
 
     @Test fun plainWdttLinksAreShownAsWdtt() {
