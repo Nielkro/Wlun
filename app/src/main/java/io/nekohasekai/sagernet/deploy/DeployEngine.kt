@@ -23,6 +23,8 @@ object DeployEngine {
     private val scope = CoroutineScope(SupervisorJob()+Dispatchers.IO)
     private var job: Job? = null
     @Volatile private var session: Session? = null
+    // Session.disconnect() is a no-op until the handshake ends, so Stop closes the socket itself.
+    @Volatile private var socket: java.net.Socket? = null
     @Volatile private var download: okhttp3.Call? = null
     @Volatile private var trustReply: CompletableDeferred<Boolean>? = null
     fun approveHost(approved: Boolean) { trustReply?.complete(approved) }
@@ -32,7 +34,7 @@ object DeployEngine {
         state.update { it.copy(stopping=true,step="Остановка…") }
         log("Остановка по запросу…")
         job?.cancel();trustReply?.complete(false);download?.cancel()
-        scope.launch { session?.disconnect() }
+        scope.launch { session?.disconnect();runCatching { socket?.close() } }
     }
     fun start(server: DeployServer, uninstall: Boolean) {
         if(state.value.running) return
@@ -52,7 +54,7 @@ object DeployEngine {
                 } else { log("Ошибка: "+redact(copy,e.message ?: e.javaClass.simpleName));update(state.value.percent,"Ошибка установки или SSH") }
                 if(e is CancellationException) throw e
             }
-            finally { session?.disconnect();session = null;download = null;state.update { it.copy(running=false,stopping=false,trust="") } }
+            finally { session?.disconnect();session = null;runCatching { socket?.close() };socket = null;download = null;state.update { it.copy(running=false,stopping=false,trust="") } }
         }
     }
     // Stop writes from the UI thread while the job logs, so these changes are atomic.
@@ -96,6 +98,11 @@ object DeployEngine {
         }
         val ssh = jsch.getSession(server["user"],server["host"],server.port("sshPort"))
         session = ssh
+        ssh.setSocketFactory(object : SocketFactory {
+            override fun createSocket(host: String,port: Int) = java.net.Socket().also { socket = it;if(state.value.stopping) it.close() }.apply { connect(java.net.InetSocketAddress(host,port),30_000) }
+            override fun getInputStream(socket: java.net.Socket) = socket.getInputStream()
+            override fun getOutputStream(socket: java.net.Socket) = socket.getOutputStream()
+        })
         ssh.setConfig("StrictHostKeyChecking","yes")
         ssh.setConfig("PreferredAuthentications",if(server["auth"] == "key") "publickey" else "password,keyboard-interactive")
         if(server["auth"] != "key") ssh.setPassword(server["sshPassword"])
