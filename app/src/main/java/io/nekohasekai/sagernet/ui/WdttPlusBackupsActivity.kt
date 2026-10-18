@@ -35,7 +35,7 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /** «Резервные копии и перенос» of WDTT Plus: the server's own scheduled snapshots, managed from the phone. */
-class WdttPlusBackupsActivity : ThemedActivity() {
+class WdttPlusBackupsActivity : ServerScreenActivity() {
     private val ui by lazy { ServerUi(this) }
     private lateinit var body: LinearLayout
     private lateinit var progress: ProgressBar

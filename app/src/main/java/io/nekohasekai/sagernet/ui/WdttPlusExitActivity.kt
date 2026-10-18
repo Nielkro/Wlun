@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /** «Выходной IP и прокси» of WDTT Plus: where the server's clients leave to the internet. */
-class WdttPlusExitActivity : ThemedActivity() {
+class WdttPlusExitActivity : ServerScreenActivity() {
     private val ui by lazy { ServerUi(this) }
     private lateinit var body: LinearLayout
     private lateinit var exit: WdttPlusExit

@@ -23,7 +23,7 @@ import kotlinx.coroutines.withContext
  * A deployed server, as the original apps open it: the address, then its actions. qWDTT manages
  * accesses through its admin API, CSQTT through its web panel; "Управление сервером" is the deploy editor.
  */
-class ServerActivity : ThemedActivity() {
+class ServerActivity : ServerScreenActivity() {
     private lateinit var body: LinearLayout
     private lateinit var toolbar: Toolbar
     private var server: DeployServer? = null

@@ -26,7 +26,7 @@ import java.util.Date
 import java.util.Locale
 
 /** «Пользователи и подписки» of a qWDTT server, the original app's access list over the admin API. */
-class QwdttAccessActivity : ThemedActivity() {
+class QwdttAccessActivity : ServerScreenActivity() {
     private val ui by lazy { ServerUi(this) }
     private lateinit var list: LinearLayout
     private lateinit var status: android.widget.TextView

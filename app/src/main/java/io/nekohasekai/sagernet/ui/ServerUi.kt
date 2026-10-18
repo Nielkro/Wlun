@@ -89,7 +89,7 @@ internal class ServerUi(private val context: Context) {
     }
 
     /** The copy button every share block ends with. */
-    fun copyButton(description: String, copy: () -> Unit) = iconButton(R.drawable.ic_mobile_copy_outline, description) {
+    fun copyButton(description: String, copy: () -> Boolean) = iconButton(R.drawable.ic_mobile_copy_outline, description) {
         if (copy()) android.widget.Toast.makeText(context, "Скопировано", android.widget.Toast.LENGTH_SHORT).show()
     }.apply { imageTintList = ColorStateList.valueOf(accent) }
 
@@ -144,5 +144,23 @@ internal class ServerUi(private val context: Context) {
         value >= 1L shl 20 -> String.format("%.0f МБ", value / (1L shl 20).toDouble())
         value >= 1024 -> String.format("%.0f КБ", value / 1024.0)
         else -> "$value Б"
+    }
+}
+
+/** Server screens slide in and out with the settings' 220 ms animation instead of the slower system one. */
+abstract class ServerScreenActivity : ThemedActivity() {
+    @Suppress("DEPRECATION")
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        if (android.os.Build.VERSION.SDK_INT >= 34) {
+            overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, R.anim.settings_enter, R.anim.settings_exit)
+            overrideActivityTransition(OVERRIDE_TRANSITION_CLOSE, R.anim.settings_pop_enter, R.anim.settings_pop_exit)
+        } else overridePendingTransition(R.anim.settings_enter, R.anim.settings_exit)
+    }
+
+    @Suppress("DEPRECATION")
+    override fun finish() {
+        super.finish()
+        if (android.os.Build.VERSION.SDK_INT < 34) overridePendingTransition(R.anim.settings_pop_enter, R.anim.settings_pop_exit)
     }
 }

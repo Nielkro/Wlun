@@ -27,7 +27,7 @@ import java.util.Date
 import java.util.Locale
 
 /** «Клиенты и сервер» of WDTT Plus: its app's server clients section over the SSH admin interface. */
-class WdttPlusClientsActivity : ThemedActivity() {
+class WdttPlusClientsActivity : ServerScreenActivity() {
     private val ui by lazy { ServerUi(this) }
     private lateinit var body: LinearLayout
     private lateinit var list: LinearLayout
