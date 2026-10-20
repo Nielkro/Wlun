@@ -4,6 +4,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.AtomicFile
 import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.outbound.link.Hosts
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -32,7 +33,7 @@ class DeployServer(val json: JSONObject) {
     }
     fun recordInstallation(config: String) { set("installed","true");set("config",config) }
     fun recordUninstall() { set("installed","false");set("config","") }
-    fun panelUrl(): String = "https://"+app.qthrone.mobile.outbound.link.Hosts.displayAddress(get("host").ifBlank { "IP" },
+    fun panelUrl(): String = "https://"+Hosts.displayAddress(get("host").ifBlank { "IP" },
         if(get("manualPorts")=="true") port("webPort") else 46002)+get("secretPath").takeIf { it.isNotBlank() }?.let { "/$it" }.orEmpty()
     fun editSignature(): String = json.keys().asSequence()
         .filterNot { json.optString(it).isEmpty() || it in setOf("config","installed","hostKey","adminPin") || (it in setOf("manualPorts","docker") && json.optString(it)!="true") }.sorted()
