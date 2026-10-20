@@ -52,9 +52,38 @@ def prepare(kind: str, folder: Path):
     else:
         raise ValueError("Expected qwdtt or wdttplus")
     path.write_text(source, encoding="utf-8", newline="\n")
+    if kind == "qwdtt":
+        bridge = folder / "csqtt_bridge.go"
+        source = bridge.read_text(encoding="utf-8")
+        source = replace_once(source,
+            '\tinput, err := command.StdinPipe()',
+            '''\tipc, err := newMobileCSQTTIPC(cache)
+\tif err != nil { return err }
+\tdefer ipc.Close()
+\tcommand.Args = append(command.Args, "--tun-fd-uds", ipc.path)
+\tinput, err := command.StdinPipe()''')
+        source = replace_once(source, '''\taddress, err := net.ResolveUDPAddr("udp4", c.Listen)
+\tif err != nil {
+\t\tdevice.Close()
+\t\treturn err
+\t}
+\tsocket, err := net.DialUDP("udp4", nil, address)
+\tif err != nil {
+\t\tdevice.Close()
+\t\treturn err
+\t}''', '''\tsocket, err := ipc.attach(ctx)
+\tif err != nil {
+\t\tdevice.Close()
+\t\treturn err
+\t}''')
+        bridge.write_text(source, encoding="utf-8", newline="\n")
+        relay = folder / "internal/csqtt/relay.go"
+        source = relay.read_text(encoding="utf-8")
+        source = replace_once(source, "socket *net.UDPConn)", "socket io.ReadWriteCloser)")
+        relay.write_text(source, encoding="utf-8", newline="\n")
     tests = Path(__file__).resolve().parents[1] / "core-patches" / "carrier-socks" / kind
-    for test in tests.glob("*_test.go"):
-        shutil.copyfile(test, folder / test.name)
+    for overlay in tests.glob("*.go"):
+        shutil.copyfile(overlay, folder / overlay.name)
 
 
 if __name__ == "__main__":

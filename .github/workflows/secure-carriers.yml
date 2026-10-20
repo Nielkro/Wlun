@@ -6,7 +6,7 @@ permissions:
 jobs:
   clients:
     runs-on: ubuntu-22.04
-    timeout-minutes: 35
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -21,6 +21,14 @@ jobs:
         with:
           path: ~/go/pkg/mod
           key: secure-carrier-modules-${{ runner.os }}-${{ hashFiles('scripts/build_secure_carriers.sh') }}
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: secure-csqtt-cargo-${{ runner.os }}-${{ matrix.abi }}-${{ hashFiles('scripts/prepare_private_csqtt.py') }}
+      - name: Install Rust build prerequisites
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends pkg-config cmake ninja-build perl
       - name: Install NDK
         shell: bash
         run: |
