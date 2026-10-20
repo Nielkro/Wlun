@@ -64,20 +64,16 @@ class WdttPlusAdmin(private val server: DeployServer) {
         }
     }
 
-    private fun root(command: String): String {
-        val quoted = DeployProtocol.quote(command)
-        return "if [ \"\$(id -u)\" = 0 ]; then bash -c $quoted; else sudo -S -p '' bash -c $quoted; fi"
-    }
-
     /** One admin request; sudo's password, when needed, goes first on stdin. */
     private fun call(args: List<String>, timeoutMs: Long = 45_000): JSONObject {
         val request = JSONObject().put("main_password", server["password"]).put("args", JSONArray(args)).toString()
         val ssh = session()
         try {
             val channel = ssh.openChannel("exec") as ChannelExec
-            channel.setCommand(root("/usr/local/bin/wdtt-server admin --config-dir /etc/wdtt --request-stdin") + " 2>&1")
-            val sudo = if (server["user"] == "root") "" else server["sudoPassword"].ifBlank { server["sshPassword"] } + "\n"
-            channel.setInputStream((sudo + request + "\n").byteInputStream())
+            val plan = rootStdinPlan("/usr/local/bin/wdtt-server admin --config-dir /etc/wdtt --request-stdin",
+                server["sudoPassword"].ifBlank { server["sshPassword"] },request+"\n")
+            channel.setCommand(plan.command + " 2>&1")
+            channel.setInputStream(plan.input.byteInputStream())
             val input = channel.inputStream
             channel.connect(20_000)
             val output = StringBuilder()

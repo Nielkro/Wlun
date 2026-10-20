@@ -4,6 +4,15 @@ import app.qthrone.mobile.outbound.json.JsonInput
 
 internal object NativeSessionPolicy {
     fun probeConfig(kind:CarrierKind,privateJson:String,interactive:Boolean,latencyProbe:Boolean=!interactive):String {
+        if(kind == CarrierKind.WDTTPLUS) {
+            if(!latencyProbe) return privateJson
+            return JsonInput.parseObject(privateJson).also {
+                val args=it.array("args").strings().toMutableList()
+                val count=args.indexOf("-n")
+                if(count >= 0 && count+1 < args.size) args[count+1]="9"
+                it["args"]=app.qthrone.mobile.outbound.json.JsonArray.of(*args.toTypedArray())
+            }.toCompact()
+        }
         if((interactive && !latencyProbe) || kind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) return privateJson
         return JsonInput.parseObject(privateJson).also {
             // Native auto captcha is allowed, visible prompts are refused by the Android bridge.
@@ -13,7 +22,7 @@ internal object NativeSessionPolicy {
     }
 
     fun startupTimeoutMs(kind:CarrierKind,requested:Long):Long = when(kind) {
-        CarrierKind.QWDTT,CarrierKind.CSQTT -> requested.coerceAtLeast(300_000L)
+        CarrierKind.QWDTT,CarrierKind.CSQTT,CarrierKind.WDTTPLUS -> requested.coerceAtLeast(300_000L)
         // DNS tunnels measure MTU and handshake query by query; S3 Bypass waits for the bucket.
         CarrierKind.DNSTT,CarrierKind.VAYDNS,CarrierKind.SLIPSTREAM,CarrierKind.MASTERDNS,CarrierKind.S3BYPASS -> requested.coerceAtLeast(120_000L)
         else -> requested
@@ -43,8 +52,16 @@ internal object NativeSessionPolicy {
                 .map { it.string("type")+" "+it.string(if(it.string("type")=="direct") "dial" else "url").trim() }.toSet()
             return carriers(first).intersect(carriers(second)).isNotEmpty()
         }
-        if(firstKind!=secondKind || firstKind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) return false
+        if(firstKind!=secondKind || firstKind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT,CarrierKind.WDTTPLUS)) return false
         val a=JsonInput.parseObject(first);val b=JsonInput.parseObject(second)
+        if(firstKind == CarrierKind.WDTTPLUS) {
+            fun value(json: app.qthrone.mobile.outbound.json.JsonObject, flag: String): String {
+                val args=json.array("args").strings(); val index=args.indexOf(flag)
+                return if(index >= 0) args.getOrNull(index+1).orEmpty() else ""
+            }
+            val peer=value(a,"-peer"); val device=value(a,"-device-id")
+            return peer.isNotBlank() && device.isNotBlank() && peer == value(b,"-peer") && device == value(b,"-device-id")
+        }
         return a.string("peer").isNotEmpty() && a.string("device_id").isNotEmpty() &&
             a.string("peer")==b.string("peer") && a.string("device_id")==b.string("device_id")
     }

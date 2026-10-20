@@ -71,6 +71,9 @@ internal fun exitsThroughVpn(profile: ProxyEntity?): Boolean {
 
 /** What a probe box is started with: the config, its Xray half and the tags to measure. */
 internal fun CoreConfig.applyTo(request: TestRequest) {
+    app.qthrone.mobile.bg.carrier.VpnListenerPolicy.check(coreConfig)
+    xrayConfig?.let(app.qthrone.mobile.bg.carrier.VpnListenerPolicy::checkXray)
+    xrayFullConfigs.forEach(app.qthrone.mobile.bg.carrier.VpnListenerPolicy::checkXray)
     request.coreConfig = coreConfig
     request.needXray = needXray
     request.xrayConfig = xrayConfig ?: ""

@@ -55,7 +55,7 @@ class VkRelayActivity : ThemedActivity() {
                 lastRetry = loginAttempt
                 if(loginAttempt >= 2) {
                     MobileAlertDialogBuilder(this).setTitle("Вход VK")
-                        .setMessage("VK отклонил все три варианта входа qWDTT. Попробуйте привязать аккаунт позже.")
+                        .setMessage("VK отклонил все три варианта входа. Попробуйте привязать аккаунт позже.")
                         .setPositiveButton(android.R.string.ok,null).show()
                     return
                 }

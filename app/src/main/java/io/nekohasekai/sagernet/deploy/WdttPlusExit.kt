@@ -99,9 +99,9 @@ private class SSHClient(private val session: Session, private val pass: String) 
         val channel = session.openChannel("exec") as ChannelExec
         val result = StringBuilder()
         try {
-            channel.setCommand("$command 2>&1")
-            // Root commands pick `sudo -S` themselves; it reads this line only when it asks.
-            channel.setInputStream((if (pass.isNotEmpty() && "sudo -S" in command) pass + "\n" else "").byteInputStream())
+            val plan = deployStdinPlan(command, pass)
+            channel.setCommand("${plan?.command ?: command} 2>&1")
+            channel.setInputStream(plan?.input.orEmpty().byteInputStream())
             val reader = channel.inputStream.bufferedReader(Charsets.UTF_8)
             channel.connect(15_000)
             val deadline = System.currentTimeMillis() + timeout

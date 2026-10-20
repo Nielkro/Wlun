@@ -89,7 +89,7 @@ abstract class BoxInstance(
             }
         }
         try {
-            if(config.carrierPlans.any { it.kind in listOf(app.qthrone.mobile.bg.carrier.CarrierKind.QWDTT,app.qthrone.mobile.bg.carrier.CarrierKind.CSQTT) }) {
+            if(config.carrierPlans.any { it.kind in listOf(app.qthrone.mobile.bg.carrier.CarrierKind.QWDTT,app.qthrone.mobile.bg.carrier.CarrierKind.CSQTT,app.qthrone.mobile.bg.carrier.CarrierKind.WDTTPLUS) }) {
                 nativeStatus=NativeConnectionStatus.Writer(profile.id).also { it.update(NativeConnectionStage.PREPARING) }
             }
             for(plan in config.carrierPlans) {
@@ -180,6 +180,8 @@ class LocalDnsFailedException(val servers: String, cause: Throwable) : Exception
 class RuleSetDownloadFailedException(cause: Throwable) : Exception(cause.message, cause)
 
 internal fun CoreConfig.toStartOptions(autoSelector: AutoSelectorBuild? = null): StartOptions = StartOptions().apply {
+    this@toStartOptions.xrayConfig?.let(app.qthrone.mobile.bg.carrier.VpnListenerPolicy::checkXray)
+    this@toStartOptions.xrayFullConfigs.forEach(app.qthrone.mobile.bg.carrier.VpnListenerPolicy::checkXray)
     coreConfig = this@toStartOptions.coreConfig
     needXray = this@toStartOptions.needXray
     xrayConfig = this@toStartOptions.xrayConfig ?: ""

@@ -21,7 +21,7 @@ class NativeSessionPolicyTest {
     }
 
     @Test fun vkPreparationHasItsOwnBudgetForBothCarriers() {
-        for(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) {
+        for(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT,CarrierKind.WDTTPLUS)) {
             assertEquals(300_000L,NativeSessionPolicy.startupTimeoutMs(kind,60_000))
             assertEquals(400_000L,NativeSessionPolicy.startupTimeoutMs(kind,400_000))
         }
@@ -55,6 +55,20 @@ class NativeSessionPolicyTest {
             assertFalse(NativeSessionPolicy.sharesRemoteSession(kind,active,kind,changed.replace("phone","another")))
         }
         assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.CSQTT,"{}",CarrierKind.CSQTT,"{}"))
+    }
+
+    @Test fun wdttPlusProbeAndVpnCannotReplaceTheSameRemoteDevice() {
+        val source="""{"args":["-peer","192.0.2.1:56000","-n","108","-device-id","phone"],"start":{"vk_hashes":"a","connection_password":"p"}}"""
+        val changed=source.replace("108","18").replace("\"a\"","\"b\"")
+        assertTrue(NativeSessionPolicy.sharesRemoteSession(CarrierKind.WDTTPLUS,source,CarrierKind.WDTTPLUS,changed))
+        assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.WDTTPLUS,source,CarrierKind.WDTTPLUS,changed.replace("phone","other")))
+        assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.WDTTPLUS,source,CarrierKind.WDTTPLUS,changed.replace("192.0.2.1","192.0.2.2")))
+        val probe=app.qthrone.mobile.outbound.json.JsonInput.parseObject(NativeSessionPolicy.probeConfig(CarrierKind.WDTTPLUS,source,false))
+        val args=probe.array("args").strings()
+        assertEquals("9",args[args.indexOf("-n")+1])
+        assertEquals("a",probe.obj("start").string("vk_hashes"))
+        assertEquals(source,NativeSessionPolicy.probeConfig(CarrierKind.WDTTPLUS,source,true))
+        assertEquals(source,NativeSessionPolicy.probeConfig(CarrierKind.WDTTPLUS,source,false,latencyProbe=false))
     }
 
     @Test fun openFluxExitServesOneClientSoSharedCarriersAreOneSession() {

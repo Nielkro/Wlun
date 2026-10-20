@@ -6,6 +6,7 @@ import app.qthrone.mobile.outbound.json.JsonArray
 import app.qthrone.mobile.outbound.json.JsonInput
 import app.qthrone.mobile.outbound.json.JsonObject
 import app.qthrone.mobile.outbound.link.Base64Strict
+import app.qthrone.mobile.group.ProviderLinks
 import app.qthrone.mobile.outbound.link.LinkCodec
 import app.qthrone.mobile.outbound.types.Custom
 import app.qthrone.mobile.outbound.types.OpenConnect
@@ -86,6 +87,15 @@ object ProfileImport {
             if (depth > MAX_DEPTH) return
             val text = Scan.trim(raw)
             if (text.isEmpty()) return
+
+            if (ProviderLinks.isProviderLink(text)) {
+                val link = runCatching { ProviderLinks.decodeChecked(text) }.getOrNull()
+                if (link == null) log("Cannot decode encrypted provider configuration")
+                else if (ProviderLinks.subscription(text) == null) {
+                    document(link.data, allowBase64 = true, needParse = true, depth = depth + 1, overrideName = overrideName)
+                } else log("Subscription URL requires subscription import")
+                return
+            }
 
             if (allowBase64) {
                 val decoded = when {

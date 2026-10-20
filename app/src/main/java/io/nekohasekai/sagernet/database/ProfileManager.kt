@@ -120,9 +120,9 @@ object ProfileManager {
 
     /** ProfilesRepo::AddProfile: appended to group [groupId], the current group when it is not a group id (<= 0). */
     private fun applyNativeDefaults(outbound: Outbound) {
-        if(outbound is app.qthrone.mobile.outbound.types.Qwdtt && outbound.type in listOf("qwdtt","csqtt","wdttplus") && !outbound.hashSourceChosen) {
-            outbound.hashSource = DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual") ?: "manual"
-            outbound.hashSourceChosen = true
+        if(outbound is app.qthrone.mobile.outbound.types.Qwdtt) {
+            app.qthrone.mobile.bg.carrier.NativeHashPolicy.applyDefaultSource(outbound,
+                DataStore.configurationStore.getString(app.qthrone.mobile.bg.carrier.VkRelayAccount.DEFAULT_SOURCE,"manual"))
         }
         // One identity per phone, as the original apps send ANDROID_ID: servers bind passwords to it,
         // so a profile added again must not look like another device.

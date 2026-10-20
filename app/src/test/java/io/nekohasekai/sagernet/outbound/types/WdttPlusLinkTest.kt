@@ -56,4 +56,28 @@ class WdttPlusLinkTest {
         assertEquals("socks5", args[args.indexOf("-mode") + 1])
         assertEquals("pw", config.obj("start").string("socks_password"))
     }
+
+    @Test fun connectionSettingsSurviveStorageAndUseOriginalNativeFlags() {
+        val profile = WdttPlus().apply {
+            assertTrue(parseFromLink("wdtt://connect?v=1&host=192.0.2.5&dtls=56000&wg=56001&local=9000&password=p&hashes=$hash"))
+            tcpOnly = true; turnSni = "turn.example.org"; rtMasque = true; workers = 36
+        }
+        val restored = WdttPlus().apply { assertTrue(parseFromJson(profile.exportToJson())) }
+        val args = restored.privateConfig(1080,1081,app.qthrone.mobile.bg.carrier.CarrierBridgeCredentials("u","pw")).array("args").strings()
+        assertTrue("-turn-stream-first=true" in args)
+        assertTrue("-rt-masque=true" in args)
+        assertEquals("turn.example.org",args[args.indexOf("-turn-sni")+1])
+        assertEquals("auto",args[args.indexOf("-transport-experiment")+1])
+        assertFalse(args.any { it == "p" || it == hash || it == "pw" })
+        assertEquals(profile.exportToJson().toCompact(),restored.exportToJson().toCompact())
+    }
+
+    @Test fun invalidExternalSniIsRejectedBeforeNativeLaunch() {
+        assertEquals("",WdttPlus.normalizeTurnSni(""))
+        assertEquals("turn.example.org",WdttPlus.normalizeTurnSni(" TURN.EXAMPLE.ORG "))
+        for (value in listOf("127.0.0.1","localhost","https://example.org","-a.example.org","a..example.org","example.org:443","example.org\n-secret"))
+            assertNull(value,WdttPlus.normalizeTurnSni(value))
+        assertEquals(108,WdttPlus.normalizeWorkers(Int.MAX_VALUE,0))
+        assertEquals(36,WdttPlus.normalizeWorkers(108,36))
+    }
 }

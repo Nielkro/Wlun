@@ -17,6 +17,12 @@ class WdttPlus : Qwdtt() {
     var wgPort = 56001
     var localPort = 9000
     var maxWorkers = 0
+    var tcpOnly = false
+    var turnSni = ""
+    var rtMasque = false
+    var fingerprint = "firefox"
+    var clientIds = "6287487,8202606"
+    var vkCallsPreflight = true
     /** Imported from a plain wdtt:// link: shown as WDTT and shared in the same form. */
     var legacy = false
     init { type = "wdttplus"; serverPort = 56000; workers = 18; mode = "wg" }
@@ -32,8 +38,16 @@ class WdttPlus : Qwdtt() {
         localPort = if (obj.contains("local_port")) obj.int("local_port") else 9000
         maxWorkers = if (obj.contains("max_workers")) obj.int("max_workers") else 0
         legacy = obj.bool("legacy")
+        tcpOnly = obj.bool("tcp_only")
+        turnSni = normalizeTurnSni(obj.string("turn_sni")) ?: return false
+        rtMasque = obj.bool("rt_masque")
+        fingerprint = obj.string("fingerprint").ifBlank { "firefox" }
+        clientIds = obj.string("client_ids").ifBlank { "6287487,8202606" }
+        vkCallsPreflight = !obj.contains("vkcalls_preflight") || obj.bool("vkcalls_preflight")
         workers = normalizeWorkers(requestedWorkers, maxWorkers)
-        return wgPort in 1..65535 && localPort in 1..65535 && captchaMode in listOf("auto", "wv", "rjs")
+        return wgPort in 1..65535 && localPort in 1..65535 && captchaMode in listOf("auto", "wv", "rjs") &&
+            fingerprint in listOf("firefox", "chrome", "safari", "ios", "android", "random") &&
+            clientIds.matches(Regex("[0-9]+(?:,[0-9]+){0,15}"))
     }
 
     override fun parseFromLink(link: String): Boolean {
@@ -73,6 +87,8 @@ class WdttPlus : Qwdtt() {
         it["type"] = "wdttplus"
         for (key in listOf("mode", "raw_port", "turn_tcp", "obfs", "go_dns", "vk_anon_path")) it.remove(key)
         it["wg_port"] = wgPort; it["local_port"] = localPort
+        it["tcp_only"] = tcpOnly; it["turn_sni"] = turnSni; it["rt_masque"] = rtMasque
+        it["fingerprint"] = fingerprint; it["client_ids"] = clientIds; it["vkcalls_preflight"] = vkCallsPreflight
         if (maxWorkers > 0) it["max_workers"] = maxWorkers
         if (legacy) it["legacy"] = true
     }
@@ -101,11 +117,12 @@ class WdttPlus : Qwdtt() {
             "-n", workers.toString(), "-listen", Hosts.displayAddress("127.0.0.1", udpPort),
             "-transport-experiment", "auto", "-mode", "socks5",
             "-socks-listen", Hosts.displayAddress("127.0.0.1", port), "-socks-udp=true", "-socks-auth=true",
-            "-fingerprint", "firefox", "-client-ids", "6287487,8202606",
-            "-vkcalls-preflight=true", "-turn-stream-first=false", "-connection-udp-backoff=0", "-rt-masque=false",
+            "-fingerprint", fingerprint, "-client-ids", clientIds,
+            "-vkcalls-preflight=$vkCallsPreflight", "-turn-stream-first=$tcpOnly", "-connection-udp-backoff=0", "-rt-masque=$rtMasque",
             "-device-id", deviceId, "-device-info", deviceInfo(),
             "-config-first-start=true",
         )
+        if (turnSni.isNotBlank()) args += listOf("-turn-sni", turnSni)
         if (hashes.size > 1) args += "-hash-fallback=true"
         args += listOf("-captcha-mode", captchaMode)
         // "hashes" is not passed on: it lets the log redactor hide every hash on its own.
@@ -116,6 +133,18 @@ class WdttPlus : Qwdtt() {
     }
 
     companion object {
+        /** Same external TURN SNI validation as WDTT Plus's normalizeRtTurnSni; blank disables it. */
+        fun normalizeTurnSni(value: String): String? {
+            val host = value.trim().lowercase(Locale.ROOT)
+            if (host.isBlank()) return ""
+            if (host.length > 253 || host.startsWith('.') || host.endsWith('.') || host.contains("..")) return null
+            val labels = host.split('.')
+            if (labels.size < 2 || labels.all { it.toIntOrNull() != null }) return null
+            return host.takeIf { labels.all { label ->
+                label.length in 1..63 && !label.startsWith('-') && !label.endsWith('-') &&
+                    label.all { it in 'a'..'z' || it in '0'..'9' || it == '-' }
+            } }
+        }
         /** A plain wdtt:// profile that 1.9.0 stored as WDTT Plus, back as the qWDTT profile it was before; null otherwise. */
         fun legacyToQwdtt(json: String): Qwdtt? {
             val obj = JsonInput.parseObjectOrNull(json) ?: return null
@@ -129,7 +158,7 @@ class WdttPlus : Qwdtt() {
         fun normalizeWorkers(requested: Int, profileMaxWorkers: Int): Int {
             val configured = profileMaxWorkers / 9 * 9
             val maximum = configured.takeIf { it >= 9 }?.coerceAtMost(108) ?: 108
-            val rounded = (requested.coerceAtLeast(9) + 4) / 9 * 9
+            val rounded = (requested.coerceIn(9,108) + 4) / 9 * 9
             return rounded.coerceIn(9, maximum)
         }
 

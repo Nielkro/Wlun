@@ -170,15 +170,16 @@ object SubscriptionQueue {
      * change window. Returns the group id, -1 on failure.
      */
     fun subscribeUrl(url: String, name: String, autoUpdate: Boolean): Long {
-        val wrapped = ProviderLinks.subscription(url)
+        val wrapped = try { ProviderLinks.decodeChecked(url) } catch (_: Exception) { return -1L }
         val content = wrapped?.data ?: url.trim()
-        if (content.isEmpty()) return -1L
+        if (!SubscriptionCrypto.isHttpUrl(content) && !content.startsWith("content://", true)) return -1L
         val group = try {
             runBlocking {
                 GroupRepo.add(
                     ProxyGroup(
-                        name = name.trim().ifEmpty { runCatching { Uri.parse(content).host }.getOrNull().orEmpty() },
-                        url = content,
+                        name = name.trim().ifEmpty { wrapped?.name.orEmpty().ifEmpty { runCatching { Uri.parse(content).host }.getOrNull().orEmpty() } },
+                        // Retain the original encrypted wire format for sharing and backup, never its decoded URL.
+                        url = if (wrapped?.encrypted == true) url.trim() else content,
                         skipAutoUpdate = !autoUpdate,
                         subOptions = SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty()),
                     )

@@ -1,6 +1,7 @@
 package app.qthrone.mobile.deploy
 
 import app.qthrone.mobile.bg.carrier.NativeHashPolicy
+import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.group.DeviceDetails
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.bg.carrier.VkRelayAccount
@@ -185,7 +186,7 @@ object DeployEngine {
             }
             val json = JSONObject().put("type",server.kind).put("name",server["name"]).put("server",server["host"]).put("server_port",server.port("peerPort"))
                 .put("password",server["password"]).put("device_id",server["deviceId"]).put("hashes",org.json.JSONArray())
-                .put("hash_source",if(server.kind == "qwdtt" && VkRelayAccount.linked() && !VkRelayAccount.needsRelink()) "auto" else "manual")
+                .put("hash_source",DataStore.configurationStore.getString(VkRelayAccount.DEFAULT_SOURCE,"manual"))
             if(server.kind == "qwdtt") json.put("raw_port",server.port("rawPort"))
             val config=DeployConfig.link(json,ownDeviceId())
             server.recordInstallation(config);DeployStore.save(server)
@@ -223,11 +224,31 @@ object DeployEngine {
                     "Сбросить и установить") == 0) { "Установка отменена: неполную установку можно только сбросить" }
                 DeployMode.ResetAll
             }
+            DeploymentOwnership.AndroidDeploy, DeploymentOwnership.PreservedAndroidData -> {
+                when(ask("Деплой WDTT Plus","Обновление сохранит клиентов, привязки устройств, ключи и статистику. Полный сброс удалит эти данные; перед ним создаётся страховочная копия.",
+                    "Обновить с сохранением", "Сбросить и установить")) {
+                    0 -> DeployMode.PreserveData
+                    1 -> {
+                        require(ask("Сброс данных WDTT Plus","Будут удалены все клиенты, пароли, привязки и ключи WireGuard на этом сервере. Старые ссылки перестанут работать.",
+                            "Удалить данные и установить заново") == 0) { "Сброс отменён" }
+                        DeployMode.ResetAll
+                    }
+                    else -> error("Установка отменена")
+                }
+            }
             // The standalone installer and unknown installs are refused below with WDTT Plus's messages.
             else -> DeployMode.PreserveData
         }
         assertDeploymentMayBeUpdated(ownership,mode)
-        if(ownership == DeploymentOwnership.AndroidDeploy) { update(5,"Создаю постоянную копию перед деплоем...");createPersistentSafetyBackup(server) }
+        if(ownership == DeploymentOwnership.AndroidDeploy) {
+            // A server whose owner password was lost cannot authenticate an admin backup.
+            // Preserve its original files through the rollback path before repairing that field.
+            val current = ops.readRemotePasswordsJson()
+            val recoverOwner = mode == DeployMode.PreserveData && current != null &&
+                validatePasswordsDbForPreserving(JSONObject(current),server["password"])
+            if(recoverOwner) log("Главный пароль отсутствует в базе. Он будет восстановлен из параметров сервера; клиенты и ключи сохранятся в страховочной копии.")
+            else { update(5,"Создаю постоянную копию перед деплоем...");createPersistentSafetyBackup(server) }
+        }
         update(6,"Загрузка официального установщика")
         val apk = artifact("https://github.com/Ivan4537/WDTT-Plus/releases/download/v20/WDTT-Plus-v20-arm64-v8a-release.apk",
             "918cc7ab477247ebdaca030c13c0d689ca1a9f59152217f8edf0484a943da0e3")
@@ -254,11 +275,10 @@ object DeployEngine {
             if(mode == DeployMode.PreserveData || (mode == DeployMode.ResetAll && ownership in setOf(DeploymentOwnership.AndroidDeploy,
                     DeploymentOwnership.PreservedAndroidData,DeploymentOwnership.IncompleteAndroidDeploy))) {
                 update(26,"Проверка сохранённых данных...")
-                fun validated(json: String) = json.also {
-                    if(ownership == DeploymentOwnership.IncompleteAndroidDeploy) validatePasswordsDbStructure(JSONObject(it))
-                    else validatePasswordsDbForPreserving(JSONObject(it),server["password"])
-                }
-                var currentDbJson = ops.readRemotePasswordsJson()?.let(::validated)
+                // Reset is also the recovery path for an incomplete or corrupt database.
+                // Back up the raw files, without requiring a usable main_password in discarded data.
+                fun validated(json: String) = json.also { validatePasswordsDbForPreserving(JSONObject(it),server["password"]) }
+                var currentDbJson = if(mode == DeployMode.PreserveData) ops.readRemotePasswordsJson()?.let(::validated) else null
                 if(mode == DeployMode.PreserveData && currentDbJson == null) throw IllegalStateException(
                     "обновление с сохранением остановлено: на сервере нет passwords.json; создание пустой базы вместо неизвестного состояния запрещено")
                 preparationStarted = true
@@ -266,7 +286,7 @@ object DeployEngine {
                 ops.prepareServerUpdateRollback(attemptId)
                 rollbackPrepared = true
                 // The first read was preflight only. The daemon has now flushed and stopped: use this stable database.
-                currentDbJson = ops.readRemotePasswordsJson()?.let(::validated)
+                currentDbJson = if(mode == DeployMode.PreserveData) ops.readRemotePasswordsJson()?.let(::validated) else null
                 if(mode == DeployMode.PreserveData && currentDbJson == null) throw IllegalStateException("После подготовки копии база сервера не найдена; обновление остановлено")
                 currentDbJsonForDeploy = currentDbJson
                 if(mode == DeployMode.PreserveData) preservedDbJson = currentDbJson
@@ -435,8 +455,9 @@ object DeployEngine {
     /** [quiet] keeps a command's output, such as a base64 copy of passwords.json, out of the console. */
     private suspend fun exec(ssh: Session,server: DeployServer,command: String,timeout: Long,quiet: Boolean = false): Pair<Int,String> {
         val channel=ssh.openChannel("exec") as ChannelExec
-        channel.setCommand("$command 2>&1")
-        channel.setInputStream((server["sudoPassword"].ifBlank { server["sshPassword"] }+"\n").byteInputStream())
+        val plan=deployStdinPlan(command,server["sudoPassword"].ifBlank { server["sshPassword"] })
+        channel.setCommand("${plan?.command ?: command} 2>&1")
+        channel.setInputStream(plan?.input.orEmpty().byteInputStream())
         val input=channel.inputStream
         val output=StringBuilder();var pending=""
         val deadline=System.currentTimeMillis()+timeout

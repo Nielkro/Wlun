@@ -100,6 +100,19 @@ class ServerUpdateSafetyTest {
         assertTrue(File(host.paths.backup, "checksums").isFile)
     }
 
+    @Test fun `reset rollback preserves an incomplete database without requiring main password`() = Host().use { host ->
+        File(host.paths.config,"passwords.json").writeText("{}")
+        File(host.paths.binary).delete()
+        host.active.delete()
+        val prepared = host.prepare()
+        assertEquals(prepared.second,0,prepared.first)
+        assertTrue(host.probe() is ServerUpdateRollbackState.PreparedValid)
+        assertEquals("{}",File(host.paths.backup,"config/passwords.json").readText())
+        val apply = host.run(serverUpdateApplyGuardScript("printf 'reset-allowed\\n'",host.attempt,host.paths))
+        assertEquals(apply.second,0,apply.first)
+        assertTrue(apply.second.contains("reset-allowed"))
+    }
+
     @Test fun `copy failure resumes old service and preserves partial copy away from active path`() = Host().use { host ->
         val result = host.prepare("FAIL_CP" to "1")
         assertNotEquals(0, result.first)

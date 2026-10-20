@@ -45,9 +45,18 @@ object SubscribeFlows {
         val content = text.trim()
         if (content.isEmpty()) return
         if (ProviderRouting.isLink(content)) { importRoute(activity, content); return }
-        ProviderLinks.decode(content)?.let {
-            if (ProviderLinks.subscription(content) != null) addSubscription(activity, content, hostOf(it.data))
-            else importInto(activity, it.data, gid)
+        if (ProviderLinks.isProviderLink(content)) {
+            // RSA key parsing and authenticated decryption must not stall the main thread.
+            runOnDefaultDispatcher {
+                val decoded = runCatching { ProviderLinks.decodeChecked(content) }.getOrNull()
+                onMainDispatcher {
+                    if (activity.isFinishing || activity.isDestroyed) return@onMainDispatcher
+                    if (decoded == null) notify(activity, activity.getString(R.string.provider_crypto_import_error))
+                    else if (Uri.parse(decoded.data).scheme?.lowercase() in listOf("https", "http")) {
+                        showSubscriptionPrompt(activity, content, decoded.name.ifBlank { hostOf(decoded.data) }, decoded)
+                    } else importInto(activity, decoded.data, gid)
+                }
+            }
             return
         }
         if (content.startsWith("throne://")) {
@@ -72,7 +81,7 @@ object SubscribeFlows {
         val batch = ArrayList<String>()
         for (payload in payloads.map { it.trim() }.filter { it.isNotEmpty() }) {
             val single = payload.startsWith("http://") || payload.startsWith("https://") ||
-                payload.startsWith("throne://") || subscribeLink(payload) != null
+                payload.startsWith("throne://") || ProviderLinks.isProviderLink(payload) || subscribeLink(payload) != null
             if (single) importText(activity, payload, gid) else batch.add(payload)
         }
         if (batch.isNotEmpty()) importInto(activity, batch.joinToString("\n"), gid)
@@ -80,6 +89,21 @@ object SubscribeFlows {
 
     /** "Add this subscription?" with the "Auto update" checkbox (throne://addsub, clash://install-config). */
     fun addSubscription(activity: FragmentActivity, url: String, name: String) {
+        if (ProviderLinks.isEncrypted(url)) {
+            runOnDefaultDispatcher {
+                val decoded = runCatching { ProviderLinks.decodeChecked(url) }.getOrNull()
+                onMainDispatcher {
+                    if (activity.isFinishing || activity.isDestroyed) return@onMainDispatcher
+                    if (decoded == null) notify(activity, activity.getString(R.string.provider_crypto_import_error))
+                    else showSubscriptionPrompt(activity, url, name.ifBlank { decoded.name.ifBlank { hostOf(decoded.data) } }, decoded)
+                }
+            }
+            return
+        }
+        showSubscriptionPrompt(activity, url, name)
+    }
+
+    private fun showSubscriptionPrompt(activity: FragmentActivity, url: String, name: String, decoded: ProviderLinks.Link? = null) {
         val link = url.trim()
         if (link.isEmpty()) {
             MaterialAlertDialogBuilder(activity)
@@ -91,7 +115,8 @@ object SubscribeFlows {
         }
         val groupName = name.trim().ifEmpty { hostOf(link) }
         val binding = LayoutRouteRemotePromptBinding.inflate(activity.layoutInflater)
-        binding.message.text = activity.getString(R.string.grp_add_subscription_prompt, groupName, link)
+        val displayed = if (decoded?.encrypted == true) activity.getString(R.string.provider_crypto_hidden, decoded.provider, decoded.format) else link
+        binding.message.text = activity.getString(R.string.grp_add_subscription_prompt, groupName, displayed)
         binding.autoUpdate.setText(R.string.grp_auto_update)
         binding.autoUpdate.isChecked = true
         MaterialAlertDialogBuilder(activity)
@@ -111,7 +136,9 @@ object SubscribeFlows {
     fun subscribeLink(text: String): SubscribeLink? {
         val content = text.trim()
         if (content.contains('\n')) return null
-        ProviderLinks.subscription(content)?.let { return SubscribeLink(content, hostOf(it.data)) }
+        // The foreground clipboard probe only classifies encrypted links; the confirmation flow decodes on IO.
+        if (ProviderLinks.isEncrypted(content)) return SubscribeLink(content, "")
+        ProviderLinks.subscription(content)?.let { return SubscribeLink(content, it.name.ifBlank { hostOf(it.data) }) }
         if (content.startsWith("clash://install-config", ignoreCase = true)) {
             val uri = Uri.parse(content)
             return SubscribeLink(uri.getQueryParameter("url").orEmpty(), uri.getQueryParameter("name").orEmpty())

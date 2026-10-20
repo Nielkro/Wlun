@@ -36,6 +36,7 @@ import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListene
 import app.qthrone.mobile.group.DeviceDetails
 import app.qthrone.mobile.group.RequestIdentity
 import app.qthrone.mobile.group.SubscriptionNameFilter
+import app.qthrone.mobile.group.ProviderLinks
 import app.qthrone.mobile.ktx.FixedLinearLayoutManager
 import app.qthrone.mobile.ktx.confirmAction
 import app.qthrone.mobile.ui.settings.DefaultSummaryProvider
@@ -580,9 +581,10 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription
             findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription
             findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription
+            findPreference<Preference>("groupEncryptedSubscription")?.isVisible = subscription && ProviderLinks.isEncrypted(DataStore.subscriptionLink)
             val expanded = subscription && host.advancedExpanded
             for (key in ADVANCED_CATEGORIES) findPreference<PreferenceCategory>(key)?.isVisible = expanded
-            val http = DataStore.subscriptionLink.trim().let { it.startsWith("https://", true) || it.startsWith("http://", true) }
+            val http = DataStore.subscriptionLink.trim().let { it.startsWith("https://", true) || it.startsWith("http://", true) || ProviderLinks.isProviderLink(it) }
             findPreference<PreferenceCategory>("groupAdvancedRequest")?.isVisible = expanded && http
 
             val mode = host.sendHwidMode()

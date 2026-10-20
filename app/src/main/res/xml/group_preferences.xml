@@ -42,6 +42,8 @@
     </PreferenceCategory>
 
     <PreferenceCategory app:key="groupPresentation" app:title="@string/sub_settings_presentation">
+        <Preference app:key="groupEncryptedSubscription" app:title="@string/provider_crypto_subscription"
+            app:summary="@string/provider_crypto_summary" app:persistent="false" app:selectable="false" />
         <SwitchPreference app:key="groupSubAllowCollapse" app:defaultValue="true"
             app:title="@string/sub_settings_allow_collapse" />
         <SwitchPreference app:key="groupSubHideServerSettings" app:title="@string/sub_settings_hide_servers"

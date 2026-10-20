@@ -163,6 +163,19 @@ class WdttPlusDeploySafetyTest {
         validatePasswordsDbStructure(goodKey)
     }
 
+    @Test fun missingMainPasswordIsRepairedWithoutTouchingClientsOrMutatingTheSource() {
+        val source = JSONObject().put("passwords",JSONObject().put("client",JSONObject().put("label","Keep").put("up_bytes",42)))
+            .put("devices",JSONObject()).put("future_field","keep")
+        assertTrue(validatePasswordsDbForPreserving(source,"new-owner"))
+        assertFalse(source.has("main_password"))
+        val after = prepareDeployDatabaseJson(source.toString(),"new-owner","","","1.1.1.1","56000,56001,9000")
+        validatePreservedServerState(source.toString(),after)
+        val database = JSONObject(after)
+        assertEquals("new-owner",database.getString("main_password"))
+        assertEquals(42,database.getJSONObject("passwords").getJSONObject("client").getInt("up_bytes"))
+        assertEquals("keep",database.getString("future_field"))
+    }
+
     @Test fun updateMustKeepEveryActiveClientAndItsCounters() {
         fun db(down: Long, withClient: Boolean = true) = JSONObject().put("main_password", "owner").put("devices", JSONObject())
             .put("passwords", if (withClient) JSONObject().put("client", JSONObject().put("label", "a").put("down_bytes", down)

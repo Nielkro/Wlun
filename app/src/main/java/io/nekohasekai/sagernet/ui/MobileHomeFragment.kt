@@ -343,26 +343,31 @@ class MobileHomeFragment : ToolbarFragment() {
                     contentDescription = description; setOnClickListener { callback(it) }; MobileFeedback.apply(this,circle=true)
                 }
                 header.addView(headerIcon(R.drawable.ic_mobile_settings, getString(R.string.qmobile_settings)) { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
-                header.addView(View(requireContext()), LinearLayout.LayoutParams(0, dp(48), 1f))
-                header.addView(headerIcon(R.drawable.ic_mobile_add, getString(R.string.qmobile_add)) { addMenu(it) }, LinearLayout.LayoutParams(dp(48), dp(48)))
-                column.addView(header)
-                updateBanner = text("", 14f, blue).apply {
-                    gravity = Gravity.CENTER_VERTICAL
+                updateBanner = text("", 12f, blue).apply {
+                    gravity = Gravity.CENTER
                     minHeight = dp(48)
-                    maxLines = 2
+                    maxLines = 1
                     ellipsize = android.text.TextUtils.TruncateAt.END
+                    setPadding(dp(8), dp(6), dp(8), dp(6))
                     isFocusable = true
-                    background = tile(selected = true)
-                    setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_mobile_update, 0, 0, 0)
-                    compoundDrawablePadding = dp(8)
+                    // Compact artwork inside a full 48dp touch target, next to Settings.
+                    background = android.graphics.drawable.InsetDrawable(tile(selected = true), 0, dp(7), 0, dp(7))
+                    val icon = androidx.core.content.ContextCompat.getDrawable(requireContext(), R.drawable.ic_mobile_update)
+                    icon?.setBounds(0, 0, dp(18), dp(18))
+                    setCompoundDrawablesRelative(icon, null, null, null)
+                    compoundDrawablePadding = dp(5)
                     androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(blue))
                     MobileFeedback.apply(this, radius = 5f)
                 }
-                column.addView(updateBanner, LinearLayout.LayoutParams(-2, -2).apply {
-                    gravity = Gravity.START
-                    topMargin = dp(4)
-                    bottomMargin = dp(4)
+                val updateSlot = FrameLayout(requireContext()).apply {
+                    addView(updateBanner, FrameLayout.LayoutParams(-2, dp(48), Gravity.START or Gravity.CENTER_VERTICAL))
+                }
+                header.addView(updateSlot, LinearLayout.LayoutParams(0, dp(48), 1f).apply {
+                    marginStart = dp(6)
+                    marginEnd = dp(6)
                 })
+                header.addView(headerIcon(R.drawable.ic_mobile_add, getString(R.string.qmobile_add)) { addMenu(it) }, LinearLayout.LayoutParams(dp(48), dp(48)))
+                column.addView(header)
                 updateReleaseBanner()
                 val centre = FrameLayout(requireContext())
                 power = action("") { host().toggleService() }.apply {
@@ -854,16 +859,21 @@ class MobileHomeFragment : ToolbarFragment() {
         body.addView(name);body.addView(url)
         body.addView(action(getString(R.string.qmobile_save)) {
             val address=url.text.toString().trim()
-            val parsed=android.net.Uri.parse(app.qthrone.mobile.group.ProviderLinks.subscription(address)?.data ?: address)
-            if(parsed.scheme !in listOf("https","http") || parsed.host.isNullOrBlank()) { url.error=getString(R.string.qmobile_subscription_url);return@action }
+            val requestedName=name.text.toString().trim()
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
-                    SubscriptionClient.subscribeUrl(address,name.text.toString().trim().ifBlank { parsed.host.orEmpty() },true)
+                    val wrapped=withContext(Dispatchers.IO) { app.qthrone.mobile.group.ProviderLinks.decodeChecked(address) }
+                    val parsed=android.net.Uri.parse(wrapped?.data ?: address)
+                    if(parsed.scheme?.lowercase() !in listOf("https","http") || parsed.host.isNullOrBlank() || parsed.userInfo!=null) {
+                        url.error=getString(R.string.qmobile_subscription_url);return@launch
+                    }
+                    val created=SubscriptionClient.subscribeUrl(address,requestedName.ifBlank { wrapped?.name.orEmpty().ifBlank { parsed.host.orEmpty() } },true)
+                    if(created<=0) { url.error=getString(R.string.provider_crypto_import_error);return@launch }
                     sheet.dismiss()
                 } catch(error: kotlinx.coroutines.CancellationException) {
                     throw error
                 } catch(error: Exception) {
-                    url.error=error.localizedMessage ?: getString(R.string.qmobile_subscription_url)
+                    url.error=getString(R.string.provider_crypto_import_error)
                 }
             }
         })

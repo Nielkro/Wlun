@@ -111,7 +111,8 @@ class HttpGetOptions(
 )
 
 /** HTTPResponse: [error] is empty on success; [data] also holds the body of an HTTP error status. */
-class HttpGetResponse(@JvmField val data: ByteArray, private val headers: Headers?, @JvmField val error: String) {
+class HttpGetResponse(@JvmField val data: ByteArray, private val headers: Headers?, @JvmField val error: String,
+                      @JvmField val finalUrl: String = "") {
     val ok: Boolean get() = error.isEmpty()
 
     /** GetHeader: case-insensitive, "" when absent. */
@@ -203,7 +204,7 @@ fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetRes
                 val error = if (it.isSuccessful) "" else app.getString(
                     R.string.subs_http_error, target.toString(), "${it.code} ${it.message}".trim(),
                 )
-                return HttpGetResponse(body, it.headers, error)
+                return HttpGetResponse(body, it.headers, error, target.toString())
             }
         }
     } catch (e: Exception) {

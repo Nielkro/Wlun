@@ -71,7 +71,7 @@ object VkRelayAccount {
     data class UiInfo(val linked: Boolean,val needsRelink: Boolean,val displayName: String)
     fun uiInfo(): UiInfo {
         val session=read()
-        return UiInfo(linked(),needsRelink(),session.optString("name").ifBlank { "Аккаунт VK для qWDTT" })
+        return UiInfo(linked(),needsRelink(),session.optString("name").ifBlank { "Аккаунт VK для VK-реле" })
     }
     fun refreshIdentity() {
         val session = read()

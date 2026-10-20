@@ -1,8 +1,34 @@
 package app.qthrone.mobile.bg.carrier
 
 import app.qthrone.mobile.outbound.types.Qwdtt
+import app.qthrone.mobile.outbound.types.WdttPlus
+import app.qthrone.mobile.outbound.OutboundFactory
 
 object NativeHashPolicy {
+    /** All three clients share the qWDTT account binding, never their own account-login flow. */
+    fun supportsAutomatic(profile: Qwdtt) = profile.type in listOf("qwdtt", "csqtt", "wdttplus")
+
+    fun applyDefaultSource(profile: Qwdtt, source: String?) {
+        if (!supportsAutomatic(profile) || profile.hashSourceChosen) return
+        profile.hashSource = if (source == "auto") "auto" else "manual"
+        profile.hashSourceChosen = true
+    }
+
+    /** A launch-only copy keeps account calls out of stored profiles, exports and subscriptions. */
+    fun runtimeProfile(profile: Qwdtt, obtainHashes: (Int) -> List<String>): Qwdtt {
+        if (!supportsAutomatic(profile) || profile.hashSource != "auto") return profile
+        val copy = OutboundFactory.newByType(profile.type) as Qwdtt
+        check(copy.parseFromJson(profile.exportToJson()))
+        val count = ((copy.workers + 26) / 27).coerceIn(1, if (profile.type == "csqtt") 6 else 4)
+        val hashes = obtainHashes(count)
+        check(hashes.size == count && hashes.distinct().size == count && hashes.all {
+            it.matches(Regex("[A-Za-z0-9_-]{16,512}"))
+        }) { "VK не вернул необходимые хеши звонков" }
+        copy.hashes = hashes.toList()
+        copy.hashSource = "manual"
+        return copy
+    }
+
     fun subscriptionIdentity(profile: Qwdtt): String = profile.exportIdentity().also {
         it.remove("hashes")
         it.remove("workers")
@@ -32,7 +58,7 @@ object NativeHashPolicy {
         val slots=if(profile.type=="csqtt") 6 else 4
         val hashes=if(profile.hashSource=="auto") slots else profile.hashes.size.coerceIn(1,slots)
         // WDTT Plus groups 9 workers each up to 108 whatever the hash count.
-        if(profile.type=="wdttplus") return 108
+        if(profile is WdttPlus) return (profile.maxWorkers / 9 * 9).takeIf { it >= 9 }?.coerceAtMost(108) ?: 108
         return (hashes*27).coerceAtMost(if(profile.type=="csqtt") 126 else 108)
     }
     fun preservedWorkers(previous:Int,previousLimit:Int,currentLimit:Int):Int =
