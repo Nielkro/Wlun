@@ -1,8 +1,7 @@
-<inset xmlns:android="http://schemas.android.com/apk/res/android"
-    android:insetLeft="4dp" android:insetTop="4dp" android:insetRight="4dp" android:insetBottom="4dp">
-    <shape android:shape="rectangle">
-        <size android:width="20dp" android:height="20dp" />
-        <corners android:radius="5dp" />
-        <solid android:color="?android:attr/textColorPrimary" />
-    </shape>
-</inset>
+<!-- Keep the thumb square within the full-height bounds supplied by Switch. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="22dp" android:height="28dp"
+    android:viewportWidth="22" android:viewportHeight="28">
+    <path android:fillColor="?android:attr/textColorPrimary"
+        android:pathData="M6,5 H16 Q20,5 20,9 V19 Q20,23 16,23 H6 Q2,23 2,19 V9 Q2,5 6,5 Z" />
+</vector>

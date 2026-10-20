@@ -10,18 +10,20 @@
         <item name="android:thumb">@drawable/mobile_switch_thumb</item>
         <item name="track">@drawable/mobile_switch_track</item>
         <item name="thumbTint">@color/mobile_switch_thumb_tint</item>
-        <item name="trackTint">@color/mobile_switch_track_tint</item>
+        <item name="trackTint">@null</item>
         <item name="splitTrack">false</item>
-        <item name="switchMinWidth">52dp</item>
+        <item name="switchMinWidth">48dp</item>
+        <item name="switchPadding">12dp</item>
         <item name="android:minHeight">48dp</item>
     </style>
     <style name="MobilePlatformSwitch" parent="android:Widget.Material.CompoundButton.Switch">
         <item name="android:thumb">@drawable/mobile_switch_thumb</item>
         <item name="android:track">@drawable/mobile_switch_track</item>
         <item name="android:thumbTint">@color/mobile_switch_thumb_tint</item>
-        <item name="android:trackTint">@color/mobile_switch_track_tint</item>
+        <item name="android:trackTint">@null</item>
         <item name="android:splitTrack">false</item>
-        <item name="android:switchMinWidth">52dp</item>
+        <item name="android:switchMinWidth">48dp</item>
+        <item name="android:switchPadding">12dp</item>
         <item name="android:minHeight">48dp</item>
     </style>
     <style name="MobileTextInput" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">

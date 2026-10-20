@@ -76,7 +76,7 @@ open class DeployEditorFragment : Fragment() {
     }
     private fun card(): LinearLayout {
         val content=column().apply { setPadding(dp(16),dp(10),dp(16),dp(10)) }
-        body.addView(MaterialCardView(requireContext()).apply { radius=dp(20).toFloat();cardElevation=0f;strokeWidth=0;setCardBackgroundColor(MobilePalette.surface);addView(content) },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
+        body.addView(MaterialCardView(requireContext()).apply { radius=dp(16).toFloat();cardElevation=0f;strokeWidth=0;setCardBackgroundColor(MobilePalette.surface);addView(content) },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(10) })
         return content
     }
     private fun row(parent: LinearLayout,block: (LinearLayout)->Unit) {
@@ -124,12 +124,22 @@ open class DeployEditorFragment : Fragment() {
     }
     private fun button(parent: LinearLayout,title: String,icon: Int=0,pair: Boolean=false,click: ()->Unit): MaterialButton {
         val b=MaterialButton(requireContext()).apply {
-            text=title;textSize=14f;isAllCaps=false;maxLines=3;minimumHeight=dp(48);cornerRadius=dp(16)
-            setTextColor(MobilePalette.accent(requireContext()));backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.surface)
-            if(icon!=0) { setIconResource(icon);iconSize=dp(22);iconTint=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext())) }
+            text=title;textSize=15f;isAllCaps=false;maxLines=3;minimumHeight=dp(52);cornerRadius=dp(16)
+            insetTop=0;insetBottom=0;elevation=0f;stateListAnimator=null
+            gravity=android.view.Gravity.CENTER_VERTICAL or (if(pair) android.view.Gravity.CENTER_HORIZONTAL else android.view.Gravity.START)
+            setPaddingRelative(dp(16),dp(14),dp(16),dp(14))
+            val accent=MobilePalette.accent(requireContext())
+            val colors=android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),intArrayOf(MobilePalette.muted,accent))
+            setTextColor(colors);iconTint=colors
+            backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.surface)
+            strokeWidth=dp(1)
+            strokeColor=android.content.res.ColorStateList.valueOf(androidx.core.graphics.ColorUtils.setAlphaComponent(MobilePalette.muted,55))
+            if(icon!=0) { setIconResource(icon);iconSize=dp(22);iconPadding=dp(12);iconGravity=MaterialButton.ICON_GRAVITY_START }
             setOnClickListener { click() }
         }
-        parent.addView(b,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply { if(pair) marginEnd=dp(4) })
+        parent.addView(b,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply {
+            topMargin=dp(4);bottomMargin=dp(4);if(pair) marginEnd=dp(4)
+        })
         return b
     }
     private fun field(parent: LinearLayout,s: DeployServer,key: String,label: String,secret: Boolean=false,number: Boolean=false,pair: Boolean=false): TextInputEditText {
@@ -247,11 +257,6 @@ open class DeployEditorFragment : Fragment() {
         refreshSaveAction()
         if(s.kind!="csqtt") {
             button(body,if(s.kind=="qwdtt") "Секреты (бот, пароли)" else "Авторизация",R.drawable.ic_baseline_vpn_key_24) { secrets(s) }
-            row(body) { r ->
-                operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
-                operations+=button(r,"Удалить сервис с VPS",R.drawable.ic_mobile_delete,true) { host.start(true) }
-                operations.takeLast(2).forEach { it.layoutParams.height=LinearLayout.LayoutParams.MATCH_PARENT }
-            }
         }
         val access=card()
         if(s.kind=="csqtt") heading(access,"Деплой и SSH")
@@ -303,7 +308,8 @@ open class DeployEditorFragment : Fragment() {
                     .setPositiveButton(android.R.string.ok,null).show()
             }
             heading(access,"Секретный путь и ссылка панели")
-            button(access,s.panelUrl(),R.drawable.baseline_public_24) {
+            access.addView(ServerUi(requireContext()).linkRow("Адрес HTTPS-панели",s.panelUrl(),lines=3))
+            button(access,"Открыть панель",R.drawable.baseline_public_24) {
                 startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(s.panelUrl())))
             }
             button(access,"Перегенерировать UUID",R.drawable.ic_mobile_refresh) {
@@ -312,12 +318,10 @@ open class DeployEditorFragment : Fragment() {
                     .setPositiveButton("Перегенерировать") { _,_ -> s["secretPath"]=java.util.UUID.randomUUID().toString();build() }
                     .setNegativeButton(android.R.string.cancel,null).show()
             }
-            row(body) { r ->
-                operations+=button(r,"Удалить",R.drawable.ic_mobile_delete,true) { host.start(true) }
-                operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
-            }
             button(body,"Авторизация",R.drawable.ic_baseline_vpn_key_24) { secrets(s) }
         }
+        operations+=button(body,"Установить / обновить",R.drawable.ic_mobile_core) { host.start(false) }
+        operations+=button(body,"Удалить сервис с VPS",R.drawable.ic_mobile_delete) { host.start(true) }
         val console=card();consoleCard=console.parent as View
         toggle=disclosure(console,"Консоль") { expanded=!expanded;expand() };consoleHeader=toggle?.parent as? View
         val content=column();console.addView(content);details=content
@@ -351,7 +355,7 @@ open class DeployEditorFragment : Fragment() {
         stop=button(content,"Остановить") { DeployEngine.cancel() }.apply {
             backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.background)
             insetTop=0;insetBottom=0
-            (layoutParams as LinearLayout.LayoutParams).apply { topMargin=dp(12);bottomMargin=dp(6);height=dp(48) }
+            (layoutParams as LinearLayout.LayoutParams).apply { topMargin=dp(12);bottomMargin=dp(6) }
         }
         val config=card();configCard=config.parent as View
         configArrow=disclosure(config,DeployActivity.title(s.kind)+" конфиг") { configExpanded=!configExpanded;expand() }

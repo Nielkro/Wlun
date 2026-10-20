@@ -62,12 +62,13 @@ internal class ServerUi(private val context: Context) {
     }
 
     fun button(label: String, primary: Boolean = false, danger: Boolean = false, click: () -> Unit) = TextView(context).apply {
-        text = label; gravity = Gravity.CENTER; textSize = 15f; setPadding(dp(12), dp(12), dp(12), dp(12))
+        text = label; gravity = Gravity.CENTER; textSize = 15f; minimumHeight = dp(48)
+        setPadding(dp(16), dp(12), dp(16), dp(12))
         val color = if (danger) android.graphics.Color.rgb(232, 120, 112) else accent
         setTextColor(if (primary) android.graphics.Color.BLACK else color)
         background = GradientDrawable().apply {
-            cornerRadius = dp(24).toFloat()
-            if (primary) setColor(color) else { setColor(android.graphics.Color.TRANSPARENT); setStroke(dp(1), ColorUtils.setAlphaComponent(color, 150)) }
+            cornerRadius = dp(16).toFloat()
+            if (primary) setColor(color) else { setColor(MobilePalette.surface); setStroke(dp(1), ColorUtils.setAlphaComponent(color, 150)) }
         }
         isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)
     }
