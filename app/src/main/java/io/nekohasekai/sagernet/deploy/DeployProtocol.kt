@@ -30,7 +30,7 @@ object DeployProtocol {
     fun wdttPlusMarked(output: String) = Regex("""(?m)^WDTT_PRESERVED_MARKER=ready\s*$""").containsMatchIn(output)
     fun successful(kind: String,exit: Int,output: String): Boolean = exit == 0 && when(kind) {
         "qwdtt" -> output.contains("WDTT_DEPLOY_OK") && Regex("WDTT_ADMIN_PIN\\|(sha256/[A-Za-z0-9+/=]+)").containsMatchIn(output)
-        "csqtt" -> output.contains("CSQTT_DEPLOY_OK")
+        "csqtt" -> output.lineSequence().any { it.trim()=="CSQTT_DEPLOY_OK" }
         "wdttplus" -> Regex("""(?m)^WDTT_INSTALL_RESULT=success\s*$""").containsMatchIn(output)
         else -> false
     }

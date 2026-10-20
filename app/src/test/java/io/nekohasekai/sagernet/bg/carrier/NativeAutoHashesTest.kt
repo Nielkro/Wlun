@@ -27,8 +27,9 @@ class NativeAutoHashesTest {
             assertEquals(type, runtime.type)
             assertEquals(saved.carrierKind, runtime.carrierKind)
             assertNotSame(saved, runtime)
-            assertEquals(2, requested)
-            assertEquals(accountHashes(2), runtime.hashes)
+            val expected=if(type=="csqtt") 5 else 2
+            assertEquals(expected, requested)
+            assertEquals(accountHashes(expected), runtime.hashes)
             assertEquals("manual", runtime.hashSource)
             assertEquals(before, saved.exportToJson().toCompact())
             assertFalse(saved.exportToJson().toCompact().contains("account_call"))
@@ -48,8 +49,10 @@ class NativeAutoHashesTest {
                     requested = it
                     accountHashes(it)
                 }
-                assertEquals("$type, $workers workers", (workers + 26) / 27, requested)
-                assertEquals(workers, runtime.workers)
+                val effective=if(type=="csqtt") app.qthrone.mobile.outbound.types.Csqtt.normalizeWorkers(workers) else workers
+                val count=if(type=="csqtt") ((effective+9)/10).coerceAtMost(6) else (workers+26)/27
+                assertEquals("$type, $workers workers", count, requested)
+                assertEquals(effective, runtime.workers)
             }
         }
     }

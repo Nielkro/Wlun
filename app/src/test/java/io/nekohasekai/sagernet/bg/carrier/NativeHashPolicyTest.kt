@@ -119,7 +119,7 @@ class NativeHashPolicyTest {
             NativeHashPolicy.preserve(incoming,listOf(old))
             assertEquals("raw",incoming.mode)
             assertEquals(old.turnTcp,incoming.turnTcp)
-            assertEquals(27,incoming.workers)
+            assertEquals(if(type=="csqtt") 20 else 27,incoming.workers)
             assertEquals(listOf("user_hash_123456789"),incoming.hashes)
             assertEquals(NativeHashPolicy.subscriptionIdentity(old),NativeHashPolicy.subscriptionIdentity(incoming))
         }

@@ -45,7 +45,7 @@ class CarrierProcess private constructor(private val process: Process, private v
     private class UnavailableCall:IllegalStateException("VK: выбранный хеш недоступен; звонок не найден")
     private class TransientStartup:IllegalStateException("Временная ошибка авторизации VK; повторите подключение")
     private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions,client=when(kind) { CarrierKind.CSQTT -> "csqtt"; CarrierKind.WDTTPLUS -> "wdttplus"; else -> "qwdtt" })
-    private val health=NativeTransportHealth()
+    private val health=NativeTransportHealth(minimumRecoveryPeak=if(kind==CarrierKind.CSQTT) 10 else 9)
     private var wdttLifecycle: WdttPlusLifecycle? = null
     private var wdttBootstrap: WdttPlusBootstrapRelay? = null
     private var wdttDeadSince=0L

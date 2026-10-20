@@ -161,6 +161,19 @@ object VkRelayAccount {
         }
         return null
     }
+    fun tokenForCalls(): String = synchronized(hashCreationLock) {
+        val session=read()
+        check(session.optString("authClient")=="qwdtt-account-turn") { "Перепривяжите аккаунт VK" }
+        tokenForCalls(session).also { check(it.isNotBlank()) { "Откройте привязку VK для подтверждения входа" } }
+    }
+    private fun tokenForCalls(session: JSONObject): String =
+        if(session.optLong("expires") > System.currentTimeMillis()+60_000) session.optString("token")
+        else refreshToken(session) ?: VkTokenRequest.obtain()?.let { (token,expires) ->
+            session.put("token",token).put("expires",if(expires>0) System.currentTimeMillis()+expires*1000 else Long.MAX_VALUE)
+            writeCurrent(session)
+            token
+        }.orEmpty()
+
     fun hashes(count: Int): List<String> {
       synchronized(hashCreationLock) {
         require(count in 1..6)
@@ -168,12 +181,7 @@ object VkRelayAccount {
         check(session.optString("authClient") == "qwdtt-account-turn") { "Перепривяжите аккаунт VK: способ авторизации обновлён" }
         val cached = session.optJSONArray("hashes")
         if(cached != null && cached.length() >= count) return (0 until count).map { cached.getString(it) }
-        val token = if(session.optLong("expires") > System.currentTimeMillis()+60_000) session.optString("token")
-            else refreshToken(session) ?: VkTokenRequest.obtain()?.let { (token,expires) ->
-                session.put("token",token).put("expires",if(expires>0) System.currentTimeMillis()+expires*1000 else Long.MAX_VALUE)
-                writeCurrent(session)
-                token
-            }.orEmpty()
+        val token = tokenForCalls(session)
         check(token.isNotBlank()) { "Откройте привязку VK для подтверждения входа" }
         check(session.optLong("retryAfter") <= System.currentTimeMillis()) { "VK ограничил запросы. Повторите позже или используйте ручные хеши" }
         val hashes = mutableListOf<String>()

@@ -83,8 +83,7 @@ class ServerActivity : ServerScreenActivity() {
                 })
             }
             "csqtt" -> body.addView(ui.tile("Панель сервера", "Пароли, устройства и звонки в веб-панели CSQTT", R.drawable.baseline_public_24) {
-                val host = server["host"].let { if (it.contains(':') && !it.startsWith('[')) "[$it]" else it }
-                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://$host:" + server["webPort"])))
+                startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(server.panelUrl())))
             })
             "wdttplus" -> listOf(
                 Triple("Клиенты и сервер", "Пароли, хеши, устройства, сроки и настройки сервера", R.drawable.ic_mobile_people) to WdttPlusClientsActivity::class.java,

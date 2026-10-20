@@ -2,6 +2,7 @@ package app.qthrone.mobile.bg.carrier
 
 import app.qthrone.mobile.outbound.types.Qwdtt
 import app.qthrone.mobile.outbound.types.WdttPlus
+import app.qthrone.mobile.outbound.types.Csqtt
 import app.qthrone.mobile.outbound.OutboundFactory
 
 object NativeHashPolicy {
@@ -16,10 +17,19 @@ object NativeHashPolicy {
 
     /** A launch-only copy keeps account calls out of stored profiles, exports and subscriptions. */
     fun runtimeProfile(profile: Qwdtt, obtainHashes: (Int) -> List<String>): Qwdtt {
-        if (!supportsAutomatic(profile) || profile.hashSource != "auto") return profile
+        if (!supportsAutomatic(profile)) return profile
+        if(profile is Csqtt && profile.hashSource=="auto_js") {
+            if(profile.vkAccessToken.isNotBlank()) return profile
+            val copy=Csqtt()
+            check(copy.parseFromJson(profile.exportToJson()))
+            copy.vkAccessToken=VkRelayAccount.tokenForCalls()
+            return copy
+        }
+        if (profile.hashSource != "auto") return profile
         val copy = OutboundFactory.newByType(profile.type) as Qwdtt
         check(copy.parseFromJson(profile.exportToJson()))
-        val count = ((copy.workers + 26) / 27).coerceIn(1, if (profile.type == "csqtt") 6 else 4)
+        val count = (if(profile is Csqtt) (copy.workers+9)/10 else (copy.workers+26)/27)
+            .coerceIn(1, if (profile.type == "csqtt") 6 else 4)
         val hashes = obtainHashes(count)
         check(hashes.size == count && hashes.distinct().size == count && hashes.all {
             it.matches(Regex("[A-Za-z0-9_-]{16,512}"))
@@ -48,13 +58,16 @@ object NativeHashPolicy {
             // The subscription owns its leading slots; local trailing slots survive until replaced.
             if (it.hashSource == "manual") incoming.hashes = mergeSlots(incoming.hashes,it.hashes,
                 if(incoming.type=="csqtt") 6 else 4)
-            incoming.workers=preservedWorkers(it.workers,workerLimit(it),workerLimit(incoming))
+            incoming.workers=if(incoming is Csqtt) Csqtt.normalizeWorkers(it.workers)
+                else preservedWorkers(it.workers,workerLimit(it),workerLimit(incoming))
             // WG/RAW and TURN over TCP/UDP are the user's choice, kept like hashes and workers.
             incoming.mode=it.mode
             incoming.turnTcp=it.turnTcp
+            if(incoming is Csqtt && it is Csqtt) incoming.turnTransport=it.turnTransport
         }
     }
     fun workerLimit(profile:Qwdtt):Int {
+        if(profile is Csqtt) return 100
         val slots=if(profile.type=="csqtt") 6 else 4
         val hashes=if(profile.hashSource=="auto") slots else profile.hashes.size.coerceIn(1,slots)
         // WDTT Plus groups 9 workers each up to 108 whatever the hash count.

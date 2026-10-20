@@ -123,6 +123,7 @@ object MobileSettingsStyle {
                 setTextColor(if(category) accent else textColor)
                 textSize=if(category) 16f else 16f
                 setTypeface(null,if(category) Typeface.BOLD else Typeface.NORMAL)
+                isSingleLine=false;maxLines=4;ellipsize=android.text.TextUtils.TruncateAt.END
             }
             view.findViewById<TextView>(android.R.id.summary)?.setTextColor(muted)
             if(preference?.key == "sharingAddresses") view.findViewById<TextView>(android.R.id.summary)?.apply {

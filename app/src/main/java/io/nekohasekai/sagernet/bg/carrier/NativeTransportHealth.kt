@@ -3,7 +3,7 @@ package app.qthrone.mobile.bg.carrier
 enum class NativeConnectionStage { PREPARING, AUTHORIZING, CAPTCHA, WAITING_VK, CONNECTING, CONNECTED, RECONNECTING }
 
 /** Only public lifecycle markers are kept; URLs, hashes and captcha tokens are never status text. */
-internal class NativeTransportHealth(private val clock: () -> Long = { System.nanoTime() / 1_000_000 }) {
+internal class NativeTransportHealth(private val minimumRecoveryPeak: Int = 9, private val clock: () -> Long = { System.nanoTime() / 1_000_000 }) {
     private val startedAt = clock()
     private var zeroSince = startedAt
     private var lastStats = startedAt
@@ -68,7 +68,7 @@ internal class NativeTransportHealth(private val clock: () -> Long = { System.na
         if (!starting) {
             // Original CSQTT: a panel restart of the server, or streams dropped from their peak, after 4 s.
             if (serverRestartAt > 0 && clock() - serverRestartAt >= 4_000) return true
-            if (zeroEventAt > 0 && peak >= 9 && (workers ?: 0) < peak && clock() - zeroEventAt >= 4_000) return true
+            if (zeroEventAt > 0 && peak >= minimumRecoveryPeak && (workers ?: 0) < peak && clock() - zeroEventAt >= 4_000) return true
             if ((workers ?: 0) >= peak) zeroEventAt = 0
         }
         if ((workers ?: 0) > 0) {

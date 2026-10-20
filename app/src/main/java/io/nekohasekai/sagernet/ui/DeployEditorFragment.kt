@@ -132,7 +132,7 @@ open class DeployEditorFragment : Fragment() {
         parent.addView(b,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply { if(pair) marginEnd=dp(4) })
         return b
     }
-    private fun field(parent: LinearLayout,s: DeployServer,key: String,label: String,secret: Boolean=false,number: Boolean=false,pair: Boolean=false) {
+    private fun field(parent: LinearLayout,s: DeployServer,key: String,label: String,secret: Boolean=false,number: Boolean=false,pair: Boolean=false): TextInputEditText {
         val box=TextInputLayout(androidx.appcompat.view.ContextThemeWrapper(requireContext(),R.style.MobileDeployInputOverlay)).apply {
             hint=label;boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE
             setBoxCornerRadii(dp(14).toFloat(),dp(14).toFloat(),dp(14).toFloat(),dp(14).toFloat())
@@ -170,6 +170,7 @@ open class DeployEditorFragment : Fragment() {
         }
         box.addView(editor,LinearLayout.LayoutParams(-1,-2))
         parent.addView(box,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply { topMargin=dp(6);bottomMargin=dp(6);if(pair) marginEnd=dp(4) })
+        return editor
     }
     private fun switch(parent: LinearLayout,s: DeployServer,key: String,label: String,rebuild: Boolean=false) {
         parent.addView(SwitchMaterial(requireContext()).apply {
@@ -178,8 +179,18 @@ open class DeployEditorFragment : Fragment() {
         },LinearLayout.LayoutParams(-1,-2))
     }
     private fun secrets(s: DeployServer) {
+        if(s.kind=="csqtt" && s["password"].isBlank()) { s["password"]=CsqttDeployPolicy.password();refreshSaveAction() }
         val c=column().apply { setPadding(dp(20),dp(8),dp(20),dp(16)) }
-        field(c,s,"password",if(s.kind=="wdttplus") "Главный пароль" else "Пароль туннеля",secret=true)
+        val passwordInput=field(c,s,"password",if(s.kind=="wdttplus") "Главный пароль" else "Пароль туннеля",secret=true)
+        if(s.kind=="csqtt") button(c,"Сгенерировать пароль (16 символов)",R.drawable.ic_mobile_refresh) {
+            MobileAlertDialogBuilder(requireContext()).setTitle("Сменить пароль туннеля?")
+                .setMessage("Новый пароль применится при установке. Сохраните новую ссылку подключения.")
+                .setPositiveButton("Сгенерировать") { _,_ ->
+                    s["password"]=CsqttDeployPolicy.password()
+                    passwordInput.setText(s["password"])
+                    refreshSaveAction()
+                }.setNegativeButton(android.R.string.cancel,null).show()
+        }
         if(s.kind=="wdttplus") {
             heading(c,"DNS для клиентов (необязательно)")
             field(c,s,"dns","DNS через запятую")
@@ -190,7 +201,7 @@ open class DeployEditorFragment : Fragment() {
             heading(c,"Доступ к веб-панели")
             field(c,s,"webUser","Логин WEB");field(c,s,"webPassword","Пароль WEB",secret=true)
         }
-        heading(c,"SSH");field(c,s,"sshPort","Порт SSH",number=true)
+        if(s.kind!="csqtt") { heading(c,"SSH");field(c,s,"sshPort","Порт SSH",number=true) }
         MobileAlertDialogBuilder(requireContext()).setTitle(if(s.kind=="csqtt") "Авторизация" else "Секреты деплоя")
             .setView(ScrollView(requireContext()).apply { addView(c) }).setPositiveButton("Готово",null).show()
     }
@@ -216,6 +227,7 @@ open class DeployEditorFragment : Fragment() {
             }
             return
         }
+        if(s.kind=="csqtt" && s["secretPath"].isBlank()) s["secretPath"]=java.util.UUID.randomUUID().toString()
         saveAction=host.toolbar.menu.add("Сохранить").apply {
             setIcon(R.drawable.ic_mobile_apply);setShowAsAction(android.view.MenuItem.SHOW_AS_ACTION_ALWAYS)
             setOnMenuItemClickListener {
@@ -263,6 +275,7 @@ open class DeployEditorFragment : Fragment() {
         if(s.kind=="qwdtt") row(access) { r -> field(r,s,"dns1","DNS 1",pair=true);field(r,s,"dns2","DNS 2",pair=true) }
         switch(access,s,"manualPorts","Ручное управление портами",true)
         if(s["manualPorts"]=="true") {
+            if(s.kind=="csqtt") field(access,s,"sshPort","Порт SSH",number=true)
             row(access) { r -> field(r,s,"peerPort","Порт туннеля",number=true,pair=true);field(r,s,if(s.kind=="csqtt") "webPort" else "wgPort",if(s.kind=="csqtt") "Порт WEB" else "Порт WG",number=true,pair=true) }
             if(s.kind=="wdttplus") field(access,s,"localPort","Локальный порт клиента",number=true)
             if(s.kind=="qwdtt") {
@@ -271,8 +284,22 @@ open class DeployEditorFragment : Fragment() {
             }
         }
         if(s.kind=="csqtt") {
-            // The web panel opens from the server menu («Панель сервера»).
             switch(access,s,"docker","Установить в Docker")
+            button(access,"О Docker-установке") {
+                MobileAlertDialogBuilder(requireContext()).setTitle("Установить в Docker")
+                    .setMessage("Штатный установщик CSQTT установит Docker при необходимости и запустит сервер в контейнере. Данные и HTTPS-панель сохраняются в /etc/csqtt.")
+                    .setPositiveButton(android.R.string.ok,null).show()
+            }
+            heading(access,"Секретный путь и ссылка панели")
+            button(access,s.panelUrl(),R.drawable.baseline_public_24) {
+                startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW,android.net.Uri.parse(s.panelUrl())))
+            }
+            button(access,"Перегенерировать UUID",R.drawable.ic_mobile_refresh) {
+                MobileAlertDialogBuilder(requireContext()).setTitle("Перегенерация пути")
+                    .setMessage("Старый путь панели перестанет работать после следующей установки. Сохраните новый UUID.")
+                    .setPositiveButton("Перегенерировать") { _,_ -> s["secretPath"]=java.util.UUID.randomUUID().toString();build() }
+                    .setNegativeButton(android.R.string.cancel,null).show()
+            }
         }
         val console=card();consoleCard=console.parent as View
         toggle=disclosure(console,"Консоль") { expanded=!expanded;expand() };consoleHeader=toggle?.parent as? View

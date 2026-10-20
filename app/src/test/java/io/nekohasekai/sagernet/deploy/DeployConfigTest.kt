@@ -31,8 +31,9 @@ class DeployConfigTest {
     }
     @Test fun csqttLinkMatchesTheOriginalPanelLink() {
         val link=DeployConfig.link(config("csqtt"),"stable-deployed-owner")
-        assertTrue(link.startsWith("csqtt://connect?v=2&host="))
-        assertEquals(listOf("v","host","peer","password"),keys(link))
+        assertTrue(link.startsWith("csqtt://"))
+        assertFalse(link.contains("password="))
+        assertNotNull(app.qthrone.mobile.outbound.link.parseCsqttLink(link))
         val parsed=Csqtt()
         assertTrue(parsed.parseFromLink(link))
         assertEquals("2001:db8::1",parsed.server)
@@ -41,7 +42,7 @@ class DeployConfigTest {
         assertTrue(parsed.hashes.isEmpty())
     }
     @Test fun serversBoundToAnotherIdentityKeepItInTheLink() {
-        for(kind in listOf("qwdtt","csqtt")) {
+        for(kind in listOf("qwdtt")) {
             val link=DeployConfig.link(config(kind),"this-phone")
             assertTrue(link.endsWith("&device_id=stable-deployed-owner"))
             val parsed=if(kind=="csqtt") Csqtt() else Qwdtt()

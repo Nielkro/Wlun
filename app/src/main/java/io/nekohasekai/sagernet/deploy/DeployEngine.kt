@@ -133,7 +133,7 @@ object DeployEngine {
         val machine = exec(ssh,server,"uname -m",30_000).second.trim()
         if(server.kind == "wdttplus") { runWdttPlus(ssh,server,uninstall,removeData,machine);return }
         val source = if(server.kind == "qwdtt") Pair("https://github.com/makriq-org/qwdtt/releases/download/v1.4.4/qWDTT_v1.4.4.apk","ff5b2d1f265b0c4253cdf54ebf1f8a5d64afd1424086aa8b8be754b5c14df6a7")
-            else Pair("https://github.com/amurcanov/csqtt/releases/download/v2.1.9/CSQTT-universal.apk","49771d60a53d731452f3301e53dbe6bdee9142876e6b295dbf88f59f0b5aaf82")
+            else Pair("https://github.com/ttrroyy/csqtt-rebirth/releases/download/v2.5.0-legacy/CSQTT-universal.apk","bbc261eff2fce56b0ee774271416b0764b34ee16349e9e250ce3c8d45d660d0f")
         update(5,"Загрузка официального установщика")
         val apk = artifact(source.first,source.second)
         val binaryName = if(server.kind == "qwdtt") {
@@ -167,17 +167,22 @@ object DeployEngine {
                         upload("/tmp/wdtt-admin.token",server["adminToken"].toByteArray())
                         upload("/tmp/wdtt-bot.token",server["botToken"].toByteArray())
                     } else {
-                        upload("/tmp/.csqtt-upload-web.env",("CSQTT_WEB_USER="+server["webUser"]+"\nCSQTT_WEB_PASS="+server["webPassword"]+"\n").toByteArray())
-                        upload("/tmp/.csqtt-upload-overrides.json",JSONObject().put("main_password",server["password"]).put("device_id",server["deviceId"]).toString().toByteArray())
+                        val docker=server["docker"] == "true"
+                        val environment=linkedMapOf("CSQTT_WEB_USER" to server["webUser"],"CSQTT_WEB_PASS" to server["webPassword"],
+                            "CSQTT_PUBLIC_IP" to server["host"],"CSQTT_WEB_SECRET_PATH" to server["secretPath"])
+                        upload("/tmp/.csqtt-upload-web.env",environment.entries.joinToString("\n",postfix="\n") {
+                            "${it.key}=${CsqttDeployPolicy.environmentValue(it.value,docker)}"
+                        }.toByteArray())
+                        upload("/tmp/.csqtt-upload-overrides.json",JSONObject().put("main_password",server["password"]).toString().toByteArray())
                     }
                 }
             }
         } finally { sftp.disconnect() }
         val env = if(server.kind == "qwdtt") "WDTT_DTLS_PORT=${server.port("peerPort")} WDTT_WG_PORT=${server.port("wgPort")} WDTT_RAW_PORT=${server.port("rawPort")} WDTT_DIRECT_PORT=${server.port("directPort")} WDTT_ADMIN_PORT=${server.port("adminPort")} WDTT_SSH_PORT=${server.port("sshPort")} WDTT_ADMIN_ID=${quote(server["adminId"])} WDTT_DNS_SERVERS=${quote(server["dns1"]+","+server["dns2"])}"
-            else "CSQTT_PEER_PORT=${server.port("peerPort")} CSQTT_WEB_PORT=${server.port("webPort")} CSQTT_SSH_PORT=${server.port("sshPort")} CSQTT_DEPLOY_MODE=${if(server["docker"] == "true") "docker" else "systemd"}"
+            else "CSQTT_PEER_PORT=${server.port("peerPort")} CSQTT_WEB_PORT=${server.port("webPort")} CSQTT_SSH_PORT=${server.port("sshPort")} CSQTT_DEPLOY_MODE=${if(server["docker"] == "true") "docker" else "systemd"} CSQTT_PUBLIC_IP=${quote(server["host"])} CSQTT_WEB_SECRET_PATH=${quote(server["secretPath"])}"
         update(45,if(uninstall) "Удаление" else "Установка и запуск сервиса")
         val result = exec(ssh,server,root("env $env bash /tmp/deploy.sh ${if(uninstall) "uninstall" else "install"}"),30*60_000L)
-        require(result.first == 0) { "Установщик завершился с кодом ${result.first}" }
+        require(result.first == 0) { if(server.kind=="csqtt") CsqttDeployPolicy.failure(result.first,result.second) else "Установщик завершился с кодом ${result.first}" }
         if(!uninstall) {
             require(DeployProtocol.successful(server.kind,result.first,result.second)) { "Установщик не подтвердил запуск сервиса" }
             if(server.kind == "qwdtt") {

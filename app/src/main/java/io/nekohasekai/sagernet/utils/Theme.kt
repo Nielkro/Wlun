@@ -42,11 +42,13 @@ object Theme {
         context.setTheme(getTheme())
         applyAmoledOverlay(context)
         context.theme.applyStyle(if (MobilePalette.light) R.style.MobileSurfaceWhite else if (MobilePalette.oled) R.style.MobileSurfaceOled else R.style.MobileSurfaceGray,true)
+        context.theme.applyStyle(R.style.MobileControls, true)
     }
 
     fun applyDialog(context: Context) {
         context.setTheme(getDialogTheme())
         applyAmoledOverlay(context)
+        context.theme.applyStyle(R.style.MobileControls, true)
     }
 
     // Night mode with AMOLED black: the black overlay goes on top of the theme

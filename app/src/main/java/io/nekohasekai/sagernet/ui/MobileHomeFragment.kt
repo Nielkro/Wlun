@@ -818,6 +818,7 @@ class MobileHomeFragment : ToolbarFragment() {
         }
         entry(getString(R.string.qmobile_ping),R.drawable.ic_mobile_test) { viewLifecycleOwner.lifecycleScope.launch { val ids=withContext(Dispatchers.IO) { SagerDatabase.proxyDao.getByGroup(group.id).map { it.id }.toLongArray() };testMenu(ids,group.displayName(),group.id,true) } }
         entry(getString(R.string.qmobile_edit),R.drawable.ic_mobile_edit) { editGroup(group,false) }
+        if(group.isSubscription) entry(getString(R.string.settings),R.drawable.ic_mobile_settings) { editGroup(group,true) }
         val pinned=group.id in pinnedGroups()
         entry(getString(if(pinned) R.string.qmobile_unpin else R.string.qmobile_pin),R.drawable.ic_mobile_pin) { val ids=pinnedGroups().toMutableSet();if(pinned) ids.remove(group.id) else ids.add(group.id);DataStore.mobilePinnedGroups=ids.joinToString(",");refresh() }
         entry(getString(R.string.qmobile_delete),R.drawable.ic_mobile_delete) {
@@ -830,7 +831,8 @@ class MobileHomeFragment : ToolbarFragment() {
     }
     private fun editGroup(group: ProxyGroup, settings: Boolean) {
         startActivity(Intent(requireContext(), GroupSettingsActivity::class.java)
-            .putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, group.id))
+            .putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, group.id)
+            .putExtra(GroupSettingsActivity.EXTRA_SETTINGS, settings))
     }
     private fun addMenu(anchor: View) {
         val popup = androidx.appcompat.widget.PopupMenu(requireContext(), anchor)

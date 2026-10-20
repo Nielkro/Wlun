@@ -4,6 +4,20 @@ on:
 permissions:
   contents: read
 jobs:
+  server-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ttrroyy/csqtt-rebirth
+          ref: 2066156119a5afe7d63e104aefdc8e0849999d03
+      - name: Install server test prerequisites
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+      - name: Test original CSQTT server and migrations
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal
+          cargo +1.97.1 test --locked --manifest-path rust-server/Cargo.toml
   clients:
     runs-on: ubuntu-22.04
     timeout-minutes: 60

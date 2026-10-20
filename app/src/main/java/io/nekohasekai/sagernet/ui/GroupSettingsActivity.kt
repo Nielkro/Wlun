@@ -38,7 +38,6 @@ import app.qthrone.mobile.group.RequestIdentity
 import app.qthrone.mobile.group.SubscriptionNameFilter
 import app.qthrone.mobile.group.ProviderLinks
 import app.qthrone.mobile.ktx.FixedLinearLayoutManager
-import app.qthrone.mobile.ktx.confirmAction
 import app.qthrone.mobile.ui.settings.DefaultSummaryProvider
 import app.qthrone.mobile.widget.ListListener
 import kotlinx.coroutines.Dispatchers
@@ -47,14 +46,14 @@ import kotlinx.coroutines.withContext
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 /**
- * Edit Group (dialog_edit_group + dialog_edit_group_advanced): Common, Subscription and the collapsed Advanced
- * subscription options. The type is chosen only while creating; a new group is saved without being updated.
- * Fields live in the profile cache store while editing.
+ * Subscription identity/options editor and a separate settings screen share the same cached document.
+ * Hidden fields stay intact when either screen saves; creating a group does not start a refresh.
  */
 class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
 
     companion object {
         const val EXTRA_GROUP_ID = "id"
+        const val EXTRA_SETTINGS = "settings"
 
         /** Ignored: a group created here is never updated right away (DialogEditGroup). */
         const val EXTRA_FROM_CLIPBOARD = "fromClipboard"
@@ -129,7 +128,8 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
     private var editingId = 0L
     private var loaded = false
     private var advancedExpanded = false
-    private var groupCount = 0
+    private var originalSignature = ""
+    private val settingsMode get() = intent.getBooleanExtra(EXTRA_SETTINGS, false)
 
     /** ResolveIdentity(nullptr), resolved while loading: the Advanced placeholders and the "Keep Default" state. */
     private var defaultUserAgent = ""
@@ -153,7 +153,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         super.onCreate(savedInstanceState)
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.apply {
-            setTitle(R.string.grp_edit_group)
+            setTitle(if (settingsMode) R.string.settings else R.string.grp_edit_group)
             setDisplayHomeAsUpEnabled(true)
             setHomeAsUpIndicator(R.drawable.ic_navigation_close)
         }
@@ -169,14 +169,14 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                 if (editingId > 0) resetDanglingProxies(group)
                 if (fresh) {
                     writeToCache(group)
+                    originalSignature = editSignature()
                     val prefilled = editingId == 0L && !link.isNullOrBlank()
                     if (prefilled) {
                         DataStore.groupType = TYPE_SUBSCRIPTION
                         DataStore.subscriptionLink = link!!.trim()
                     }
                     DataStore.dirty = prefilled
-                }
-                groupCount = GroupRepo.ids().size
+                } else originalSignature = savedInstanceState?.getString("originalSignature") ?: editSignature()
                 val identity = RequestIdentity.resolve(null)
                 defaultUserAgent = identity.userAgent
                 defaultDevice = identity.device
@@ -203,6 +203,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(STATE_ADVANCED, advancedExpanded)
+        outState.putString("originalSignature", originalSignature)
     }
 
     override fun onDestroy() {
@@ -212,8 +213,8 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String) {
         if (key == Key.PROFILE_DIRTY) return
-        DataStore.dirty = true
-        runOnUiThread { fragment?.refreshState() }
+        DataStore.dirty = editSignature() != originalSignature
+        runOnUiThread { fragment?.refreshState(); invalidateOptionsMenu() }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -222,8 +223,8 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        // A new group's delete discards it; the last group cannot be removed.
-        menu.findItem(R.id.action_delete)?.isVisible = loaded && (editingId == 0L || groupCount > 1)
+        menu.findItem(R.id.action_delete)?.isVisible = false
+        menu.findItem(R.id.action_apply)?.isVisible = loaded && DataStore.dirty
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -234,10 +235,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                 return true
             }
 
-            R.id.action_delete -> {
-                if (editingId == 0L) finish() else confirmRemove()
-                return true
-            }
         }
         return super.onOptionsItemSelected(item)
     }
@@ -258,16 +255,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             .setNegativeButton(R.string.discard) { _, _ -> finish() }
             .setNeutralButton(android.R.string.cancel, null)
             .show()
-    }
-
-    private fun confirmRemove() {
-        val name = ProxyGroup(name = DataStore.groupName.trim()).displayName()
-        confirmAction(getString(R.string.confirm_remove_group), name, R.string.delete) {
-            lifecycleScope.launch {
-                withContext(Dispatchers.IO) { GroupRepo.delete(editingId) }
-                finish()
-            }
-        }
     }
 
     // ------------------------------------------------------------------------------------------------ load / save
@@ -351,6 +338,14 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         )
     }
 
+    private fun editSignature(): String = app.qthrone.mobile.outbound.json.jsonObjectOf(
+        "name" to DataStore.groupName.trim(), "type" to DataStore.groupType,
+        "url" to DataStore.subscriptionLink.trim(), "front" to proxyId(KEY_FRONT), "landing" to proxyId(KEY_LANDING),
+        "clear" to DataStore.profileCacheStore.getBoolean(KEY_AUTO_CLEAR, false),
+        "skip" to DataStore.profileCacheStore.getBoolean(KEY_SKIP_AUTO_UPDATE, false),
+        "options" to optionsFromCache().toJson(),
+    ).toCompact()
+
     /** A subscription's name filters must compile, like the auto selector's name filter (edit_autoselector onEnd). */
     private fun nameFilterError(): String? {
         if (DataStore.groupType != TYPE_SUBSCRIPTION) return null
@@ -382,7 +377,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         val result = withContext(Dispatchers.IO) {
             val group = if (editingId > 0) GroupRepo.get(editingId) ?: return@withContext SaveResult.GONE else ProxyGroup()
             val url = DataStore.subscriptionLink.trim()
-            if (editingId > 0 && group.isSubscription && url.isEmpty()) return@withContext SaveResult.URL_REQUIRED
+            if (DataStore.groupType==TYPE_SUBSCRIPTION && url.isEmpty()) return@withContext SaveResult.URL_REQUIRED
             val store = DataStore.profileCacheStore
             group.name = DataStore.groupName.trim()
             group.autoClearUnavailable = store.getBoolean(KEY_AUTO_CLEAR, false)
@@ -483,7 +478,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                 }
             }
             findPreference<SimpleMenuPreference>(KEY_SORT_RULE)!!.summaryProvider = Preference.SummaryProvider<SimpleMenuPreference> {
-                "${it.entry}\n${getString(R.string.sub_settings_sort_summary)}"
+                it.entry ?: ""
             }
             val device = host.defaultDevice
             findPreference<EditTextPreference>(KEY_HWID)!!.placeholder(device.hwid)
@@ -578,11 +573,21 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             if (preferenceScreen == null) return
             val store = DataStore.profileCacheStore
             val subscription = DataStore.groupType == TYPE_SUBSCRIPTION
+            val editing = !host.settingsMode
+            val settings = host.settingsMode || !subscription
+            findPreference<Preference>(Key.GROUP_NAME)?.isVisible = editing
+            findPreference<Preference>(Key.GROUP_TYPE)?.isVisible = editing && host.editingId == 0L
+            findPreference<Preference>(Key.SUBSCRIPTION_LINK)?.isVisible = subscription && editing
+            findPreference<PreferenceCategory>("groupEditOptions")?.isVisible = subscription && editing
+            findPreference<PreferenceCategory>("groupCommon")?.isVisible = editing
+            for (key in listOf(KEY_SKIP_AUTO_UPDATE, KEY_SHOW_INFO_CARD, KEY_ADVANCED_TOGGLE, KEY_AUTO_CLEAR, KEY_SORT_RULE))
+                findPreference<Preference>(key)?.isVisible = settings
             findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription
-            findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription
-            findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription
+            findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription && settings
+            findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription && settings
             findPreference<Preference>("groupEncryptedSubscription")?.isVisible = subscription && ProviderLinks.isEncrypted(DataStore.subscriptionLink)
-            val expanded = subscription && host.advancedExpanded
+            val expanded = subscription && settings && host.advancedExpanded
+            findPreference<PreferenceCategory>("groupAdvancedProxies")?.isVisible = (settings && host.advancedExpanded) || !subscription
             for (key in ADVANCED_CATEGORIES) findPreference<PreferenceCategory>(key)?.isVisible = expanded
             val http = DataStore.subscriptionLink.trim().let { it.startsWith("https://", true) || it.startsWith("http://", true) || ProviderLinks.isProviderLink(it) }
             findPreference<PreferenceCategory>("groupAdvancedRequest")?.isVisible = expanded && http

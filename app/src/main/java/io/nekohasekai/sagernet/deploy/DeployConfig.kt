@@ -14,6 +14,8 @@ object DeployConfig {
     fun link(config: JSONObject, ownDeviceId: String? = null): String {
         val kind=config.getString("type")
         require(kind in listOf("qwdtt","csqtt"))  // WDTT Plus stores its wdtt://connect link itself
+        if(kind=="csqtt") return app.qthrone.mobile.outbound.link.formatCsqttLink(
+            config.getString("server"),config.getInt("server_port"),config.getString("password"),name=config.optString("name"))
         val url=LinkBuilder(kind).apply { host=if(kind=="qwdtt") "config" else "connect";plusAsEscape=true }
         if(kind=="qwdtt") {
             // qwdtt://config?name&peer&hashes&workers=18&port=9000&pass, as the original admin tab builds it.

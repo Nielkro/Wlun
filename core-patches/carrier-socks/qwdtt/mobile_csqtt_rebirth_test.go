@@ -5,7 +5,22 @@ import (
     "os"
     "path/filepath"
     "testing"
+    "wg-turn-client/internal/csqtt"
 )
+
+func TestMobileSOCKSCSQTTRebirthNegotiatedConfiguration(t *testing.T) {
+    legacy := "TUNCONF:10.66.67.2:1.1.1.1:9000:stream-v1"
+    for _, suffix := range []string{"", ":workers=5", ":workers=100"} {
+        config, err := csqtt.ParseTunnelConfig(legacy + suffix)
+        if err != nil { t.Fatal(err) }
+        if config.Address.String() != "10.66.67.2" || config.Revision != "stream-v1" {
+            t.Fatalf("unexpected tunnel config: %+v", config)
+        }
+    }
+    for _, suffix := range []string{":workers=no", ":workers=101", ":workers=-1", ":unexpected=5", ":workers=5:extra"} {
+        if _, err := csqtt.ParseTunnelConfig(legacy + suffix); err == nil { t.Fatalf("accepted invalid config %s", suffix) }
+    }
+}
 
 func TestMobileSOCKSCSQTTRebirthModes(t *testing.T) {
     for _, workers := range []int{5, 10, 18, 100, 126} {
