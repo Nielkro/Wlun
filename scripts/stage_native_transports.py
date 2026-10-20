@@ -58,7 +58,7 @@ if secure:
                 files[member.name] = tar.extractfile(member).read()
         assert set(files) == {'libqwdtt.so', 'libwdttplus.so', 'libcsqtt_transport.so', 'qWDTT-LICENSE', 'WDTT-Plus-LICENSE', 'CSQTT-LICENSE', 'SOURCES.txt', 'SHA256SUMS', 'SECURITY.json'}
         provenance = json.loads(files['SECURITY.json'])
-        for key in ('build_commit', 'core_commit', 'csqtt_commit', 'inputs'):
+        for key in ('build_commit', 'core_commit', 'wdtt_commit', 'csqtt_commit', 'inputs'):
             assert provenance[key] == secure[key], 'Secure SOCKS provenance mismatch'
         assert files['SOURCES.txt'].decode() == item['sources']
         sums = dict(line.split()[::-1] for line in files['SHA256SUMS'].decode().splitlines())
