@@ -4,6 +4,10 @@ import app.qthrone.mobile.bg.carrier.NativeHashPolicy
 import app.qthrone.mobile.R
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.GroupSortAction
+import app.qthrone.mobile.database.GroupSortMethod
+import app.qthrone.mobile.database.ServerSortRule
 import app.qthrone.mobile.database.ProfileManager
 import app.qthrone.mobile.database.ProxyEntity
 import app.qthrone.mobile.database.SagerDatabase
@@ -252,9 +256,9 @@ internal object SubscriptionRefresh {
         )
         SubscriptionQueue.groupChanged(gid, disturbed)
 
-        if (options.effectiveSortRule == app.qthrone.mobile.database.ServerSortRule.NAME) {
-            app.qthrone.mobile.database.GroupSort.sortProfiles(gid,
-                app.qthrone.mobile.database.GroupSortAction(app.qthrone.mobile.database.GroupSortMethod.BY_NAME))
+        if (options.effectiveSortRule == ServerSortRule.NAME) {
+            GroupSort.sortProfiles(gid,
+                GroupSortAction(GroupSortMethod.BY_NAME))
         }
         if (!notifyErrors && DataStore.subNotifyUpdate && changeText.trim() != str(R.string.subs_nothing)) {
             SubscriptionNotifications.updated(group)
@@ -284,7 +288,7 @@ internal object SubscriptionRefresh {
         val group = GroupRepo.get(gid) ?: return
         if (group.archive) return
         val options = group.subOptions
-        if (!options.urlTest || (!options.removeUnavailable && options.effectiveSortRule != app.qthrone.mobile.database.ServerSortRule.PING)) return
+        if (!options.urlTest || (!options.removeUnavailable && options.effectiveSortRule != ServerSortRule.PING)) return
 
         val result = SubscriptionFilters.removeUnavailableAndSort(group, options)
         if (result.report.isNotEmpty()) {
