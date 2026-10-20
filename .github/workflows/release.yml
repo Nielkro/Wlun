@@ -47,7 +47,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '[:space:]')
+          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '[:space:]')
           if gh release view "v$VERSION_NAME" >/dev/null 2>&1; then
             echo "::notice::v$VERSION_NAME is already published: nothing to release"
             echo "publish=false" >> "$GITHUB_OUTPUT"
