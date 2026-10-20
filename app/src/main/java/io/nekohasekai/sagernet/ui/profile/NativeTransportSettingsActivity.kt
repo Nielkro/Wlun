@@ -94,6 +94,10 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 document["backend"]=backend
             }
         }
+        if(type == "sstp") {
+            for((key,value) in mapOf("server" to "","server_port" to 443,"username" to "","password" to "","sni" to "","allow_insecure" to false))
+                if(!document.contains(key)) document[key]=value
+        }
         if(type == "s3bypass") {
             val storage=document.obj("storage")
             for(key in listOf("endpoint","region","bucket","prefix","accessKey","secretKey")) if(!storage.contains(key)) storage[key]=""
@@ -129,6 +133,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             "vaydns" -> listOf("name","domain","pubkey","resolvers","record_type","dnstt_compat","clientid_size","idle_timeout","keepalive") + backendFields
             "slipstream" -> listOf("name","domain","cert","resolvers","authoritative","congestion_control","keep_alive_interval") + backendFields
             "masterdns" -> listOf("name","domain","mkey","encryption","resolvers")
+            "sstp" -> listOf("name","server","server_port","username","password","sni","allow_insecure")
             "s3bypass" -> listOf("name") + listOf("endpoint","region","bucket","prefix","sessionsDir","accessKey","secretKey").map { "storage.$it" } +
                 listOf("pollIntervalMs","writeIntervalMs","idleTimeoutSec","maxFileSizeBytes").map { "tuning.$it" }
             else -> listOf("name","provider","transport","room","key","token","channel","dns","device_id") + optionDefaults.keys.map { "options.$it" }
@@ -257,7 +262,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             "idle_timeout" to "Тайм-аут простоя", "keepalive" to "Интервал keepalive", "cert" to "Сертификат сервера (PEM)",
             "authoritative" to "Резолвер — авторитетный сервер", "congestion_control" to "Управление перегрузкой",
             "keep_alive_interval" to "Keepalive QUIC, мс", "mkey" to "Ключ шифрования", "encryption" to "Шифрование",
-            "backend_type" to "Сервис на сервере", "user" to "Логин", "pk" to "Приватный ключ SSH", "method" to "Метод шифрования",
+            "backend_type" to "Сервис на сервере", "user" to "Логин", "username" to "Имя пользователя", "sni" to "SNI (Server Name)", "allow_insecure" to "Разрешить недоверенный сертификат", "pk" to "Приватный ключ SSH", "method" to "Метод шифрования",
             "endpoint" to "Адрес хранилища (endpoint)", "region" to "Регион", "bucket" to "Корзина (bucket)", "prefix" to "Префикс",
             "sessionsDir" to "Каталог сессий", "accessKey" to "Access Key", "secretKey" to "Secret Key",
             "pollIntervalMs" to "Опрос хранилища, мс", "writeIntervalMs" to "Запись в хранилище, мс",
@@ -341,12 +346,20 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 else -> (if(path in listOf("go_dns","dns")) AnchoredTextPreference(requireContext())
                     else if(path.startsWith("hash_") && path!="hash_source") HashTextPreference(requireContext())
                     else EditTextPreference(requireContext())).apply {
-                    summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
+                    summaryProvider = if (key in listOf("password", "secret") || path.endsWith(".password")) {
+                        androidx.preference.Preference.SummaryProvider<EditTextPreference> { pref ->
+                            val text = pref.text
+                            if (text.isNullOrEmpty()) "Не указано" else "••••••••"
+                        }
+                    } else {
+                        EditTextPreference.SimpleSummaryProvider.getInstance()
+                    }
                     positiveButtonText=getString(android.R.string.ok)
                     negativeButtonText=getString(android.R.string.cancel)
                     setOnBindEditTextListener {
                         it.inputType = when {
                             value is Number -> InputType.TYPE_CLASS_NUMBER
+                            key in listOf("password","secret") -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
                             key in listOf("hashes","cert","pk") || value is JsonArray -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
                             else -> InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                         }

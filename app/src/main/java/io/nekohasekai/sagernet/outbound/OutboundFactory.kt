@@ -7,6 +7,7 @@ import app.qthrone.mobile.outbound.link.LinkParser
 import app.qthrone.mobile.outbound.types.DnsTunnel
 import app.qthrone.mobile.outbound.types.Http
 import app.qthrone.mobile.outbound.types.S3Bypass
+import app.qthrone.mobile.outbound.types.Sstp
 import app.qthrone.mobile.outbound.types.WdttPlus
 import app.qthrone.mobile.outbound.types.Shadowsocks
 import app.qthrone.mobile.outbound.types.Socks
@@ -33,7 +34,7 @@ object OutboundFactory {
     /** Every factory string of OutboundFactory.cpp:35-61 (R2 Р В РІР‚в„ўР вЂ™Р’В§A). */
     @JvmField
     val ALL_TYPES: List<String> = listOf(
-        "qwdtt", "csqtt", "wdttplus", "openflux", "olcrtc", "dnstt", "vaydns", "slipstream", "masterdns", "s3bypass", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
+        "qwdtt", "csqtt", "wdttplus", "openflux", "olcrtc", "dnstt", "vaydns", "slipstream", "masterdns", "s3bypass", "sstp", "socks", "http", "shadowsocks", "chain", "autoselector", "vmess", "trojan", "vless", "xrayvless", "hysteria",
         "tuic", "juicity", "trusttunnel", "anytls", "mieru", "snell", "shadowtls", "wireguard", "masque", "openvpn",
         "openconnect", "tailscale", "ssh", "custom", "extracore", "naive", "direct",
     )
@@ -53,7 +54,7 @@ object OutboundFactory {
         "anytls" to "AnyTls", "mieru" to "Mieru", "snell" to "Snell", "shadowtls" to "ShadowTls",
         "wireguard" to "WireGuard", "masque" to "Masque", "openvpn" to "OpenVpn", "openconnect" to "OpenConnect",
         "ssh" to "Ssh", "custom" to "Custom", "naive" to "Naive", "direct" to "Direct", "chain" to "Chain",
-        "autoselector" to "AutoSelector", "qwdtt" to "Qwdtt", "csqtt" to "Csqtt", "openflux" to "OpenFlux", "olcrtc" to "OlcRtc",
+        "autoselector" to "AutoSelector", "qwdtt" to "Qwdtt", "csqtt" to "Csqtt", "openflux" to "OpenFlux", "olcrtc" to "OlcRtc", "sstp" to "Sstp",
     )
 
     private const val TYPES_PACKAGE = "app.qthrone.mobile.outbound.types."
@@ -67,6 +68,7 @@ object OutboundFactory {
         "slipstream" to { DnsTunnel("slipstream") },
         "masterdns" to { DnsTunnel("masterdns") },
         "s3bypass" to { S3Bypass() },
+        "sstp" to { Sstp() },
         "wdttplus" to { WdttPlus() },
     )
 
@@ -116,6 +118,7 @@ object OutboundFactory {
         Protocol("slipstream", emptyList(), listOf("slipstream"), emptyList()),
         Protocol("masterdns", emptyList(), listOf("masterdns"), emptyList()),
         Protocol("s3bypass", emptyList(), listOf("s3bypass"), emptyList()),
+        Protocol("sstp", listOf("sstp://"), listOf("sstp"), emptyList()),
         Protocol("csqtt", listOf("csqtt://"), listOf("csqtt"), emptyList()),
         // wdtt://connect?v=1 is WDTT Plus; the older wdtt://host:dtls:wg:local:pass form is qWDTT, as before 1.9.0.
         Protocol("wdttplus", listOf("wdtt://connect"), listOf("wdttplus"), emptyList()),

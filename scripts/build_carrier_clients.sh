@@ -77,6 +77,9 @@ mkdir -p "$SOURCE/fedarisha/main/qthrone-s3bypass"
 cp "$ROOT/carriers/s3bypass/"*.go "$SOURCE/fedarisha/main/qthrone-s3bypass/"
 (cd "$SOURCE/fedarisha"; go build -trimpath -buildmode=pie -ldflags='-s -w -buildid= -checklinkname=0' -o "$OUT/libs3bypass.so" ./main/qthrone-s3bypass)
 cp "$SOURCE/fedarisha/LICENSE" "$OUT/Xray-fedarisha-LICENSE"
+# SSTP: pure Go + gVisor netstack + swiftsstp client
+(cd "$ROOT/carriers/sstp"; go build -trimpath -buildmode=pie -ldflags='-s -w' -o "$OUT/libsstp.so" .)
+cp "$ROOT/carriers/sstp/LICENSE" "$OUT/SSTP-LICENSE"
 CSQTT=71712b07dbabe16fa43f5a248dc69e1ab9f3a270
 fetch_source "$SOURCE/csqtt" https://github.com/amurcanov/csqtt.git "$CSQTT"
 python3 "$SOURCE/qThrone/script/prepare_csqtt.py" "$SOURCE/csqtt"
