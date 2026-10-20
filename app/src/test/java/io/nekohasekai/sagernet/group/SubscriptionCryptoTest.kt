@@ -24,7 +24,7 @@ class SubscriptionCryptoTest {
             checked++
         }
         // Includes independent pinned official Incy and public salted-Happ vectors, plus block-spanning legacy RSA.
-        assertEquals(79, checked)
+        assertEquals(80, checked)
     }
 
     @Test fun decryptsEverySupportedEncryptTagResponseKey() {
@@ -35,6 +35,9 @@ class SubscriptionCryptoTest {
                     vector.get("body").asString, vector.get("tag").asString))
         }
         assertEquals(90, fixtures.getAsJsonArray("responses").size())
+        val first = fixtures.getAsJsonArray("responses")[0].asJsonObject
+        assertEquals(first.get("text").asString, SubscriptionCrypto.decryptResponse("https://cdn.example.test/sub",
+            first.get("body").asString, first.get("tag").asString, "https://example.test/sub?key=key01"))
     }
 
     @Test fun rejectsInvalidSchemaLocalFileUrlsFutureFormatsAndOversizedInput() {

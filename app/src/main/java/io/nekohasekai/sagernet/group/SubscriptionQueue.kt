@@ -172,7 +172,7 @@ object SubscriptionQueue {
     fun subscribeUrl(url: String, name: String, autoUpdate: Boolean): Long {
         val wrapped = try { ProviderLinks.decodeChecked(url) } catch (_: Exception) { return -1L }
         val content = wrapped?.data ?: url.trim()
-        if (!SubscriptionCrypto.isHttpUrl(content) && !content.startsWith("content://", true)) return -1L
+        if (!SubscriptionCrypto.isHttpUrl(content) && (wrapped != null || !content.startsWith("content://", true))) return -1L
         val group = try {
             runBlocking {
                 GroupRepo.add(

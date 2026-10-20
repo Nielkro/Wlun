@@ -47,6 +47,7 @@ class CarrierProcess private constructor(private val process: Process, private v
     private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions,client=when(kind) { CarrierKind.CSQTT -> "csqtt"; CarrierKind.WDTTPLUS -> "wdttplus"; else -> "qwdtt" })
     private val health=NativeTransportHealth()
     private var wdttLifecycle: WdttPlusLifecycle? = null
+    private var wdttBootstrap: WdttPlusBootstrapRelay? = null
     private var wdttDeadSince=0L
     fun recoveryFailure(): Pair<String,Boolean>? {
         if(closed.get() || captcha.waiting) return null
@@ -68,6 +69,7 @@ class CarrierProcess private constructor(private val process: Process, private v
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
         wdttLifecycle?.close(); wdttLifecycle = null
+        wdttBootstrap?.close(); wdttBootstrap = null
         captcha.close()
         runCatching { process.outputStream.write("STOP\n".toByteArray()); process.outputStream.flush() }
         runCatching { process.outputStream.close() }
@@ -148,6 +150,7 @@ class CarrierProcess private constructor(private val process: Process, private v
             // withContext may discard a successful return when cancellation wins the
             // dispatcher hand-off. Keep ownership outside it so that process is closed too.
             var owner: CarrierProcess? = null
+            var pendingBootstrap: WdttPlusBootstrapRelay? = null
             try {
                 return withContext(Dispatchers.IO) {
                     require(apiLevel >= kind.minimumApi) { "Transport requires Android API ${kind.minimumApi}" }
@@ -177,7 +180,15 @@ class CarrierProcess private constructor(private val process: Process, private v
                             val masque = if ("-rt-masque=true" in flags) {
                                 val state = File(app.qthrone.mobile.ktx.app.noBackupFilesDir,"wdttplus")
                                 check(state.isDirectory || state.mkdirs()) { "Cannot create private WDTT Plus state" }
-                                listOf("-rt-masque-config",File(state,"rt-masque-v1.json").absolutePath,"-rt-masque-accept-tos=true")
+                                val masqueConfig=File(state,"rt-masque-v1.json")
+                                val bootstrap = if(WdttPlusBootstrapPolicy.needed(true,launchConfig.optBoolean("masque_server_bootstrap"),masqueConfig.exists())) {
+                                    val peerIndex=flags.indexOf("-peer")
+                                    val peer=app.qthrone.mobile.outbound.link.LinkParser.parse("udp://"+flags.getOrNull(peerIndex+1).orEmpty())
+                                    if(peerIndex >= 0 && peer.isValid) WdttPlusBootstrapRelay.start(peer.host,peer.port(56000)) else null
+                                } else null
+                                pendingBootstrap=bootstrap
+                                listOf("-rt-masque-config",masqueConfig.absolutePath,"-rt-masque-accept-tos=true") +
+                                    WdttPlusBootstrapPolicy.arguments(true,launchConfig.optBoolean("masque_server_bootstrap"),masqueConfig.exists(),bootstrap?.address)
                             } else emptyList()
                             listOf(executable.absolutePath) + flags + masque
                         } else listOf(executable.absolutePath, kind.configFlag, config.absolutePath)
@@ -196,6 +207,7 @@ class CarrierProcess private constructor(private val process: Process, private v
                         }
                         val running = CarrierProcess(child, config,allowInteractions,kind,onStatus)
                         owner = running
+                        running.wdttBootstrap=pendingBootstrap; pendingBootstrap=null
                         if (launchConfig != null) {
                             val start = android.util.Base64.encodeToString(launchConfig.getJSONObject("start").toString().toByteArray(Charsets.UTF_8),
                                 android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)
@@ -253,12 +265,14 @@ class CarrierProcess private constructor(private val process: Process, private v
                         }
                         throw IllegalStateException("Transport client startup timed out")
                     } catch (error: Throwable) {
+                        pendingBootstrap?.close(); pendingBootstrap=null
                         owner?.close()
                         config.parentFile?.deleteRecursively()
                         throw error
                     }
                 }
             } catch (error: Throwable) {
+                pendingBootstrap?.close()
                 owner?.close()
                 throw error
             }

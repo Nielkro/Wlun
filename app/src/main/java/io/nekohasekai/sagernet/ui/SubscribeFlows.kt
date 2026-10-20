@@ -1,6 +1,7 @@
 package app.qthrone.mobile.ui
 
 import app.qthrone.mobile.group.ProviderLinks
+import app.qthrone.mobile.group.SubscriptionCrypto
 import app.qthrone.mobile.route.ProviderRouting
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -52,7 +53,7 @@ object SubscribeFlows {
                 onMainDispatcher {
                     if (activity.isFinishing || activity.isDestroyed) return@onMainDispatcher
                     if (decoded == null) notify(activity, activity.getString(R.string.provider_crypto_import_error))
-                    else if (Uri.parse(decoded.data).scheme?.lowercase() in listOf("https", "http")) {
+                    else if (SubscriptionCrypto.isHttpUrl(decoded.data)) {
                         showSubscriptionPrompt(activity, content, decoded.name.ifBlank { hostOf(decoded.data) }, decoded)
                     } else importInto(activity, decoded.data, gid)
                 }
@@ -261,10 +262,16 @@ object SubscribeFlows {
         (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_mobile_home)
         runOnDefaultDispatcher {
             try {
-                SubscriptionClient.subscribeUrl(url, name, autoUpdate)
+                if (SubscriptionClient.subscribeUrl(url, name, autoUpdate) <= 0) {
+                    onMainDispatcher { notify(activity, activity.getString(R.string.provider_crypto_import_error)) }
+                }
             } catch (e: Exception) {
-                Logs.w(e)
-                onMainDispatcher { notify(activity, e.readableMessage) }
+                if (ProviderLinks.isEncrypted(url)) {
+                    onMainDispatcher { notify(activity, activity.getString(R.string.provider_crypto_fetch_error)) }
+                } else {
+                    Logs.w(e)
+                    onMainDispatcher { notify(activity, e.readableMessage) }
+                }
             }
         }
     }

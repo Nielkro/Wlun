@@ -20,6 +20,7 @@ class WdttPlus : Qwdtt() {
     var tcpOnly = false
     var turnSni = ""
     var rtMasque = false
+    var rtMasqueServerBootstrap = false
     var fingerprint = "firefox"
     var clientIds = "6287487,8202606"
     var vkCallsPreflight = true
@@ -41,6 +42,7 @@ class WdttPlus : Qwdtt() {
         tcpOnly = obj.bool("tcp_only")
         turnSni = normalizeTurnSni(obj.string("turn_sni")) ?: return false
         rtMasque = obj.bool("rt_masque")
+        rtMasqueServerBootstrap = obj.bool("rt_masque_server_bootstrap")
         fingerprint = obj.string("fingerprint").ifBlank { "firefox" }
         clientIds = obj.string("client_ids").ifBlank { "6287487,8202606" }
         vkCallsPreflight = !obj.contains("vkcalls_preflight") || obj.bool("vkcalls_preflight")
@@ -88,6 +90,7 @@ class WdttPlus : Qwdtt() {
         for (key in listOf("mode", "raw_port", "turn_tcp", "obfs", "go_dns", "vk_anon_path")) it.remove(key)
         it["wg_port"] = wgPort; it["local_port"] = localPort
         it["tcp_only"] = tcpOnly; it["turn_sni"] = turnSni; it["rt_masque"] = rtMasque
+        it["rt_masque_server_bootstrap"] = rtMasqueServerBootstrap
         it["fingerprint"] = fingerprint; it["client_ids"] = clientIds; it["vkcalls_preflight"] = vkCallsPreflight
         if (maxWorkers > 0) it["max_workers"] = maxWorkers
         if (legacy) it["legacy"] = true
@@ -126,7 +129,8 @@ class WdttPlus : Qwdtt() {
         if (hashes.size > 1) args += "-hash-fallback=true"
         args += listOf("-captcha-mode", captchaMode)
         // "hashes" is not passed on: it lets the log redactor hide every hash on its own.
-        return jsonObjectOf("args" to JsonArray.of(*args.toTypedArray()), "hashes" to JsonArray.of(*hashes.toTypedArray()), "start" to jsonObjectOf(
+        return jsonObjectOf("args" to JsonArray.of(*args.toTypedArray()), "hashes" to JsonArray.of(*hashes.toTypedArray()),
+            "masque_server_bootstrap" to rtMasqueServerBootstrap, "start" to jsonObjectOf(
             "vk_hashes" to hashes.joinToString(","), "connection_password" to password,
             "custom_vk_client_id" to "", "custom_vk_client_secret" to "",
             "socks_username" to credentials.username, "socks_password" to credentials.password))

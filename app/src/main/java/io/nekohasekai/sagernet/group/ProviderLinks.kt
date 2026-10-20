@@ -29,7 +29,11 @@ object ProviderLinks {
                 content = payload
             } else if (action.startsWith("crypt")) {
                 val decoded = try {
-                    SubscriptionCrypto.decrypt(scheme, action, URLDecoder.decode(payload.replace("+", "%2B"), "UTF-8"))
+                    // crypt5 nonce/salt bytes can contain literal '%'; preserve raw wire bytes first.
+                    runCatching { SubscriptionCrypto.decrypt(scheme, action, payload) }.getOrElse {
+                        require(payload.contains('%'))
+                        SubscriptionCrypto.decrypt(scheme, action, URLDecoder.decode(payload.replace("+", "%2B"), "UTF-8"))
+                    }
                 } catch (_: Exception) {
                     throw IllegalArgumentException("Cannot decrypt subscription: unsupported format or damaged data")
                 }

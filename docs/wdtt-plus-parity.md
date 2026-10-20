@@ -6,7 +6,7 @@ The native client supplies the original VKCalls providers, fallback hashes, work
 
 1.9.2 aligns the Android adapter with v20 in these areas:
 
-- UDP with TCP/TLS fallback, or TCP/TLS without external UDP; optional external TURN SNI and MASQUE fallback. MASQUE state persists in private storage excluded from Android backups. Registration is enabled only when the user enables this fallback.
+- UDP with TCP/TLS fallback, or TCP/TLS without external UDP; optional external TURN SNI and MASQUE fallback. MASQUE state persists in private storage excluded from Android backups. Registration is enabled only when the user enables this fallback. The optional first-registration SSH relay uses an unambiguous saved server with an approved host key and forwards only to Cloudflare's enrollment API; missing access or relay failure falls back to direct registration.
 - Screen sleep/wake and underlying non-VPN network changes are forwarded to the native connection policy. A live native client is allowed to repair its own channels. An exited process receives the original 60-second observation period before recovery.
 - Up to 108 workers in groups of nine, respecting a shared profile's smaller `max_workers` limit; multi-hash native fallback remains enabled.
 - Connection status, serialized latency probes, startup budget and exclusion of duplicate sessions for the same server and device.
@@ -15,4 +15,6 @@ The native client supplies the original VKCalls providers, fallback hashes, work
 
 Existing protections remain: server-ownership checks, host-key pinning for the main server, private staging, checked snapshots, update locking, binary identity/service verification and failure rollback. The original standalone installer's ownership is not claimed by Android deployment.
 
-Limits: qThrone supplies its own VPN interface, settings UI and shared VK account flow; this is not a port of every screen or account flow from the original app. MASQUE's optional bootstrap through an SSH relay is not exposed. Optional operations on a second VPS retain the original first-contact host-key behavior. Automated tests exercise database preservation, snapshots, link/runtime parameters, session conflicts and sudo stdin framing; a real VPS and Android network handover test still require a device and server credentials.
+Security deviation from the pinned native source: authenticated local SOCKS UDP requires the client's prebound source port, rather than learning it from the first unauthenticated datagram. UDP remains enabled. The mobile core advertises its reserved port before the native client accepts the association.
+
+Limits: qThrone supplies its own VPN interface, settings UI and shared VK account flow; this is not a port of every screen or account flow from the original app. Optional operations on a second VPS retain the original first-contact host-key behavior. Automated tests exercise database preservation, snapshots, link/runtime parameters, session conflicts, sudo stdin framing and SSH-bootstrap eligibility; a real VPS and Android network handover test still require a device and server credentials.

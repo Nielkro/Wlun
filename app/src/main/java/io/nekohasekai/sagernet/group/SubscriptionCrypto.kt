@@ -63,13 +63,15 @@ internal object SubscriptionCrypto {
     }
 
     /** Happ response layer: base64 ciphertext, detached base64 Encrypt-Tag, ?key=key01..key90. */
-    fun decryptResponse(url: String, body: String, encryptTag: String): String {
+    fun decryptResponse(url: String, body: String, encryptTag: String, originalUrl: String = ""): String {
         if (encryptTag.isBlank()) return body
         require(body.length <= MAX_BODY_CHARS && encryptTag.length <= 64)
-        val names = URI(url).rawQuery.orEmpty().split('&').mapNotNull { item ->
+        fun keyNames(address: String): List<String> = URI(address).rawQuery.orEmpty().split('&').mapNotNull { item ->
             val pair = item.split('=', limit = 2)
             if (pair.size == 2 && URLDecoder.decode(pair[0], "UTF-8") == "key") URLDecoder.decode(pair[1], "UTF-8") else null
         }
+        // Redirects may add a key or omit the original query. An explicit final key takes precedence.
+        val names = keyNames(url).ifEmpty { keyNames(originalUrl) }
         require(names.size == 1)
         val key = data.getAsJsonObject("happResponse").get(names.single())?.asString
             ?: throw IllegalArgumentException("Unsupported encrypted response key")

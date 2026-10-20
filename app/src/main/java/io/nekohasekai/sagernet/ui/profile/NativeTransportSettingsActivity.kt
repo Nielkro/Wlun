@@ -123,7 +123,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         val order = when(type) {
             "qwdtt" -> listOf("name","server","server_port","mode","password","hash_source") + (1..4).map { "hash_$it" } + listOf("raw_port","workers","turn_tcp","vk_anon_path","captcha_mode","obfs","go_dns","device_id")
             "csqtt" -> listOf("name","server","server_port","password","hash_source") + (1..6).map { "hash_$it" } + listOf("workers","turn_tcp","vk_anon_path","captcha_mode","obfs","device_id")
-            "wdttplus" -> listOf("name","server","server_port","wg_port","local_port","password","hash_source") + (1..4).map { "hash_$it" } + listOf("workers","captcha_mode","tcp_only","turn_sni","rt_masque","device_id")
+            "wdttplus" -> listOf("name","server","server_port","wg_port","local_port","password","hash_source") + (1..4).map { "hash_$it" } + listOf("workers","captcha_mode","tcp_only","turn_sni","rt_masque","rt_masque_server_bootstrap","device_id")
             "openflux" -> listOf("name","secret") + openFluxKinds.map { "transport_$it" } + listOf("context")
             "dnstt" -> listOf("name","domain","pubkey","resolvers") + backendFields
             "vaydns" -> listOf("name","domain","pubkey","resolvers","record_type","dnstt_compat","clientid_size","idle_timeout","keepalive") + backendFields
@@ -279,6 +279,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
         }
         fun refreshEditors() {
             val automatic = DataStore.profileCacheStore.getString(cache("hash_source")) == "auto"
+            editors["rt_masque_server_bootstrap"]?.isEnabled=DataStore.profileCacheStore.getString(cache("rt_masque")) == "true"
             editors.filterKeys { it.startsWith("hash_") && it != "hash_source" }.values.forEach { it.isVisible = !automatic }
             checkButton.isVisible=!automatic
             checkButton.isEnabled=hashCheck!=null || fields.keys.any { it.startsWith("hash_") && it!="hash_source" && !DataStore.profileCacheStore.getString(cache(it)).isNullOrBlank() }
@@ -358,6 +359,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             if(editingOutbound.type=="wdttplus") when(key) {
                 "tcp_only" -> preference.summary="Отключить внешний UDP и использовать TCP/TLS"
                 "rt_masque" -> preference.summary="Резерв через Cloudflare. При первом включении потребуется регистрация Cloudflare"
+                "rt_masque_server_bootstrap" -> { preference.title="Регистрация MASQUE по SSH"; preference.summary="Для первой регистрации использовать сохранённый SSH-доступ к этому серверу" }
             }
             preference.setOnPreferenceChangeListener { _, next ->
                 // A full VK call link pasted into a hash field keeps only its hash, as in the original apps.

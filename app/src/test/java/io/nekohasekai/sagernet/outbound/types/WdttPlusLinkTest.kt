@@ -60,7 +60,7 @@ class WdttPlusLinkTest {
     @Test fun connectionSettingsSurviveStorageAndUseOriginalNativeFlags() {
         val profile = WdttPlus().apply {
             assertTrue(parseFromLink("wdtt://connect?v=1&host=192.0.2.5&dtls=56000&wg=56001&local=9000&password=p&hashes=$hash"))
-            tcpOnly = true; turnSni = "turn.example.org"; rtMasque = true; workers = 36
+            tcpOnly = true; turnSni = "turn.example.org"; rtMasque = true; rtMasqueServerBootstrap = true; workers = 36
         }
         val restored = WdttPlus().apply { assertTrue(parseFromJson(profile.exportToJson())) }
         val args = restored.privateConfig(1080,1081,app.qthrone.mobile.bg.carrier.CarrierBridgeCredentials("u","pw")).array("args").strings()
@@ -69,6 +69,7 @@ class WdttPlusLinkTest {
         assertEquals("turn.example.org",args[args.indexOf("-turn-sni")+1])
         assertEquals("auto",args[args.indexOf("-transport-experiment")+1])
         assertFalse(args.any { it == "p" || it == hash || it == "pw" })
+        assertTrue(restored.privateConfig(1080,1081,app.qthrone.mobile.bg.carrier.CarrierBridgeCredentials("u","pw")).bool("masque_server_bootstrap"))
         assertEquals(profile.exportToJson().toCompact(),restored.exportToJson().toCompact())
     }
 

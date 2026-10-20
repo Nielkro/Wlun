@@ -27,7 +27,7 @@ object SubscriptionFetch {
         Logs.i(">>>>>>>> " + app.getString(R.string.subs_requesting, name))
         val result = try {
             val resolved = ProviderLinks.decodeChecked(url)?.data ?: url
-            if (resolved.startsWith("content://", ignoreCase = true)) readContent(resolved)
+            if (!encrypted && resolved.startsWith("content://", ignoreCase = true)) readContent(resolved)
             else {
                 require(SubscriptionCrypto.isHttpUrl(resolved))
                 request(resolved, identity)
@@ -60,7 +60,7 @@ object SubscriptionFetch {
             return Result(body, SubUserInfo(), response.error)
         }
         val body = try {
-            SubscriptionCrypto.decryptResponse(response.finalUrl.ifBlank { url }, String(response.data, Charsets.UTF_8), response.header("Encrypt-Tag"))
+            SubscriptionCrypto.decryptResponse(response.finalUrl.ifBlank { url }, String(response.data, Charsets.UTF_8), response.header("Encrypt-Tag"), url)
         } catch (_: Exception) {
             return Result("", SubUserInfo(), app.getString(R.string.provider_crypto_response_error))
         }
