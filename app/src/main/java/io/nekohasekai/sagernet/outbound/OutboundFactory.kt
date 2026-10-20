@@ -117,9 +117,9 @@ object OutboundFactory {
         Protocol("masterdns", emptyList(), listOf("masterdns"), emptyList()),
         Protocol("s3bypass", emptyList(), listOf("s3bypass"), emptyList()),
         Protocol("csqtt", listOf("csqtt://"), listOf("csqtt"), emptyList()),
-        // Every wdtt:// link runs on the WDTT Plus client: connect?v=1 is WDTT Plus, the older form plain WDTT.
-        Protocol("wdttplus", listOf("wdtt://"), listOf("wdttplus"), emptyList()),
-        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config"), listOf("qwdtt"), emptyList()),
+        // wdtt://connect?v=1 is WDTT Plus; the older wdtt://host:dtls:wg:local:pass form is qWDTT, as before 1.9.0.
+        Protocol("wdttplus", listOf("wdtt://connect"), listOf("wdttplus"), emptyList()),
+        Protocol("qwdtt", listOf("qwdtt://", "qwdtt:config", "wdtt://"), listOf("qwdtt"), emptyList()),
         Protocol("socks", listOf("socks5://", "socks4://", "socks4a://", "socks://"), listOf("socks"), listOf("socks5")),
         Protocol("http", listOf("http://", "https://"), listOf("http"), listOf("http")),
         Protocol("shadowsocks", listOf("ss://"), listOf("shadowsocks"), listOf("ss")),

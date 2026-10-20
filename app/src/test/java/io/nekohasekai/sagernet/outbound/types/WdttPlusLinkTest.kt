@@ -22,11 +22,27 @@ class WdttPlusLinkTest {
         assertEquals(profile.exportToJson().also { it.remove("device_id") }.toCompact(), again.exportToJson().also { it.remove("device_id") }.toCompact())
     }
 
-    @Test fun plainWdttLinksAreShownAsWdtt() {
-        val profile = ProfileImport.parse("wdtt://192.0.2.6:56000:56001:9000:secret:$hash").outbounds.single() as WdttPlus
-        assertEquals("WDTT", profile.displayType())
-        assertEquals(56001, profile.wgPort)
-        assertEquals("wdtt://192.0.2.6:56000:56001:9000:secret:$hash", profile.exportToLink())
+    @Test fun plainWdttLinksAreQwdtt() {
+        val profile = ProfileImport.parse("wdtt://31.76.50.112:56000:56001:9000:secret:$hash").outbounds.single()
+        assertFalse(profile is WdttPlus)
+        profile as Qwdtt
+        assertEquals("qWDTT (WG)", profile.displayType())
+        assertEquals("31.76.50.112", profile.server)
+        assertEquals(56000, profile.serverPort)
+        assertEquals("secret", profile.password)
+        assertEquals(listOf(hash), profile.hashes)
+    }
+
+    @Test fun profilesStoredAsLegacyWdttBecomeQwdttAgain() {
+        val stored = WdttPlus().apply { assertTrue(parseFromLink("wdtt://connect?v=1&host=192.0.2.6&dtls=56000&wg=56001&local=9000&password=secret&hashes=$hash")) }
+            .exportToJson().also { it["legacy"] = true; it["tag"] = "Home" }.toCompact()
+        val profile = WdttPlus.legacyToQwdtt(stored)!!
+        assertEquals("qwdtt", profile.type)
+        assertEquals("Home", profile.name)
+        assertEquals("192.0.2.6", profile.server)
+        assertEquals("wg", profile.mode)
+        assertEquals(listOf(hash), profile.hashes)
+        assertNull(WdttPlus.legacyToQwdtt(stored.replace("\"legacy\":true", "\"legacy\":false")))
     }
 
     @Test fun startsLikeTheOriginalApp() {

@@ -116,6 +116,15 @@ class WdttPlus : Qwdtt() {
     }
 
     companion object {
+        /** A plain wdtt:// profile that 1.9.0 stored as WDTT Plus, back as the qWDTT profile it was before; null otherwise. */
+        fun legacyToQwdtt(json: String): Qwdtt? {
+            val obj = JsonInput.parseObjectOrNull(json) ?: return null
+            if (obj.string("type") != "wdttplus" || !obj.bool("legacy")) return null
+            val copy = obj.copy(); copy["type"] = "qwdtt"
+            for (key in listOf("legacy", "wg_port", "local_port", "max_workers", "workers")) copy.remove(key)
+            return Qwdtt().takeIf { it.parseFromJson(copy) }
+        }
+
         /** normalizeTunnelWorkerCount of WDTT Plus: groups of 9, up to 108 or the profile's own limit. */
         fun normalizeWorkers(requested: Int, profileMaxWorkers: Int): Int {
             val configured = profileMaxWorkers / 9 * 9
