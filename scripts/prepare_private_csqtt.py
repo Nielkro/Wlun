@@ -16,6 +16,13 @@ after = '''        let address = if name.starts_with('/') {
             UnixAddr::new_abstract(name.as_bytes())?
         };
         bind(listener.as_raw_fd(), &address)?;'''
+if 'let addr = UnixAddr::new_abstract(name.as_bytes())?;' in source:
+    before = 'let addr = UnixAddr::new_abstract(name.as_bytes())?;'
+    after = '''let addr = if name.starts_with('/') {
+            UnixAddr::new(name)?
+        } else {
+            UnixAddr::new_abstract(name.as_bytes())?
+        };'''
 if source.count(before) != 1:
     raise SystemExit("CSQTT FD receiver bind changed; review private IPC patch")
 source = source.replace(before, after, 1)
@@ -29,6 +36,17 @@ after = '''                            let descriptor = unsafe { OwnedFd::from_r
                                 continue;
                             }
                             configure_nonblocking(descriptor.as_raw_fd())?;'''
+if 'if let Err(error) = configure_nonblocking(descriptor.as_fd()) {' in source:
+    before = '''                                let descriptor = unsafe { OwnedFd::from_raw_fd(descriptor) };
+                                if let Err(error) = configure_nonblocking(descriptor.as_fd()) {'''
+    after = '''                                let descriptor = unsafe { OwnedFd::from_raw_fd(descriptor) };
+                                let credentials = nix::sys::socket::getsockopt(
+                                    &descriptor, nix::sys::socket::sockopt::PeerCredentials,
+                                )?;
+                                if credentials.uid() != unsafe { libc::geteuid() } {
+                                    continue;
+                                }
+                                if let Err(error) = configure_nonblocking(descriptor.as_fd()) {'''
 if source.count(before) != 1:
     raise SystemExit("CSQTT FD receiver accept changed; review private IPC patch")
 source = source.replace(before, after, 1)

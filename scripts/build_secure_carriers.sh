@@ -4,7 +4,7 @@ ABI=${1:?Android ABI is required}
 ROOT=$(pwd)
 REF=$(sed -n 's/^THRONE_CORE_REF=//p' nb4a.properties | tr -d '\r[:space:]')
 WDTTPLUS=f706ccd373685bbde20cae33b2b7f400e8335ecc
-CSQTT=71712b07dbabe16fa43f5a248dc69e1ab9f3a270
+CSQTT=2066156119a5afe7d63e104aefdc8e0849999d03
 SOURCE=$(mktemp -d "${RUNNER_TEMP:?}/secure-carriers.XXXXXX")
 OUT="$ROOT/deployment/secure-carriers/$ABI"
 mkdir -p "$OUT"
@@ -16,7 +16,7 @@ fetch_source() {
 }
 fetch_source "$SOURCE/qThrone" https://github.com/ttrroyy/qThrone.git "$REF"
 fetch_source "$SOURCE/wdttplus" https://github.com/Ivan4537/WDTT-Plus.git "$WDTTPLUS"
-fetch_source "$SOURCE/csqtt" https://github.com/amurcanov/csqtt.git "$CSQTT"
+fetch_source "$SOURCE/csqtt" https://github.com/ttrroyy/csqtt-rebirth.git "$CSQTT"
 python3 scripts/prepare_android_captcha.py "$SOURCE/qThrone/qwdtt"
 # The Android bridge launches the CSQTT executable from the application's native library directory.
 python3 - "$SOURCE/qThrone/qwdtt/csqtt_bridge.go" <<'PY'
@@ -28,14 +28,14 @@ assert text.count(old)==1
 p.write_text(text.replace(old,old+'\n\tif runtime.GOOS == "android" { name = "libcsqtt_transport.so" }'),newline='\n')
 PY
 python3 scripts/prepare_mobile_carrier_socks.py qwdtt "$SOURCE/qThrone/qwdtt"
+python3 scripts/prepare_csqtt_rebirth_bridge.py "$SOURCE/qThrone/qwdtt"
 python3 scripts/prepare_mobile_carrier_socks.py wdttplus "$SOURCE/wdttplus/go_client"
 (cd "$SOURCE/qThrone/qwdtt"; CGO_ENABLED=0 go test -run '^TestMobileSOCKS' -count=1 .)
 (cd "$SOURCE/wdttplus/go_client"; CGO_ENABLED=0 go test -run '^TestMobileSOCKS' -count=1 .)
-python3 "$SOURCE/qThrone/script/prepare_csqtt.py" "$SOURCE/csqtt"
-python3 "$ROOT/scripts/prepare_mobile_csqtt.py" "$SOURCE/csqtt"
+python3 "$ROOT/scripts/prepare_csqtt_rebirth.py" "$SOURCE/csqtt"
 python3 "$ROOT/scripts/prepare_private_csqtt.py" "$SOURCE/csqtt"
 rustup toolchain install 1.97.1 --profile minimal
-(cd "$SOURCE/csqtt/rust-client"; cargo +1.97.1 test --locked mobile_private_ipc_tests)
+(cd "$SOURCE/csqtt/rust-client"; cargo +1.97.1 test --locked)
 case "$ABI" in
   arm64-v8a) export GOARCH=arm64; CLANG=aarch64-linux-android; RUST=aarch64-linux-android ;;
   armeabi-v7a) export GOARCH=arm GOARM=7; CLANG=armv7a-linux-androideabi; RUST=armv7-linux-androideabi ;;
@@ -60,7 +60,7 @@ printf 'qThrone %s\nWDTT-Plus %s\nCSQTT %s\nAndroid ABI %s\nLocal IPC hardening 
 python3 - "$OUT" "$REF" "$WDTTPLUS" "$CSQTT" <<'PY'
 from pathlib import Path
 import hashlib,json,os,sys
-paths=['scripts/build_secure_carriers.sh','scripts/prepare_android_captcha.py','scripts/prepare_mobile_carrier_socks.py','scripts/prepare_private_csqtt.py']
+paths=['scripts/build_secure_carriers.sh','scripts/prepare_android_captcha.py','scripts/prepare_mobile_carrier_socks.py','scripts/prepare_private_csqtt.py','scripts/prepare_csqtt_rebirth.py','scripts/prepare_csqtt_rebirth_bridge.py']
 paths+=sorted(str(p).replace('\\','/') for p in Path('core-patches/carrier-socks').rglob('*.go'))
 metadata={'build_commit':os.environ['GITHUB_SHA'],'core_commit':sys.argv[2],'wdtt_commit':sys.argv[3],'csqtt_commit':sys.argv[4],
           'inputs':{name:hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in paths}}
