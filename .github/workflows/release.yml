@@ -11,6 +11,11 @@ on:
       - 'v1.3.8-beta.10'
       - 'v1.3.8-beta10'
       - 'v1.3.8'
+  # Every green CI run on stable publishes its VERSION_NAME once.
+  workflow_run:
+    workflows: [qThroneMobile CI]
+    types: [completed]
+    branches: [stable]
   workflow_dispatch:
     inputs:
       publish:
@@ -24,8 +29,35 @@ permissions:
   contents: write
   actions: read
 jobs:
+  gate:
+    name: Unpublished version
+    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Check
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '[:space:]')
+          if gh release view "v$VERSION_NAME" >/dev/null 2>&1; then
+            echo "::notice::v$VERSION_NAME is already published: nothing to release"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
   release:
     name: APK
+    needs: gate
+    if: ${{ always() && (github.event_name != 'workflow_run' || needs.gate.outputs.publish == 'true') }}
     runs-on: ubuntu-latest
     env:
       SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
@@ -35,13 +67,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - name: Release numbering regression
         run: python3 buildScript/test_release_tag.py
       # Public tags use three version components and always increase.
       - name: Version
         id: version
         env:
-          PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+          PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -65,7 +99,7 @@ jobs:
       - name: Release assets
         run: python3 buildScript/release_assets.py app/build/outputs/apk/oss/release dist stable
       - name: Upload artifact
-        if: ${{ github.event_name != 'push' && !inputs.publish }}
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.publish }}
         uses: actions/upload-artifact@v7
         with:
           name: qThroneMobile-${{ steps.version.outputs.tag }}
@@ -73,16 +107,17 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Publish release
-        if: ${{ github.event_name == 'push' || inputs.publish }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.version.outputs.tag }}
+          TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
           RELEASE_NAME: ${{ steps.version.outputs.name }}
         run: |
           set -euo pipefail
           if [[ "$TAG" == *-beta.* || "$TAG" == *-rc.* ]]; then
-            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --prerelease --latest=false --notes-file RELEASE_NOTES.md
+            gh release create "$TAG" dist/* --target "$TARGET" --title "$RELEASE_NAME" --prerelease --latest=false --notes-file RELEASE_NOTES.md
           else
-            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
+            gh release create "$TAG" dist/* --target "$TARGET" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
           fi
