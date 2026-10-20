@@ -29,6 +29,23 @@ class SubscriptionSettingsFragment : SettingsScreenFragment(R.xml.settings_subsc
         checkText(userAgent.key, R.string.invalid_value, reload = false) { true }
 
         bindAutoUpdate()
+        pref<EditTextPreference>(SettingsRegistry.SUB_REQUEST_TIMEOUT.key).apply {
+            summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                getString(R.string.sub_settings_timeout_summary, DataStore.subRequestTimeoutSeconds)
+            }
+            setOnBindEditTextListener(EditTextPreferenceModifiers.Number)
+            setOnPreferenceChangeListener { _, value ->
+                val raw = value?.toString().orEmpty()
+                val number = raw.trim().toIntOrNull()
+                if (number == null || number !in 5..300) {
+                    toast(R.string.sub_settings_timeout_error)
+                    false
+                } else if (raw != number.toString()) {
+                    text = number.toString()
+                    false
+                } else true
+            }
+        }
 
         val sendHwid = pref<SwitchPreference>(SettingsRegistry.SUB_SEND_HWID.key)
         sendHwid.summary = hwidSummary(DataStore.subCustomHwidParams)

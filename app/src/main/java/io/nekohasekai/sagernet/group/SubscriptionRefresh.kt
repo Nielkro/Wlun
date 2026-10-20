@@ -74,7 +74,7 @@ internal object SubscriptionRefresh {
             return
         }
         // Android-only (#53): filtered servers never enter the sink, so the diff deletes the ones already stored.
-        val servers = SubscriptionNameFilter.apply(parsed, options, group.name)
+        val servers = if (options.ignoreNameFilters) parsed else SubscriptionNameFilter.apply(parsed, options, group.name)
         if (servers.isEmpty()) {
             if (fetched.subInfo.valid) {
                 SagerDatabase.groupDao.setSubscriptionMetadata(gid, fetched.subInfo.toJsonString())
@@ -252,6 +252,13 @@ internal object SubscriptionRefresh {
         )
         SubscriptionQueue.groupChanged(gid, disturbed)
 
+        if (options.effectiveSortRule == app.qthrone.mobile.database.ServerSortRule.NAME) {
+            app.qthrone.mobile.database.GroupSort.sortProfiles(gid,
+                app.qthrone.mobile.database.GroupSortAction(app.qthrone.mobile.database.GroupSortMethod.BY_NAME))
+        }
+        if (!notifyErrors && DataStore.subNotifyUpdate && changeText.trim() != str(R.string.subs_nothing)) {
+            SubscriptionNotifications.updated(group)
+        }
         if (options.urlTest) SubscriptionQueue.requestUrlTest(gid, members().map { it.id })
     }
 
@@ -277,7 +284,7 @@ internal object SubscriptionRefresh {
         val group = GroupRepo.get(gid) ?: return
         if (group.archive) return
         val options = group.subOptions
-        if (!options.urlTest || (!options.removeUnavailable && !options.sortByLatency)) return
+        if (!options.urlTest || (!options.removeUnavailable && options.effectiveSortRule != app.qthrone.mobile.database.ServerSortRule.PING)) return
 
         val result = SubscriptionFilters.removeUnavailableAndSort(group, options)
         if (result.report.isNotEmpty()) {

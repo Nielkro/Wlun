@@ -41,6 +41,7 @@ import app.qthrone.mobile.SagerNet
 import app.qthrone.mobile.bg.test.TestSpec
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.GroupRepo
 import app.qthrone.mobile.database.GroupSortAction
 import app.qthrone.mobile.database.GroupSortMethod
 import app.qthrone.mobile.database.ProfileManager
@@ -51,6 +52,8 @@ import app.qthrone.mobile.ktx.runOnDefaultDispatcher
 import app.qthrone.mobile.ktx.snackbar
 import app.qthrone.mobile.widget.bars
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -508,7 +511,22 @@ class TestPanelController(
             context.getString(R.string.test_panel_progress_description, s.done, s.total, s.ok, s.failed)
     }
 
+    private var sortGroupId = 0L
+    private var sortGroupIsSubscription = true
+
     private fun renderActions(s: TestUiState) {
+        if (s.groupId != sortGroupId) {
+            sortGroupId = s.groupId
+            sortGroupIsSubscription = true
+            val queriedId = s.groupId
+            if (queriedId > 0) owner.lifecycleScope.launch {
+                val subscription = withContext(Dispatchers.IO) { GroupRepo.get(queriedId)?.isSubscription != false }
+                if (sortGroupId == queriedId) {
+                    sortGroupIsSubscription = subscription
+                    renderActions(TestSessionClient.state.value)
+                }
+            }
+        }
         val canAct = s.finished && !s.testCurrent
         val best = s.ranking.firstOrNull()
         connectAction.isVisible = canAct && best != null && best.profileId != selectedId
@@ -520,7 +538,9 @@ class TestPanelController(
                 )
             )
         }
-        sortAction.isVisible = canAct && s.groupId > 0 && s.ok > 0 && s.kind != TestSpec.KIND_IP
+        val bySpeed = s.kind == TestSpec.KIND_SPEED && !s.countryMode
+        sortAction.isVisible = canAct && s.groupId > 0 && s.ok > 0 && s.kind != TestSpec.KIND_IP &&
+            (bySpeed || !sortGroupIsSubscription)
         if (sortAction.isVisible) {
             sortAction.setTextIfChanged(
                 context.getString(
@@ -843,6 +863,7 @@ class TestPanelController(
         val bySpeed = s.kind == TestSpec.KIND_SPEED && !s.countryMode
         val upload = s.speedMode == TestUiState.SPEED_MODE_UPLOAD
         runOnDefaultDispatcher {
+            if (!bySpeed && GroupRepo.get(groupId)?.isSubscription == true) return@runOnDefaultDispatcher
             val sorted = if (bySpeed) {
                 // Fastest first; "N/A" (failed) sorts after untested like the desktop's bitrate key.
                 val order = ProfileManager.members(groupId)

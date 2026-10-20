@@ -28,6 +28,10 @@ import app.qthrone.mobile.database.ProfileManager
 import app.qthrone.mobile.database.ProxyGroup
 import app.qthrone.mobile.database.SendHwid
 import app.qthrone.mobile.database.SubscriptionOptions
+import app.qthrone.mobile.database.ServerSortRule
+import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.GroupSortAction
+import app.qthrone.mobile.database.GroupSortMethod
 import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
 import app.qthrone.mobile.group.DeviceDetails
 import app.qthrone.mobile.group.RequestIdentity
@@ -84,8 +88,13 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         private const val KEY_REMOVE_INVALID = "groupSubRemoveInvalid"
         private const val KEY_URL_TEST = "groupSubUrlTest"
         private const val KEY_REMOVE_UNAVAILABLE = "groupSubRemoveUnavailable"
-        private const val KEY_SORT_BY_LATENCY = "groupSubSortByLatency"
-        private const val KEY_AUTO_SORT_PING = "groupAutoSortByPing"
+        private const val KEY_SORT_RULE = "groupServerSortRule"
+        private const val KEY_TIMEOUT = "groupSubRequestTimeout"
+        private const val KEY_HWID_COOKIE = "groupSubHwidCookie"
+        private const val KEY_INSECURE_REQUESTS = "groupSubInsecureRequests"
+        private const val KEY_IGNORE_FILTERS = "groupSubIgnoreNameFilters"
+        private const val KEY_ALLOW_COLLAPSE = "groupSubAllowCollapse"
+        private const val KEY_HIDE_SERVER_SETTINGS = "groupSubHideServerSettings"
         private const val KEY_FILTER = "groupFilter"
         private const val KEY_NAME_INCLUDE = "groupSubNameInclude"
         private const val KEY_NAME_EXCLUDE = "groupSubNameExclude"
@@ -98,7 +107,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         private val OPTION_TEXT_KEYS = listOf(KEY_USER_AGENT) + HWID_KEYS
         private val OPTION_BOOL_KEYS = listOf(
             KEY_KEEP_WORKING, KEY_REMOVE_DUPLICATES, KEY_REMOVE_INSECURE, KEY_REMOVE_INVALID, KEY_URL_TEST,
-            KEY_REMOVE_UNAVAILABLE, KEY_SORT_BY_LATENCY,
+            KEY_REMOVE_UNAVAILABLE, KEY_HWID_COOKIE, KEY_INSECURE_REQUESTS,
         )
     }
 
@@ -299,8 +308,13 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         store.putBoolean(KEY_REMOVE_INVALID, options.removeInvalid)
         store.putBoolean(KEY_URL_TEST, options.urlTest)
         store.putBoolean(KEY_REMOVE_UNAVAILABLE, options.removeUnavailable)
-        store.putBoolean(KEY_SORT_BY_LATENCY, options.sortByLatency)
-        store.putBoolean(KEY_AUTO_SORT_PING, options.autoSortByPing)
+        store.putString(KEY_SORT_RULE, options.effectiveSortRule.value.toString())
+        store.putString(KEY_TIMEOUT, options.requestTimeoutSeconds.toString())
+        store.putBoolean(KEY_HWID_COOKIE, options.sendHwidInCookie)
+        store.putBoolean(KEY_INSECURE_REQUESTS, options.allowInsecureRequests)
+        store.putBoolean(KEY_IGNORE_FILTERS, options.ignoreNameFilters)
+        store.putBoolean(KEY_ALLOW_COLLAPSE, options.allowCollapse)
+        store.putBoolean(KEY_HIDE_SERVER_SETTINGS, options.hideServerSettings)
         store.putString(KEY_NAME_INCLUDE, options.nameInclude)
         store.putString(KEY_NAME_EXCLUDE, options.nameExclude)
     }
@@ -323,8 +337,13 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             removeInvalid = flag(KEY_REMOVE_INVALID),
             urlTest = flag(KEY_URL_TEST),
             removeUnavailable = flag(KEY_REMOVE_UNAVAILABLE),
-            sortByLatency = flag(KEY_SORT_BY_LATENCY),
-            autoSortByPing = flag(KEY_AUTO_SORT_PING),
+            serverSortRule = ServerSortRule.of(text(KEY_SORT_RULE).toIntOrNull() ?: 0),
+            requestTimeoutSeconds = text(KEY_TIMEOUT).toIntOrNull()?.takeIf { it in 5..300 } ?: 0,
+            sendHwidInCookie = flag(KEY_HWID_COOKIE),
+            allowInsecureRequests = flag(KEY_INSECURE_REQUESTS),
+            ignoreNameFilters = flag(KEY_IGNORE_FILTERS),
+            allowCollapse = store.getBoolean(KEY_ALLOW_COLLAPSE, true),
+            hideServerSettings = flag(KEY_HIDE_SERVER_SETTINGS),
             nameInclude = text(KEY_NAME_INCLUDE),
             nameExclude = text(KEY_NAME_EXCLUDE),
             showInfoCard = store.getBoolean(KEY_SHOW_INFO_CARD, true),
@@ -335,6 +354,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
     private fun nameFilterError(): String? {
         if (DataStore.groupType != TYPE_SUBSCRIPTION) return null
         val store = DataStore.profileCacheStore
+        if (store.getBoolean(KEY_IGNORE_FILTERS, false)) return null
         for ((key, title) in NAME_FILTERS) {
             val error = SubscriptionNameFilter.error(store.getString(key).orEmpty().trim()) ?: continue
             return getString(R.string.grp_filter_bad_regex, getString(title), error)
@@ -378,6 +398,11 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             group.frontProxyId = proxyId(KEY_FRONT)
             group.landingProxyId = proxyId(KEY_LANDING)
             if (editingId > 0) GroupRepo.save(group) else GroupRepo.add(group)
+            if (editingId > 0) when (group.subOptions.effectiveSortRule) {
+                ServerSortRule.PING -> GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_LATENCY))
+                ServerSortRule.NAME -> GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_NAME))
+                ServerSortRule.NONE -> Unit
+            }
             SaveResult.OK
         }
         when (result) {
@@ -442,6 +467,23 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             setupProxyMenu(KEY_LANDING)
 
             findPreference<EditTextPreference>(KEY_USER_AGENT)!!.placeholder(host.defaultUserAgent)
+            findPreference<EditTextPreference>(KEY_TIMEOUT)!!.apply {
+                summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                    val seconds = it.text?.toIntOrNull() ?: 0
+                    if (seconds == 0) getString(R.string.sub_settings_timeout_inherit, DataStore.subRequestTimeoutSeconds)
+                    else getString(R.string.sub_settings_timeout_summary, seconds)
+                }
+                setOnBindEditTextListener { it.inputType = InputType.TYPE_CLASS_NUMBER; it.setSingleLine() }
+                setOnPreferenceChangeListener { _, value ->
+                    val seconds = value?.toString()?.trim()?.toIntOrNull()
+                    val valid = seconds != null && (seconds == 0 || seconds in 5..300)
+                    if (!valid) Toast.makeText(requireContext(), R.string.sub_settings_timeout_override_error, Toast.LENGTH_SHORT).show()
+                    valid
+                }
+            }
+            findPreference<SimpleMenuPreference>(KEY_SORT_RULE)!!.summaryProvider = Preference.SummaryProvider<SimpleMenuPreference> {
+                "${it.entry}\n${getString(R.string.sub_settings_sort_summary)}"
+            }
             val device = host.defaultDevice
             findPreference<EditTextPreference>(KEY_HWID)!!.placeholder(device.hwid)
             findPreference<EditTextPreference>(KEY_HWID_OS)!!.placeholder(device.os)
@@ -470,6 +512,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
+            MobileSettingsStyle.apply(this, view)
             listView.layoutManager = FixedLinearLayoutManager(listView)
             ViewCompat.setOnApplyWindowInsetsListener(listView, ListListener)
         }
@@ -536,12 +579,18 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             val subscription = DataStore.groupType == TYPE_SUBSCRIPTION
             findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription
             findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription
+            findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription
             val expanded = subscription && host.advancedExpanded
             for (key in ADVANCED_CATEGORIES) findPreference<PreferenceCategory>(key)?.isVisible = expanded
+            val http = DataStore.subscriptionLink.trim().let { it.startsWith("https://", true) || it.startsWith("http://", true) }
+            findPreference<PreferenceCategory>("groupAdvancedRequest")?.isVisible = expanded && http
 
             val mode = host.sendHwidMode()
             val sent = mode == SendHwid.ON || (mode == SendHwid.KEEP_DEFAULT && host.globalSendHwid)
             for (key in HWID_KEYS) findPreference<Preference>(key)?.isEnabled = sent
+            findPreference<Preference>(KEY_HWID_COOKIE)?.isEnabled = sent
+            val filtersEnabled = !store.getBoolean(KEY_IGNORE_FILTERS, false)
+            for ((key, _) in NAME_FILTERS) findPreference<Preference>(key)?.isEnabled = filtersEnabled
 
             val set = OPTION_TEXT_KEYS.count { !store.getString(it).isNullOrBlank() } +
                 OPTION_BOOL_KEYS.count { store.getBoolean(it, false) } +

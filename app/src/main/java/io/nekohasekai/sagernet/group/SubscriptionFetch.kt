@@ -36,7 +36,8 @@ object SubscriptionFetch {
     private fun request(url: String, identity: RequestIdentity): Result {
         val response = httpGet(
             url,
-            HttpGetOptions(userAgent = identity.userAgent, headers = identity.headers(), maxBytes = MAX_BYTES),
+            HttpGetOptions(userAgent = identity.userAgent, headers = identity.headers(), maxBytes = MAX_BYTES,
+                timeoutSeconds = identity.timeoutSeconds, allowInsecure = identity.allowInsecureRequests),
         )
         if (!response.ok) {
             val body = String(response.data, 0, minOf(response.data.size, MAX_LOGGED_BODY), Charsets.UTF_8)

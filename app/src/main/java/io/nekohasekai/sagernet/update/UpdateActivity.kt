@@ -27,8 +27,11 @@ import kotlinx.coroutines.launch
 class UpdateActivity : ThemedActivity() {
 
     companion object {
-        fun start(context: Context) {
-            context.startActivity(Intent(context, UpdateActivity::class.java))
+        private const val EXTRA_DISCOVERED_OFFER = "discoveredOffer"
+
+        fun start(context: Context, offer: UpdateChecker.Offer? = null) {
+            val showOffer = offer != null && UpdateManager.showOffer(offer)
+            context.startActivity(Intent(context, UpdateActivity::class.java).putExtra(EXTRA_DISCOVERED_OFFER, showOffer))
         }
     }
 
@@ -53,7 +56,8 @@ class UpdateActivity : ThemedActivity() {
         setFinishOnTouchOutside(false)
         if (savedInstanceState == null) {
             val state = UpdateManager.state.value
-            if (state is State.Idle || state is State.UpToDate || state is State.Available ||
+            if (state is State.Idle || state is State.UpToDate ||
+                state is State.Available && !intent.getBooleanExtra(EXTRA_DISCOVERED_OFFER, false) ||
                 state is State.Failed && state.offer == null
             ) {
                 UpdateManager.check()

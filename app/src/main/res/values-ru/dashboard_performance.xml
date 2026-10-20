@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dashboard_server_page">Серверы %1$d–%2$d из %3$d</string>
+    <string name="dashboard_previous_servers">Назад</string>
+    <string name="dashboard_next_servers">Далее</string>
+</resources>

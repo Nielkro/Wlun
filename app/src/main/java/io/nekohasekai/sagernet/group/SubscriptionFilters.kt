@@ -103,7 +103,8 @@ internal object SubscriptionFilters {
                 if (outcome.kept.isNotEmpty()) report.append('\n').append(app.getString(R.string.subs_running_kept))
             }
         }
-        if (options.sortByLatency && !GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_LATENCY))) {
+        if (options.effectiveSortRule == app.qthrone.mobile.database.ServerSortRule.PING &&
+            !GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_LATENCY))) {
             Logs.i(app.getString(R.string.subs_sort_skipped, group.name))
         }
         return Outcome(deleted, report.toString())

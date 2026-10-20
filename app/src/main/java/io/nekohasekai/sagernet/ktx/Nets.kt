@@ -104,6 +104,8 @@ class HttpGetOptions(
     @JvmField val headers: List<Pair<String, String>> = emptyList(),
     @JvmField val maxBytes: Long = 0L,
     @JvmField val useProxy: Boolean = false,
+    @JvmField val timeoutSeconds: Int = 10,
+    @JvmField val allowInsecure: Boolean = false,
     /** Android extra: appTLSVersion "1.3" allows TLS 1.3 only. */
     @JvmField val restrictTls13: Boolean = DataStore.appTLSVersion == "1.3",
 )
@@ -127,9 +129,9 @@ private const val MAX_REDIRECTS = 20
  */
 fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetResponse {
     val builder = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .writeTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(options.timeoutSeconds.coerceIn(5, 300).toLong(), TimeUnit.SECONDS)
+        .readTimeout(options.timeoutSeconds.coerceIn(5, 300).toLong(), TimeUnit.SECONDS)
+        .writeTimeout(options.timeoutSeconds.coerceIn(5, 300).toLong(), TimeUnit.SECONDS)
         .followRedirects(false)
         .followSslRedirects(false)
     if (options.useProxy || appRequestsViaProxy()) {
@@ -158,7 +160,7 @@ fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetRes
             )
         )
     }
-    if (DataStore.netInsecure) {
+    if (DataStore.netInsecure || options.allowInsecure) {
         val sslContext = SSLContext.getInstance("TLS")
         sslContext.init(null, arrayOf(TrustAllManager), SecureRandom())
         builder.sslSocketFactory(sslContext.socketFactory, TrustAllManager)

@@ -69,6 +69,7 @@ class GroupMenu(private val host: ConfigurationFragment) {
     /** Before the ⋮ menu opens: what applies to the current group and the running test / service. */
     fun prepare(menu: Menu) {
         val group = host.currentGroup()
+        menu.findItem(R.id.action_sort_test_latency)?.isVisible = group?.isSubscription != true
         menu.findItem(R.id.action_update_subscription)?.isVisible = group?.isSubscription == true
         menu.findItem(R.id.action_test_speed_current)?.isEnabled = DataStore.serviceState.connected
         menu.findItem(R.id.action_test_stop)?.isVisible = host.testState.running
@@ -132,7 +133,7 @@ class GroupMenu(private val host: ConfigurationFragment) {
 
             R.id.action_sort_address -> sort(id, GroupSortMethod.BY_ADDRESS)
             R.id.action_sort_name -> sort(id, GroupSortMethod.BY_NAME)
-            R.id.action_sort_test_latency -> sortByTest(id, TestBy.LATENCY)
+            R.id.action_sort_test_latency -> if (!group.isSubscription) sortByTest(id, TestBy.LATENCY)
             R.id.action_sort_test_download -> sortByTest(id, TestBy.DL_SPEED)
             R.id.action_sort_test_upload -> sortByTest(id, TestBy.UL_SPEED)
             R.id.action_sort_test_ip_out -> sortByTest(id, TestBy.IP_OUT)

@@ -2,10 +2,8 @@ package app.qthrone.mobile.ui.settings
 
 import android.content.Intent
 import androidx.preference.Preference
-import app.qthrone.mobile.Key
 import app.qthrone.mobile.R
 import app.qthrone.mobile.update.UpdateActivity
-import app.qthrone.mobile.update.UpdateScheduler
 import app.qthrone.mobile.update.UpdateManager
 import app.qthrone.mobile.BuildConfig
 import androidx.lifecycle.Lifecycle
@@ -24,10 +22,6 @@ class UpdateSettingsFragment : SettingsScreenFragment(R.xml.settings_updates) {
                         state is UpdateManager.State.UpToDate || state is UpdateManager.State.Failed && state.offer==null
                 }
             }
-        }
-        pref<Preference>(Key.UPDATE_CHECK_AUTO).setOnPreferenceChangeListener { _, value ->
-            UpdateScheduler.schedule(enabled=value as Boolean)
-            true
         }
         pref<Preference>("qmobileUpdate").setOnPreferenceClickListener {
             startActivity(Intent(requireContext(),UpdateActivity::class.java))

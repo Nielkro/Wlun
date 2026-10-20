@@ -117,7 +117,7 @@ internal class TestSession(
             Logs.w(e)
         } finally {
             try { if(completed && !cancelled && kind==TestSpec.KIND_URL && spec.sortGroupId>0 &&
-                GroupRepo.get(spec.sortGroupId)?.subOptions?.autoSortByPing==true) {
+                GroupRepo.get(spec.sortGroupId)?.subOptions?.effectiveSortRule==app.qthrone.mobile.database.ServerSortRule.PING) {
                 GroupSort.sortProfiles(spec.sortGroupId,GroupSortAction(GroupSortMethod.BY_LATENCY))
             } } catch(error: Exception) { Logs.w("Ping sort failed: ${error.readableMessage}") }
             notification.finish(assetProblems)
