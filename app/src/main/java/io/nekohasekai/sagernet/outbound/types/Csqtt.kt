@@ -24,7 +24,13 @@ class Csqtt:Qwdtt() {
         if(hashSource=="auto_js" || vkAnonPath=="auto_js") { hashSource="auto_js";vkAnonPath="auto_js" }
         vkAccessToken = obj.string("vk_access_token")
         turnTransport = obj.string("turn_transport").ifEmpty { if(turnTcp) "tcp" else "udp" }
-        srtpMode = obj.string("srtp_mode").ifEmpty { "auto" }
+        turnTransport = when(turnTransport.lowercase()) { "tcp","tcp-tls","tcp/tls" -> "tcp_tls"; else -> turnTransport.lowercase() }
+        srtpMode = when(val value=obj.string("srtp_mode").lowercase()) {
+            "wrap-srtp","wrap_srtp","legacy" -> "wrap"
+            "dtls-srtp","dtls_srtp" -> "dtls"
+            "" -> "auto"
+            else -> value
+        }
         fingerprint = obj.string("fingerprint").ifEmpty { "firefox" }
         clientIds = obj.string("client_ids").ifEmpty { "8202606,6287487" }
         customTurnIps = obj.string("custom_turn_ips")

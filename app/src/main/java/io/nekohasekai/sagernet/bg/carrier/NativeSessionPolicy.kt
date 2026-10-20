@@ -3,6 +3,8 @@ package app.qthrone.mobile.bg.carrier
 import app.qthrone.mobile.outbound.json.JsonInput
 
 internal object NativeSessionPolicy {
+    // The CSQTT wrapper waits for Rust's VK creator/bot leave operations before it exits.
+    fun shutdownGraceMs(kind: CarrierKind) = if(kind==CarrierKind.CSQTT) 20_000L else 1_000L
     fun probeConfig(kind:CarrierKind,privateJson:String,interactive:Boolean,latencyProbe:Boolean=!interactive):String {
         if(kind == CarrierKind.WDTTPLUS) {
             if(!latencyProbe) return privateJson
@@ -54,6 +56,8 @@ internal object NativeSessionPolicy {
         }
         if(firstKind!=secondKind || firstKind !in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT,CarrierKind.WDTTPLUS)) return false
         val a=JsonInput.parseObject(first);val b=JsonInput.parseObject(second)
+        if(firstKind==CarrierKind.CSQTT) return a.string("peer").isNotBlank() && a.string("password").isNotEmpty() &&
+            a.string("peer")==b.string("peer") && a.string("password")==b.string("password")
         if(firstKind == CarrierKind.WDTTPLUS) {
             fun value(json: app.qthrone.mobile.outbound.json.JsonObject, flag: String): String {
                 val args=json.array("args").strings(); val index=args.indexOf(flag)

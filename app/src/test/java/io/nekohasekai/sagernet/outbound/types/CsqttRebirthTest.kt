@@ -46,4 +46,18 @@ class CsqttRebirthTest {
             assertEquals(expected,Csqtt.normalizeWorkers(request))
         assertEquals(100,NativeHashPolicy.workerLimit(Csqtt()))
     }
+    @Test fun oldTcpAndOriginalSrtpNamesAreNormalized() {
+        val p=Csqtt()
+        assertTrue(p.parseFromJson(app.qthrone.mobile.outbound.json.jsonObjectOf(
+            "type" to "csqtt","server" to "192.0.2.1","server_port" to 46000,"turn_tcp" to true,"srtp_mode" to "wrap-srtp")))
+        assertEquals("tcp_tls",p.turnTransport)
+        assertEquals("wrap",p.srtpMode)
+    }
+    @Test fun twoProfilesWithTheSamePasswordCannotProbeOverAnActiveSession() {
+        val first=Csqtt().apply { server="192.0.2.1";password="shared";deviceId="first" }
+        val second=Csqtt().apply { server=first.server;password=first.password;deviceId="second" }
+        assertEquals(first.probeSessionKey(),second.probeSessionKey())
+        second.password="another"
+        assertNotEquals(first.probeSessionKey(),second.probeSessionKey())
+    }
 }

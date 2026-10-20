@@ -48,11 +48,12 @@ class NativeSessionPolicyTest {
 
     @Test fun differentHashesMustNotCreateAnotherSessionForAnActiveDevice() {
         for(kind in listOf(CarrierKind.QWDTT,CarrierKind.CSQTT)) {
-            val active="""{"peer":"192.0.2.1:46000","device_id":"phone","hashes":["a"]}"""
-            val changed="""{"peer":"192.0.2.1:46000","device_id":"phone","hashes":["b"],"workers":27}"""
+            val active="""{"peer":"192.0.2.1:46000","password":"shared","device_id":"phone","hashes":["a"]}"""
+            val changed="""{"peer":"192.0.2.1:46000","password":"shared","device_id":"phone","hashes":["b"],"workers":27}"""
             assertTrue(NativeSessionPolicy.sharesRemoteSession(kind,active,kind,changed))
             assertFalse(NativeSessionPolicy.sharesRemoteSession(kind,active,kind,changed.replace("192.0.2.1","192.0.2.2")))
-            assertFalse(NativeSessionPolicy.sharesRemoteSession(kind,active,kind,changed.replace("phone","another")))
+            assertEquals(kind==CarrierKind.CSQTT,NativeSessionPolicy.sharesRemoteSession(kind,active,kind,changed.replace("phone","another")))
+            if(kind==CarrierKind.CSQTT) assertFalse(NativeSessionPolicy.sharesRemoteSession(kind,active,kind,changed.replace("shared","different")))
         }
         assertFalse(NativeSessionPolicy.sharesRemoteSession(CarrierKind.CSQTT,"{}",CarrierKind.CSQTT,"{}"))
     }

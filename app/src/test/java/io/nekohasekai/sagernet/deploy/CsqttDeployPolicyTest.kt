@@ -28,4 +28,15 @@ class CsqttDeployPolicyTest {
         first["manualPorts"]="true";first["webPort"]="8443"
         assertEquals("https://[2001:db8::1]:8443/${first["secretPath"]}",first.panelUrl())
     }
+    @Test fun manualPortToggleUsesTheOriginalDefaultsWithoutDeletingCustomValues() {
+        val server=DeployServer.create("csqtt")
+        server["sshPort"]="2222";server["peerPort"]="47000";server["webPort"]="8443"
+        assertEquals(22,server.port("sshPort"))
+        assertEquals(46000,server.port("peerPort"))
+        assertEquals(46002,server.port("webPort"))
+        server["manualPorts"]="true"
+        assertEquals(2222,server.port("sshPort"))
+        assertEquals(47000,server.port("peerPort"))
+        assertEquals(8443,server.port("webPort"))
+    }
 }

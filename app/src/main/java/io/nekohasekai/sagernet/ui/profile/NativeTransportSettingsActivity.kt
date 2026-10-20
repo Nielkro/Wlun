@@ -282,8 +282,8 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             captions["vk_anon_path"]=listOf("Звонок VK","Капча","Auto JS")
             choices["obfs"]=listOf("unified","audio","video")
             captions["obfs"]=listOf("Универсальная","Аудио","Видео")
-            choices["turn_transport"]=listOf("udp","tcp","tcp_tls")
-            captions["turn_transport"]=listOf("UDP","TCP","TCP/TLS")
+            choices["turn_transport"]=listOf("udp","tcp_tls")
+            captions["turn_transport"]=listOf("UDP","TCP/TLS")
             choices["srtp_mode"]=listOf("auto","wrap","dtls")
             captions["srtp_mode"]=listOf("Автоматически","WRAP-SRTP","DTLS-SRTP")
             choices["fingerprint"]=listOf("firefox","chrome","safari","edge","opera")
@@ -305,7 +305,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
                 val count=editors.keys.filter { it.startsWith("hash_") && it != "hash_source" }.map { DataStore.profileCacheStore.getString(cache(it))?.trim().orEmpty() }.filter { it.isNotEmpty() }.distinct().size.coerceAtLeast(1)
                 val csqtt=editingOutbound.type=="csqtt"
                 val max=if(csqtt) 100 else if(editingOutbound is app.qthrone.mobile.outbound.types.WdttPlus) app.qthrone.mobile.bg.carrier.NativeHashPolicy.workerLimit(editingOutbound as app.qthrone.mobile.outbound.types.WdttPlus)
-                    else if(automatic) { if(editingOutbound.type=="csqtt") 126 else 108 } else (count*27).coerceAtMost(if(editingOutbound.type=="csqtt") 126 else 108)
+                    else if(automatic) 108 else (count*27).coerceAtMost(108)
                 (editors["workers"] as? ListPreference)?.apply {
                     entries=(if(csqtt) listOf(5)+(10..100 step 10) else (9..max step 9).toList()).map(Int::toString).toTypedArray();entryValues=entries
                     val raw=DataStore.profileCacheStore.getString(cache("workers"))?.toIntOrNull() ?: 9

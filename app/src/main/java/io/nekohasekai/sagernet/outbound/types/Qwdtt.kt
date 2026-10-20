@@ -28,7 +28,8 @@ open class Qwdtt : Outbound("qwdtt"), app.qthrone.mobile.bg.carrier.NativeCarrie
     var deviceIdProvided=false
     /** Same remote endpoint as privateConfig/CarrierPool, including RAW's separate port. */
     internal fun probeSessionKey()=listOf(type,server,
-        (if(carrierKind==CarrierKind.QWDTT && mode=="raw") rawPort else serverPort).toString(),deviceId)
+        (if(carrierKind==CarrierKind.QWDTT && mode=="raw") rawPort else serverPort).toString(),
+        if(carrierKind==CarrierKind.CSQTT) password else deviceId)
     override fun displayType()=if(mode == "wg") "qWDTT (WG)" else "qWDTT (RAW)"
     override fun parseFromJson(obj:JsonObject):Boolean {
         if(obj.string("type") !in listOf("qwdtt","wdtt")) return false

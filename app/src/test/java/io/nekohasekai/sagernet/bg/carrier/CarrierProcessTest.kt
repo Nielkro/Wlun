@@ -15,6 +15,36 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
+    @Test fun csqttCanFinishVkCleanupAfterStopWithoutBeingKilled(): Unit = runBlocking {
+        val root=Files.createTempDirectory("csqtt-cleanup").toFile()
+        try {
+            for(name in listOf("libqwdtt.so","libcsqtt_transport.so")) File(root,name).apply { writeText("fixture");setExecutable(true) }
+            val stoppedAt=java.util.concurrent.atomic.AtomicLong()
+            val destroyed=java.util.concurrent.atomic.AtomicBoolean()
+            val failure=runCatching {
+                CarrierProcess.start(CarrierKind.CSQTT,root,File(root,"configs"),35,"{}",12345,CarrierBridgeCredentials.fresh()) {
+                    object:Process() {
+                        override fun getOutputStream()=object:java.io.OutputStream() {
+                            override fun write(value:Int) { if(value==10) stoppedAt.compareAndSet(0,System.nanoTime()) }
+                        }
+                        override fun getInputStream()=ByteArrayInputStream("FATAL_AUTH: rejected\n".toByteArray())
+                        override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                        override fun exitValue():Int {
+                            if(destroyed.get() || stoppedAt.get()!=0L && System.nanoTime()-stoppedAt.get()>=1_200_000_000L) return 0
+                            throw IllegalThreadStateException()
+                        }
+                        override fun waitFor()=0
+                        override fun destroy() { destroyed.set(true) }
+                    }
+                }
+            }.exceptionOrNull()
+            assertNotNull(failure)
+            assertTrue("STOP must reach the Rust wrapper",stoppedAt.get()>0)
+            assertFalse("The original VK cleanup must not be cut off after one second",destroyed.get())
+            assertTrue(File(root,"configs").listFiles().orEmpty().isEmpty())
+        } finally { root.deleteRecursively() }
+    }
+
     @Test fun cancellationAtReadyDispatcherHandoffClosesTheNativeProcess(): Unit = runBlocking {
         val root=Files.createTempDirectory("carrier-cancel-ready").toFile()
         val executor=Executors.newSingleThreadExecutor()

@@ -74,7 +74,7 @@ class CarrierProcess private constructor(private val process: Process, private v
         runCatching { process.outputStream.write("STOP\n".toByteArray()); process.outputStream.flush() }
         runCatching { process.outputStream.close() }
         // Let the Go wrapper shut down its Rust child before sending SIGTERM.
-        val deadline=System.nanoTime()+1_000_000_000L
+        val deadline=System.nanoTime()+NativeSessionPolicy.shutdownGraceMs(kind)*1_000_000L
         var exited=false
         while(System.nanoTime()<deadline) {
             exited=try { process.exitValue();true } catch(_:IllegalThreadStateException) { false }

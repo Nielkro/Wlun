@@ -192,6 +192,7 @@
                 <data android:scheme="throne" />
                 <data android:scheme="happ" />
                 <data android:scheme="incy" />
+                <data android:scheme="csqtt" />
                 <data android:scheme="json" />
             </intent-filter>
         </activity>

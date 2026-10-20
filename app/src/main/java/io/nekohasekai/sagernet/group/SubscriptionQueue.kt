@@ -302,6 +302,7 @@ object SubscriptionQueue {
         if (job.gid >= 0) stateLocked(job.gid, STATE_QUEUED)
         if (draining) return
         draining = true
+        if(job.foreground) SubscriptionScheduler.holdQueue()
         scope.launch { drain() }
     }
 

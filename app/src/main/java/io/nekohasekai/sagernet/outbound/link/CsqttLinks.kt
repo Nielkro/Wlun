@@ -89,6 +89,7 @@ fun encryptCsqttPayload(plaintext: String): String {
 
 fun parseCsqttLink(raw: String): CsqttLink? {
     val trimmed = raw.trim()
+    if (trimmed.length > 65_536) return null
     if (!trimmed.startsWith("csqtt://", ignoreCase = true)) return null
     val payload = trimmed.substring(8).trim()
     val decoded = decryptCsqttPayload(payload) ?: return null

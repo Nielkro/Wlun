@@ -77,7 +77,7 @@ object DeployEngine {
     }
     private fun redact(server: DeployServer,text: String): String {
         var result = text
-        for(key in listOf("sshPassword","key","keyPassword","sudoPassword","password","webPassword","botToken","adminToken")) {
+        for(key in listOf("sshPassword","key","keyPassword","sudoPassword","password","webPassword","botToken","adminToken","secretPath")) {
             val secret = server[key]
             if(secret.isNotBlank()) result = result.replace(secret,"[скрыто]")
         }

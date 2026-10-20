@@ -245,22 +245,29 @@ open class DeployEditorFragment : Fragment() {
             }
         }
         refreshSaveAction()
-        button(body,if(s.kind=="qwdtt") "Секреты (бот, пароли)" else "Авторизация",R.drawable.ic_baseline_vpn_key_24) { secrets(s) }
-        row(body) { r ->
-            operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
-            operations+=button(r,"Удалить сервис с VPS",R.drawable.ic_mobile_delete,true) { host.start(true) }
-            // Both take the taller one's height when the longer title wraps.
-            operations.takeLast(2).forEach { it.layoutParams.height=LinearLayout.LayoutParams.MATCH_PARENT }
+        if(s.kind!="csqtt") {
+            button(body,if(s.kind=="qwdtt") "Секреты (бот, пароли)" else "Авторизация",R.drawable.ic_baseline_vpn_key_24) { secrets(s) }
+            row(body) { r ->
+                operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
+                operations+=button(r,"Удалить сервис с VPS",R.drawable.ic_mobile_delete,true) { host.start(true) }
+                operations.takeLast(2).forEach { it.layoutParams.height=LinearLayout.LayoutParams.MATCH_PARENT }
+            }
         }
         val access=card()
+        if(s.kind=="csqtt") heading(access,"Деплой и SSH")
         field(access,s,"name","Название сервера")
-        row(access) { r -> field(r,s,"host","IP / домен",pair=true);field(r,s,"user","Логин SSH",pair=true) }
-        heading(access,"Вход на сервер")
-        row(access) { r ->
+        if(s.kind=="csqtt" && s["auth"]!="key") field(access,s,"host","IP сервера или домен")
+        else row(access) { r -> field(r,s,"host","IP / домен",pair=true);field(r,s,"user","Логин SSH",pair=true) }
+        if(s.kind=="csqtt" && s["manualPorts"]=="true") row(access) { r ->
+            field(r,s,"sshPort","Порт SSH",number=true,pair=true)
+            field(r,s,"peerPort","Туннель",number=true,pair=true)
+            field(r,s,"webPort","WEB",number=true,pair=true)
+        }
+        if(s.kind!="csqtt") { heading(access,"Вход на сервер"); row(access) { r ->
             for((value,label) in listOf("password" to "Пароль","key" to "SSH-ключ")) button(r,label,pair=true) { s["auth"]=value;build() }.apply {
                 strokeWidth=dp(1);strokeColor=android.content.res.ColorStateList.valueOf(if(s["auth"]==value) MobilePalette.accent(requireContext()) else MobilePalette.muted)
             }
-        }
+        } }
         if(s["auth"]=="key") {
             row(access) { r ->
                 button(r,if(s["key"].isBlank()) "Загрузить ключ" else "Сменить ключ",R.drawable.ic_baseline_vpn_key_24,pair=true) { host.pickKey() }.apply {
@@ -271,12 +278,17 @@ open class DeployEditorFragment : Fragment() {
             }
             if(s["key"].isNotBlank()) heading(access,"Ключ загружен: "+s["keyName"])
             field(access,s,"keyPassword","Пароль SSH-ключа",secret=true);field(access,s,"sudoPassword","Пароль sudo (если требуется)",secret=true)
+        } else if(s.kind=="csqtt") row(access) { r ->
+            field(r,s,"user","Логин SSH",pair=true);field(r,s,"sshPassword","Пароль SSH",secret=true,pair=true)
         } else field(access,s,"sshPassword","Пароль SSH",secret=true)
+        if(s.kind=="csqtt") access.addView(SwitchMaterial(requireContext()).apply {
+            text="SSH-ключи";setTextColor(MobilePalette.text);minHeight=dp(48);isChecked=s["auth"]=="key"
+            setOnCheckedChangeListener { _,checked -> s["auth"]=if(checked) "key" else "password";build() }
+        })
         if(s.kind=="qwdtt") row(access) { r -> field(r,s,"dns1","DNS 1",pair=true);field(r,s,"dns2","DNS 2",pair=true) }
         switch(access,s,"manualPorts","Ручное управление портами",true)
-        if(s["manualPorts"]=="true") {
-            if(s.kind=="csqtt") field(access,s,"sshPort","Порт SSH",number=true)
-            row(access) { r -> field(r,s,"peerPort","Порт туннеля",number=true,pair=true);field(r,s,if(s.kind=="csqtt") "webPort" else "wgPort",if(s.kind=="csqtt") "Порт WEB" else "Порт WG",number=true,pair=true) }
+        if(s.kind!="csqtt" && s["manualPorts"]=="true") {
+            row(access) { r -> field(r,s,"peerPort","Порт туннеля",number=true,pair=true);field(r,s,"wgPort","Порт WG",number=true,pair=true) }
             if(s.kind=="wdttplus") field(access,s,"localPort","Локальный порт клиента",number=true)
             if(s.kind=="qwdtt") {
                 row(access) { r -> field(r,s,"rawPort","Порт RAW",number=true,pair=true);field(r,s,"directPort","Прямой порт",number=true,pair=true) }
@@ -300,6 +312,11 @@ open class DeployEditorFragment : Fragment() {
                     .setPositiveButton("Перегенерировать") { _,_ -> s["secretPath"]=java.util.UUID.randomUUID().toString();build() }
                     .setNegativeButton(android.R.string.cancel,null).show()
             }
+            row(body) { r ->
+                operations+=button(r,"Удалить",R.drawable.ic_mobile_delete,true) { host.start(true) }
+                operations+=button(r,"Установить",R.drawable.ic_mobile_core,true) { host.start(false) }
+            }
+            button(body,"Авторизация",R.drawable.ic_baseline_vpn_key_24) { secrets(s) }
         }
         val console=card();consoleCard=console.parent as View
         toggle=disclosure(console,"Консоль") { expanded=!expanded;expand() };consoleHeader=toggle?.parent as? View

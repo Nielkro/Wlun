@@ -24,10 +24,15 @@ class DeployServer(val json: JSONObject) {
         val keys=(json.keys().asSequence().toSet()+defaults.keys().asSequence().toSet())-generated
         return keys.all { json.optString(it)==defaults.optString(it) }
     }
-    fun port(key: String) = get(key).toInt().also { require(it in 1..65535) }
+    fun port(key: String): Int {
+        val value=if(kind=="csqtt" && get("manualPorts")!="true") when(key) {
+            "sshPort" -> "22";"peerPort" -> "46000";"webPort" -> "46002";else -> get(key)
+        } else get(key)
+        return value.toInt().also { require(it in 1..65535) }
+    }
     fun recordInstallation(config: String) { set("installed","true");set("config",config) }
     fun recordUninstall() { set("installed","false");set("config","") }
-    fun panelUrl(): String = "https://"+app.qthrone.mobile.outbound.link.Hosts.displayAddress(get("host"),
+    fun panelUrl(): String = "https://"+app.qthrone.mobile.outbound.link.Hosts.displayAddress(get("host").ifBlank { "IP" },
         if(get("manualPorts")=="true") port("webPort") else 46002)+get("secretPath").takeIf { it.isNotBlank() }?.let { "/$it" }.orEmpty()
     fun editSignature(): String = json.keys().asSequence()
         .filterNot { json.optString(it).isEmpty() || it in setOf("config","installed","hostKey","adminPin") || (it in setOf("manualPorts","docker") && json.optString(it)!="true") }.sorted()

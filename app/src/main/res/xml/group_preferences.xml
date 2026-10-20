@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory app:key="groupEditOptions" app:title="@string/sub_settings_presentation">
+    <PreferenceCategory app:key="groupEditOptions" app:title="@string/group_edit_options">
         <SwitchPreference app:key="groupSubHideServerSettings" app:title="@string/sub_settings_hide_servers" app:summary="@string/sub_settings_hide_servers_summary" />
-        <Preference app:key="groupEncryptedSubscription" app:title="@string/provider_crypto_subscription" app:summary="@string/provider_crypto_summary" app:persistent="false" app:selectable="false" />
+        <SwitchPreference app:key="groupEncryptedSubscription" app:title="@string/provider_crypto_subscription" app:summary="@string/provider_crypto_summary" app:persistent="false" app:enabled="false" />
         <SwitchPreference app:key="groupSubInsecureRequests" app:title="@string/sub_settings_insecure_requests" app:summary="@string/sub_settings_insecure_requests_summary" />
         <SwitchPreference app:key="groupSubHwidCookie" app:title="@string/sub_settings_hwid_cookie" app:summary="@string/sub_settings_hwid_cookie_summary" />
     </PreferenceCategory>
     <PreferenceCategory app:title="@string/grp_common" app:key="groupCommon">
         <EditTextPreference app:icon="@drawable/ic_social_emoji_symbols" app:key="groupName" app:title="@string/grp_name" app:useSimpleSummaryProvider="true" />
         <moe.matsuri.nb4a.ui.SimpleMenuPreference app:defaultValue="0" app:entries="@array/group_types" app:entryValues="@array/int_array_2" app:icon="@drawable/ic_baseline_layers_24" app:key="groupType" app:title="@string/grp_type" app:useSimpleSummaryProvider="true" />
+        <app.qthrone.mobile.widget.LinkOrContentPreference app:icon="@drawable/ic_baseline_link_24" app:key="subscriptionLink" app:title="@string/grp_url" app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory app:key="groupPresentation" app:title="@string/sub_settings_presentation">
         <SwitchPreference app:key="groupSubAllowCollapse" app:defaultValue="true" app:title="@string/sub_settings_allow_collapse" />
         <SwitchPreference app:icon="@drawable/baseline_delete_sweep_24" app:key="groupAutoClearUnavailable" app:title="@string/grp_auto_clear_unavailable" />
         <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="groupServerSortRule" app:title="@string/sub_settings_sort_rule" app:entries="@array/sub_settings_sort_rules" app:entryValues="@array/int_array_3" app:defaultValue="0" app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
-    <PreferenceCategory app:key="groupSubscription" app:title="@string/subscription">
-        <app.qthrone.mobile.widget.LinkOrContentPreference app:icon="@drawable/ic_baseline_link_24" app:key="subscriptionLink" app:title="@string/grp_url" app:useSimpleSummaryProvider="true" />
+    <PreferenceCategory app:key="groupSubscription" app:title="@string/grp_update">
         <SwitchPreference app:icon="@drawable/ic_baseline_update_24" app:key="groupSkipAutoUpdate" app:title="@string/grp_skip_auto_update" />
         <SwitchPreference app:defaultValue="true" app:icon="@drawable/ic_device_data_usage" app:key="groupSubShowInfoCard" app:summary="@string/grp_show_info_card_tip" app:title="@string/grp_show_info_card" />
         <Preference app:icon="@drawable/ic_baseline_expand_more_24" app:key="groupAdvancedToggle" app:persistent="false" app:title="@string/grp_advanced" />

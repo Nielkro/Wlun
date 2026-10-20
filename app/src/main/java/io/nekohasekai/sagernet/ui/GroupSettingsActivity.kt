@@ -579,13 +579,16 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             findPreference<Preference>(Key.GROUP_TYPE)?.isVisible = editing && host.editingId == 0L
             findPreference<Preference>(Key.SUBSCRIPTION_LINK)?.isVisible = subscription && editing
             findPreference<PreferenceCategory>("groupEditOptions")?.isVisible = subscription && editing
-            findPreference<PreferenceCategory>("groupCommon")?.isVisible = editing
+            findPreference<PreferenceCategory>("groupCommon")?.apply {
+                isVisible = editing
+                setTitle(if(subscription) R.string.group_title_url else R.string.grp_common)
+            }
             for (key in listOf(KEY_SKIP_AUTO_UPDATE, KEY_SHOW_INFO_CARD, KEY_ADVANCED_TOGGLE, KEY_AUTO_CLEAR, KEY_SORT_RULE))
                 findPreference<Preference>(key)?.isVisible = settings
-            findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription
+            findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription && settings
             findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription && settings
             findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription && settings
-            findPreference<Preference>("groupEncryptedSubscription")?.isVisible = subscription && ProviderLinks.isEncrypted(DataStore.subscriptionLink)
+            findPreference<androidx.preference.SwitchPreference>("groupEncryptedSubscription")?.isChecked = ProviderLinks.isEncrypted(DataStore.subscriptionLink)
             val expanded = subscription && settings && host.advancedExpanded
             findPreference<PreferenceCategory>("groupAdvancedProxies")?.isVisible = (settings && host.advancedExpanded) || !subscription
             for (key in ADVANCED_CATEGORIES) findPreference<PreferenceCategory>(key)?.isVisible = expanded

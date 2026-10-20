@@ -6,7 +6,7 @@ import app.qthrone.mobile.outbound.types.Csqtt
 import app.qthrone.mobile.outbound.OutboundFactory
 
 object NativeHashPolicy {
-    /** All three clients share the qWDTT account binding, never their own account-login flow. */
+    /** All three clients can share the qWDTT account binding. CSQTT also accepts a link's own token. */
     fun supportsAutomatic(profile: Qwdtt) = profile.type in listOf("qwdtt", "csqtt", "wdttplus")
 
     fun applyDefaultSource(profile: Qwdtt, source: String?) {
@@ -68,11 +68,11 @@ object NativeHashPolicy {
     }
     fun workerLimit(profile:Qwdtt):Int {
         if(profile is Csqtt) return 100
-        val slots=if(profile.type=="csqtt") 6 else 4
+        val slots=4
         val hashes=if(profile.hashSource=="auto") slots else profile.hashes.size.coerceIn(1,slots)
         // WDTT Plus groups 9 workers each up to 108 whatever the hash count.
         if(profile is WdttPlus) return (profile.maxWorkers / 9 * 9).takeIf { it >= 9 }?.coerceAtMost(108) ?: 108
-        return (hashes*27).coerceAtMost(if(profile.type=="csqtt") 126 else 108)
+        return (hashes*27).coerceAtMost(108)
     }
     fun preservedWorkers(previous:Int,previousLimit:Int,currentLimit:Int):Int =
         if(previous>=previousLimit) currentLimit else previous.coerceIn(9,currentLimit)/9*9

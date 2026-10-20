@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.work.Constraints
 import androidx.work.Data
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequest
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkerParameters
@@ -37,6 +39,28 @@ object SubscriptionScheduler {
     private const val LEGACY_WORK_NAME = "SubscriptionUpdater"
 
     private const val KEY_INTERVAL = "sub_auto_update"
+
+    /** Keep manual updates alive after the activity closes, without a foreground notification. */
+    fun holdQueue() {
+        runOnDefaultDispatcher {
+            try {
+                val request=OneTimeWorkRequest.Builder(QueueTask::class.java).setInputData(
+                    Data.Builder()
+                        .putString(RemoteListenableWorker.ARGUMENT_PACKAGE_NAME,app.packageName)
+                        .putString(RemoteListenableWorker.ARGUMENT_CLASS_NAME,RemoteWorkerService::class.java.name)
+                        .build()
+                ).build()
+                RemoteWorkManager.getInstance(app).enqueueUniqueWork("SubscriptionQueue",ExistingWorkPolicy.APPEND_OR_REPLACE,listOf(request)).await()
+            } catch(e: Exception) { Logs.w("SubscriptionScheduler: queue worker failed",e) }
+        }
+    }
+
+    class QueueTask(appContext: Context,params: WorkerParameters):RemoteCoroutineWorker(appContext,params) {
+        override suspend fun doRemoteWork(): Result {
+            SubscriptionQueue.awaitIdle()
+            return Result.success()
+        }
+    }
 
     /**
      * (Re)schedules the periodic update from sub_auto_update, or cancels it below [MIN_INTERVAL_MINUTES]. Call it
