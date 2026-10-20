@@ -53,12 +53,12 @@ class MobileHomeFragment : ToolbarFragment() {
     private var blue = Color.rgb(87,190,229)
     private var surface = Color.rgb(49,51,54)
     private var muted = Color.rgb(173,182,191)
-    private var foreground = Color.rgb(231,234,237)
+    private var foregroundColor = Color.rgb(231,234,237)
     private var toolbarColor = Color.rgb(34,35,37)
     private var backgroundColor = Color.rgb(30,30,30)
     private fun readPalette() {
         blue=MobilePalette.accent(requireContext());surface=MobilePalette.surface;muted=MobilePalette.muted
-        foreground=MobilePalette.text;toolbarColor=MobilePalette.toolbar;backgroundColor=MobilePalette.background
+        foregroundColor=MobilePalette.text;toolbarColor=MobilePalette.toolbar;backgroundColor=MobilePalette.background
     }
     private var content: LinearLayout? = null
     private var updateBanner: TextView? = null
@@ -152,7 +152,7 @@ class MobileHomeFragment : ToolbarFragment() {
         cornerRadius = dp(5).toFloat()
         setStroke(dp(1), if (selected) blue else Color.argb(45, 103, 116, 128))
     }
-    private fun text(value: String, size: Float = 16f, color: Int = foreground) = TextView(requireContext()).apply {
+    private fun text(value: String, size: Float = 16f, color: Int = foregroundColor) = TextView(requireContext()).apply {
         text = value; textSize = size; setTextColor(color)
         setPadding(dp(14), dp(12), dp(14), dp(12))
     }
@@ -161,7 +161,7 @@ class MobileHomeFragment : ToolbarFragment() {
         isFocusable = true; setOnClickListener { callback() }
     }
     private fun iconAction(icon: Int, description: String, color: Int = Color.TRANSPARENT, callback: () -> Unit) = ImageButton(requireContext()).apply {
-        setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(this@MobileHomeFragment.foreground); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
+        setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(foregroundColor); setBackgroundColor(color); setPadding(dp(12),dp(12),dp(12),dp(12))
         contentDescription=description; setOnClickListener { callback() }; MobileFeedback.apply(this, circle=true)
     }
     private fun View.showUpdating(updating: Boolean) {
@@ -289,7 +289,7 @@ class MobileHomeFragment : ToolbarFragment() {
         if(load?.isActive==true) { refreshPending=true;return }
         refreshPending=false
         readPalette()
-        val colors=listOf(surface,blue,foreground,muted,toolbarColor,backgroundColor)
+        val colors=listOf(surface,blue,foregroundColor,muted,toolbarColor,backgroundColor)
         val collapsedSnapshot=collapsed.toSet()
         val pageSnapshot=profilePages.toMap()
         val previousStructure=renderedStructure
@@ -339,7 +339,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 openSwipe=null
                 val header = LinearLayout(requireContext()).apply { gravity = Gravity.CENTER_VERTICAL }
                 fun headerIcon(icon: Int, description: String, callback: (View) -> Unit) = ImageButton(requireContext()).apply {
-                    setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(this@MobileHomeFragment.foreground); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
+                    setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(foregroundColor); background = null; setPadding(dp(10),dp(10),dp(10),dp(10))
                     contentDescription = description; setOnClickListener { callback(it) }; MobileFeedback.apply(this,circle=true)
                 }
                 header.addView(headerIcon(R.drawable.ic_mobile_settings, getString(R.string.qmobile_settings)) { host().displayFragmentWithId(R.id.nav_settings) }, LinearLayout.LayoutParams(dp(48), dp(48)))
@@ -396,7 +396,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     gravity=Gravity.CENTER; isFocusable=true; contentDescription=label
                     setOnClickListener { callback() }
                     background=GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }
-                    addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(this@MobileHomeFragment.foreground); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(24),dp(24)).apply { marginEnd=dp(10) })
+                    addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(foregroundColor); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(24),dp(24)).apply { marginEnd=dp(10) })
                     addView(text(label,14f).apply { setPadding(0,0,0,0); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO })
                 }
                 imports.addView(importButton(getString(R.string.qmobile_clipboard), R.drawable.ic_mobile_clipboard) { importClipboard() }, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(8) })
@@ -849,8 +849,8 @@ class MobileHomeFragment : ToolbarFragment() {
         val sheet=MobileSheetDialog(requireContext())
         val body=LinearLayout(requireContext()).apply { orientation=LinearLayout.VERTICAL;setPadding(dp(20),dp(20),dp(20),dp(28));setBackgroundColor(surface) }
         body.addView(text(getString(R.string.grp_add_subscription),20f).apply { setTypeface(null,Typeface.BOLD) })
-        val name=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_name);setTextColor(foreground);setHintTextColor(muted);isSingleLine=true }
-        val url=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_url);setTextColor(foreground);setHintTextColor(muted);isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI }
+        val name=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_name);setTextColor(foregroundColor);setHintTextColor(muted);isSingleLine=true }
+        val url=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_url);setTextColor(foregroundColor);setHintTextColor(muted);isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI }
         body.addView(name);body.addView(url)
         body.addView(action(getString(R.string.qmobile_save)) {
             val address=url.text.toString().trim()
@@ -926,7 +926,7 @@ class MobileHomeFragment : ToolbarFragment() {
         for((type, title) in nativeTypes + originalTypes) {
             protocols.addView(androidx.appcompat.widget.AppCompatButton(requireContext()).apply {
                 text=title;isAllCaps=false;textSize=18f;setTypeface(null,Typeface.BOLD)
-                setTextColor(foreground);background=tile();stateListAnimator=null
+                setTextColor(foregroundColor);background=tile();stateListAnimator=null
                 supportBackgroundTintList=null
                 gravity=Gravity.CENTER_VERTICAL or Gravity.START;includeFontPadding=false
                 minimumHeight=dp(56);setPadding(dp(16),dp(14),dp(16),dp(14))
