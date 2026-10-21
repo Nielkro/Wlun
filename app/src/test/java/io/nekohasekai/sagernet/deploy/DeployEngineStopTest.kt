@@ -17,7 +17,9 @@ class DeployEngineStopTest {
             DeployEngine.start(server, uninstall = true)
             listener.accept().use {
                 DeployEngine.cancel()
-                assertTrue(DeployEngine.state.value.stopping)
+                // SSH can finish stopping before this thread observes the intermediate state.
+                val afterCancel = DeployEngine.state.value
+                assertTrue(afterCancel.stopping || !afterCancel.running)
                 DeployEngine.cancel()
                 val deadline = System.currentTimeMillis() + 10_000
                 while (DeployEngine.state.value.running && System.currentTimeMillis() < deadline) Thread.sleep(50)
