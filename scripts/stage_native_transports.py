@@ -72,3 +72,34 @@ if secure:
             (license_dir / name).write_bytes(files[name])
         (license_dir / 'SOCKS-SOURCES.txt').write_bytes(files['SOURCES.txt'])
         print('Verified secure SOCKS transports:', item['abi'])
+
+assert 'sstp' in lock, 'Build and pin SSTP before packaging this version'
+sstp = lock['sstp']
+source_paths = {p.relative_to(root).as_posix() for p in (root / 'carriers/sstp').rglob('*')
+                if p.is_file() and (p.suffix in {'.go', '.mod', '.sum'} or p.name == 'LICENSE')}
+source_paths.add('scripts/build_sstp.sh')
+assert source_paths == set(sstp['inputs']), 'Rebuild SSTP after adding or removing source files'
+for name, expected in sstp['inputs'].items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected, 'Rebuild SSTP after changing ' + name
+assert {item['abi'] for item in sstp['archives']} == {item['abi'] for item in lock['archives']}
+for item in sstp['archives']:
+    with urllib.request.urlopen(item['url'], timeout=60) as response:
+        archive = response.read()
+    assert hashlib.sha256(archive).hexdigest() == item['sha256'], 'SSTP archive checksum mismatch'
+    files = {}
+    with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as tar:
+        for member in tar.getmembers():
+            assert member.isfile() and '/' not in member.name and '\\' not in member.name
+            assert member.name not in files, 'Duplicate SSTP archive entry'
+            files[member.name] = tar.extractfile(member).read()
+    assert set(files) == {'libsstp.so', 'SSTP-LICENSE', 'SSTP.json', 'SOURCES.txt', 'SHA256SUMS'}
+    provenance = json.loads(files['SSTP.json'])
+    assert provenance == {'build_commit': sstp['build_commit'], 'abi': item['abi'], 'inputs': sstp['inputs']}, 'SSTP build provenance mismatch'
+    assert files['SOURCES.txt'].decode() == item['sources']
+    digest, binary = files['SHA256SUMS'].decode().split()
+    assert binary == 'libsstp.so' and hashlib.sha256(files[binary]).hexdigest() == digest, 'SSTP binary checksum mismatch'
+    (root / 'deployment/carriers' / item['abi'] / binary).write_bytes(files[binary])
+    license_dir = root / 'app/src/main/assets/carrier-licenses' / item['abi']
+    (license_dir / 'SSTP-LICENSE').write_bytes(files['SSTP-LICENSE'])
+    (license_dir / 'SSTP-SOURCES.txt').write_bytes(files['SOURCES.txt'])
+    print('Verified SSTP transport:', item['abi'])

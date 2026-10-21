@@ -14,10 +14,12 @@
 - [x] Align shared preference/deploy/server tiles and press feedback; standardize screen transition durations; remove deploy first-frame blocking.
 - [x] Parse all Android XML and check native source pins (only Windows CRLF normalized in the local check).
 - [x] Update Graphify AST graph.
-- [ ] Build SSTP from reviewed sources for arm64-v8a, armeabi-v7a and x86_64.
-- [ ] Verify build provenance and ELF files, publish immutable archives and pin SSTP staging; require the binary on every supported ABI before release.
-- [ ] Complete Android unit tests/APK compilation and Linux race tests in Actions.
+- [x] Build SSTP from reviewed sources for arm64-v8a, armeabi-v7a and x86_64 (Actions 39543105859, build 9409f474ec032e97c9fc3c90d03f15f1fada0b1d).
+- [x] Verify build provenance, ELF machine/type and 16KiB load alignment; publish immutable archives and pin SSTP staging. Source-set, checksum and archive traversal rejection were checked.
+- [x] Initial Android CI 39543102104: 329 tests passed, no failures/ignored; APKs compiled; Linux race tests and vet passed.
+- [ ] Final CI with pinned SSTP binaries and version 2.2.
 - [ ] Confirm the supplied CSQTT connection against the live server; decoding and session setup alone do not prove the remote TURN path works.
-- [ ] Bump stable version to 2.2, write final release notes, run stable CI and publish.
+- [x] Bump stable version to 2.2 and write final release notes.
+- [ ] Run stable CI and publish.
 
 Long emulator/UI tests are intentionally excluded at the user's request. Visual checks and real phone/router behavior remain device checks.
