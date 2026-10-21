@@ -15,6 +15,45 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
+    @Test fun csqttConnectionAndLatencyProbeRetryTheDeviceBoundProtocolWithoutChangingCredentials(): Unit = runBlocking {
+        for (interactive in listOf(false,true)) {
+            val root=Files.createTempDirectory("csqtt-protocol-retry").toFile()
+            try {
+                for(name in listOf("libqwdtt.so","libcsqtt_transport.so","libcsqtt_compat.so"))
+                    File(root,name).apply { writeText("fixture");setExecutable(true) }
+                val source="""{"peer":"192.0.2.1:46000","password":"fixture-secret","device_id":"old-phone","hashes":["manual_hash_12345678"],"workers":18}"""
+                val configuration=NativeSessionPolicy.probeConfig(CarrierKind.CSQTT,source,interactive)
+                val launches=mutableListOf<app.qthrone.mobile.outbound.json.JsonObject>()
+                val failure=runCatching {
+                    CarrierProcess.start(CarrierKind.CSQTT,root,File(root,"configs"),35,configuration,12345,
+                        CarrierBridgeCredentials.fresh(),allowInteractions=interactive) { builder ->
+                        val config=app.qthrone.mobile.outbound.json.JsonInput.parseObject(File(builder.command()[2]).readText())
+                        launches.add(config)
+                        val output=if(launches.size==1) "FATAL_PROTOCOL: fixture mismatch\n" else "FATAL_AUTH: fixture rejected\n"
+                        object:Process() {
+                            override fun getOutputStream()=ByteArrayOutputStream()
+                            override fun getInputStream()=ByteArrayInputStream(output.toByteArray())
+                            override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun waitFor()=1
+                            override fun exitValue()=1
+                            override fun destroy() {}
+                        }
+                    }
+                }.exceptionOrNull()
+                assertNotNull(failure)
+                assertEquals(listOf("legacy","compat"),launches.map { it.string("protocol_variant") })
+                for (config in launches) {
+                    assertEquals("fixture-secret",config.string("password"))
+                    assertEquals("old-phone",config.string("device_id"))
+                    assertEquals(listOf("manual_hash_12345678"),config.array("hashes").strings())
+                    assertEquals(!interactive,config.bool("probe_only"))
+                }
+                assertNotEquals(launches[0].string("salt"),launches[1].string("salt"))
+                assertTrue(File(root,"configs").listFiles().orEmpty().isEmpty())
+            } finally { root.deleteRecursively() }
+        }
+    }
+
     @Test fun csqttCanFinishVkCleanupAfterStopWithoutBeingKilled(): Unit = runBlocking {
         val root=Files.createTempDirectory("csqtt-cleanup").toFile()
         try {

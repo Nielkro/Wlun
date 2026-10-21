@@ -31,7 +31,10 @@ permissions:
 jobs:
   gate:
     name: Unpublished version
-    if: github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
+    if: >-
+      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ steps.check.outputs.publish }}
@@ -48,7 +51,8 @@ jobs:
         run: |
           set -euo pipefail
           VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '[:space:]')
-          if gh release view "v$VERSION_NAME" >/dev/null 2>&1; then
+          DRAFT=$(gh release view "v$VERSION_NAME" --json isDraft --jq .isDraft 2>/dev/null || true)
+          if [[ "$DRAFT" == false ]]; then
             echo "::notice::v$VERSION_NAME is already published: nothing to release"
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
@@ -70,7 +74,11 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - name: Release numbering regression
-        run: python3 buildScript/test_release_tag.py
+        run: |
+          python3 buildScript/test_release_tag.py
+          python3 buildScript/test_release_metadata.py
+      - name: Require pinned compatibility transport
+        run: python3 -c "import json; assert 'csqtt_compat' in json.load(open('native-transports.lock.json')), 'Build and pin CSQTT compatibility before releasing'"
       # Public tags use three version components and always increase.
       - name: Version
         id: version
@@ -115,9 +123,4 @@ jobs:
           TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
           RELEASE_NAME: ${{ steps.version.outputs.name }}
         run: |
-          set -euo pipefail
-          if [[ "$TAG" == *-beta.* || "$TAG" == *-rc.* ]]; then
-            gh release create "$TAG" dist/* --target "$TARGET" --title "$RELEASE_NAME" --prerelease --latest=false --notes-file RELEASE_NOTES.md
-          else
-            gh release create "$TAG" dist/* --target "$TARGET" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
-          fi
+          python3 buildScript/publish_release.py

@@ -36,7 +36,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
       - name: Release numbering regression
-        run: python3 buildScript/test_release_tag.py
+        run: |
+          python3 buildScript/test_release_tag.py
+          python3 buildScript/test_release_metadata.py
+          python3 scripts/test_csqtt_compat_archive.py
       - name: Build
         uses: ./.github/actions/android-build
         with:

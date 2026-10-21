@@ -123,6 +123,17 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
     private var loaded = false
     private var originalSignature = ""
     private var editorSheet: View? = null
+    private var editorHandle: View? = null
+    private var editorBehavior: com.google.android.material.bottomsheet.BottomSheetBehavior<android.widget.LinearLayout>? = null
+
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+            val bounds = android.graphics.Rect()
+            editorBehavior?.isDraggable = editorHandle?.getGlobalVisibleRect(bounds) == true &&
+                bounds.contains(event.rawX.toInt(), event.rawY.toInt())
+        }
+        return super.dispatchTouchEvent(event)
+    }
     private val settingsMode get() = intent.getBooleanExtra(EXTRA_SETTINGS, false)
     override val isDialog get() = !settingsMode
 
@@ -147,12 +158,20 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!settingsMode) createEditorSheet()
+        if (!settingsMode) findViewById<View>(R.id.appbar).setBackgroundColor(MobilePalette.background)
         setSupportActionBar(findViewById(R.id.toolbar))
-        findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar).setSubtitleTextColor(MobilePalette.muted)
+        findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar).apply {
+            setSubtitleTextColor(MobilePalette.muted)
+            if (!settingsMode) {
+                setBackgroundColor(MobilePalette.background)
+                setPadding(0,0,0,0)
+                contentInsetStartWithNavigation = 0
+            }
+        }
         supportActionBar?.apply {
             setTitle(if (settingsMode) R.string.settings else R.string.grp_edit_group)
-            setDisplayHomeAsUpEnabled(true)
-            setHomeAsUpIndicator(R.drawable.ic_navigation_close)
+            setDisplayHomeAsUpEnabled(settingsMode)
+            if (settingsMode) setHomeAsUpIndicator(R.drawable.ic_navigation_close)
         }
         editingId = intent.getLongExtra(EXTRA_GROUP_ID, 0L)
         onBackPressedDispatcher.addCallback(this) { close() }
@@ -278,12 +297,19 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
         }
         form.clipToOutline=true
         form.findViewById<View>(R.id.settings).layoutParams=android.widget.LinearLayout.LayoutParams(-1,0,1f)
-        form.addView(View(this).apply {
+        val handle=android.widget.FrameLayout(this).apply {
+            minimumHeight=(48*density).toInt()
+            contentDescription=getString(android.R.string.cancel)
+            isFocusable=true
+            setOnClickListener { close() }
+            addView(View(this@GroupSettingsActivity).apply {
             background=android.graphics.drawable.GradientDrawable().apply { setColor(MobilePalette.muted);cornerRadius=2*density }
-        },0,android.widget.LinearLayout.LayoutParams((40*density).toInt(),(4*density).toInt()).apply {
-            gravity=android.view.Gravity.CENTER_HORIZONTAL;topMargin=(12*density).toInt();bottomMargin=(8*density).toInt()
-        })
+            },android.widget.FrameLayout.LayoutParams((40*density).toInt(),(4*density).toInt(),android.view.Gravity.CENTER))
+        }
+        editorHandle=handle
+        form.addView(handle,0,android.widget.LinearLayout.LayoutParams(-1,(48*density).toInt()))
         val behavior=com.google.android.material.bottomsheet.BottomSheetBehavior<android.widget.LinearLayout>().apply {
+            isDraggable=false
             isHideable=true;skipCollapsed=true;state=com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
             addBottomSheetCallback(object: com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
                 override fun onSlide(bottomSheet: View, slideOffset: Float) {}
@@ -295,6 +321,7 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
                 }
             })
         }
+        editorBehavior=behavior
         coordinator.addView(form,androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(-1,(resources.displayMetrics.heightPixels*.88f).toInt()).apply {
             gravity=android.view.Gravity.BOTTOM;this.behavior=behavior
         })

@@ -175,7 +175,7 @@ class UpdateActivity : ThemedActivity() {
                 appendLine()
                 appendLine(getString(R.string.update_browser_only, it))
             }
-            val notes = offer.release.body.trim()
+            val notes = UpdateReleaseNotes.visible(offer.release.body)
             if (notes.isNotEmpty()) {
                 appendLine()
                 appendLine(notes.take(4000))

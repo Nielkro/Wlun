@@ -4,6 +4,17 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeSessionPolicyTest {
+    @Test fun compatibilityRetryOnlyFollowsAmbiguousWrapOrProtocolFailure() {
+        assertTrue(NativeSessionPolicy.csqttCompatibilityFallback(
+            NativeSessionPolicy.startupFailure("FATAL_PROTOCOL: private server")!!))
+        assertTrue(NativeSessionPolicy.csqttCompatibilityFallback(
+            "Неверный пароль подключения или несовместимый WRAP: сервер не отвечает на рукопожатие"))
+        assertFalse(NativeSessionPolicy.csqttCompatibilityFallback(
+            NativeSessionPolicy.startupFailure("FATAL_AUTH: wrong password")!!))
+        for (message in listOf("VK confirmation cancelled", "network timeout", "captcha", "cancelled"))
+            assertFalse(NativeSessionPolicy.csqttCompatibilityFallback(message))
+    }
+
     @Test fun nineWorkerProbeNeverChangesTheProfileOrAnInteractiveConnection() {
         val source="""{"peer":"192.0.2.1:56003","device_id":"phone","workers":108,"mode":"raw","hashes":["one","two","three"]}"""
         val probe=app.qthrone.mobile.outbound.json.JsonInput.parseObject(NativeSessionPolicy.probeConfig(CarrierKind.QWDTT,source,false))

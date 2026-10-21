@@ -804,7 +804,13 @@ class MobileHomeFragment : ToolbarFragment() {
         val body=LinearLayout(requireContext()).apply {
             orientation=LinearLayout.VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(24)); setBackgroundColor(backgroundColor)
         }
-        body.addView(View(requireContext()).apply { background=GradientDrawable().apply { setColor(muted); cornerRadius=dp(2).toFloat() } },LinearLayout.LayoutParams(dp(40),dp(4)).apply { gravity=Gravity.CENTER_HORIZONTAL; bottomMargin=dp(20) })
+        val handle=FrameLayout(requireContext()).apply {
+            contentDescription=getString(android.R.string.cancel);isFocusable=true;setOnClickListener { dialog.dismiss() }
+            addView(View(requireContext()).apply { background=GradientDrawable().apply { setColor(muted);cornerRadius=dp(2).toFloat() } },
+                FrameLayout.LayoutParams(dp(40),dp(4),Gravity.CENTER))
+        }
+        body.addView(handle,LinearLayout.LayoutParams(-1,dp(48)))
+        dialog.dragOnlyFrom(handle)
         body.addView(text(group.displayName(),18f).apply { setTypeface(null,Typeface.BOLD) })
         fun entry(label:String,icon:Int,action:()->Unit) {
             val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; minimumHeight=dp(56);background=tile(); isFocusable=true; contentDescription=label; setOnClickListener { dialog.dismiss();action() }; MobileFeedback.apply(this) }
