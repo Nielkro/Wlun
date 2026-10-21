@@ -26,7 +26,7 @@ class DeployConfigTest {
         assertEquals("VPS + test",parsed.name)
         assertEquals("secret+&!",parsed.password)
         assertEquals(18,parsed.workers)
-        assertEquals("wg",parsed.mode)
+        assertEquals("raw",parsed.mode)
         assertTrue(parsed.hashes.isEmpty())
     }
     @Test fun csqttLinkMatchesTheOriginalPanelLink() {

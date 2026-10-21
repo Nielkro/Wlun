@@ -105,7 +105,7 @@ class NativeHashPolicyTest {
     }
     @Test fun newProfilesStartLikeTheOriginalAppsAndRefreshKeepsTheUsersModeAndTransport() {
         val qwdtt=Qwdtt();assertTrue(qwdtt.parseFromJson(app.qthrone.mobile.outbound.json.JsonInput.parseObject("""{"type":"qwdtt","peer":"192.0.2.1:56000","password":"fixture"}""")))
-        assertEquals("wg",qwdtt.mode);assertTrue(qwdtt.turnTcp)
+        assertEquals("raw",qwdtt.mode);assertTrue(qwdtt.turnTcp)
         val csqtt=app.qthrone.mobile.outbound.types.Csqtt()
         assertTrue(csqtt.parseFromJson(app.qthrone.mobile.outbound.json.JsonInput.parseObject("""{"type":"csqtt","server":"192.0.2.1","server_port":46000,"password":"fixture","hashes":["exampleHash123456789"]}""")))
         assertFalse(csqtt.turnTcp)
