@@ -49,7 +49,7 @@ import moe.matsuri.nb4a.ui.SimpleMenuPreference
  * Subscription identity/options editor and a separate settings screen share the same cached document.
  * Hidden fields stay intact when either screen saves; creating a group does not start a refresh.
  */
-class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
+class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
 
     companion object {
         const val EXTRA_GROUP_ID = "id"
@@ -145,6 +145,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         super.onCreate(savedInstanceState)
         if (!settingsMode) createEditorSheet()
         setSupportActionBar(findViewById(R.id.toolbar))
+        findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar).setSubtitleTextColor(MobilePalette.muted)
         supportActionBar?.apply {
             setTitle(if (settingsMode) R.string.settings else R.string.grp_edit_group)
             setDisplayHomeAsUpEnabled(true)
@@ -157,7 +158,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         val link = intent.getStringExtra(EXTRA_GROUP_SUBSCRIPTION_LINK)
         lifecycleScope.launch {
             val found = withContext(Dispatchers.IO) {
-                val group = if (editingId > 0) GroupRepo.get(editingId) ?: return@withContext false else ProxyGroup()
+                val group = if (editingId > 0) GroupRepo.get(editingId) ?: return@withContext null else ProxyGroup()
                 if (editingId > 0) resetDanglingProxies(group)
                 if (fresh) {
                     writeToCache(group)
@@ -177,13 +178,14 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                     val id = proxyId(key)
                     if (id > 0) proxyLabel(id)?.let { proxyLabels[id] = it }
                 }
-                true
+                group
             }
-            if (!found) {
+            if (found == null) {
                 finish()
                 return@launch
             }
             loaded = true
+            if (settingsMode) supportActionBar?.subtitle = found.displayName()
             invalidateOptionsMenu()
             supportFragmentManager.beginTransaction()
                 .replace(R.id.settings, GroupPreferenceFragment())
@@ -287,7 +289,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
         window.attributes=window.attributes.apply { dimAmount=.55f }
         window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-        window.setWindowAnimations(R.style.MobileSheetWindowAnimation)
+        window.setWindowAnimations(com.google.android.material.R.style.Animation_MaterialComponents_BottomSheetDialog)
     }
 
     // ------------------------------------------------------------------------------------------------ load / save

@@ -61,11 +61,11 @@ class ServerActivity : ServerScreenActivity() {
         toolbar.subtitle = server["host"]
         body.removeAllViews()
         body.addView(LinearLayout(this).apply {
-            gravity = android.view.Gravity.CENTER_VERTICAL; setPadding(ui.dp(18), ui.dp(16), ui.dp(18), ui.dp(16))
+            gravity = android.view.Gravity.CENTER_VERTICAL; setPadding(ui.dp(12), ui.dp(8), ui.dp(12), ui.dp(8))
             background = ui.card().background
-            addView(ui.badge(R.drawable.ic_action_dns), LinearLayout.LayoutParams(ui.dp(48), ui.dp(48)).apply { marginEnd = ui.dp(16) })
+            addView(ui.badge(R.drawable.ic_action_dns), LinearLayout.LayoutParams(ui.dp(26), ui.dp(26)).apply { marginEnd = ui.dp(12) })
             addView(ui.column().apply {
-                addView(ui.text(server["name"].ifBlank { server["host"] }, 20f))
+                addView(ui.text(server["name"].ifBlank { server["host"] }, 16f, bold = true))
                 addView(ui.text(buildString {
                     if (server["name"].isNotBlank()) append(server["host"]).append(" · ")
                     append("SSH ").append(server["sshPort"])

@@ -72,20 +72,20 @@ open class DeployEditorFragment : Fragment() {
         return arrow
     }
     private fun heading(parent: LinearLayout,title: String) {
-        parent.addView(TextView(requireContext()).apply { text=title;textSize=16f;setTextColor(MobilePalette.accent(requireContext()));setTypeface(null,android.graphics.Typeface.BOLD);setPadding(0,dp(10),0,dp(8)) })
+        parent.addView(TextView(requireContext()).apply { text=title;textSize=16f;setTextColor(MobilePalette.accent(requireContext()));setTypeface(null,android.graphics.Typeface.BOLD);setPadding(0,dp(6),0,dp(6)) })
     }
     private fun card(): LinearLayout {
-        val content=column().apply { setPadding(dp(16),dp(10),dp(16),dp(10)) }
-        body.addView(MaterialCardView(requireContext()).apply { radius=dp(5).toFloat();cardElevation=0f;strokeWidth=0;setCardBackgroundColor(MobilePalette.surface);addView(content) },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(8) })
+        val content=column().apply { setPadding(dp(12),dp(8),dp(12),dp(8)) }
+        body.addView(MaterialCardView(requireContext()).apply { radius=dp(5).toFloat();cardElevation=0f;strokeWidth=0;preventCornerOverlap=false;useCompatPadding=false;setCardBackgroundColor(MobilePalette.surface);addView(content) },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(8) })
         return content
     }
     private fun row(parent: LinearLayout,block: (LinearLayout)->Unit) {
-        val r=LinearLayout(requireContext()).apply { orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL };parent.addView(r);block(r)
+        val r=LinearLayout(requireContext()).apply { orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL };parent.addView(r,LinearLayout.LayoutParams(-1,-2));block(r)
     }
     private fun serverTile(title: String,subtitle: String?,icon: Int,server: DeployServer?=null,click: ()->Unit) {
         val tile=LinearLayout(requireContext()).apply {
             orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL
-            setPadding(dp(18),dp(16),dp(18),dp(16));minimumHeight=dp(56)
+            setPadding(dp(12),dp(8),dp(12),dp(8));minimumHeight=dp(48)
             background=android.graphics.drawable.GradientDrawable().apply {
                 setColor(MobilePalette.surface);cornerRadius=dp(5).toFloat()
             }
@@ -95,7 +95,7 @@ open class DeployEditorFragment : Fragment() {
         tile.addView(ImageView(requireContext()).apply {
             setImageResource(icon);imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
             importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginEnd=dp(20) })
+        },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginEnd=dp(12) })
         val labels=column()
         labels.addView(TextView(requireContext()).apply { text=title;textSize=16f;setTextColor(MobilePalette.text) })
         if(subtitle!=null) labels.addView(TextView(requireContext()).apply {
@@ -124,10 +124,10 @@ open class DeployEditorFragment : Fragment() {
     }
     private fun button(parent: LinearLayout,title: String,icon: Int=0,pair: Boolean=false,click: ()->Unit): MaterialButton {
         val b=MaterialButton(requireContext()).apply {
-            text=title;textSize=17f;setTypeface(null,android.graphics.Typeface.BOLD);isAllCaps=false;maxLines=3;minimumHeight=dp(56);cornerRadius=dp(5)
+            text=title;textSize=16f;setTypeface(null,android.graphics.Typeface.BOLD);isAllCaps=false;maxLines=Int.MAX_VALUE;minimumWidth=0;minimumHeight=dp(48);cornerRadius=dp(5)
             insetTop=0;insetBottom=0;elevation=0f;stateListAnimator=null
             gravity=android.view.Gravity.CENTER_VERTICAL or (if(pair) android.view.Gravity.CENTER_HORIZONTAL else android.view.Gravity.START)
-            setPaddingRelative(dp(16),dp(14),dp(16),dp(14))
+            setPaddingRelative(dp(12),dp(8),dp(12),dp(8))
             val accent=MobilePalette.accent(requireContext())
             val colors=android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),intArrayOf(MobilePalette.muted,accent))
             setTextColor(colors);iconTint=colors
@@ -138,13 +138,13 @@ open class DeployEditorFragment : Fragment() {
             setOnClickListener { click() }
         }
         parent.addView(b,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply {
-            topMargin=dp(4);bottomMargin=dp(4);if(pair) marginEnd=dp(4)
+            topMargin=dp(4);bottomMargin=dp(4);if(pair && parent.childCount>0) marginStart=dp(8)
         })
         return b
     }
     private fun field(parent: LinearLayout,s: DeployServer,key: String,label: String,secret: Boolean=false,number: Boolean=false,pair: Boolean=false): TextInputEditText {
         val box=TextInputLayout(androidx.appcompat.view.ContextThemeWrapper(requireContext(),R.style.MobileDeployInputOverlay)).apply {
-            hint=label;boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE
+            minimumWidth=0;hint=label;boxBackgroundMode=TextInputLayout.BOX_BACKGROUND_OUTLINE
             setBoxCornerRadii(dp(5).toFloat(),dp(5).toFloat(),dp(5).toFloat(),dp(5).toFloat())
             defaultHintTextColor=android.content.res.ColorStateList.valueOf(MobilePalette.muted)
             hintTextColor=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
@@ -153,10 +153,10 @@ open class DeployEditorFragment : Fragment() {
             if(secret) endIconMode=TextInputLayout.END_ICON_PASSWORD_TOGGLE
         }
         val editor=TextInputEditText(box.context).apply {
-            textSize=16f;setTextColor(MobilePalette.text);setSingleLine(true)
+            minimumWidth=0;textSize=16f;setTextColor(MobilePalette.text);setSingleLine(true)
             highlightColor=androidx.core.graphics.ColorUtils.setAlphaComponent(MobilePalette.accent(requireContext()),80)
             inputType=if(secret) InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD else if(number) InputType.TYPE_CLASS_NUMBER else InputType.TYPE_CLASS_TEXT
-            setText(s[key]);setPadding(dp(12),dp(16),dp(12),dp(16))
+            setText(s[key]);minimumHeight=dp(48);setPadding(dp(12),dp(12),dp(12),dp(12))
             fun tintCursor() {
                 if(android.os.Build.VERSION.SDK_INT>=29) {
                     val accent=MobilePalette.accent(requireContext())
@@ -179,7 +179,7 @@ open class DeployEditorFragment : Fragment() {
             })
         }
         box.addView(editor,LinearLayout.LayoutParams(-1,-2))
-        parent.addView(box,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply { topMargin=dp(6);bottomMargin=dp(6);if(pair) marginEnd=dp(4) })
+        parent.addView(box,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply { topMargin=dp(6);bottomMargin=dp(6);if(pair && parent.childCount>0) marginStart=dp(8) })
         return editor
     }
     private fun switch(parent: LinearLayout,s: DeployServer,key: String,label: String,rebuild: Boolean=false) {
@@ -262,9 +262,9 @@ open class DeployEditorFragment : Fragment() {
         if(s.kind=="csqtt") heading(access,"Деплой и SSH")
         field(access,s,"name","Название сервера")
         if(s.kind=="csqtt" && s["auth"]!="key") field(access,s,"host","IP сервера или домен")
-        else row(access) { r -> field(r,s,"host","IP / домен",pair=true);field(r,s,"user","Логин SSH",pair=true) }
+        else { field(access,s,"host","IP / домен");field(access,s,"user","Логин SSH") }
         if(s.kind=="csqtt" && s["manualPorts"]=="true") row(access) { r ->
-            field(r,s,"sshPort","Порт SSH",number=true,pair=true)
+            field(r,s,"sshPort","SSH",number=true,pair=true)
             field(r,s,"peerPort","Туннель",number=true,pair=true)
             field(r,s,"webPort","WEB",number=true,pair=true)
         }
@@ -274,23 +274,21 @@ open class DeployEditorFragment : Fragment() {
             }
         } }
         if(s["auth"]=="key") {
-            row(access) { r ->
-                button(r,if(s["key"].isBlank()) "Загрузить ключ" else "Сменить ключ",R.drawable.ic_baseline_vpn_key_24,pair=true) { host.pickKey() }.apply {
-                    strokeWidth=dp(1);strokeColor=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
-                    backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.background)
-                }
-                if(s["key"].isNotBlank()) button(r,"Удалить",R.drawable.ic_mobile_delete,true) { s["key"]="";s["keyName"]="";build() }
+            button(access,if(s["key"].isBlank()) "Загрузить ключ" else "Сменить ключ",R.drawable.ic_baseline_vpn_key_24) { host.pickKey() }.apply {
+                strokeWidth=dp(1);strokeColor=android.content.res.ColorStateList.valueOf(MobilePalette.accent(requireContext()))
+                backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.background)
             }
+            if(s["key"].isNotBlank()) button(access,"Удалить ключ",R.drawable.ic_mobile_delete) { s["key"]="";s["keyName"]="";build() }
             if(s["key"].isNotBlank()) heading(access,"Ключ загружен: "+s["keyName"])
             field(access,s,"keyPassword","Пароль SSH-ключа",secret=true);field(access,s,"sudoPassword","Пароль sudo (если требуется)",secret=true)
-        } else if(s.kind=="csqtt") row(access) { r ->
-            field(r,s,"user","Логин SSH",pair=true);field(r,s,"sshPassword","Пароль SSH",secret=true,pair=true)
+        } else if(s.kind=="csqtt") {
+            field(access,s,"user","Логин SSH");field(access,s,"sshPassword","Пароль SSH",secret=true)
         } else field(access,s,"sshPassword","Пароль SSH",secret=true)
         if(s.kind=="csqtt") access.addView(SwitchMaterial(requireContext()).apply {
             text="SSH-ключи";setTextColor(MobilePalette.text);minHeight=dp(48);isChecked=s["auth"]=="key"
             setOnCheckedChangeListener { _,checked -> s["auth"]=if(checked) "key" else "password";build() }
         })
-        if(s.kind=="qwdtt") row(access) { r -> field(r,s,"dns1","DNS 1",pair=true);field(r,s,"dns2","DNS 2",pair=true) }
+        if(s.kind=="qwdtt") { field(access,s,"dns1","DNS 1");field(access,s,"dns2","DNS 2") }
         switch(access,s,"manualPorts","Ручное управление портами",true)
         if(s.kind!="csqtt" && s["manualPorts"]=="true") {
             row(access) { r -> field(r,s,"peerPort","Порт туннеля",number=true,pair=true);field(r,s,"wgPort","Порт WG",number=true,pair=true) }

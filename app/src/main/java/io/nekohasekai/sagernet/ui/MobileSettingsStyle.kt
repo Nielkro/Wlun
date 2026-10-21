@@ -68,7 +68,7 @@ object MobileSettingsStyle {
                 val position=parent.getChildAdapterPosition(view)
                 val category=position>=0 && (parent.adapter as? PreferenceGroupAdapter)?.getItem(position) is PreferenceCategory
                 outRect.top=if(category && position>0) (2*density).toInt() else 0
-                outRect.bottom=((if(category) 2 else 8)*density).toInt()
+                outRect.bottom=((if(category) 2 else 6)*density).toInt()
             }
         })
         val styledBackgrounds = java.util.WeakHashMap<View, android.graphics.drawable.Drawable>()
@@ -90,8 +90,8 @@ object MobileSettingsStyle {
                 view.minimumHeight=0
                 view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())
             } else {
-                view.minimumHeight=(56*density).toInt()
-                view.setPaddingRelative((16*density).toInt(),(12*density).toInt(),(16*density).toInt(),(12*density).toInt())
+                view.minimumHeight=(48*density).toInt()
+                view.setPaddingRelative((12*density).toInt(),(8*density).toInt(),(12*density).toInt(),(8*density).toInt())
             }
             val oldCopy=view.findViewWithTag<View>("socks-copy")
             (oldCopy?.parent as? android.view.ViewGroup)?.removeView(oldCopy)
@@ -124,9 +124,9 @@ object MobileSettingsStyle {
             }
             view.findViewById<TextView>(android.R.id.title)?.apply {
                 setTextColor(if(category) accent else textColor)
-                textSize=if(category) 16f else 17f
-                setTypeface(null,Typeface.BOLD)
-                isSingleLine=false;maxLines=4;ellipsize=android.text.TextUtils.TruncateAt.END
+                textSize=16f
+                setTypeface(null,if(category) Typeface.BOLD else Typeface.NORMAL)
+                isSingleLine=false;maxLines=Int.MAX_VALUE;ellipsize=null
             }
             view.findViewById<TextView>(android.R.id.summary)?.apply { setTextColor(muted);textSize=13f }
             if(preference?.key == "sharingAddresses") view.findViewById<TextView>(android.R.id.summary)?.apply {

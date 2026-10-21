@@ -83,17 +83,17 @@ class DeployListFragment : Fragment() {
     private fun tile(title: String, subtitle: String?, icon: Int, server: DeployServer? = null, click: () -> Unit) {
         fun background() = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat() }
         val tile = LinearLayout(requireContext()).apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14))
-            minimumHeight = dp(56); this.background = background()
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(12), dp(8))
+            minimumHeight = dp(48); this.background = background()
             isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)
         }
         tile.addView(ImageView(requireContext()).apply {
             setImageResource(icon); imageTintList = ColorStateList.valueOf(MobilePalette.accent(context))
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(20) })
+        }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(12) })
         tile.addView(LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(TextView(context).apply { text = title; textSize = 17f; setTypeface(null,android.graphics.Typeface.BOLD); setTextColor(MobilePalette.text) })
+            addView(TextView(context).apply { text = title; textSize = 16f; setTypeface(null,android.graphics.Typeface.BOLD); setTextColor(MobilePalette.text) })
             if (subtitle != null) addView(TextView(context).apply {
                 text = subtitle; textSize = 14f; setTextColor(MobilePalette.muted); setPadding(0, dp(3), 0, 0)
             })
