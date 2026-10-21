@@ -296,7 +296,12 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
         content.removeView(form)
         val density=resources.displayMetrics.density
         form.setPadding(0,(12*density).toInt(),0,0)
-        val coordinator=androidx.coordinatorlayout.widget.CoordinatorLayout(this)
+        val coordinator=object: androidx.coordinatorlayout.widget.CoordinatorLayout(this) {
+            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                form.layoutParams.height=(View.MeasureSpec.getSize(heightMeasureSpec)*.88f).toInt()
+                super.onMeasure(widthMeasureSpec,heightMeasureSpec)
+            }
+        }
         coordinator.setOnClickListener { close() }
         form.isClickable=true
         form.background=android.graphics.drawable.GradientDrawable().apply {
@@ -329,8 +334,9 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
             })
         }
         editorBehavior=behavior
-        coordinator.addView(form,androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(-1,(resources.displayMetrics.heightPixels*.88f).toInt()).apply {
-            gravity=android.view.Gravity.BOTTOM;this.behavior=behavior
+        coordinator.addView(form,androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(-1,-1).apply {
+            // The behavior supplies the bottom offset; bottom gravity would apply it twice.
+            gravity=android.view.Gravity.TOP;this.behavior=behavior
         })
         setContentView(coordinator)
         window.setBackgroundDrawableResource(android.R.color.transparent)
