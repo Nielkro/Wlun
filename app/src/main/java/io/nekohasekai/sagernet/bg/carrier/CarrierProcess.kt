@@ -112,7 +112,6 @@ class CarrierProcess private constructor(private val process: Process, private v
             val deadline=System.nanoTime()+NativeSessionPolicy.startupTimeoutMs(kind,timeoutMs)*1_000_000
             var attempt=0
             var retries=0
-            var compatibleCSQTT=false
             while(attempt<attempts) {
                 coroutineContext.ensureActive()
                 val remaining=(deadline-System.nanoTime())/1_000_000
@@ -122,9 +121,6 @@ class CarrierProcess private constructor(private val process: Process, private v
                     // Every launch is a new epoch on the server, as in the original app; a retry included.
                     if(kind==CarrierKind.CSQTT) {
                         launchJson=CsqttEpoch.apply(launchJson,CsqttEpoch.reserve(),CsqttEpoch.salt())
-                        launchJson=app.qthrone.mobile.outbound.json.JsonInput.parseObject(launchJson).also {
-                            it["protocol_variant"]=if(compatibleCSQTT) "compat" else "legacy"
-                        }.toCompact()
                     }
                     return startOnce(kind,nativeDirectory,privateDirectory,apiLevel,
                         launchJson,socksPort,bridgeCredentials,
@@ -140,12 +136,6 @@ class CarrierProcess private constructor(private val process: Process, private v
                     runCatching { onStatus(NativeConnectionStage.RECONNECTING) }
                     moe.matsuri.nb4a.utils.CoreLog.write("[Info] [${kind.name}] Retrying transient transport startup ($retries/2)")
                     delay(retries*2_000L)
-                } catch(error:IllegalStateException) {
-                    if(kind!=CarrierKind.CSQTT || compatibleCSQTT ||
-                        !NativeSessionPolicy.csqttCompatibilityFallback(error.message.orEmpty())) throw error
-                    compatibleCSQTT=true
-                    runCatching { onStatus(NativeConnectionStage.RECONNECTING) }
-                    moe.matsuri.nb4a.utils.CoreLog.write("[Info] [CSQTT] Trying the device-bound compatibility protocol")
                 }
             }
             error("No transport candidate")
@@ -173,8 +163,6 @@ class CarrierProcess private constructor(private val process: Process, private v
                     check(executable.isFile && executable.canExecute()) { "Transport client is not installed" }
                     if (kind == CarrierKind.CSQTT) {
                         check(File(nativeDirectory, "libcsqtt_transport.so").canExecute()) { "CSQTT transport client is not installed" }
-                        val compatible=app.qthrone.mobile.outbound.json.JsonInput.parseObject(privateJson).string("protocol_variant")=="compat"
-                        check(!compatible || File(nativeDirectory,"libcsqtt_compat.so").canExecute()) { "CSQTT compatibility transport is not installed" }
                     }
                     if (kind == CarrierKind.SLIPSTREAM) {
                         check(File(nativeDirectory, "libslipstream.so").canExecute()) { "Slipstream transport client is not installed" }

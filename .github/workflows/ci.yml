@@ -39,7 +39,6 @@ jobs:
         run: |
           python3 buildScript/test_release_tag.py
           python3 buildScript/test_release_metadata.py
-          python3 scripts/test_csqtt_compat_archive.py
       - name: Build
         uses: ./.github/actions/android-build
         with:

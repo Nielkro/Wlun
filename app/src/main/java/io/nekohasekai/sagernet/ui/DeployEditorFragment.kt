@@ -138,7 +138,9 @@ open class DeployEditorFragment : Fragment() {
             setOnClickListener { click() }
         }
         parent.addView(b,(if(pair) LinearLayout.LayoutParams(0,-2,1f) else LinearLayout.LayoutParams(-1,-2)).apply {
-            topMargin=dp(4);bottomMargin=dp(4);if(pair && parent.childCount>0) marginStart=dp(8)
+            topMargin=if(parent===body) 0 else dp(4)
+            bottomMargin=if(parent===body) dp(8) else dp(4)
+            if(pair && parent.childCount>0) marginStart=dp(8)
         })
         return b
     }

@@ -3,10 +3,6 @@ package app.qthrone.mobile.bg.carrier
 import app.qthrone.mobile.outbound.json.JsonInput
 
 internal object NativeSessionPolicy {
-    fun csqttCompatibilityFallback(message: String): Boolean =
-        message.startsWith("Неверный пароль подключения или несовместимый WRAP:") ||
-            message == "Сервер отклонил несовместимый протокол подключения"
-
     // The CSQTT wrapper waits for Rust's VK creator/bot leave operations before it exits.
     fun shutdownGraceMs(kind: CarrierKind) = when(kind) { CarrierKind.CSQTT -> 20_000L; CarrierKind.SSTP -> 3_000L; else -> 1_000L }
     fun probeConfig(kind:CarrierKind,privateJson:String,interactive:Boolean,latencyProbe:Boolean=!interactive):String {
