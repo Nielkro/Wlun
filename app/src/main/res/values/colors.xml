@@ -115,7 +115,7 @@
     <color name="color_route_config">#8E24AA</color>
 
     <!-- Default thin card border: about 12% black (night: values-night/colors.xml) -->
-    <color name="card_stroke">#29000000</color>
+    <color name="card_stroke">#37646E77</color>
 
     <!-- Tinted elevated card surfaces: white + 8% of each primary (night: values-night/colors.xml) -->
     <color name="card_elevated_pink">#FDEDF3</color>

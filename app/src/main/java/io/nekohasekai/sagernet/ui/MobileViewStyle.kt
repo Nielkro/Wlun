@@ -14,7 +14,7 @@ object MobileViewStyle {
         if(root is MaterialCardView) {
             root.setCardBackgroundColor(MobilePalette.surface)
             root.radius=16f*root.resources.displayMetrics.density
-            root.strokeColor=MobilePalette.muted and 0x00ffffff or 0x22000000
+            root.strokeColor=MobilePalette.outline
             root.strokeWidth=1
         }
         if(root is TextView) root.setTextColor(MobilePalette.text)

@@ -150,7 +150,7 @@ class MobileHomeFragment : ToolbarFragment() {
     private fun tile(selected: Boolean = false) = GradientDrawable().apply {
         setColor(if (selected) androidx.core.graphics.ColorUtils.blendARGB(surface,blue,.16f) else surface)
         cornerRadius = dp(5).toFloat()
-        setStroke(dp(1), if (selected) blue else Color.argb(45, 103, 116, 128))
+        setStroke(if(selected) dp(1) else 1, if (selected) blue else MobilePalette.outline)
     }
     private fun text(value: String, size: Float = 16f, color: Int = foregroundColor) = TextView(requireContext()).apply {
         text = value; textSize = size; setTextColor(color)
@@ -400,7 +400,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 fun importButton(label: String, icon: Int, callback: () -> Unit) = LinearLayout(requireContext()).apply {
                     gravity=Gravity.CENTER; isFocusable=true; contentDescription=label
                     setOnClickListener { callback() }
-                    background=GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }
+                    background=GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat();setStroke(1,MobilePalette.outline) }
                     addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(foregroundColor); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(24),dp(24)).apply { marginEnd=dp(10) })
                     addView(text(label,14f).apply { setPadding(0,0,0,0); importantForAccessibility=View.IMPORTANT_FOR_ACCESSIBILITY_NO })
                 }
@@ -422,7 +422,7 @@ class MobileHomeFragment : ToolbarFragment() {
                 } else { currentCheck=null;subscriptionTop=null }
                 geoBanner = LinearLayout(requireContext()).apply {
                     gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16),dp(12),dp(16),dp(12))
-                    background = GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat() }
+                    background = GradientDrawable().apply { setColor(surface); cornerRadius=dp(16).toFloat();setStroke(1,MobilePalette.outline) }
                     visibility = View.GONE
                 }
                 geoStatus = text("",14f).apply { setPadding(0,0,dp(12),0) }

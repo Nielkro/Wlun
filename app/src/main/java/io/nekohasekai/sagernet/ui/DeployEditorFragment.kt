@@ -76,7 +76,7 @@ open class DeployEditorFragment : Fragment() {
     }
     private fun card(): LinearLayout {
         val content=column().apply { setPadding(dp(12),dp(8),dp(12),dp(8)) }
-        body.addView(MaterialCardView(requireContext()).apply { radius=dp(5).toFloat();cardElevation=0f;strokeWidth=0;preventCornerOverlap=false;useCompatPadding=false;setCardBackgroundColor(MobilePalette.surface);addView(content) },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(8) })
+        body.addView(MaterialCardView(requireContext()).apply { radius=dp(5).toFloat();cardElevation=0f;strokeWidth=1;strokeColor=MobilePalette.outline;preventCornerOverlap=false;useCompatPadding=false;setCardBackgroundColor(MobilePalette.surface);addView(content) },LinearLayout.LayoutParams(-1,-2).apply { bottomMargin=dp(8) })
         return content
     }
     private fun row(parent: LinearLayout,block: (LinearLayout)->Unit) {
@@ -87,7 +87,7 @@ open class DeployEditorFragment : Fragment() {
             orientation=LinearLayout.HORIZONTAL;gravity=android.view.Gravity.CENTER_VERTICAL
             setPadding(dp(12),dp(8),dp(12),dp(8));minimumHeight=dp(48)
             background=android.graphics.drawable.GradientDrawable().apply {
-                setColor(MobilePalette.surface);cornerRadius=dp(5).toFloat()
+                setColor(MobilePalette.surface);cornerRadius=dp(5).toFloat();setStroke(1,MobilePalette.outline)
             }
             isFocusable=true;contentDescription=listOfNotNull(title,subtitle).joinToString(". ")
             setOnClickListener { click() };MobileFeedback.apply(this)
@@ -115,7 +115,7 @@ open class DeployEditorFragment : Fragment() {
                 }
             }
             MobileSwipeTile(requireContext(),tile,View(requireContext()),View(requireContext()),delete,deleteOnly=true).apply {
-                background=android.graphics.drawable.GradientDrawable().apply { setColor(MobilePalette.surface);cornerRadius=dp(5).toFloat() }
+                background=android.graphics.drawable.GradientDrawable().apply { setColor(MobilePalette.surface);cornerRadius=dp(5).toFloat();setStroke(1,MobilePalette.outline) }
                 clipToOutline=true
                 onOpened={ opened -> openSwipe?.takeIf { it!==opened }?.closeActions();openSwipe=opened }
             }
@@ -132,8 +132,8 @@ open class DeployEditorFragment : Fragment() {
             val colors=android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),intArrayOf(MobilePalette.muted,accent))
             setTextColor(colors);iconTint=colors
             backgroundTintList=android.content.res.ColorStateList.valueOf(MobilePalette.surface)
-            strokeWidth=dp(1)
-            strokeColor=android.content.res.ColorStateList.valueOf(androidx.core.graphics.ColorUtils.setAlphaComponent(MobilePalette.muted,55))
+            strokeWidth=1
+            strokeColor=android.content.res.ColorStateList.valueOf(MobilePalette.outline)
             if(icon!=0) { setIconResource(icon);iconSize=dp(22);iconPadding=dp(12);iconGravity=MaterialButton.ICON_GRAVITY_START }
             setOnClickListener { click() }
         }

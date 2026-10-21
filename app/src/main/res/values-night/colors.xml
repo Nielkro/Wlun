@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Default thin card border: about 12% white -->
-    <color name="card_stroke">#29FFFFFF</color>
+    <color name="card_stroke">#37ADB6BF</color>
 
     <!-- Route rule types (night, lighter) -->
     <color name="color_route_block">#EF5350</color>

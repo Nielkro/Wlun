@@ -13,6 +13,8 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnPreDraw
+import androidx.core.content.res.use
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
@@ -120,6 +122,7 @@ class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settin
     private var editingId = 0L
     private var loaded = false
     private var originalSignature = ""
+    private var editorSheet: View? = null
     private val settingsMode get() = intent.getBooleanExtra(EXTRA_SETTINGS, false)
     override val isDialog get() = !settingsMode
 
@@ -190,6 +193,15 @@ class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settin
             supportFragmentManager.beginTransaction()
                 .replace(R.id.settings, GroupPreferenceFragment())
                 .commitNowAllowingStateLoss()
+            editorSheet?.doOnPreDraw { sheet ->
+                sheet.visibility = View.VISIBLE
+                if (fresh) {
+                    val enter = obtainStyledAttributes(
+                        com.google.android.material.R.style.Animation_MaterialComponents_BottomSheetDialog,
+                        intArrayOf(android.R.attr.windowEnterAnimation)).use { it.getResourceId(0,0) }
+                    sheet.startAnimation(android.view.animation.AnimationUtils.loadAnimation(this@GroupSettingsActivity,enter))
+                }
+            }
             DataStore.profileCacheStore.registerChangeListener(this@GroupSettingsActivity)
         }
     }
@@ -250,9 +262,12 @@ class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settin
             .show()
     }
 
+    @Suppress("DEPRECATION")
     private fun createEditorSheet() {
         val content=findViewById<android.view.ViewGroup>(android.R.id.content)
         val form=content.getChildAt(0) as android.widget.LinearLayout
+        editorSheet=form
+        form.visibility=View.INVISIBLE
         content.removeView(form)
         val density=resources.displayMetrics.density
         val coordinator=androidx.coordinatorlayout.widget.CoordinatorLayout(this)
@@ -290,6 +305,9 @@ class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settin
         window.attributes=window.attributes.apply { dimAmount=.55f }
         window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         window.setWindowAnimations(com.google.android.material.R.style.Animation_MaterialComponents_BottomSheetDialog)
+        // Animate the panel after its fields load; Android may replace an activity's window animation.
+        if (android.os.Build.VERSION.SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN,0,0)
+        else overridePendingTransition(0,0)
     }
 
     // ------------------------------------------------------------------------------------------------ load / save

@@ -1,5 +1,6 @@
 <resources>
     <style name="MobileControls">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.SagerNet</item>
         <item name="switchStyle">@style/MobileSwitch</item>
         <item name="android:switchStyle">@style/MobilePlatformSwitch</item>
         <item name="textInputStyle">@style/MobileTextInput</item>

@@ -23,7 +23,7 @@ internal class ServerUi(private val context: Context) {
     fun column(padding: Int = 0) = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(padding), dp(padding), dp(padding), dp(padding)) }
 
     fun card(radius: Int = 5) = column(12).apply {
-        background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(radius).toFloat() }
+        background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(radius).toFloat(); setStroke(1,MobilePalette.outline) }
     }
 
     fun well() = GradientDrawable().apply {
@@ -43,7 +43,7 @@ internal class ServerUi(private val context: Context) {
     /** An action tile: icon, title, subtitle and an arrow, like the original server screen. */
     fun tile(title: String, subtitle: String?, icon: Int, click: () -> Unit) = LinearLayout(context).apply {
         gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(12), dp(8)); minimumHeight = dp(48)
-        background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat() }
+        background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat(); setStroke(1,MobilePalette.outline) }
         isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)
         addView(badge(icon), LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(12) })
         addView(column().apply {
@@ -67,7 +67,8 @@ internal class ServerUi(private val context: Context) {
         setTextColor(if (primary) android.graphics.Color.BLACK else color)
         background = GradientDrawable().apply {
             cornerRadius = dp(5).toFloat()
-            if (primary) setColor(color) else { setColor(MobilePalette.surface); setStroke(dp(1), ColorUtils.setAlphaComponent(color, 150)) }
+            setColor(if (primary) color else MobilePalette.surface)
+            setStroke(1, MobilePalette.outline)
         }
         isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)
     }

@@ -81,7 +81,7 @@ class DeployListFragment : Fragment() {
     }
 
     private fun tile(title: String, subtitle: String?, icon: Int, server: DeployServer? = null, click: () -> Unit) {
-        fun background() = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat() }
+        fun background() = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat(); setStroke(1,MobilePalette.outline) }
         val tile = LinearLayout(requireContext()).apply {
             gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(12), dp(8))
             minimumHeight = dp(48); this.background = background()

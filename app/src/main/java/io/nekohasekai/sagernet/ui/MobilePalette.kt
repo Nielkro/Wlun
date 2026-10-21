@@ -14,6 +14,7 @@ object MobilePalette {
     val toolbar get() = if (oled) Color.BLACK else if (light) Color.rgb(231,233,235) else Color.rgb(34,35,37)
     val text get() = if (light) Color.rgb(39,44,48) else Color.rgb(231,234,237)
     val muted get() = if (light) Color.rgb(100,110,119) else Color.rgb(173,182,191)
+    val outline get() = androidx.core.graphics.ColorUtils.setAlphaComponent(muted,55)
     fun accent(context: Context) = if (!DataStore.useSystemTheme && DataStore.appTheme == Theme.CYAN) Color.rgb(87,190,229)
         else MaterialColors.getColor(context, androidx.appcompat.R.attr.colorAccent, Color.rgb(87,190,229))
 }

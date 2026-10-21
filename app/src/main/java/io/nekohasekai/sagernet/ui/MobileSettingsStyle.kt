@@ -115,6 +115,7 @@ object MobileSettingsStyle {
             view.background=android.graphics.drawable.GradientDrawable().apply {
                 setColor(if(category || warning) background else surface)
                 cornerRadius=5*density
+                if(!category && !warning) setStroke(1,MobilePalette.outline)
             }
             if(!category && !warning) MobileFeedback.apply(view)
             styledBackgrounds[view] = view.background
