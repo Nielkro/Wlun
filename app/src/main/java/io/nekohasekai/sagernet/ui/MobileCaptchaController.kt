@@ -112,7 +112,9 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             webChromeClient=android.webkit.WebChromeClient()
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
             if(turn || oauthState!=null) {
-                settings.userAgentString=app.qthrone.mobile.bg.carrier.VkRelayLogin.userAgent(android.webkit.WebSettings.getDefaultUserAgent(host),0)
+                settings.userAgentString=app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionUserAgent().ifBlank {
+                    app.qthrone.mobile.bg.carrier.VkRelayLogin.userAgent(android.webkit.WebSettings.getDefaultUserAgent(host),0)
+                }
             }
             val hook=if(turn) VkTurnScripts.INTERCEPTOR else CaptchaAutoScripts.intercept
             if(!turn && oauthState==null && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER))

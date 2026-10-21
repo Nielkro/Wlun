@@ -10,10 +10,13 @@ import app.qthrone.mobile.outbound.common.QuicFields
 import app.qthrone.mobile.outbound.common.Tls
 import app.qthrone.mobile.outbound.json.JsonObject
 import app.qthrone.mobile.outbound.json.JsonValues
+import app.qthrone.mobile.outbound.link.Hosts
+import app.qthrone.mobile.outbound.link.LinkBuilder
+import app.qthrone.mobile.outbound.link.LinkParser
 
 /**
  * masque (include/configs/outbounds/masque.h, src/configs/outbounds/masque.cpp): a sing-box endpoint.
- * No share link exists (masque.cpp:66-69); the clash import of masque.cpp:39-64 has no Android counterpart.
+ * Shares use masque://private-key@server:port?publickey=...&address=...&network=h2.
  */
 class Masque : Outbound("masque") {
     @JvmField var private_key: String = ""
@@ -88,8 +91,48 @@ class Masque : Outbound("masque") {
         return true
     }
 
-    /** masque.cpp:66-69. */
-    override fun exportToLink(): String = ""
+    override fun parseFromLink(link: String): Boolean {
+        val url=LinkParser.parse(link.trim())
+        if(!url.isValid || url.scheme!="masque" || url.host.isEmpty() || url.port(443) !in 1..65535 ||
+            url.password.isNotEmpty() || url.path !in listOf("","/")) return false
+        val q=url.query
+        if(q.items.map { it.first }.distinct().size!=q.items.size) return false
+        private_key=url.userName
+        peer_public_key=q.valueFully("publickey")
+        fun validKey(key:String)=key.length in 1..8192 && key.matches(Regex("[A-Za-z0-9+/_=-]+"))
+        if(!validKey(private_key) || (peer_public_key.isNotEmpty() && !validKey(peer_public_key))) return false
+        val addresses=q.valueFully("address").split(',').map { it.trim() }
+        if(addresses.isEmpty() || addresses.any { raw ->
+            val ip=raw.substringBefore('/')
+            !Hosts.isIpAddress(ip) || (raw.contains('/') &&
+                raw.substringAfter('/').toIntOrNull()?.let { it in 0..if(Hosts.isIpv6Address(ip)) 128 else 32 }!=true)
+        }) return false
+        address=addresses.map { withPrefix(it,if(it.contains(':')) "/128" else "/32")!! }.toMutableList()
+        if(q.has("mtu")) mtu=q.valueFully("mtu").toIntOrNull()?.takeIf { it in 576..65535 } ?: return false
+        http_version=if(q.has("http_version")) q.valueFully("http_version").toIntOrNull() ?: return false
+            else when(q.valueFully("network")) { "" -> 0; "h2" -> 2; "h3" -> 3; else -> return false }
+        if(http_version !in listOf(0,2,3)) return false
+        disable_version_fallback=if(q.has("disable_version_fallback")) when(q.valueFully("disable_version_fallback")) {
+            "true","1" -> true; "false","0" -> false; else -> return false
+        } else http_version==3
+        super.parseFromLink(url)
+        serverPort=url.port(443)
+        tls.parseFromLink(url);tls.enabled=true
+        quic.parseFromLink(url)
+        return true
+    }
+
+    override fun exportToLink(): String = LinkBuilder("masque").apply {
+        host=server;port=serverPort;fragment=name.takeIf(String::isNotEmpty);plusAsEscape=true
+        setUserName(private_key)
+        if(peer_public_key.isNotEmpty()) addQueryItem("publickey",peer_public_key)
+        addQueryItem("address",address.joinToString(","))
+        addQueryItem("mtu",mtu.toString())
+        addQueryItem("http_version",http_version.toString())
+        addQueryItem("disable_version_fallback",disable_version_fallback.toString())
+        addQueryItems(baseLinkQuery())
+        addQueryItems(tls.exportToLink());addQueryItems(quic.exportToLink())
+    }.build()
 
     /** masque.cpp:71-85. */
     override fun exportToJson(): JsonObject {

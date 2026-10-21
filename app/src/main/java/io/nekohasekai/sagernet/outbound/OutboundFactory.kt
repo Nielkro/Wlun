@@ -137,8 +137,8 @@ object OutboundFactory {
         Protocol("juicity", listOf("juicity://"), listOf("juicity"), emptyList()),
         Protocol("trusttunnel", listOf("tt://"), listOf("trusttunnel"), emptyList()),
         Protocol("shadowtls", listOf("shadowtls://"), listOf("shadowtls"), emptyList()),
-        Protocol("wireguard", listOf("awg://", "wg://", "wireguard://"), listOf("wireguard"), emptyList()),
-        Protocol("masque", emptyList(), listOf("masque"), listOf("masque")),
+        Protocol("wireguard", listOf("awg://", "wg://", "wireguard://"), listOf("wireguard"), listOf("wireguard")),
+        Protocol("masque", listOf("masque://"), listOf("masque"), listOf("masque")),
         Protocol("ssh", listOf("ssh://"), listOf("ssh"), listOf("ssh")),
         Protocol("naive", listOf("naive+https://", "naive+quic://"), listOf("naive"), emptyList()),
     )

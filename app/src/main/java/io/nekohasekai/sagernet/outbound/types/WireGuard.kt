@@ -6,6 +6,7 @@ import app.qthrone.mobile.outbound.Outbound
 import app.qthrone.mobile.outbound.QtStrings
 import app.qthrone.mobile.outbound.SecurityInfo
 import app.qthrone.mobile.outbound.SecurityLevel
+import app.qthrone.mobile.outbound.import.ClashProxy
 import app.qthrone.mobile.outbound.json.JsonArray
 import app.qthrone.mobile.outbound.json.JsonObject
 import app.qthrone.mobile.outbound.json.JsonValues
@@ -310,6 +311,37 @@ class WireGuard : Outbound("wireguard") {
         }
         fixAddress()
         return private_key.isNotEmpty() && peer.public_key.isNotEmpty()
+    }
+
+    override fun parseFromClash(node: JsonObject): Boolean {
+        val proxy=ClashProxy(node)
+        if(proxy.type!="wireguard") return false
+        baseParseFromClash(proxy)
+        private_key=proxy.string("private-key")
+        peer=WireGuardPeer().apply {
+            address=server;port=serverPort
+            public_key=proxy.string("public-key")
+            pre_shared_key=proxy.string("pre-shared-key")
+            persistent_keepalive=proxy.string("persistent-keepalive")
+            if(node.isArray("reserved")) reserved=node.array("reserved").map { JsonValues.toInt(it) }.toMutableList()
+        }
+        if(peer.reserved.any { it !in 0..255 }) return false
+        address=(proxy.strings("ip")+proxy.strings("ipv6")).filter(String::isNotBlank).toMutableList()
+        if(proxy.has("mtu")) mtu=proxy.int("mtu")
+        val amnezia=JsonObject()
+        val options=proxy.obj("amnezia-wg-option")
+        for((key,value) in options.node) {
+            val field=key.replace('-','_')
+            amnezia[field]=when(field) {
+                "h1","h2","h3","h4" -> options.string(key)
+                "random_trailers","disable_cookies" -> options.bool(key)
+                else -> value
+            }
+        }
+        amneziaFromJson(amnezia)
+        fixAddress()
+        return private_key.isNotEmpty() && peer.public_key.isNotEmpty() && peer.address.isNotEmpty() &&
+            peer.port in 1..65535 && address.isNotEmpty()
     }
 
     /** wireguard.cpp:247-260. */

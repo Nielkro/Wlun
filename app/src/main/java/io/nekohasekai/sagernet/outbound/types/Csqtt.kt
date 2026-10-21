@@ -21,7 +21,9 @@ class Csqtt:Qwdtt() {
         if(!copy.contains("turn_tcp")) copy["turn_tcp"]=false
         if(!super.parseFromJson(copy)) return false
         hashSource = obj.string("hash_source").takeIf { it in listOf("manual","auto","auto_js") } ?: "manual"
-        if(hashSource=="auto_js" || vkAnonPath=="auto_js") { hashSource="auto_js";vkAnonPath="auto_js" }
+        if(hashSource=="auto_js" || (!obj.contains("hash_source") && vkAnonPath=="auto_js")) {
+            hashSource="auto_js";vkAnonPath="auto_js"
+        } else if(vkAnonPath=="auto_js") vkAnonPath="vkcalls"
         vkAccessToken = obj.string("vk_access_token")
         turnTransport = obj.string("turn_transport").ifEmpty { if(turnTcp) "tcp" else "udp" }
         turnTransport = when(turnTransport.lowercase()) { "tcp","tcp-tls","tcp/tls" -> "tcp_tls"; else -> turnTransport.lowercase() }
@@ -87,7 +89,7 @@ class Csqtt:Qwdtt() {
         require(deviceId.isNotEmpty() && (hashSource in listOf("auto","auto_js") || hashes.size in 1..6) && hashes.distinct().size==hashes.size)
         require(hashes.all { h -> h.length>=16 && h.none { it==',' || it=='|' || it.isWhitespace() } })
         require(workers == normalizeWorkers(workers) && obfs in listOf("audio","video","unified"))
-        require(hashSource != "auto_js" || vkAccessToken.isNotEmpty()) { "Укажите VK access token или привяжите аккаунт VK" }
+        // The editor validates before the linked account supplies its launch-only token.
         return exportToJson().also {
             // Like TunnelService in 2.5.0: every launch owns a new server session.
             it["generation"]=generation.updateAndGet { previous -> maxOf(previous+1,System.currentTimeMillis()/1000) }

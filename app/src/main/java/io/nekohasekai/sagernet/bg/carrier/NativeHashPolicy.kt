@@ -16,13 +16,19 @@ object NativeHashPolicy {
     }
 
     /** A launch-only copy keeps account calls out of stored profiles, exports and subscriptions. */
-    fun runtimeProfile(profile: Qwdtt, obtainHashes: (Int) -> List<String>): Qwdtt {
+    fun runtimeProfile(profile: Qwdtt, obtainHashes: (Int) -> List<String>): Qwdtt =
+        runtimeProfile(profile, obtainHashes) { VkRelayAccount.tokenForCalls() }
+
+    internal fun runtimeProfile(profile: Qwdtt, obtainHashes: (Int) -> List<String>, obtainToken: () -> String): Qwdtt {
         if (!supportsAutomatic(profile)) return profile
         if(profile is Csqtt && profile.hashSource=="auto_js") {
             if(profile.vkAccessToken.isNotBlank()) return profile
             val copy=Csqtt()
             check(copy.parseFromJson(profile.exportToJson()))
-            copy.vkAccessToken=VkRelayAccount.tokenForCalls()
+            copy.vkAccessToken=obtainToken()
+            check(copy.vkAccessToken.isNotBlank() && copy.vkAccessToken.length<=4096 && copy.vkAccessToken.none { it.isWhitespace() || it.isISOControl() }) {
+                "Не удалось получить токен привязанного аккаунта VK"
+            }
             return copy
         }
         if (profile.hashSource != "auto") return profile

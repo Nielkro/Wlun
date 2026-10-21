@@ -301,6 +301,7 @@ class NativeTransportSettingsActivity : ProfileSettingsActivity<Outbound>() {
             val source=DataStore.profileCacheStore.getString(cache("hash_source"))
             val automatic = source in listOf("auto","auto_js")
             editors["vk_access_token"]?.isVisible=source=="auto_js"
+            (editors["vk_access_token"] as? EditTextPreference)?.dialogMessage="Необязательно: если поле пустое, токен берётся из общей привязки VK в настройках VK-релея."
             editors["rt_masque_server_bootstrap"]?.isEnabled=DataStore.profileCacheStore.getString(cache("rt_masque")) == "true"
             editors.filterKeys { it.startsWith("hash_") && it != "hash_source" }.values.forEach { it.isVisible = !automatic }
             checkButton.isVisible=!automatic

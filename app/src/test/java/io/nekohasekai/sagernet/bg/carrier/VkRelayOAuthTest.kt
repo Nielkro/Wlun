@@ -5,6 +5,23 @@ import org.junit.Test
 import java.net.URI
 
 class VkRelayOAuthTest {
+    @Test fun tokenLookupUsesTheCacheOrTheOriginalHttpThenWebViewSequence() {
+        assertEquals("cached",VkRelayOAuth.obtainToken("cached",120_000,0,{ error("Cache must be reused") },{ error("Unexpected WebView") }))
+        var httpCalls=0;var webCalls=0
+        assertEquals("http-token",VkRelayOAuth.obtainToken("",Long.MAX_VALUE,0,{ httpCalls++;"http-token" },{ error("HTTP succeeded") }))
+        assertEquals(1,httpCalls)
+        assertEquals("web-token",VkRelayOAuth.obtainToken("expired",0,0,{ throw java.io.IOException("offline") },{ webCalls++;"web-token" }))
+        assertEquals(1,webCalls)
+        assertNull(VkRelayOAuth.obtainToken("",0,0,{ null },{ null }))
+        assertEquals("web-token",VkRelayOAuth.obtainToken("",0,0,{ "bad\ntoken" },{ "web-token" }))
+    }
+    @Test fun queryCallbacksStillRequireTheMatchingStateAndAnUnambiguousToken() {
+        assertEquals("query-token" to 60L,VkRelayOAuth.tokenFields("https://oauth.vk.com/blank.html?access_token=query-token&expires_in=60&state=expected","expected"))
+        assertNull(VkRelayOAuth.tokenFields("https://oauth.vk.com/blank.html?state=wrong#access_token=token&state=expected","expected"))
+        assertNull(VkRelayOAuth.tokenFields("https://oauth.vk.com/blank.html#access_token=bad%0Atoken&state=expected","expected"))
+        assertNull(VkRelayOAuth.tokenFields("https://oauth.vk.com/blank.html#access_token=bad%00token&state=expected","expected"))
+    }
+
     @Test fun acceptsOnlyMatchingVkCallback() {
         assertEquals("test-token" to 3600L,VkRelayOAuth.tokenFields("https://oauth.vk.com/blank.html#access_token=test-token&expires_in=3600&state=expected","expected"))
         assertNull(VkRelayOAuth.tokenFields("https://oauth.vk.com/blank.html#access_token=test-token&state=wrong","expected"))

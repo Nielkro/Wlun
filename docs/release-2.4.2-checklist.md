@@ -11,6 +11,10 @@
 - Automatic CSQTT protocol choice: Legacy first, then a separate device-bound transport after explicit protocol rejection or the existing zero-worker WRAP timeout verdict.
 - No protocol selector in the product UI. Preserve device ID, password, hashes and per-launch epoch across the retry.
 - Latency probes and normal connections share the retry path; retain the existing active-session collision guard.
+- Shared qWDTT account binding for all three VK carriers; Auto JS gets its token only at launch, and explicit Auto API takes priority over an old Auto JS authentication field.
+- HTTP token lookup falls back to the original WebView after network failure, retains the login user agent and retries one rejected API token once.
+- Theme preference input/selection dialogs through the common activity callback; preserve input titles, modifiers, validation and switch resources.
+- Import/export masque:// through the common parser and Android intent handler. Import the supplied Clash template structure for all 15 WireGuard/AmneziaWG/Masque profiles with synthetic test identities.
 
 ## Native sources
 
@@ -31,3 +35,7 @@ Source-level agreement does not yet prove live interoperability with the supplie
 - Pending: Android unit tests/build; real APK upgrade and real old-server ping/connection.
 - Release publisher preserves a verified bridge and can resume an interrupted draft publication.
 - Long emulator/UI suites are intentionally excluded.
+- XML audit: all 463 declared text-input preferences have titles; no switch layouts/drawables were changed.
+- Verified the reported YAML and anonymized regression fixture have identical proxy field structures (13 WireGuard, 2 Masque, 25 aliases).
+- Added Kotlin regressions for shared account tokens, API/JS precedence, URI key escaping, YAML templates and bounded recursive/expanded YAML. Execution awaits Android CI because this workstation has no JDK/SDK.
+- Native workflow now fetches full history for promotion and runs the original Rust suite sequentially after an upstream UDP fixture timed out during parallel tests.

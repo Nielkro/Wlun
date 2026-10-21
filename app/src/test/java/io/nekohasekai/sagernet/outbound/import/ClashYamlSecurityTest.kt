@@ -21,6 +21,17 @@ class ClashYamlSecurityTest {
         ClashYaml.proxies("!!java.util.Date {}")
     }
 
+    @Test(expected = YAMLException::class) fun recursiveValuesCannotOverflowTheJsonConverter() {
+        ClashYaml.proxies("proxies: [&loop {name: recursive, nested: *loop}]")
+    }
+
+    @Test(expected = YAMLException::class) fun smallAliasCountCannotCreateAnUnboundedJsonTree() {
+        val definitions=(0..18).joinToString("\n") { i ->
+            if(i==0) "n0: &n0 [0, 1]" else "n$i: &n$i [*n${i-1}, *n${i-1}]"
+        }
+        ClashYaml.proxies(definitions+"\nproxies: [{name: expanded, nested: *n18}]")
+    }
+
     @Test(expected = YAMLException::class) fun oversizedYamlIsRejected() {
         ClashYaml.proxies("proxies: []\npadding: " + "x".repeat(4 * 1024 * 1024))
     }

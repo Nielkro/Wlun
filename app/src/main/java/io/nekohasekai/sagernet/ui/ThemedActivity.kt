@@ -17,7 +17,7 @@ import app.qthrone.mobile.R
 import app.qthrone.mobile.utils.Theme
 import app.qthrone.mobile.widget.applyTopInset
 
-abstract class ThemedActivity : AppCompatActivity {
+abstract class ThemedActivity : AppCompatActivity, androidx.preference.PreferenceFragmentCompat.OnPreferenceDisplayDialogCallback {
     constructor() : super()
     constructor(contentLayoutId: Int) : super(contentLayoutId)
 
@@ -52,12 +52,18 @@ abstract class ThemedActivity : AppCompatActivity {
             }
             override fun onFragmentStarted(manager: androidx.fragment.app.FragmentManager, fragment: androidx.fragment.app.Fragment) {
                 val dialog=(fragment as? androidx.fragment.app.DialogFragment)?.dialog as? androidx.appcompat.app.AlertDialog ?: return
-                val colors=android.content.res.ColorStateList(arrayOf(intArrayOf(-android.R.attr.state_enabled),intArrayOf()),intArrayOf(MobilePalette.muted,MobilePalette.accent(this@ThemedActivity)))
-                for(which in listOf(-1,-2,-3)) dialog.getButton(which)?.setTextColor(colors)
+                MobileAlertDialogBuilder.style(dialog)
             }
         },true)
         uiMode = resources.configuration.uiMode
     }
+
+    override fun onPreferenceDisplayDialog(caller: androidx.preference.PreferenceFragmentCompat, pref: androidx.preference.Preference): Boolean =
+        when(pref) {
+            is androidx.preference.EditTextPreference -> { MobilePreferenceDialog.show(caller,pref); true }
+            is androidx.preference.ListPreference -> MobileSelector.show(this,pref)
+            else -> false
+        }
 
     /** Status bar icons in contrast to the toolbar colour (dark icons on light bars such as the white theme's). */
     private fun statusBarStyle(): SystemBarStyle {

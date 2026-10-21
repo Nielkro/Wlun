@@ -186,6 +186,7 @@
                 <data android:scheme="mierus" />
                 <data android:scheme="snell" />
                 <data android:scheme="wireguard" />
+                <data android:scheme="masque" />
                 <data android:scheme="wg" />
                 <data android:scheme="awg" />
                 <data android:scheme="tt" />
