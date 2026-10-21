@@ -65,7 +65,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         const val TYPE_BASIC = 0
         const val TYPE_SUBSCRIPTION = 1
 
-        private const val STATE_ADVANCED = "advancedExpanded"
         private const val AUTO_SELECTOR = "autoselector"
 
         private const val KEY_FRONT = "groupFrontProxyId"
@@ -74,8 +73,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         private const val KEY_SUBSCRIPTION = "groupSubscription"
         private const val KEY_SKIP_AUTO_UPDATE = "groupSkipAutoUpdate"
         private const val KEY_SHOW_INFO_CARD = "groupSubShowInfoCard"
-        private const val KEY_ADVANCED_TOGGLE = "groupAdvancedToggle"
-        private val ADVANCED_CATEGORIES = listOf("groupAdvancedRequest", "groupAdvancedUpdate", "groupAdvancedAfterUpdate")
         private const val KEY_USER_AGENT = "groupSubUserAgent"
         private const val KEY_SEND_HWID = "groupSubSendHwid"
         private const val KEY_HWID = "groupSubHwid"
@@ -104,11 +101,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         )
 
         private val HWID_KEYS = listOf(KEY_HWID, KEY_HWID_OS, KEY_HWID_OS_VERSION, KEY_HWID_MODEL)
-        private val OPTION_TEXT_KEYS = listOf(KEY_USER_AGENT) + HWID_KEYS
-        private val OPTION_BOOL_KEYS = listOf(
-            KEY_KEEP_WORKING, KEY_REMOVE_DUPLICATES, KEY_REMOVE_INSECURE, KEY_REMOVE_INVALID, KEY_URL_TEST,
-            KEY_REMOVE_UNAVAILABLE, KEY_HWID_COOKIE, KEY_INSECURE_REQUESTS,
-        )
     }
 
     object PasswordSummaryProvider : Preference.SummaryProvider<EditTextPreference> {
@@ -127,9 +119,9 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     private var editingId = 0L
     private var loaded = false
-    private var advancedExpanded = false
     private var originalSignature = ""
     private val settingsMode get() = intent.getBooleanExtra(EXTRA_SETTINGS, false)
+    override val isDialog get() = !settingsMode
 
     /** ResolveIdentity(nullptr), resolved while loading: the Advanced placeholders and the "Keep Default" state. */
     private var defaultUserAgent = ""
@@ -151,6 +143,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!settingsMode) createEditorSheet()
         setSupportActionBar(findViewById(R.id.toolbar))
         supportActionBar?.apply {
             setTitle(if (settingsMode) R.string.settings else R.string.grp_edit_group)
@@ -158,7 +151,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             setHomeAsUpIndicator(R.drawable.ic_navigation_close)
         }
         editingId = intent.getLongExtra(EXTRA_GROUP_ID, 0L)
-        advancedExpanded = savedInstanceState?.getBoolean(STATE_ADVANCED) ?: false
         onBackPressedDispatcher.addCallback(this) { close() }
 
         val fresh = savedInstanceState == null
@@ -202,7 +194,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean(STATE_ADVANCED, advancedExpanded)
         outState.putString("originalSignature", originalSignature)
     }
 
@@ -255,6 +246,48 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             .setNegativeButton(R.string.discard) { _, _ -> finish() }
             .setNeutralButton(android.R.string.cancel, null)
             .show()
+    }
+
+    private fun createEditorSheet() {
+        val content=findViewById<android.view.ViewGroup>(android.R.id.content)
+        val form=content.getChildAt(0) as android.widget.LinearLayout
+        content.removeView(form)
+        val density=resources.displayMetrics.density
+        val coordinator=androidx.coordinatorlayout.widget.CoordinatorLayout(this)
+        coordinator.setOnClickListener { close() }
+        form.isClickable=true
+        form.background=android.graphics.drawable.GradientDrawable().apply {
+            setColor(MobilePalette.background);cornerRadius=24*density
+        }
+        form.clipToOutline=true
+        form.findViewById<View>(R.id.settings).layoutParams=android.widget.LinearLayout.LayoutParams(-1,0,1f)
+        form.addView(View(this).apply {
+            background=android.graphics.drawable.GradientDrawable().apply { setColor(MobilePalette.muted);cornerRadius=2*density }
+        },0,android.widget.LinearLayout.LayoutParams((40*density).toInt(),(4*density).toInt()).apply {
+            gravity=android.view.Gravity.CENTER_HORIZONTAL;topMargin=(12*density).toInt();bottomMargin=(8*density).toInt()
+        })
+        val behavior=com.google.android.material.bottomsheet.BottomSheetBehavior<android.widget.LinearLayout>().apply {
+            isHideable=true;skipCollapsed=true;state=com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            addBottomSheetCallback(object: com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if(newState==com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HIDDEN) {
+                        close()
+                        state=com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+            })
+        }
+        coordinator.addView(form,androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(-1,(resources.displayMetrics.heightPixels*.88f).toInt()).apply {
+            gravity=android.view.Gravity.BOTTOM;this.behavior=behavior
+        })
+        setContentView(coordinator)
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+        window.setLayout(-1,-1)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.attributes=window.attributes.apply { dimAmount=.55f }
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        window.setWindowAnimations(R.style.MobileSheetWindowAnimation)
     }
 
     // ------------------------------------------------------------------------------------------------ load / save
@@ -498,11 +531,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             nameFilter(KEY_NAME_INCLUDE, R.string.grp_filter_include_empty)
             nameFilter(KEY_NAME_EXCLUDE, R.string.grp_filter_exclude_empty)
 
-            findPreference<Preference>(KEY_ADVANCED_TOGGLE)!!.setOnPreferenceClickListener {
-                host.advancedExpanded = !host.advancedExpanded
-                refreshState()
-                true
-            }
             refreshState()
         }
 
@@ -583,17 +611,21 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                 isVisible = editing
                 setTitle(if(subscription) R.string.group_title_url else R.string.grp_common)
             }
-            for (key in listOf(KEY_SKIP_AUTO_UPDATE, KEY_SHOW_INFO_CARD, KEY_ADVANCED_TOGGLE, KEY_AUTO_CLEAR, KEY_SORT_RULE))
+            for (key in listOf(KEY_AUTO_CLEAR, KEY_SORT_RULE, KEY_FRONT, KEY_LANDING))
                 findPreference<Preference>(key)?.isVisible = settings
-            findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription && settings
+            for (key in listOf(KEY_SKIP_AUTO_UPDATE, KEY_SHOW_INFO_CARD, KEY_KEEP_WORKING, KEY_REMOVE_DUPLICATES,
+                KEY_REMOVE_INSECURE, KEY_REMOVE_INVALID, KEY_URL_TEST, KEY_REMOVE_UNAVAILABLE))
+                findPreference<Preference>(key)?.isVisible = subscription && settings
+            findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.apply {
+                isVisible = settings
+                setTitle(if(subscription) R.string.grp_update else R.string.settings)
+            }
             findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription && settings
             findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription && settings
             findPreference<androidx.preference.SwitchPreference>("groupEncryptedSubscription")?.isChecked = ProviderLinks.isEncrypted(DataStore.subscriptionLink)
-            val expanded = subscription && settings && host.advancedExpanded
-            findPreference<PreferenceCategory>("groupAdvancedProxies")?.isVisible = (settings && host.advancedExpanded) || !subscription
-            for (key in ADVANCED_CATEGORIES) findPreference<PreferenceCategory>(key)?.isVisible = expanded
             val http = DataStore.subscriptionLink.trim().let { it.startsWith("https://", true) || it.startsWith("http://", true) || ProviderLinks.isProviderLink(it) }
-            findPreference<PreferenceCategory>("groupAdvancedRequest")?.isVisible = expanded && http
+            for(key in listOf(KEY_TIMEOUT, KEY_USER_AGENT, KEY_SEND_HWID)+HWID_KEYS)
+                findPreference<Preference>(key)?.isVisible = subscription && settings && http
 
             val mode = host.sendHwidMode()
             val sent = mode == SendHwid.ON || (mode == SendHwid.KEEP_DEFAULT && host.globalSendHwid)
@@ -602,14 +634,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             val filtersEnabled = !store.getBoolean(KEY_IGNORE_FILTERS, false)
             for ((key, _) in NAME_FILTERS) findPreference<Preference>(key)?.isEnabled = filtersEnabled
 
-            val set = OPTION_TEXT_KEYS.count { !store.getString(it).isNullOrBlank() } +
-                OPTION_BOOL_KEYS.count { store.getBoolean(it, false) } +
-                (if (mode != SendHwid.KEEP_DEFAULT) 1 else 0)
-            findPreference<Preference>(KEY_ADVANCED_TOGGLE)?.apply {
-                title = if (set > 0) getString(R.string.grp_advanced_count, set) else getString(R.string.grp_advanced)
-                summary = getString(if (host.advancedExpanded) R.string.grp_advanced_hide else R.string.grp_advanced_show)
-                setIcon(if (host.advancedExpanded) R.drawable.ic_baseline_expand_less_24 else R.drawable.ic_baseline_expand_more_24)
-            }
         }
     }
 }

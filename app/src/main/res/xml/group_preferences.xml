@@ -11,17 +11,9 @@
         <moe.matsuri.nb4a.ui.SimpleMenuPreference app:defaultValue="0" app:entries="@array/group_types" app:entryValues="@array/int_array_2" app:icon="@drawable/ic_baseline_layers_24" app:key="groupType" app:title="@string/grp_type" app:useSimpleSummaryProvider="true" />
         <app.qthrone.mobile.widget.LinkOrContentPreference app:icon="@drawable/ic_baseline_link_24" app:key="subscriptionLink" app:title="@string/grp_url" app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
-    <PreferenceCategory app:key="groupPresentation" app:title="@string/sub_settings_presentation">
-        <SwitchPreference app:key="groupSubAllowCollapse" app:defaultValue="true" app:title="@string/sub_settings_allow_collapse" />
-        <SwitchPreference app:icon="@drawable/baseline_delete_sweep_24" app:key="groupAutoClearUnavailable" app:title="@string/grp_auto_clear_unavailable" />
-        <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="groupServerSortRule" app:title="@string/sub_settings_sort_rule" app:entries="@array/sub_settings_sort_rules" app:entryValues="@array/int_array_3" app:defaultValue="0" app:useSimpleSummaryProvider="true" />
-    </PreferenceCategory>
     <PreferenceCategory app:key="groupSubscription" app:title="@string/grp_update">
         <SwitchPreference app:icon="@drawable/ic_baseline_update_24" app:key="groupSkipAutoUpdate" app:title="@string/grp_skip_auto_update" />
         <SwitchPreference app:defaultValue="true" app:icon="@drawable/ic_device_data_usage" app:key="groupSubShowInfoCard" app:summary="@string/grp_show_info_card_tip" app:title="@string/grp_show_info_card" />
-        <Preference app:icon="@drawable/ic_baseline_expand_more_24" app:key="groupAdvancedToggle" app:persistent="false" app:title="@string/grp_advanced" />
-    </PreferenceCategory>
-    <PreferenceCategory app:isPreferenceVisible="false" app:key="groupAdvancedRequest" app:title="@string/grp_request">
         <EditTextPreference app:key="groupSubRequestTimeout" app:title="@string/sub_settings_timeout" />
         <EditTextPreference app:dialogMessage="@string/grp_user_agent_tip" app:icon="@drawable/ic_baseline_http_24" app:key="groupSubUserAgent" app:title="@string/grp_user_agent" />
         <moe.matsuri.nb4a.ui.SimpleMenuPreference app:defaultValue="0" app:entryValues="@array/int_array_3" app:icon="@drawable/ic_baseline_fingerprint_24" app:key="groupSubSendHwid" app:title="@string/grp_send_hwid" />
@@ -29,24 +21,23 @@
         <EditTextPreference app:key="groupSubHwidOs" app:title="@string/grp_os" />
         <EditTextPreference app:key="groupSubHwidOsVersion" app:title="@string/grp_os_version" />
         <EditTextPreference app:key="groupSubHwidModel" app:title="@string/grp_device_model" />
-    </PreferenceCategory>
-    <PreferenceCategory app:isPreferenceVisible="false" app:key="groupAdvancedUpdate" app:title="@string/grp_update">
         <SwitchPreference app:key="groupSubKeepWorking" app:summary="@string/grp_keep_working_tip" app:title="@string/grp_keep_working" />
-    </PreferenceCategory>
-    <PreferenceCategory app:isPreferenceVisible="false" app:key="groupAdvancedAfterUpdate" app:title="@string/grp_after_each_update">
         <SwitchPreference app:key="groupSubRemoveDuplicates" app:title="@string/grp_remove_duplicates" />
         <SwitchPreference app:key="groupSubRemoveInsecure" app:title="@string/grp_remove_insecure" />
         <SwitchPreference app:key="groupSubRemoveInvalid" app:summary="@string/grp_remove_invalid_tip" app:title="@string/grp_remove_invalid" />
         <SwitchPreference app:key="groupSubUrlTest" app:summary="@string/grp_url_test_tip" app:title="@string/grp_url_test" />
         <SwitchPreference app:dependency="groupSubUrlTest" app:key="groupSubRemoveUnavailable" app:summary="@string/grp_url_test_only" app:title="@string/grp_remove_unavailable" />
+        <Preference app:icon="@drawable/ic_hardware_router" app:key="groupFrontProxyId" app:persistent="false" app:title="@string/grp_front_proxy" />
+        <Preference app:icon="@drawable/baseline_public_24" app:key="groupLandingProxyId" app:persistent="false" app:title="@string/grp_landing_proxy" />
+    </PreferenceCategory>
+    <PreferenceCategory app:key="groupPresentation" app:title="@string/sub_settings_presentation">
+        <SwitchPreference app:key="groupSubAllowCollapse" app:defaultValue="true" app:title="@string/sub_settings_allow_collapse" />
+        <SwitchPreference app:icon="@drawable/baseline_delete_sweep_24" app:key="groupAutoClearUnavailable" app:title="@string/grp_auto_clear_unavailable" />
+        <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="groupServerSortRule" app:title="@string/sub_settings_sort_rule" app:entries="@array/sub_settings_sort_rules" app:entryValues="@array/int_array_3" app:defaultValue="0" app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
     <PreferenceCategory app:key="groupFilter" app:title="@string/grp_filter">
         <SwitchPreference app:key="groupSubIgnoreNameFilters" app:title="@string/sub_settings_ignore_filters" app:summary="@string/sub_settings_ignore_filters_summary" />
         <EditTextPreference app:dialogMessage="@string/grp_filter_include_tip" app:icon="@drawable/ic_baseline_filter_list_24" app:key="groupSubNameInclude" app:title="@string/grp_filter_include" />
         <EditTextPreference app:dialogMessage="@string/grp_filter_exclude_tip" app:icon="@drawable/ic_baseline_block_24" app:key="groupSubNameExclude" app:title="@string/grp_filter_exclude" />
-    </PreferenceCategory>
-    <PreferenceCategory app:key="groupAdvancedProxies" app:title="@string/grp_advanced" app:isPreferenceVisible="false">
-        <Preference app:icon="@drawable/ic_hardware_router" app:key="groupFrontProxyId" app:persistent="false" app:title="@string/grp_front_proxy" />
-        <Preference app:icon="@drawable/baseline_public_24" app:key="groupLandingProxyId" app:persistent="false" app:title="@string/grp_landing_proxy" />
     </PreferenceCategory>
 </PreferenceScreen>

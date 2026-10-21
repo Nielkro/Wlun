@@ -9,6 +9,20 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CsqttRebirthTest {
+    @Test fun importsOriginalQrSubscriptionOnceAndCreatesFreshRuntimeSessions() {
+        val link=formatCsqttLink("192.0.2.1",32322,"examplePassword1",listOf("exampleHash123456789"))
+        val html="""<!DOCTYPE html><html><body><input readonly value="$link"><a href="$link">Connect</a></body></html>"""
+        val p=app.qthrone.mobile.outbound.`import`.ProfileImport.parse(html).outbounds.single() as Csqtt
+        assertEquals(32322,p.serverPort)
+        assertEquals(listOf("exampleHash123456789"),p.hashes)
+        val first=p.privateConfig(10808,9000,CarrierBridgeCredentials.fresh())
+        val second=p.privateConfig(10808,9000,CarrierBridgeCredentials.fresh())
+        assertTrue(first.integer("generation")>0)
+        assertEquals(32,first.string("salt").length)
+        assertNotEquals(first.string("salt"),second.string("salt"))
+        assertFalse(p.exportToJson().contains("salt"))
+        assertFalse(p.exportToJson().contains("generation"))
+    }
     @Test fun importsLegacyAndNewLinksThroughTheSameFactory() {
         val forms=listOf("csqtt://secret@192.0.2.1:46000", "csqtt://connect?v=2&host=192.0.2.1&peer=46000&password=secret",
             formatCsqttLink("192.0.2.1",46000,"secret"))

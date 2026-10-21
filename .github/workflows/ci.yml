@@ -13,6 +13,22 @@ permissions:
   contents: read
   actions: read
 jobs:
+  sstp-tests:
+    name: SSTP protocol and SOCKS security
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.0'
+          cache-dependency-path: carriers/sstp/go.sum
+      - name: Test SSTP with the race detector
+        working-directory: carriers/sstp
+        run: go test -race -count=1 ./...
+      - name: Vet SSTP
+        working-directory: carriers/sstp
+        run: go vet ./...
   build:
     name: Tests and APK
     runs-on: ubuntu-latest

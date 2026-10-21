@@ -22,7 +22,7 @@ internal class ServerUi(private val context: Context) {
 
     fun column(padding: Int = 0) = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(padding), dp(padding), dp(padding), dp(padding)) }
 
-    fun card(radius: Int = 20) = column(18).apply {
+    fun card(radius: Int = 5) = column(16).apply {
         background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(radius).toFloat() }
     }
 
@@ -42,10 +42,10 @@ internal class ServerUi(private val context: Context) {
 
     /** An action tile: icon, title, subtitle and an arrow, like the original server screen. */
     fun tile(title: String, subtitle: String?, icon: Int, click: () -> Unit) = LinearLayout(context).apply {
-        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(18), dp(16), dp(14), dp(16)); minimumHeight = dp(72)
-        background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(20).toFloat() }
+        gravity = Gravity.CENTER_VERTICAL; setPadding(dp(16), dp(14), dp(16), dp(14)); minimumHeight = dp(56)
+        background = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat() }
         isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)
-        addView(badge(icon), LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginEnd = dp(16) })
+        addView(badge(icon), LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(16) })
         addView(column().apply {
             addView(text(title, 17f, bold = true))
             if (subtitle != null) addView(text(subtitle, 13f, MobilePalette.muted).apply { setPadding(0, dp(3), 0, 0) })
@@ -57,17 +57,16 @@ internal class ServerUi(private val context: Context) {
 
     fun badge(icon: Int) = ImageView(context).apply {
         setImageResource(icon); imageTintList = ColorStateList.valueOf(accent); scaleType = ImageView.ScaleType.CENTER_INSIDE
-        setPadding(dp(10), dp(10), dp(10), dp(10))
-        background = GradientDrawable().apply { setColor(ColorUtils.setAlphaComponent(accent, 46)); cornerRadius = dp(14).toFloat() }
     }
 
     fun button(label: String, primary: Boolean = false, danger: Boolean = false, click: () -> Unit) = TextView(context).apply {
-        text = label; gravity = Gravity.CENTER; textSize = 15f; minimumHeight = dp(48)
+        text = label; gravity = Gravity.CENTER; textSize = 17f; minimumHeight = dp(56)
+        setTypeface(null, Typeface.BOLD)
         setPadding(dp(16), dp(12), dp(16), dp(12))
         val color = if (danger) android.graphics.Color.rgb(232, 120, 112) else accent
         setTextColor(if (primary) android.graphics.Color.BLACK else color)
         background = GradientDrawable().apply {
-            cornerRadius = dp(16).toFloat()
+            cornerRadius = dp(5).toFloat()
             if (primary) setColor(color) else { setColor(MobilePalette.surface); setStroke(dp(1), ColorUtils.setAlphaComponent(color, 150)) }
         }
         isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)

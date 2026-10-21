@@ -807,8 +807,8 @@ class MobileHomeFragment : ToolbarFragment() {
         body.addView(View(requireContext()).apply { background=GradientDrawable().apply { setColor(muted); cornerRadius=dp(2).toFloat() } },LinearLayout.LayoutParams(dp(40),dp(4)).apply { gravity=Gravity.CENTER_HORIZONTAL; bottomMargin=dp(20) })
         body.addView(text(group.displayName(),18f).apply { setTypeface(null,Typeface.BOLD) })
         fun entry(label:String,icon:Int,action:()->Unit) {
-            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; minimumHeight=dp(56);background=tile(); isFocusable=true; contentDescription=label; setOnClickListener { dialog.dismiss();action() } }
-            row.addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(muted) },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginStart=dp(14) })
+            val row=LinearLayout(requireContext()).apply { gravity=Gravity.CENTER_VERTICAL; minimumHeight=dp(56);background=tile(); isFocusable=true; contentDescription=label; setOnClickListener { dialog.dismiss();action() }; MobileFeedback.apply(this) }
+            row.addView(ImageView(requireContext()).apply { setImageResource(icon); imageTintList=android.content.res.ColorStateList.valueOf(blue) },LinearLayout.LayoutParams(dp(26),dp(26)).apply { marginStart=dp(14) })
             row.addView(text(label,17f).apply { gravity=Gravity.CENTER_VERTICAL; setTypeface(null,Typeface.BOLD) },LinearLayout.LayoutParams(-1,-2))
             body.addView(row,LinearLayout.LayoutParams(-1,-2).apply { topMargin=dp(8) })
         }
@@ -906,7 +906,7 @@ class MobileHomeFragment : ToolbarFragment() {
             addView(protocols,ViewGroup.LayoutParams(-1,-2))
         },LinearLayout.LayoutParams(-1,0,1f))
         val nativeTypes = listOf("qwdtt" to "qWDTT", "csqtt" to "CSQTT", "wdttplus" to "WDTT Plus", "openflux" to "OpenFlux", "olcrtc" to "olcRTC",
-            "masterdns" to "MasterDNS", "vaydns" to "VayDNS", "dnstt" to "DNSTT", "slipstream" to "SlipStream", "s3bypass" to "S3 Bypass")
+            "masterdns" to "MasterDNS", "vaydns" to "VayDNS", "dnstt" to "DNSTT", "slipstream" to "SlipStream", "s3bypass" to "S3 Bypass", "sstp" to "SSTP")
         // Keep the same editors and localized labels as the original manual-entry menu.
         val originalTypes = listOf(
             "autoselector" to R.string.action_auto_selector,

@@ -1,0 +1,6 @@
+<resources>
+    <style name="MobileSheetWindowAnimation">
+        <item name="android:windowEnterAnimation">@anim/mobile_sheet_enter</item>
+        <item name="android:windowExitAnimation">@anim/mobile_sheet_exit</item>
+    </style>
+</resources>

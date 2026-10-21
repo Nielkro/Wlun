@@ -22,7 +22,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
-class DeployActivity : ThemedActivity() {
+class DeployActivity : ServerScreenActivity() {
     lateinit var toolbar: Toolbar
     class EditorState : androidx.lifecycle.ViewModel() { var server: DeployServer? = null;var baseline: String? = null }
     private val editorState by lazy { androidx.lifecycle.ViewModelProvider(this)[EditorState::class.java] }
@@ -50,22 +50,12 @@ class DeployActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(MobilePalette.background))
-        window.setWindowAnimations(0)
-        if(android.os.Build.VERSION.SDK_INT>=34) {
-            overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_OPEN,0,0)
-            overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_CLOSE,0,0)
-        }
         shownConfig=savedInstanceState?.getString("shownConfig").orEmpty()
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(MobilePalette.background) }
         toolbar=Toolbar(this).apply { setTitleTextColor(MobilePalette.text);setNavigationIcon(R.drawable.baseline_arrow_back_24);setNavigationOnClickListener { back() } }
         val content=FrameLayout(this).apply { id=android.R.id.content+3 }
-        content.viewTreeObserver.addOnPreDrawListener(object: android.view.ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                if(screen()?.view == null) return false
-                content.viewTreeObserver.removeOnPreDrawListener(this)
-                return true
-            }
-        })
+        val loading=ProgressBar(this)
+        content.addView(loading,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.CENTER))
         root.addView(toolbar);root.addView(content,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view,insets -> val b=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(b.left,b.top,b.right,b.bottom);insets }
         val id=savedInstanceState?.getString("server") ?: intent.getStringExtra("editServer")
@@ -79,6 +69,7 @@ class DeployActivity : ThemedActivity() {
                     finish();return@launch
                 }
             } else if (server == null && intent.getBooleanExtra("directEditor",false)) server = DeployServer.create(kind)
+            content.removeView(loading)
             if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commitNow()
             else screen()?.build()
         }

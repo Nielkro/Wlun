@@ -89,6 +89,13 @@ object ProfileImport {
             val text = Scan.trim(raw)
             if (text.isEmpty()) return
 
+            // CSQTT's /sub endpoint serves the same QR landing page to apps and browsers.
+            if (text.startsWith("<!doctype html", true) || text.startsWith("<html", true)) {
+                val links = CSQTT_HTML_LINK.findAll(text).map { it.groupValues[1].replace("&amp;", "&") }.distinct()
+                for (item in links) link(item, depth + 1, overrideName)
+                return
+            }
+
             if (ProviderLinks.isProviderLink(text)) {
                 val link = runCatching { ProviderLinks.decodeChecked(text) }.getOrNull()
                 if (link == null) log("Cannot decode encrypted provider configuration")
@@ -198,7 +205,7 @@ object ProfileImport {
                     return
                 }
                 val type=doc.string("type").lowercase()
-                if (type in listOf("qwdtt","wdtt","csqtt","wdttplus","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass",
+                if (type in listOf("qwdtt","wdtt","csqtt","wdttplus","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass","sstp",
                         "chain","autoselector","custom","xrayvless")) {
                     val outbound=OutboundFactory.newByType(type)
                     if(outbound.parseFromJson(doc)) produce(outbound) else log("Invalid $type profile")
@@ -603,6 +610,7 @@ object ProfileImport {
     }
 
     private val OPENCONNECT_CLI = Regex("""(?:^|\s)--protocol[= ](?:anyconnect|nc|gp|pulse|f5|fortinet)\b""")
+    private val CSQTT_HTML_LINK = Regex("""<(?:a|input)\b[^>]*?\b(?:href|value)\s*=\s*["'](csqtt://[^"'<>\s]+)["'][^>]*>""", RegexOption.IGNORE_CASE)
     private val OPENCONNECT_FILE = Regex("""[ \t]*protocol[ \t]*=[ \t]*(?:anyconnect|nc|gp|pulse|f5|fortinet)[ \t]*""")
 
     /** hasWireGuardSections (SubscriptionParser.cpp:103-106): shared by document and vpnLink so both agree on what a WireGuard conf is. */

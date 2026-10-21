@@ -7,7 +7,7 @@ import android.graphics.drawable.RippleDrawable
 import android.view.View
 
 object MobileFeedback {
-    fun apply(view: View, radius: Float = 16f, circle: Boolean = false, white: Boolean = false) {
+    fun apply(view: View, radius: Float = 5f, circle: Boolean = false, white: Boolean = false) {
         if(view.background is RippleDrawable) return
         val mask=GradientDrawable().apply {
             setColor(Color.WHITE)

@@ -21,7 +21,7 @@ object MobileScreenMotion {
             playTogether(
                 ObjectAnimator.ofFloat(view, View.TRANSLATION_X, from, 0f),
                 ObjectAnimator.ofFloat(view, View.ALPHA, if (incoming) 0f else 1f, if (incoming) 1f else 0f))
-            duration = if (incoming) 180 else 90
+            duration = 220
             interpolator = android.view.animation.DecelerateInterpolator(1.5f)
         }
     }

@@ -2,10 +2,17 @@ name: qThroneMobile transports
 run-name: qThroneMobile transports
 on:
   workflow_dispatch:
+    inputs:
+      client:
+        description: Transport clients to build
+        type: choice
+        options: [all, sstp]
+        default: all
 permissions:
   contents: read
 jobs:
   clients:
+    if: inputs.client != 'sstp'
     runs-on: ubuntu-22.04
     timeout-minutes: 45
     strategy:
@@ -31,4 +38,29 @@ jobs:
         with:
           name: qThrone-carriers-${{ matrix.abi }}
           path: deployment/carriers/${{ matrix.abi }}/
+          if-no-files-found: error
+  sstp:
+    if: inputs.client == 'sstp'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.0'
+          cache-dependency-path: carriers/sstp/go.sum
+      - name: Install NDK
+        run: |
+          echo y | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'ndk;28.2.13676358'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+      - name: Build SSTP from reviewed source
+        run: bash scripts/build_sstp.sh '${{ matrix.abi }}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: qThrone-SSTP-${{ matrix.abi }}
+          path: qthrone-sstp-*.tar.gz
           if-no-files-found: error

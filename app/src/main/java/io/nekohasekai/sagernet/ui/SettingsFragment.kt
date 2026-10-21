@@ -78,16 +78,13 @@ class SettingsFragment : ToolbarFragment(R.layout.layout_config_settings),
         fragment.arguments = Bundle(extras).apply {
             putCharSequence(SettingsScreenFragment.ARG_TITLE, title)
         }
-        val current = childFragmentManager.findFragmentById(R.id.settings)
-        val relayTransition = fragment is VkRelayActivity.Screen || fragment is DeployListFragment ||
-            current is VkRelayActivity.Screen || current is DeployListFragment
         childFragmentManager.beginTransaction()
             .setReorderingAllowed(true)
             .setCustomAnimations(
-                if (relayTransition) 0 else R.anim.settings_enter,
-                if (relayTransition) 0 else R.anim.settings_exit,
-                if (relayTransition) 0 else R.anim.settings_pop_enter,
-                if (relayTransition) 0 else R.anim.settings_pop_exit)
+                R.anim.settings_enter,
+                R.anim.settings_exit,
+                R.anim.settings_pop_enter,
+                R.anim.settings_pop_exit)
             .replace(R.id.settings, fragment)
             .addToBackStack(null)
             .commit()

@@ -89,12 +89,16 @@ class Csqtt:Qwdtt() {
         require(workers == normalizeWorkers(workers) && obfs in listOf("audio","video","unified"))
         require(hashSource != "auto_js" || vkAccessToken.isNotEmpty()) { "Укажите VK access token или привяжите аккаунт VK" }
         return exportToJson().also {
+            // Like TunnelService in 2.5.0: every launch owns a new server session.
+            it["generation"]=generation.updateAndGet { previous -> maxOf(previous+1,System.currentTimeMillis()/1000) }
+            it["salt"]=java.util.UUID.randomUUID().toString().replace("-", "")
             it["backend"]="csqtt";it["peer"]=Hosts.displayAddress(server,serverPort)
             it["listen"]=Hosts.displayAddress("127.0.0.1",udpPort);it["socks"]=Hosts.displayAddress("127.0.0.1",port)
             it["socks_user"]=credentials.username;it["socks_pass"]=credentials.password
         }
     }
     companion object {
+        private val generation=java.util.concurrent.atomic.AtomicLong()
         fun normalizeWorkers(requested: Int) = if(requested <= 5) 5 else maxOf(5, requested.coerceIn(5,100)/10*10)
     }
 }
