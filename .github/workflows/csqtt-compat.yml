@@ -56,6 +56,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
+          fetch-depth: 0
       - name: Require unchanged development head
         run: |
           test "$(git ls-remote origin refs/heads/dev | cut -f1)" = "$GITHUB_SHA"
