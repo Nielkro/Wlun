@@ -610,7 +610,7 @@ object ProfileImport {
     }
 
     private val OPENCONNECT_CLI = Regex("""(?:^|\s)--protocol[= ](?:anyconnect|nc|gp|pulse|f5|fortinet)\b""")
-    private val CSQTT_HTML_LINK = Regex("""<(?:a|input)\b[^>]*?\b(?:href|value)\s*=\s*["'](csqtt://[^"'<>\s]+)["'][^>]*>""", RegexOption.IGNORE_CASE)
+    private val CSQTT_HTML_LINK = Regex("""<(?:a|input)\b[^<>]*?\b(?:href|value)\s*=\s*["'](csqtt://[^"'<>\s]+)["'][^<>]*>""", RegexOption.IGNORE_CASE)
     private val OPENCONNECT_FILE = Regex("""[ \t]*protocol[ \t]*=[ \t]*(?:anyconnect|nc|gp|pulse|f5|fortinet)[ \t]*""")
 
     /** hasWireGuardSections (SubscriptionParser.cpp:103-106): shared by document and vpnLink so both agree on what a WireGuard conf is. */

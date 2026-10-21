@@ -9,6 +9,10 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CsqttRebirthTest {
+    @Test(timeout=2000) fun brokenHtmlCannotMakeLinkExtractionScanAcrossTags() {
+        val html="<!DOCTYPE html><html>"+"<a ".repeat(30_000)+"x></html>"
+        assertTrue(app.qthrone.mobile.outbound.`import`.ProfileImport.parse(html).outbounds.isEmpty())
+    }
     @Test fun importsOriginalQrSubscriptionOnceAndCreatesFreshRuntimeSessions() {
         val link=formatCsqttLink("192.0.2.1",32322,"examplePassword1",listOf("exampleHash123456789"))
         val html="""<!DOCTYPE html><html><body><input readonly value="$link"><a href="$link">Connect</a></body></html>"""
