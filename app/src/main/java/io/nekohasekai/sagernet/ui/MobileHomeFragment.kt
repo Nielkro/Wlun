@@ -348,7 +348,6 @@ class MobileHomeFragment : ToolbarFragment() {
                     minHeight = dp(48)
                     maxLines = 1
                     ellipsize = android.text.TextUtils.TruncateAt.END
-                    setPadding(dp(8), dp(6), dp(8), dp(6))
                     isFocusable = true
                     // Compact artwork inside a full 48dp touch target, next to Settings.
                     background = android.graphics.drawable.InsetDrawable(tile(selected = true), 0, dp(7), 0, dp(7))
@@ -358,6 +357,8 @@ class MobileHomeFragment : ToolbarFragment() {
                     compoundDrawablePadding = dp(5)
                     androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(this, android.content.res.ColorStateList.valueOf(blue))
                     MobileFeedback.apply(this, radius = 5f)
+                    // Set this after the background, whose inset padding replaces view padding.
+                    setPadding(dp(12), dp(6), dp(12), dp(6))
                 }
                 val updateSlot = FrameLayout(requireContext()).apply {
                     addView(updateBanner, FrameLayout.LayoutParams(-2, dp(48), Gravity.START or Gravity.CENTER_VERTICAL))

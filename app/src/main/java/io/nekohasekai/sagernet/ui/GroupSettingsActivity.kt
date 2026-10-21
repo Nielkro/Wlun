@@ -158,7 +158,13 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (!settingsMode) createEditorSheet()
-        if (!settingsMode) findViewById<View>(R.id.appbar).setBackgroundColor(MobilePalette.background)
+        if (!settingsMode) findViewById<View>(R.id.appbar).apply {
+            // This toolbar is inside the sheet, below the status bar.
+            ViewCompat.setOnApplyWindowInsetsListener(this, null)
+            setPadding(0, 0, 0, 0)
+            layoutParams = layoutParams.apply { height = (56 * resources.displayMetrics.density).toInt() }
+            setBackgroundColor(MobilePalette.background)
+        }
         setSupportActionBar(findViewById(R.id.toolbar))
         findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar).apply {
             setSubtitleTextColor(MobilePalette.muted)
@@ -289,6 +295,7 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
         form.visibility=View.INVISIBLE
         content.removeView(form)
         val density=resources.displayMetrics.density
+        form.setPadding(0,(12*density).toInt(),0,0)
         val coordinator=androidx.coordinatorlayout.widget.CoordinatorLayout(this)
         coordinator.setOnClickListener { close() }
         form.isClickable=true
@@ -585,6 +592,8 @@ open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_s
             super.onViewCreated(view, savedInstanceState)
             MobileSettingsStyle.apply(this, view)
             listView.layoutManager = FixedLinearLayoutManager(listView)
+            // The list scrolls itself; only the handle may move the editor sheet.
+            if (!host.settingsMode) listView.isNestedScrollingEnabled = false
             ViewCompat.setOnApplyWindowInsetsListener(listView, ListListener)
         }
 
