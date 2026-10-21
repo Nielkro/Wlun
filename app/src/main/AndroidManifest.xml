@@ -289,6 +289,10 @@
             android:name="app.qthrone.mobile.ui.GroupSettingsActivity"
             android:configChanges="uiMode" />
         <activity
+            android:name="app.qthrone.mobile.ui.SubscriptionEditorActivity"
+            android:theme="@style/Theme.SagerNet.SubscriptionEditor"
+            android:configChanges="uiMode" />
+        <activity
             android:name="app.qthrone.mobile.ui.AppListActivity"
             android:configChanges="uiMode" />
         <activity

@@ -49,6 +49,8 @@ object Theme {
         context.setTheme(getDialogTheme())
         applyAmoledOverlay(context)
         context.theme.applyStyle(R.style.MobileControls, true)
+        if(context is app.qthrone.mobile.ui.SubscriptionEditorActivity)
+            context.theme.applyStyle(R.style.MobileSubscriptionEditorWindow, true)
     }
 
     // Night mode with AMOLED black: the black overlay goes on top of the theme

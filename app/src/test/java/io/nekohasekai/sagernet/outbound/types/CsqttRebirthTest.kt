@@ -9,6 +9,27 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CsqttRebirthTest {
+    @Test fun original219LinksKeepAllSixHashesAndPasswordEscapes() {
+        val hashes=(1..6).map { "0123456789abcdef-hash$it" }
+        val link="csqtt://connect?v=2&host=198.51.100.19&peer=46000&password=old%2Bpass%40word&hashes="+hashes.joinToString("+")
+        val profile=OutboundFactory.parseLink(link) as Csqtt
+        assertEquals("old+pass@word",profile.password)
+        assertEquals(hashes,profile.hashes)
+        val html="<!DOCTYPE html><html><input value='$link'><a href='$link'>Connect</a></html>"
+        val imported=app.qthrone.mobile.outbound.`import`.ProfileImport.parse(html).outbounds.single() as Csqtt
+        assertEquals(profile.exportIdentity().toCompact(),imported.exportIdentity().toCompact())
+    }
+
+    @Test fun preliminary250AesGcmFormatAndHtmlSubscriptionsRemainCompatible() {
+        // Independent AES-GCM vector using the key seed and nonce layout found in the supplied 2.5.0 APK.
+        val link="csqtt://AAECAwQFBgcICQoLnWJ4sGLhXEU4Lx5kmNv4OgG3nIAwttrQ9J8P4vf_mYSVcA21sCLBNlFIYwCVOGm4NBpIOEwOveKOn3k9OmGrnU1kpW32LX1P0DYwJIoD72fH_zBQH5eZPx1htJPKCYwG_P6KzrnibBCrY2UYCouGNKq--cwoSbO-Zv1WI6UBk5mQ98ct_g"
+        val html="<!doctype html><html><input readonly value=\"$link\"><a href=\"$link\">Connect</a></html>"
+        val profile=app.qthrone.mobile.outbound.`import`.ProfileImport.parse(html).outbounds.single() as Csqtt
+        assertEquals("198.51.100.25",profile.server)
+        assertEquals("Pre250-Secret",profile.password)
+        assertEquals(listOf("0123456789abcdef123456","fedcba9876543210abcdef"),profile.hashes)
+    }
+
     @Test(timeout=2000) fun brokenHtmlCannotMakeLinkExtractionScanAcrossTags() {
         val html="<!DOCTYPE html><html>"+"<a ".repeat(30_000)+"x></html>"
         assertTrue(app.qthrone.mobile.outbound.`import`.ProfileImport.parse(html).outbounds.isEmpty())

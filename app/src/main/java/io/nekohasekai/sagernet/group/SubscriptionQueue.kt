@@ -166,7 +166,7 @@ object SubscriptionQueue {
      * host when blank) that skips automatic updates unless [autoUpdate]; its first refresh is queued without the
      * change window. Returns the group id, -1 on failure.
      */
-    fun subscribeUrl(url: String, name: String, autoUpdate: Boolean): Long {
+    fun subscribeUrl(url: String, name: String, autoUpdate: Boolean, allowInsecureRequests: Boolean = false): Long {
         val wrapped = try { ProviderLinks.decodeChecked(url) } catch (_: Exception) { return -1L }
         val content = wrapped?.data ?: url.trim()
         if (!SubscriptionCrypto.isHttpUrl(content) && (wrapped != null || !content.startsWith("content://", true))) return -1L
@@ -178,7 +178,8 @@ object SubscriptionQueue {
                         // Retain the original encrypted wire format for sharing and backup, never its decoded URL.
                         url = if (wrapped?.encrypted == true) url.trim() else content,
                         skipAutoUpdate = !autoUpdate,
-                        subOptions = SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty()),
+                        subOptions = SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty(),
+                            allowInsecureRequests = allowInsecureRequests),
                     )
                 )
             }

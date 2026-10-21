@@ -6,6 +6,7 @@ import app.qthrone.mobile.route.ProviderRouting
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.FragmentActivity
@@ -71,7 +72,7 @@ object SubscribeFlows {
         if (content.startsWith("http://") || content.startsWith("https://")) {
             val uri=Uri.parse(content)
             if(uri.userInfo!=null) importInto(activity,content,gid)
-            else subscribe(activity,uri.buildUpon().fragment(null).build().toString(),uri.fragment.orEmpty().ifBlank { hostOf(content) },true)
+            else addSubscription(activity,uri.buildUpon().fragment(null).build().toString(),uri.fragment.orEmpty().ifBlank { hostOf(content) })
             return
         }
         importInto(activity, content, gid)
@@ -120,11 +121,15 @@ object SubscribeFlows {
         binding.message.text = activity.getString(R.string.grp_add_subscription_prompt, groupName, displayed)
         binding.autoUpdate.setText(R.string.grp_auto_update)
         binding.autoUpdate.isChecked = true
+        val resolved = decoded?.data ?: ProviderLinks.subscription(link)?.data ?: link
+        binding.allowInsecureRequests.visibility = if(resolved.startsWith("https://",true)) View.VISIBLE else View.GONE
+        binding.allowInsecureRequests.text = activity.getString(R.string.sub_settings_insecure_requests) + "\n" +
+            activity.getString(R.string.sub_settings_insecure_requests_summary)
         MaterialAlertDialogBuilder(activity)
             .setTitle(R.string.grp_add_subscription)
             .setView(binding.root)
             .setPositiveButton(android.R.string.ok) { _, _ ->
-                subscribe(activity, link, groupName, binding.autoUpdate.isChecked)
+                subscribe(activity, link, groupName, binding.autoUpdate.isChecked, binding.allowInsecureRequests.isChecked)
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
@@ -258,11 +263,11 @@ object SubscribeFlows {
         }
     }
 
-    private fun subscribe(activity: FragmentActivity, url: String, name: String, autoUpdate: Boolean) {
+    private fun subscribe(activity: FragmentActivity, url: String, name: String, autoUpdate: Boolean, allowInsecureRequests: Boolean = false) {
         (activity as? MainActivity)?.displayFragmentWithId(R.id.nav_mobile_home)
         runOnDefaultDispatcher {
             try {
-                if (SubscriptionClient.subscribeUrl(url, name, autoUpdate) <= 0) {
+                if (SubscriptionClient.subscribeUrl(url, name, autoUpdate, allowInsecureRequests) <= 0) {
                     onMainDispatcher { notify(activity, activity.getString(R.string.provider_crypto_import_error)) }
                 }
             } catch (e: Exception) {

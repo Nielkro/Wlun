@@ -830,7 +830,7 @@ class MobileHomeFragment : ToolbarFragment() {
         dialog.setContentView(androidx.core.widget.NestedScrollView(requireContext()).apply { addView(body) });dialog.show()
     }
     private fun editGroup(group: ProxyGroup, settings: Boolean) {
-        startActivity(Intent(requireContext(), GroupSettingsActivity::class.java)
+        startActivity(Intent(requireContext(), if(settings) GroupSettingsActivity::class.java else SubscriptionEditorActivity::class.java)
             .putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, group.id)
             .putExtra(GroupSettingsActivity.EXTRA_SETTINGS, settings))
     }
@@ -859,9 +859,15 @@ class MobileHomeFragment : ToolbarFragment() {
         val name=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_name);setTextColor(foregroundColor);setHintTextColor(muted);isSingleLine=true }
         val url=EditText(requireContext()).apply { hint=getString(R.string.qmobile_subscription_url);setTextColor(foregroundColor);setHintTextColor(muted);isSingleLine=true;inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI }
         body.addView(name);body.addView(url)
+        val insecure=com.google.android.material.switchmaterial.SwitchMaterial(requireContext()).apply {
+            text=getString(R.string.sub_settings_insecure_requests);textSize=14f;setTextColor(foregroundColor);minHeight=dp(48)
+        }
+        body.addView(insecure)
+        body.addView(text(getString(R.string.sub_settings_insecure_requests_summary),13f,muted))
         body.addView(action(getString(R.string.qmobile_save)) {
             val address=url.text.toString().trim()
             val requestedName=name.text.toString().trim()
+            val allowInsecure=insecure.isChecked
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val wrapped=withContext(Dispatchers.IO) { app.qthrone.mobile.group.ProviderLinks.decodeChecked(address) }
@@ -869,7 +875,7 @@ class MobileHomeFragment : ToolbarFragment() {
                     if(parsed.scheme?.lowercase() !in listOf("https","http") || parsed.host.isNullOrBlank() || parsed.userInfo!=null) {
                         url.error=getString(R.string.qmobile_subscription_url);return@launch
                     }
-                    val created=SubscriptionClient.subscribeUrl(address,requestedName.ifBlank { wrapped?.name.orEmpty().ifBlank { parsed.host.orEmpty() } },true)
+                    val created=SubscriptionClient.subscribeUrl(address,requestedName.ifBlank { wrapped?.name.orEmpty().ifBlank { parsed.host.orEmpty() } },true,allowInsecure)
                     if(created<=0) { url.error=getString(R.string.provider_crypto_import_error);return@launch }
                     sheet.dismiss()
                 } catch(error: kotlinx.coroutines.CancellationException) {

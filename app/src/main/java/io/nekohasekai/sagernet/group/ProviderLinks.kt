@@ -17,6 +17,11 @@ object ProviderLinks {
         var name = ""
         var format = ""
         repeat(8) {
+            websitePayload(content)?.let {
+                content = it
+                if(provider.isEmpty()) provider = "SSConnect"
+                return@repeat
+            }
             val match = pattern.matchEntire(content)
                 ?: return if (provider.isEmpty()) null else Link(provider, content, encrypted, name, format)
             require(content.length <= SubscriptionCrypto.MAX_LINK_CHARS) { "Encrypted subscription is too large" }
@@ -51,6 +56,8 @@ object ProviderLinks {
         var content = text.trim()
         if (content.length > SubscriptionCrypto.MAX_LINK_CHARS) return false
         repeat(8) {
+            val website = runCatching { websitePayload(content) }.getOrNull()
+            if(website != null) { content = website; return@repeat }
             val match = pattern.matchEntire(content) ?: return false
             val action = match.groupValues[2].lowercase()
             if (action.startsWith("crypt")) return true
@@ -61,7 +68,20 @@ object ProviderLinks {
         return false
     }
 
-    fun isProviderLink(text: String): Boolean = pattern.matches(text.trim())
+    fun isProviderLink(text: String): Boolean =
+        pattern.matches(text.trim()) || runCatching { websitePayload(text.trim()) != null }.getOrDefault(false)
+
+    private fun websitePayload(text: String): String? {
+        if(!text.startsWith("https://",true)) return null
+        val uri = runCatching { java.net.URI(text) }.getOrNull() ?: return null
+        if(uri.host?.lowercase() !in listOf("ssconnect.app","www.ssconnect.app") ||
+            uri.rawUserInfo != null || uri.port !in listOf(-1,443)) return null
+        require(text.length <= SubscriptionCrypto.MAX_LINK_CHARS) { "Subscription link is too large" }
+        val values = uri.rawQuery.orEmpty().split('&').filter { it.substringBefore('=') == "q" }
+        require(values.size == 1 && values.single().contains('=')) { "Invalid subscription wrapper" }
+        return URLDecoder.decode(values.single().substringAfter('=').replace("+","%2B"),"UTF-8")
+            .trim().also { require(it.isNotEmpty()) { "Empty subscription wrapper" } }
+    }
 
     fun subscription(text: String): Link? = decode(text)?.takeIf { SubscriptionCrypto.isHttpUrl(it.data) }
 }

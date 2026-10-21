@@ -13,7 +13,7 @@ interface ICoreService {
   // Subscriptions (desktop GroupUpdater queue).
   void refreshGroup(long gid, boolean showDiff);
   void refreshAll(boolean onlyAllowed);
-  long subscribeUrl(String url, String name, boolean autoUpdate);
+  long subscribeUrl(String url, String name, boolean autoUpdate, boolean allowInsecureRequests);
   void importUrl(String url, long gid);
   void importFile(String path, long gid);
   String groupAction(long gid, String action);

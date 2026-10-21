@@ -51,7 +51,7 @@ import moe.matsuri.nb4a.ui.SimpleMenuPreference
  * Subscription identity/options editor and a separate settings screen share the same cached document.
  * Hidden fields stay intact when either screen saves; creating a group does not start a refresh.
  */
-class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
+open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
 
     companion object {
         const val EXTRA_GROUP_ID = "id"
