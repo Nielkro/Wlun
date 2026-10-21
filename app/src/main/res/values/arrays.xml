@@ -642,4 +642,13 @@
         <item>@string/warp_http3_only</item>
         <item>HTTP/2</item>
     </string-array>
+
+    <string-array name="url_test_mode_entries">
+        <item>@string/url_test_mode_cold</item>
+        <item>@string/url_test_mode_keepalive</item>
+    </string-array>
+    <string-array name="url_test_mode_values" translatable="false">
+        <item>cold</item>
+        <item>keepalive</item>
+    </string-array>
 </resources>

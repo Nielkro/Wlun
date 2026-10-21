@@ -235,6 +235,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
 
     // testing
     var testUrl by SettingsRegistry.TEST_URL
+    var urlTestMode by SettingsRegistry.URL_TEST_MODE
     var urlTestTimeoutMs by SettingsRegistry.URL_TEST_TIMEOUT_MS
     var testConcurrent by SettingsRegistry.TEST_CONCURRENT
     var directTestUrl by SettingsRegistry.DIRECT_TEST_URL

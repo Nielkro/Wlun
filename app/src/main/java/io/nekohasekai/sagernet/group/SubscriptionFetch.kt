@@ -43,7 +43,11 @@ object SubscriptionFetch {
             return Result(body, SubUserInfo(), response.error)
         }
         val body = String(response.data, Charsets.UTF_8)
-        return Result(body, SubscriptionMetadata.read(response::header, body), null, response.header("routing"))
+        val routingHeader = response.header("routing")
+            .ifBlank { response.header("x-routing") }
+            .ifBlank { response.header("happ-routing") }
+            .trim()
+        return Result(body, SubscriptionMetadata.read(response::header, body), null, routingHeader)
     }
 
     private fun readContent(url: String): Result = try {

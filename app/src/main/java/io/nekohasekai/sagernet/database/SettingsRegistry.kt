@@ -245,7 +245,11 @@ object SettingsRegistry {
 
     // ------------------------------------------------------------------------------------------------ testing
 
+    const val URL_TEST_MODE_COLD = "cold"
+    const val URL_TEST_MODE_KEEPALIVE = "keepalive"
+
     @JvmField val TEST_URL = string("test_url", "http://www.google.com/generate_204") { it.isNotBlank() }
+    @JvmField val URL_TEST_MODE = string("url_test_mode", URL_TEST_MODE_COLD)
     @JvmField val URL_TEST_TIMEOUT_MS = int("url_test_timeout_ms", 3000) { it > 0 }
     @JvmField val TEST_CONCURRENT = int("test_concurrent", 10) { it > 0 }
     @JvmField val DIRECT_TEST_URL = string("direct_test_url", "")

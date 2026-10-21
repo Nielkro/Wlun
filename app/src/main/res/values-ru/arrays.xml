@@ -349,4 +349,9 @@
         <item>@string/xray_vless_all</item>
     </string-array>
 
+    <string-array name="url_test_mode_entries">
+        <item>@string/url_test_mode_cold</item>
+        <item>@string/url_test_mode_keepalive</item>
+    </string-array>
+
 </resources>

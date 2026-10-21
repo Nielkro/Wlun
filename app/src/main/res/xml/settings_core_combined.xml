@@ -5,6 +5,13 @@
             app:key="test_url"
             app:title="@string/connection_test_url"
             app:useSimpleSummaryProvider="true" />
+        <ListPreference
+            app:defaultValue="cold"
+            app:entries="@array/url_test_mode_entries"
+            app:entryValues="@array/url_test_mode_values"
+            app:key="url_test_mode"
+            app:title="@string/url_test_mode"
+            app:useSimpleSummaryProvider="true" />
         <EditTextPreference
             app:dialogMessage="@string/direct_test_url_sum"
             app:key="direct_test_url"

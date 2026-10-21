@@ -66,14 +66,20 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
     }
 
     private fun startScoped(probe: TestProbe, batch: List<ProxyEntity>, emit: (ProbeResult) -> Unit, done: () -> Unit): AutoCloseable {
+        val isKeepAlive = session.options.keepAlive
+        val testUrl = if (isKeepAlive && !session.options.url.contains("#keepalive")) {
+            session.options.url + "#keepalive"
+        } else {
+            session.options.url
+        }
         val request = probe.request().apply {
-            url = session.options.url
+            url = testUrl
             timeoutMs = ProbeTimeout.effective(session.options.timeoutMs,probe.carrierPlans.isNotEmpty())
             maxConcurrency = session.options.concurrency
         }
         // The probe box closes with the test, so the verdict is asked for up front (TestRunner.cpp:171-176).
         probe.tagsOf(batch.filter { it.isVpnProfile() }.mapTo(HashSet()) { it.id }).forEach(request::addVPNEndpointTag)
-        val task = Mobile.startScopedURLTest(null, CoreRuntime.platform, request, Handler(probe::profileOf, emit, done))
+        val task = Mobile.startScopedURLTest(null, CoreRuntime.platform, request, Handler(probe::profileOf, emit, done, isKeepAlive))
         return AutoCloseable { task.cancel() }
     }
 
@@ -104,9 +110,15 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
             return
         }
         val nativeCurrent=ProfileManager.getProfile(running.profileId)?.type in NATIVE_TYPES
+        val isKeepAlive = session.options.keepAlive
+        val testUrl = if (isKeepAlive && !session.options.url.contains("#keepalive")) {
+            session.options.url + "#keepalive"
+        } else {
+            session.options.url
+        }
         val request = TestRequest().apply {
             testCurrent = true
-            url = session.options.url
+            url = testUrl
             timeoutMs = ProbeTimeout.effective(session.options.timeoutMs,
                 ProfileManager.getProfile(running.profileId)?.outbound is NativeCarrier)
             maxConcurrency = 1
@@ -119,10 +131,10 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
             TestTags.holding(listOf(TestTags.CURRENT)) {
                 // Match the desktop native-current path: warm one HTTP connection,
                 // then report the second request. Neither request reauthorizes VK.
-                if(nativeCurrent) {
+                if(nativeCurrent || isKeepAlive) {
                     awaitScopedUrlProbe(urlProbeBudgetMs(1, 1, request.timeoutMs)) { done ->
                         val task = Mobile.startScopedURLTest(running.instance,CoreRuntime.platform,request,
-                            Handler({ running.profileId },result::set,done))
+                            Handler({ running.profileId },result::set,done, isKeepAlive))
                         AutoCloseable { task.cancel() }
                     }
                     if(result.get().error.isNotEmpty()) return@holding
@@ -130,7 +142,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
                 awaitScopedUrlProbe(urlProbeBudgetMs(1, 1, request.timeoutMs)) { done ->
                     val task = Mobile.startScopedURLTest(
                         running.instance, CoreRuntime.platform, request,
-                        Handler({ running.profileId }, result::set, done),
+                        Handler({ running.profileId }, result::set, done, isKeepAlive),
                     )
                     AutoCloseable { task.cancel() }
                 }
@@ -151,6 +163,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         private val profileOf: (String?) -> Long?,
         private val emit: (ProbeResult) -> Unit,
         private val done: () -> Unit,
+        private val isKeepAlive: Boolean = false,
     ) : URLTestHandler {
         private val startTime = android.os.SystemClock.elapsedRealtime()
         // Results may land on another Go thread than the verdicts.
@@ -160,7 +173,11 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
             val id = profileOf(tag) ?: return@guarded
             val elapsed = (android.os.SystemClock.elapsedRealtime() - startTime).toInt()
             val realLatency = if (error.isNullOrEmpty() && latencyMs > 0) {
-                maxOf(latencyMs * 3 + 25, minOf(elapsed, latencyMs * 3 + 60))
+                if (isKeepAlive) {
+                    latencyMs
+                } else {
+                    maxOf(latencyMs * 3 + 25, minOf(elapsed, latencyMs * 3 + 60))
+                }
             } else {
                 latencyMs
             }

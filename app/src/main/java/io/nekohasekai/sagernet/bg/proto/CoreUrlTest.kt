@@ -20,10 +20,18 @@ import java.util.concurrent.atomic.AtomicReference
  * [vpnExit] a failure whose tunnel is up is [ProxyEntity.LATENCY_CONNECT_ONLY] (url_test_current,
  * mainwindow_view.cpp:405-433).
  */
-suspend fun urlTestCurrent(instance: Instance, core: CoreConfig, url: String, timeoutMs: Int, vpnExit: Boolean): Int {
+suspend fun urlTestCurrent(
+    instance: Instance,
+    core: CoreConfig,
+    url: String,
+    timeoutMs: Int,
+    vpnExit: Boolean,
+    isKeepAlive: Boolean = (app.qthrone.mobile.database.DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE)
+): Int {
+    val testUrl = if (isKeepAlive && !url.contains("#keepalive")) url + "#keepalive" else url
     val request = TestRequest().apply {
         testCurrent = true
-        this.url = url
+        this.url = testUrl
         this.timeoutMs = ProbeTimeout.effective(timeoutMs,app.qthrone.mobile.database.DataStore.baseService?.data?.proxy?.config?.carrierPlans?.isNotEmpty()==true)
         maxConcurrency = 1
         core.outboundTags.forEach(::addOutboundTag)
@@ -40,7 +48,7 @@ suspend fun urlTestCurrent(instance: Instance, core: CoreConfig, url: String, ti
                     if (error.isNullOrEmpty()) {
                         val elapsed = (System.currentTimeMillis() - startTime).toInt()
                         val realLatency = if (latencyMs > 0) {
-                            maxOf(latencyMs * 3 + 25, minOf(elapsed, latencyMs * 3 + 60))
+                            if (isKeepAlive) latencyMs else maxOf(latencyMs * 3 + 25, minOf(elapsed, latencyMs * 3 + 60))
                         } else {
                             latencyMs
                         }

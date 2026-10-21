@@ -2,6 +2,7 @@ package mobile
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -34,9 +35,31 @@ func StartScopedURLTest(current *Instance, platform PlatformInterface, request *
 		defer cancel()
 		var mu sync.Mutex
 		failed := make(map[string]bool)
-		// Publish directly to this handler. Concurrent probes must not drain and
-		// discard each other's results from the shared desktop polling buffer.
-		results := probe.BatchURLTestTo(ctx, env.box, env.tags, request.URL,
+
+		keepAlive := strings.Contains(request.URL, "#keepalive")
+		reqURL := strings.TrimSuffix(request.URL, "#keepalive")
+
+		if keepAlive {
+			// Phase 1: Warm-up pass in the same core box. We send the first request batch with closeOutbound=false.
+			// This establishes the TCP + TLS connection and keeps it alive in the connection pool.
+			warmupDone := make(chan struct{})
+			go func() {
+				defer close(warmupDone)
+				probe.BatchURLTestTo(ctx, env.box, env.tags, reqURL,
+					int(request.MaxConcurrency), false,
+					time.Duration(request.TimeoutMs)*time.Millisecond,
+					nil)
+			}()
+			select {
+			case <-warmupDone:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		// Phase 2: Measured pass.
+		// In keepalive mode, the established TLS session is reused to measure clean response latency.
+		results := probe.BatchURLTestTo(ctx, env.box, env.tags, reqURL,
 			int(request.MaxConcurrency), !request.TestCurrent,
 			time.Duration(request.TimeoutMs)*time.Millisecond,
 			func(result *probe.URLTestResult) {

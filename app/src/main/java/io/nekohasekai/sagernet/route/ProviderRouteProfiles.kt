@@ -54,7 +54,7 @@ object ProviderRouteProfiles {
                 val active=JsonInput.parseObjectOrNull(selected)
                 if(active!=null && key(active)==key(previous)) selected=document.toCompact()
             } else profiles.add(document)
-            if(selected.isBlank() || (command.activate && !manual && firstImport)) selected=document.toCompact()
+            if(selected.isBlank() || (command.activate && !manual)) selected=document.toCompact()
         }
         val provider=JsonInput.parseObjectOrNull(selected)?.let { source(it,fallback) } ?: fallback
         return Result(profiles,selected,provider)

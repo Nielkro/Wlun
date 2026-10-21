@@ -58,6 +58,9 @@
 <string name="connection_test_testing">Тестирование…</string>
 <string name="connection_test_timeout_error">Тайм-аут</string>
 <string name="connection_test_url">URL проверки задержки</string>
+<string name="url_test_mode">Режим проверки задержки</string>
+<string name="url_test_mode_cold">По умолчанию (полная транзакция: TCP + TLS + HTTP)</string>
+<string name="url_test_mode_keepalive">Keepalive (тёплое соединение: прогрев + чистый RTT)</string>
 <string name="create_shortcut">Создать ярлык</string>
 <string name="custom_config">Пользовательская конфигурация</string>
 <string name="delete">Удалить</string>

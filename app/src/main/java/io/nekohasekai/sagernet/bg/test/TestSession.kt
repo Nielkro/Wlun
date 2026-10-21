@@ -48,6 +48,7 @@ internal class TestSession(
         val speedTimeoutMs: Int = spec.speedTimeoutMs.takeIf { it > 0 } ?: DataStore.speedTestTimeoutMs
         val simpleDlUrl: String = spec.simpleDlUrl.ifBlank { DataStore.simpleDlUrl }
         val creditTraffic: Boolean = !DataStore.disableTrafficStats
+        val keepAlive: Boolean = spec.keepAlive || (DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE)
     }
 
     val interactive = client != null

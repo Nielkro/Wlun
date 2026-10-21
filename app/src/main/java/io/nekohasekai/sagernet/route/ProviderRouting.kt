@@ -24,14 +24,26 @@ object ProviderRouting {
     fun isLink(text: String) = link.matches(unwrap(text))
     fun parse(text: String, provider: String = "Happ"): Command {
         require(text.length <= 2 * 1024 * 1024) { "Routing profile is too large" }
-        val raw = unwrap(text)
-        val input = if (raw.contains("://routing/") && !isLink(raw)) provider.lowercase() + raw.substring(raw.indexOf("://routing/")) else raw
+        val raw = unwrap(text).trim().removeSurrounding("\"")
+        val input = when {
+            raw.startsWith("happ://", ignoreCase = true) || raw.startsWith("incy://", ignoreCase = true) -> raw
+            raw.contains("://routing/") -> provider.lowercase() + raw.substring(raw.indexOf("://routing/"))
+            raw.startsWith("routing/", ignoreCase = true) -> "happ://" + raw
+            raw.startsWith("onadd/", ignoreCase = true) -> "happ://routing/" + raw
+            raw.startsWith("add/", ignoreCase = true) -> "happ://routing/" + raw
+            raw.startsWith("ey") || raw.startsWith("{") -> "happ://routing/onadd/" + raw
+            else -> raw
+        }
         val match = link.matchEntire(input)
         val source = match?.groupValues?.get(1)?.takeIf { it.isNotBlank() }?.replaceFirstChar { it.uppercase() } ?: provider
         if (input.equals("off", true) || match?.groupValues?.get(2)?.equals("off", true) == true)
             return Command(source, false, true, null)
         val payload = match?.let { java.net.URLDecoder.decode(it.groupValues[3].ifEmpty { it.groupValues[4] }.replace("+", "%2B"), "UTF-8") } ?: input
-        val json = JsonInput.parseObjectOrNull(payload) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload)) ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload,true))
+        val json = JsonInput.parseObjectOrNull(payload)
+            ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload.trim()))
+            ?: JsonInput.parseObjectOrNull(Base64Strict.decodeToString(payload.trim(), true))
+            ?: JsonInput.parseObjectOrNull(String(Base64Strict.decodeLenient(payload.trim()), Charsets.UTF_8))
+            ?: JsonInput.parseObjectOrNull(String(Base64Strict.decodeLenient(payload.trim(), true), Charsets.UTF_8))
             ?: error("Профиль маршрутизации $source неполный или повреждён. Скопируйте ссылку целиком.")
         require(json.contains("GlobalProxy") || json.contains("DirectSites") || json.contains("Name")) { "Not a $source routing profile" }
         for (key in listOf("DirectSites", "DirectIp", "ProxySites", "ProxyIp", "BlockSites", "BlockIp")) {

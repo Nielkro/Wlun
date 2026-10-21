@@ -126,7 +126,8 @@ object TestSessionClient {
         prepare(m) {
             val group = GroupRepo.get(groupId)
             val ids = if (group == null) emptyList() else ProfileManager.memberIds(groupId)
-            TestSpec(kind, ids.toLongArray(), scopeLabel = group?.displayName().orEmpty(), sortGroupId = groupId, url = DataStore.testUrl)
+            val isKeepAlive = DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE
+            TestSpec(kind, ids.toLongArray(), scopeLabel = group?.displayName().orEmpty(), sortGroupId = groupId, url = DataStore.testUrl, keepAlive = isKeepAlive)
         }
         return true
     }
@@ -141,7 +142,8 @@ object TestSessionClient {
             } else {
                 app.getString(R.string.test_panel_scope_selected, ids.size)
             }
-            TestSpec(kind, ids.toLongArray(), scopeLabel = label, url = DataStore.testUrl)
+            val isKeepAlive = DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE
+            TestSpec(kind, ids.toLongArray(), scopeLabel = label, url = DataStore.testUrl, keepAlive = isKeepAlive)
         }
         return true
     }
@@ -153,9 +155,10 @@ object TestSessionClient {
         prepare(m) {
             // The engine ignores profileIds of a test-current spec; the id only keys the row.
             val runningId = ProfileManager.runningProfileId()
+            val isKeepAlive = DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE
             TestSpec(
                 kind, if (runningId > 0) longArrayOf(runningId) else LongArray(0), testCurrent = true,
-                scopeLabel = label, url = DataStore.testUrl
+                scopeLabel = label, url = DataStore.testUrl, keepAlive = isKeepAlive
             )
         }
         return true
