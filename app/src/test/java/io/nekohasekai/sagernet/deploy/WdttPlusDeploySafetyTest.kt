@@ -25,7 +25,7 @@ class WdttPlusDeploySafetyTest {
         val unit = File(root, "etc/systemd/system/wdtt.service")
         val binary = File(root, "usr/local/bin/wdtt-server")
         fun installAndroidDeploy(marker: Boolean = true) {
-            config.mkdirs(); unit.parentFile.mkdirs(); binary.parentFile.mkdirs()
+            config.mkdirs(); unit.parentFile?.mkdirs(); binary.parentFile?.mkdirs()
             File(config, "passwords.json").writeText("""{"main_password":"owner","passwords":{},"devices":{}}""")
             File(config, "wg-keys.dat").writeText("keys")
             File(config, "server.log").writeText("log")

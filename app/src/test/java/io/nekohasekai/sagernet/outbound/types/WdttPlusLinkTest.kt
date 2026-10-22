@@ -26,7 +26,7 @@ class WdttPlusLinkTest {
         val profile = ProfileImport.parse("wdtt://31.76.50.112:56000:56001:9000:secret:$hash").outbounds.single()
         assertFalse(profile is WdttPlus)
         profile as Qwdtt
-        assertEquals("qWDTT (WG)", profile.displayType())
+        assertEquals("qWDTT (RAW)", profile.displayType())
         assertEquals("31.76.50.112", profile.server)
         assertEquals(56000, profile.serverPort)
         assertEquals("secret", profile.password)
@@ -40,7 +40,7 @@ class WdttPlusLinkTest {
         assertEquals("qwdtt", profile.type)
         assertEquals("Home", profile.name)
         assertEquals("192.0.2.6", profile.server)
-        assertEquals("wg", profile.mode)
+        assertEquals("raw", profile.mode)
         assertEquals(listOf(hash), profile.hashes)
         assertNull(WdttPlus.legacyToQwdtt(stored.replace("\"legacy\":true", "\"legacy\":false")))
     }
