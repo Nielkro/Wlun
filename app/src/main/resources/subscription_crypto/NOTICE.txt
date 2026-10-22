@@ -1,0 +1,14 @@
+Subscription link interoperability data and protocol references
+
+{
+  "happwn": "8ae0171535a1622f100a1535a216afbe7675d58d",
+  "incy-link-encoder": "455f00c34fa28d99b974bb30e9254b9f56fd7337",
+  "happ-decryptor": "5a05cfe59f45db8684be26077ce28979a3ee3208",
+  "hpwnr": "ba7e870a78163e5bb4fe2f8b6da12c3e9ce31842"
+}
+
+Happ RSA compatibility data: https://github.com/useruserdev/happwn (Apache-2.0). Four keys converted from PKCS#1 to PKCS#8; retained 34 crypt5 keys.
+Two additional crypt5 protocol key values and salted wire layout reference: https://github.com/LeeeeT/happ-decryptor. No program code copied.
+Incy crypt1 key derivation: Copyright (c) 2026 INCY LLC, https://github.com/INCY-DEV/incy-link-encoder (MIT). Key derived from published encoder assets; fingerprint verified.
+Happ Encrypt-Tag protocol constants (90 AES key values and IV): https://github.com/Omegaplexx/hpwnr/src/keys.rs and src/lib.rs. No program code copied.
+The Kotlin decoder is an independent implementation. It never sends links to a third-party decryptor. Public protocol keys provide obfuscation, not access control.

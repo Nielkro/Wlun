@@ -107,9 +107,9 @@ internal object DnsServers {
         "94.140.15.15" to "https://94.140.15.15/dns-query",
     )
 
-    /** upgradeUdpDnsToDoH: a known resolver keeps its address, anything else becomes Google's DoH. */
+    /** Known resolvers retain their provider; unsupported UDP-over-Xray uses the app's remote DoH default. */
     @JvmStatic
-    fun upgradeUdpDnsToDoH(server: String): String = KNOWN_DOH[server] ?: "https://8.8.8.8/dns-query"
+    fun upgradeUdpDnsToDoH(server: String): String = KNOWN_DOH[server] ?: DnsDefaults.REMOTE
 }
 
 /** PredefinedDNSEntry (generate.h:72-76). */

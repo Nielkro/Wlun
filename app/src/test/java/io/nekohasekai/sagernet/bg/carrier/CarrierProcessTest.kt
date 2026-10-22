@@ -15,6 +15,76 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CarrierProcessTest {
+    @Test fun csqttConnectionAndLatencyProbeUseOnlyLegacyWithoutChangingCredentials(): Unit = runBlocking {
+        for (interactive in listOf(false,true)) {
+            val root=Files.createTempDirectory("csqtt-protocol-retry").toFile()
+            try {
+                for(name in listOf("libqwdtt.so","libcsqtt_transport.so"))
+                    File(root,name).apply { writeText("fixture");setExecutable(true) }
+                val source="""{"peer":"192.0.2.1:46000","password":"fixture-secret","device_id":"old-phone","hashes":["manual_hash_12345678"],"workers":18}"""
+                val configuration=NativeSessionPolicy.probeConfig(CarrierKind.CSQTT,source,interactive)
+                val launches=mutableListOf<app.qthrone.mobile.outbound.json.JsonObject>()
+                val failure=runCatching {
+                    CarrierProcess.start(CarrierKind.CSQTT,root,File(root,"configs"),35,configuration,12345,
+                        CarrierBridgeCredentials.fresh(),allowInteractions=interactive) { builder ->
+                        val config=app.qthrone.mobile.outbound.json.JsonInput.parseObject(File(builder.command()[2]).readText())
+                        launches.add(config)
+                        val output="FATAL_PROTOCOL: fixture mismatch\n"
+                        object:Process() {
+                            override fun getOutputStream()=ByteArrayOutputStream()
+                            override fun getInputStream()=ByteArrayInputStream(output.toByteArray())
+                            override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                            override fun waitFor()=1
+                            override fun exitValue()=1
+                            override fun destroy() {}
+                        }
+                    }
+                }.exceptionOrNull()
+                assertNotNull(failure)
+                assertEquals(1,launches.size)
+                assertFalse(launches.single().contains("protocol_variant"))
+                for (config in launches) {
+                    assertEquals("fixture-secret",config.string("password"))
+                    assertEquals("old-phone",config.string("device_id"))
+                    assertEquals(listOf("manual_hash_12345678"),config.array("hashes").strings())
+                    assertEquals(!interactive,config.bool("probe_only"))
+                }
+                assertTrue(launches.single().string("salt").isNotEmpty())
+                assertTrue(File(root,"configs").listFiles().orEmpty().isEmpty())
+            } finally { root.deleteRecursively() }
+        }
+    }
+
+    @Test fun csqttCanFinishVkCleanupAfterStopWithoutBeingKilled(): Unit = runBlocking {
+        val root=Files.createTempDirectory("csqtt-cleanup").toFile()
+        try {
+            for(name in listOf("libqwdtt.so","libcsqtt_transport.so")) File(root,name).apply { writeText("fixture");setExecutable(true) }
+            val stoppedAt=java.util.concurrent.atomic.AtomicLong()
+            val destroyed=java.util.concurrent.atomic.AtomicBoolean()
+            val failure=runCatching {
+                CarrierProcess.start(CarrierKind.CSQTT,root,File(root,"configs"),35,"{}",12345,CarrierBridgeCredentials.fresh()) {
+                    object:Process() {
+                        override fun getOutputStream()=object:java.io.OutputStream() {
+                            override fun write(value:Int) { if(value==10) stoppedAt.compareAndSet(0,System.nanoTime()) }
+                        }
+                        override fun getInputStream()=ByteArrayInputStream("FATAL_AUTH: rejected\n".toByteArray())
+                        override fun getErrorStream()=ByteArrayInputStream(byteArrayOf())
+                        override fun exitValue():Int {
+                            if(destroyed.get() || stoppedAt.get()!=0L && System.nanoTime()-stoppedAt.get()>=1_200_000_000L) return 0
+                            throw IllegalThreadStateException()
+                        }
+                        override fun waitFor()=0
+                        override fun destroy() { destroyed.set(true) }
+                    }
+                }
+            }.exceptionOrNull()
+            assertNotNull(failure)
+            assertTrue("STOP must reach the Rust wrapper",stoppedAt.get()>0)
+            assertFalse("The original VK cleanup must not be cut off after one second",destroyed.get())
+            assertTrue(File(root,"configs").listFiles().orEmpty().isEmpty())
+        } finally { root.deleteRecursively() }
+    }
+
     @Test fun cancellationAtReadyDispatcherHandoffClosesTheNativeProcess(): Unit = runBlocking {
         val root=Files.createTempDirectory("carrier-cancel-ready").toFile()
         val executor=Executors.newSingleThreadExecutor()

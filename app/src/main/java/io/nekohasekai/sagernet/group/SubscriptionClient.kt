@@ -90,9 +90,9 @@ object SubscriptionClient {
      * SubscribeUrl: a subscription group named [name] (the URL host when blank) whose automatic update follows
      * [autoUpdate], created in :bg with its first refresh queued; returns its id, -1 on failure.
      */
-    suspend fun subscribeUrl(url: String, name: String, autoUpdate: Boolean): Long = withContext(Dispatchers.IO) {
+    suspend fun subscribeUrl(url: String, name: String, autoUpdate: Boolean, allowInsecureRequests: Boolean = false): Long = withContext(Dispatchers.IO) {
         try {
-            CoreServiceClient.call { it.subscribeUrl(url, name, autoUpdate) }
+            CoreServiceClient.call { it.subscribeUrl(url, name, autoUpdate, allowInsecureRequests) }
         } catch (e: Exception) {
             failed(-1L, e)
             -1L

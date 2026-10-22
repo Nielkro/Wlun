@@ -4,6 +4,11 @@ on:
   push:
     tags:
       - 'v*'
+  # Every green CI run on stable publishes its VERSION_NAME once.
+  workflow_run:
+    workflows: [Wlun CI]
+    types: [completed]
+    branches: [stable]
   workflow_dispatch:
     inputs:
       publish:
@@ -17,8 +22,39 @@ permissions:
   contents: write
   actions: read
 jobs:
+  gate:
+    name: Unpublished version
+    if: >-
+      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      (github.event.workflow_run.event == 'push' || github.event.workflow_run.event == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - name: Check
+        id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          VERSION_NAME=$(sed -n 's/^VERSION_NAME=//p' nb4a.properties | tr -d '[:space:]')
+          DRAFT=$(gh release view "v$VERSION_NAME" --json isDraft --jq .isDraft 2>/dev/null || true)
+          if [[ "$DRAFT" == false ]]; then
+            echo "::notice::v$VERSION_NAME is already published: nothing to release"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
   release:
     name: APK
+    needs: gate
+    if: ${{ always() && (github.event_name != 'workflow_run' || needs.gate.outputs.publish == 'true') }}
     runs-on: ubuntu-latest
     env:
       SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
@@ -28,13 +64,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - name: Release numbering regression
-        run: python3 buildScript/test_release_tag.py
+        run: |
+          python3 buildScript/test_release_tag.py
+          python3 buildScript/test_release_metadata.py
+      - name: Require pinned CSQTT 2.5.0 Legacy
+        run: python3 -c "import json; assert json.load(open('native-transports.lock.json'))['secure_socks']['csqtt_commit'] == '2066156119a5afe7d63e104aefdc8e0849999d03', 'CSQTT 2.5.0 Legacy transport pin changed'"
       # Public tags use three version components and always increase.
       - name: Version
         id: version
         env:
-          PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+          PUBLISH: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -90,16 +132,12 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Publish release
-        if: ${{ github.event_name == 'push' || inputs.publish }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.publish }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           TAG: ${{ steps.version.outputs.tag }}
+          TARGET: ${{ github.event.workflow_run.head_sha || github.sha }}
           RELEASE_NAME: ${{ steps.version.outputs.name }}
         run: |
-          set -euo pipefail
-          if [[ "$TAG" == *-beta.* || "$TAG" == *-rc.* ]]; then
-            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --prerelease --latest=false --notes-file RELEASE_NOTES.md
-          else
-            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$RELEASE_NAME" --latest --notes-file RELEASE_NOTES.md
-          fi
+          python3 buildScript/publish_release.py

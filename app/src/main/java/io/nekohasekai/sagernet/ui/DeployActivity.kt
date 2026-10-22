@@ -22,7 +22,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
-class DeployActivity : ThemedActivity() {
+class DeployActivity : ServerScreenActivity() {
     lateinit var toolbar: Toolbar
     class EditorState : androidx.lifecycle.ViewModel() { var server: DeployServer? = null;var baseline: String? = null }
     private val editorState by lazy { androidx.lifecycle.ViewModelProvider(this)[EditorState::class.java] }
@@ -31,6 +31,7 @@ class DeployActivity : ThemedActivity() {
         set(value) { editorState.server=value;editorState.baseline=value?.editSignature() }
     fun hasChanges() = server?.editSignature()!=editorState.baseline
     private var shownTrust = ""
+    private var shownQuestion: DeployQuestion? = null
     private var shownConfig = ""
     private var wasRunning = false
     val kind get() = intent.getStringExtra("kind").orEmpty().takeIf { it in listOf("qwdtt","csqtt","wdttplus") } ?: "qwdtt"
@@ -49,22 +50,12 @@ class DeployActivity : ThemedActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(MobilePalette.background))
-        window.setWindowAnimations(0)
-        if(android.os.Build.VERSION.SDK_INT>=34) {
-            overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_OPEN,0,0)
-            overrideActivityTransition(android.app.Activity.OVERRIDE_TRANSITION_CLOSE,0,0)
-        }
         shownConfig=savedInstanceState?.getString("shownConfig").orEmpty()
         val root=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(MobilePalette.background) }
         toolbar=Toolbar(this).apply { setTitleTextColor(MobilePalette.text);setNavigationIcon(R.drawable.baseline_arrow_back_24);setNavigationOnClickListener { back() } }
         val content=FrameLayout(this).apply { id=android.R.id.content+3 }
-        content.viewTreeObserver.addOnPreDrawListener(object: android.view.ViewTreeObserver.OnPreDrawListener {
-            override fun onPreDraw(): Boolean {
-                if(screen()?.view == null) return false
-                content.viewTreeObserver.removeOnPreDrawListener(this)
-                return true
-            }
-        })
+        val loading=ProgressBar(this)
+        content.addView(loading,FrameLayout.LayoutParams(-2,-2,android.view.Gravity.CENTER))
         root.addView(toolbar);root.addView(content,LinearLayout.LayoutParams(-1,0,1f));setContentView(root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view,insets -> val b=insets.getInsets(WindowInsetsCompat.Type.systemBars());view.setPadding(b.left,b.top,b.right,b.bottom);insets }
         val id=savedInstanceState?.getString("server") ?: intent.getStringExtra("editServer")
@@ -78,6 +69,7 @@ class DeployActivity : ThemedActivity() {
                     finish();return@launch
                 }
             } else if (server == null && intent.getBooleanExtra("directEditor",false)) server = DeployServer.create(kind)
+            content.removeView(loading)
             if(savedInstanceState==null) supportFragmentManager.beginTransaction().replace(content.id,Screen()).commitNow()
             else screen()?.build()
         }
@@ -94,6 +86,15 @@ class DeployActivity : ThemedActivity() {
                             .setPositiveButton("Доверять") { _,_ -> DeployEngine.approveHost(true) }
                             .setNegativeButton(android.R.string.cancel) { _,_ -> DeployEngine.approveHost(false) }
                             .setOnCancelListener { DeployEngine.approveHost(false) }.show()
+                    }
+                    val question=state.question
+                    if(question!=null && question!==shownQuestion) {
+                        shownQuestion=question
+                        MobileAlertDialogBuilder(this@DeployActivity).setTitle(question.title).setMessage(question.message).apply {
+                            question.options.getOrNull(0)?.let { setPositiveButton(it) { _,_ -> DeployEngine.answer(0) } }
+                            question.options.getOrNull(1)?.let { setNeutralButton(it) { _,_ -> DeployEngine.answer(1) } }
+                        }.setNegativeButton(android.R.string.cancel) { _,_ -> DeployEngine.answer(-1) }
+                            .setOnCancelListener { DeployEngine.answer(-1) }.show()
                     }
                 }
             }
@@ -121,8 +122,13 @@ class DeployActivity : ThemedActivity() {
         if(DeployEngine.state.value.running) { Toast.makeText(this,"Дождитесь завершения текущей операции",Toast.LENGTH_SHORT).show();return }
         val valid=runCatching { target.validate(!uninstall) }
         if(valid.isFailure) { MobileAlertDialogBuilder(this).setMessage(valid.exceptionOrNull()?.message).setPositiveButton(android.R.string.ok,null).show();return }
-        fun run() { DeployEngine.start(target,uninstall);shownConfig="";shownTrust="";showConsole() }
-        if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${title(kind)} на ${target["host"]}.")
+        fun run(removeData: Boolean = false) { DeployEngine.start(target,uninstall,removeData);shownConfig="";shownTrust="";showConsole() }
+        // WDTT Plus removes the service either keeping /etc/wdtt (clients, keys) for a later install or with it.
+        if(uninstall && kind=="wdttplus") MobileAlertDialogBuilder(this).setTitle("Удалить WDTT Plus с VPS?")
+            .setMessage("Сервис будет удалён с ${target["host"]}. Можно сохранить данные (клиентов, ключи WireGuard) для повторной установки или удалить их вместе с сервисом.")
+            .setPositiveButton("Сохранить данные") { _,_ -> run(false) }.setNeutralButton("Удалить всё") { _,_ -> run(true) }
+            .setNegativeButton(android.R.string.cancel,null).show()
+        else if(uninstall) MobileAlertDialogBuilder(this).setTitle("Удалить сервис с VPS?").setMessage("Будет запущено удаление ${title(kind)} на ${target["host"]}.")
             .setPositiveButton("Удалить") { _,_ -> run() }.setNegativeButton(android.R.string.cancel,null).show()
         else run()
     }

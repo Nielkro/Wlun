@@ -9,6 +9,7 @@ import app.qthrone.mobile.bg.XrayGeoAssets
 import app.qthrone.mobile.bg.proto.SpeedTestSnapshot
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.ServerSortRule
 import app.qthrone.mobile.database.GroupSort
 import app.qthrone.mobile.database.GroupSortAction
 import app.qthrone.mobile.database.GroupSortMethod
@@ -118,7 +119,7 @@ internal class TestSession(
             Logs.w(e)
         } finally {
             try { if(completed && !cancelled && kind==TestSpec.KIND_URL && spec.sortGroupId>0 &&
-                GroupRepo.get(spec.sortGroupId)?.subOptions?.autoSortByPing==true) {
+                GroupRepo.get(spec.sortGroupId)?.subOptions?.effectiveSortRule==ServerSortRule.PING) {
                 GroupSort.sortProfiles(spec.sortGroupId,GroupSortAction(GroupSortMethod.BY_LATENCY))
             } } catch(error: Exception) { Logs.w("Ping sort failed: ${error.readableMessage}") }
             notification.finish(assetProblems)

@@ -104,12 +104,15 @@ class HttpGetOptions(
     @JvmField val headers: List<Pair<String, String>> = emptyList(),
     @JvmField val maxBytes: Long = 0L,
     @JvmField val useProxy: Boolean = false,
+    @JvmField val timeoutSeconds: Int = 10,
+    @JvmField val allowInsecure: Boolean = false,
     /** Android extra: appTLSVersion "1.3" allows TLS 1.3 only. */
     @JvmField val restrictTls13: Boolean = DataStore.appTLSVersion == "1.3",
 )
 
 /** HTTPResponse: [error] is empty on success; [data] also holds the body of an HTTP error status. */
-class HttpGetResponse(@JvmField val data: ByteArray, private val headers: Headers?, @JvmField val error: String) {
+class HttpGetResponse(@JvmField val data: ByteArray, private val headers: Headers?, @JvmField val error: String,
+                      @JvmField val finalUrl: String = "") {
     val ok: Boolean get() = error.isEmpty()
 
     /** GetHeader: case-insensitive, "" when absent. */
@@ -127,9 +130,9 @@ private const val MAX_REDIRECTS = 20
  */
 fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetResponse {
     val builder = OkHttpClient.Builder()
-        .connectTimeout(10, TimeUnit.SECONDS)
-        .readTimeout(10, TimeUnit.SECONDS)
-        .writeTimeout(10, TimeUnit.SECONDS)
+        .connectTimeout(options.timeoutSeconds.coerceIn(5, 300).toLong(), TimeUnit.SECONDS)
+        .readTimeout(options.timeoutSeconds.coerceIn(5, 300).toLong(), TimeUnit.SECONDS)
+        .writeTimeout(options.timeoutSeconds.coerceIn(5, 300).toLong(), TimeUnit.SECONDS)
         .followRedirects(false)
         .followSslRedirects(false)
     if (options.useProxy || appRequestsViaProxy()) {
@@ -158,7 +161,7 @@ fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetRes
             )
         )
     }
-    if (DataStore.netInsecure) {
+    if (DataStore.netInsecure || options.allowInsecure) {
         val sslContext = SSLContext.getInstance("TLS")
         sslContext.init(null, arrayOf(TrustAllManager), SecureRandom())
         builder.sslSocketFactory(sslContext.socketFactory, TrustAllManager)
@@ -201,7 +204,7 @@ fun httpGet(url: String, options: HttpGetOptions = HttpGetOptions()): HttpGetRes
                 val error = if (it.isSuccessful) "" else app.getString(
                     R.string.subs_http_error, target.toString(), "${it.code} ${it.message}".trim(),
                 )
-                return HttpGetResponse(body, it.headers, error)
+                return HttpGetResponse(body, it.headers, error, target.toString())
             }
         }
     } catch (e: Exception) {

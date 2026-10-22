@@ -33,5 +33,45 @@ object VpnListenerPolicy {
         if(api.string("external_controller").isNotEmpty()) {
             check(api.string("secret").length>=32) { "VPN dashboard API requires a strong secret of at least 32 characters" }
         }
+        check(json.obj("experimental").obj("v2ray_api").string("listen").isEmpty()) {
+            "Unauthenticated V2Ray API listeners are not allowed on Android"
+        }
+        for (value in json.array("services")) {
+            val service = value as? JsonObject ?: error("Invalid VPN service configuration")
+            check(service.string("type") == "api") { "Unsupported listening service in VPN configuration" }
+            if (service.int("listen_port") == 0) continue // In-process statistics only; no TCP listener.
+            check(service.string("listen") in listOf("127.0.0.1", "::1") && service.string("secret").length >= 32) {
+                "VPN API service must bind to loopback and require a strong secret of at least 32 characters"
+            }
+        }
+    }
+
+    /** Full Xray documents are untrusted too, including auto-selector and latency-test members. */
+    fun checkXray(config: String) {
+        if (config.isBlank()) return
+        val json = JsonInput.parseObject(config)
+        check(json.obj("api").isEmpty()) { "Xray management API is not allowed on Android" }
+        check(json.obj("metrics").string("listen").isEmpty()) { "Unauthenticated Xray metrics listener is not allowed on Android" }
+        for (value in json.array("inbounds")) {
+            val inbound = value as? JsonObject ?: error("Invalid Xray inbound configuration")
+            check(inbound.string("listen") in listOf("127.0.0.1", "::1")) {
+                "Xray bridge listeners must bind to loopback"
+            }
+            val settings = inbound.obj("settings")
+            check(inbound.string("protocol") in listOf("socks", "http")) {
+                "Xray custom configuration contains an unsupported listening inbound"
+            }
+            if (inbound.string("protocol") == "socks") {
+                check(settings.string("auth") == "password") { "Xray SOCKS listener requires authentication" }
+            }
+            val accounts = settings.array("accounts")
+            check(accounts.isNotEmpty()) { "Xray listener requires authentication" }
+            for (valueAccount in accounts) {
+                val account = valueAccount as? JsonObject ?: error("Invalid Xray credentials")
+                check(account.string("user").isNotEmpty() && account.string("pass").length >= 32) {
+                    "Xray listener requires a strong password of at least 32 characters"
+                }
+            }
+        }
     }
 }

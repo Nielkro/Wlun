@@ -64,20 +64,16 @@ class WdttPlusAdmin(private val server: DeployServer) {
         }
     }
 
-    private fun root(command: String): String {
-        val quoted = DeployProtocol.quote(command)
-        return "if [ \"\$(id -u)\" = 0 ]; then bash -c $quoted; else sudo -S -p '' bash -c $quoted; fi"
-    }
-
     /** One admin request; sudo's password, when needed, goes first on stdin. */
     private fun call(args: List<String>, timeoutMs: Long = 45_000): JSONObject {
         val request = JSONObject().put("main_password", server["password"]).put("args", JSONArray(args)).toString()
         val ssh = session()
         try {
             val channel = ssh.openChannel("exec") as ChannelExec
-            channel.setCommand(root("/usr/local/bin/wdtt-server admin --config-dir /etc/wdtt --request-stdin") + " 2>&1")
-            val sudo = if (server["user"] == "root") "" else server["sudoPassword"].ifBlank { server["sshPassword"] } + "\n"
-            channel.setInputStream((sudo + request + "\n").byteInputStream())
+            val plan = rootStdinPlan("/usr/local/bin/wdtt-server admin --config-dir /etc/wdtt --request-stdin",
+                server["sudoPassword"].ifBlank { server["sshPassword"] },request+"\n")
+            channel.setCommand(plan.command + " 2>&1")
+            channel.setInputStream(plan.input.byteInputStream())
             val input = channel.inputStream
             channel.connect(20_000)
             val output = StringBuilder()
@@ -137,7 +133,10 @@ class WdttPlusAdmin(private val server: DeployServer) {
     fun configureBackups(enabled: Boolean, intervalHours: Int, retention: Int): JSONObject =
         call(listOf("backup-configure", "--enabled", enabled.toString(), "--interval-hours", intervalHours.coerceIn(6, 168).toString(),
             "--retention", retention.coerceIn(2, 90).toString()), 120_000).optJSONObject("backup_status") ?: JSONObject()
-    fun createBackup(): JSONObject = call(listOf("backup-create", "--reason", "manual"), 180_000).optJSONObject("backup_status") ?: JSONObject()
+    fun createBackup(reason: String = "manual"): JSONObject {
+        require(reason in setOf("manual", "pre_deploy", "pre_restore")) { "Некорректная причина резервной копии" }
+        return call(listOf("backup-create", "--reason", reason), 180_000).optJSONObject("backup_status") ?: JSONObject()
+    }
     fun verifyBackup(id: String): JSONObject = call(listOf("backup-verify", "--id", id), 120_000).optJSONObject("backup") ?: JSONObject()
     fun deleteBackup(id: String): JSONObject = call(listOf("backup-delete", "--id", id, "--confirm", "УДАЛИТЬ"), 120_000).optJSONObject("backup_status") ?: JSONObject()
     fun exportBackup(id: String): JSONObject = call(listOf("backup-export", "--id", id), 180_000).optJSONObject("backup_document") ?: JSONObject()

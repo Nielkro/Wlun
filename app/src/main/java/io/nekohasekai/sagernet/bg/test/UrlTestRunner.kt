@@ -203,7 +203,7 @@ internal class UrlTestRunner(session: TestSession) : LatencySweep(session) {
         const val ERROR_NOT_RUNNING = "instance is not running"
 
         /** Profiles backed by a native client process instead of a sing-box outbound. */
-        val NATIVE_TYPES = listOf("qwdtt","csqtt","wdttplus","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass")
+        val NATIVE_TYPES = listOf("qwdtt","csqtt","wdttplus","openflux","olcrtc","dnstt","vaydns","slipstream","masterdns","s3bypass","sstp")
 
         /** Credentials, an automatic VK check and the handshake; the original app allows 20 s without a check. */
         const val QWDTT_PING_TIMEOUT_MS = 60_000L

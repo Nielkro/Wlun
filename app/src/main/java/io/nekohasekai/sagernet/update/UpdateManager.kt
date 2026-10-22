@@ -69,7 +69,7 @@ object UpdateManager {
     /** Main-process start: leftovers of a finished or interrupted update. */
     fun onAppStart(context: Context) {
         scope.launch { updateDir(context).deleteRecursively() }
-        if (BuildConfig.IN_APP_UPDATER) UpdateScheduler.schedule(keepExisting = true)
+        if (BuildConfig.IN_APP_UPDATER) UpdateDiscovery.onAppStart(context)
     }
 
     @Synchronized
@@ -77,7 +77,7 @@ object UpdateManager {
         if (_state.value.busy) return
         _state.value = State.Checking
         job = scope.launch {
-            val result = UpdateChecker.check(app)
+            val result = UpdateDiscovery.check()
             ensureActive()
             _state.value = when (result) {
                 is UpdateChecker.Result.UpToDate -> State.UpToDate
@@ -85,6 +85,14 @@ object UpdateManager {
                 is UpdateChecker.Result.Failed -> State.Failed(null, result.message)
             }
         }
+    }
+
+    /** Opens a discovered offer immediately, while an active download keeps its own dialog state. */
+    @Synchronized
+    fun showOffer(offer: UpdateChecker.Offer): Boolean {
+        if (_state.value.busy || _state.value is State.Installing) return false
+        _state.value = State.Available(offer)
+        return true
     }
 
     @Synchronized

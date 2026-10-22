@@ -44,7 +44,7 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     // ------------------------------------------------------------------------------------------------ Android-only
 
     var appTLSVersion by configurationStore.string(Key.APP_TLS_VERSION)
-    var updateCheckAuto by configurationStore.boolean(Key.UPDATE_CHECK_AUTO)
+    var updateCheckAuto by configurationStore.boolean(Key.UPDATE_CHECK_AUTO) { true }
     var updateSkippedVersionCode by configurationStore.long(Key.UPDATE_SKIPPED_VERSION_CODE)
     /** The profile id to restart once after an in-app update, 0 = none. */
     var resumeAfterUpdate by configurationStore.long(Key.RESUME_AFTER_UPDATE)
@@ -252,6 +252,12 @@ object DataStore : OnPreferenceDataStoreChangeListener {
     var subClear by SettingsRegistry.SUB_CLEAR
     var subShowChangePopup by SettingsRegistry.SUB_SHOW_CHANGE_POPUP
     var subSendHwid by SettingsRegistry.SUB_SEND_HWID
+    var subRequestTimeoutSeconds by SettingsRegistry.SUB_REQUEST_TIMEOUT
+    var subUpdateOnOpen by SettingsRegistry.SUB_UPDATE_ON_OPEN
+    var subPingOnOpen by SettingsRegistry.SUB_PING_ON_OPEN
+    var subConnectOnOpen by SettingsRegistry.SUB_CONNECT_ON_OPEN
+    var subConnectTarget by SettingsRegistry.SUB_CONNECT_TARGET
+    var subNotifyUpdate by SettingsRegistry.SUB_NOTIFY_UPDATE
     var subCustomHwidParams by SettingsRegistry.SUB_CUSTOM_HWID_PARAMS
     var allowStoppingActiveProfile by SettingsRegistry.ALLOW_STOPPING_ACTIVE_PROFILE
 

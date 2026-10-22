@@ -21,6 +21,7 @@ enum class CarrierKind(val executable: String, val configFlag: String, val minim
     SLIPSTREAM("libdnstun.so", "--qthrone-config", 24),
     MASTERDNS("libmasterdns.so", "--qthrone-config", 24),
     S3BYPASS("libs3bypass.so", "--qthrone-config", 24),
+    SSTP("libsstp.so", "--qthrone-config", 24),
     // WDTT Plus takes flags and its secrets as START_CONFIG on stdin, as its own app starts it.
     WDTTPLUS("libwdttplus.so", "", 24),
 }
@@ -37,7 +38,7 @@ class CarrierBridgeCredentials(val username: String, val password: String) {
 }
 
 /** Native client owner. Config secrets are removed before provider output enters application logs. */
-class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean, kind: CarrierKind,
+class CarrierProcess private constructor(private val process: Process, private val config: File, allowInteractions: Boolean, private val kind: CarrierKind,
     private val onStatus: (NativeConnectionStage) -> Unit) : AutoCloseable {
     private val closed = AtomicBoolean(false)
     private val startupFailure = java.util.concurrent.atomic.AtomicReference<String?>(null)
@@ -45,23 +46,36 @@ class CarrierProcess private constructor(private val process: Process, private v
     private class UnavailableCall:IllegalStateException("VK: выбранный хеш недоступен; звонок не найден")
     private class TransientStartup:IllegalStateException("Временная ошибка авторизации VK; повторите подключение")
     private val captcha=CarrierCaptchaBridge(process,allowUi=allowInteractions,client=when(kind) { CarrierKind.CSQTT -> "csqtt"; CarrierKind.WDTTPLUS -> "wdttplus"; else -> "qwdtt" })
-    private val health=NativeTransportHealth()
+    private val health=NativeTransportHealth(minimumRecoveryPeak=if(kind==CarrierKind.CSQTT) 10 else 9)
+    private var wdttLifecycle: WdttPlusLifecycle? = null
+    private var wdttBootstrap: WdttPlusBootstrapRelay? = null
+    private var wdttDeadSince=0L
     fun recoveryFailure(): Pair<String,Boolean>? {
         if(closed.get() || captcha.waiting) return null
         if(captcha.userCancelled) return "Подтверждение VK отменено" to true
         startupFailure.get()?.let { return it to true }
-        if(health.wrongPassword(false)) return WRONG_PASSWORD to true
         val exited=try { process.exitValue();true } catch(_:IllegalThreadStateException) { false }
+        // WDTT Plus v20 keeps a live Go process through loss of workers, DNS and network handovers.
+        // Its native connection policy repairs individual channels without creating new VK calls.
+        if(kind == CarrierKind.WDTTPLUS) {
+            if(!exited) { wdttDeadSince=0L; return null }
+            val now=System.nanoTime()/1_000_000
+            if(wdttDeadSince == 0L) wdttDeadSince=now
+            if(now-wdttDeadSince < 60_000L) return null
+        }
+        if(health.wrongPassword(false)) return WRONG_PASSWORD to true
         return if(exited || health.needsRestart(false,false)) "Транспорт потерял соединение" to false else null
     }
 
     override fun close() {
         if (!closed.compareAndSet(false, true)) return
+        wdttLifecycle?.close(); wdttLifecycle = null
+        wdttBootstrap?.close(); wdttBootstrap = null
         captcha.close()
         runCatching { process.outputStream.write("STOP\n".toByteArray()); process.outputStream.flush() }
         runCatching { process.outputStream.close() }
         // Let the Go wrapper shut down its Rust child before sending SIGTERM.
-        val deadline=System.nanoTime()+1_000_000_000L
+        val deadline=System.nanoTime()+NativeSessionPolicy.shutdownGraceMs(kind)*1_000_000L
         var exited=false
         while(System.nanoTime()<deadline) {
             exited=try { process.exitValue();true } catch(_:IllegalThreadStateException) { false }
@@ -105,7 +119,9 @@ class CarrierProcess private constructor(private val process: Process, private v
                 try {
                     var launchJson=NativeSessionPolicy.rotatedHashes(privateJson,attempt)
                     // Every launch is a new epoch on the server, as in the original app; a retry included.
-                    if(kind==CarrierKind.CSQTT) launchJson=CsqttEpoch.apply(launchJson,CsqttEpoch.reserve(),CsqttEpoch.salt())
+                    if(kind==CarrierKind.CSQTT) {
+                        launchJson=CsqttEpoch.apply(launchJson,CsqttEpoch.reserve(),CsqttEpoch.salt())
+                    }
                     return startOnce(kind,nativeDirectory,privateDirectory,apiLevel,
                         launchJson,socksPort,bridgeCredentials,
                         remaining,allowInteractions,onStatus,launch)
@@ -137,6 +153,7 @@ class CarrierProcess private constructor(private val process: Process, private v
             // withContext may discard a successful return when cancellation wins the
             // dispatcher hand-off. Keep ownership outside it so that process is closed too.
             var owner: CarrierProcess? = null
+            var pendingBootstrap: WdttPlusBootstrapRelay? = null
             try {
                 return withContext(Dispatchers.IO) {
                     require(apiLevel >= kind.minimumApi) { "Transport requires Android API ${kind.minimumApi}" }
@@ -162,7 +179,21 @@ class CarrierProcess private constructor(private val process: Process, private v
                         val launchConfig = if (kind == CarrierKind.WDTTPLUS) org.json.JSONObject(privateJson) else null
                         val command = if (launchConfig != null) {
                             val args = launchConfig.getJSONArray("args")
-                            listOf(executable.absolutePath) + (0 until args.length()).map { args.getString(it) }
+                            val flags = (0 until args.length()).map { args.getString(it) }
+                            val masque = if ("-rt-masque=true" in flags) {
+                                val state = File(app.qthrone.mobile.ktx.app.noBackupFilesDir,"wdttplus")
+                                check(state.isDirectory || state.mkdirs()) { "Cannot create private WDTT Plus state" }
+                                val masqueConfig=File(state,"rt-masque-v1.json")
+                                val bootstrap = if(WdttPlusBootstrapPolicy.needed(true,launchConfig.optBoolean("masque_server_bootstrap"),masqueConfig.exists())) {
+                                    val peerIndex=flags.indexOf("-peer")
+                                    val peer=app.qthrone.mobile.outbound.link.LinkParser.parse("udp://"+flags.getOrNull(peerIndex+1).orEmpty())
+                                    if(peerIndex >= 0 && peer.isValid) WdttPlusBootstrapRelay.start(peer.host,peer.port(56000)) else null
+                                } else null
+                                pendingBootstrap=bootstrap
+                                listOf("-rt-masque-config",masqueConfig.absolutePath,"-rt-masque-accept-tos=true") +
+                                    WdttPlusBootstrapPolicy.arguments(true,launchConfig.optBoolean("masque_server_bootstrap"),masqueConfig.exists(),bootstrap?.address)
+                            } else emptyList()
+                            listOf(executable.absolutePath) + flags + masque
                         } else listOf(executable.absolutePath, kind.configFlag, config.absolutePath)
                         val builder = ProcessBuilder(command)
                             .directory(if (launchConfig != null) sessionDirectory else nativeDirectory).redirectErrorStream(true)
@@ -179,11 +210,17 @@ class CarrierProcess private constructor(private val process: Process, private v
                         }
                         val running = CarrierProcess(child, config,allowInteractions,kind,onStatus)
                         owner = running
+                        running.wdttBootstrap=pendingBootstrap; pendingBootstrap=null
                         if (launchConfig != null) {
                             val start = android.util.Base64.encodeToString(launchConfig.getJSONObject("start").toString().toByteArray(Charsets.UTF_8),
                                 android.util.Base64.URL_SAFE or android.util.Base64.NO_PADDING or android.util.Base64.NO_WRAP)
                             val line = "START_CONFIG|" + start + '\n'
                             synchronized(child) { child.outputStream.write(line.toByteArray(Charsets.UTF_8)); child.outputStream.flush() }
+                            running.wdttLifecycle = WdttPlusLifecycle(app.qthrone.mobile.ktx.app) { command ->
+                                synchronized(child) { runCatching {
+                                    child.outputStream.write((command+'\n').toByteArray(Charsets.UTF_8)); child.outputStream.flush()
+                                } }
+                            }
                         }
                         runCatching { onStatus(NativeConnectionStage.AUTHORIZING) }
                         val redactor = CarrierLogRedactor(privateJson, bridgeCredentials)
@@ -231,12 +268,14 @@ class CarrierProcess private constructor(private val process: Process, private v
                         }
                         throw IllegalStateException("Transport client startup timed out")
                     } catch (error: Throwable) {
+                        pendingBootstrap?.close(); pendingBootstrap=null
                         owner?.close()
                         config.parentFile?.deleteRecursively()
                         throw error
                     }
                 }
             } catch (error: Throwable) {
+                pendingBootstrap?.close()
                 owner?.close()
                 throw error
             }

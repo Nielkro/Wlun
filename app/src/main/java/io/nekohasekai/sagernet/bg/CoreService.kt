@@ -25,8 +25,8 @@ class CoreService : Service() {
 
         override fun refreshAll(onlyAllowed: Boolean) = SubscriptionQueue.refreshAll(onlyAllowed)
 
-        override fun subscribeUrl(url: String, name: String?, autoUpdate: Boolean): Long =
-            SubscriptionQueue.subscribeUrl(url, name.orEmpty(), autoUpdate)
+        override fun subscribeUrl(url: String, name: String?, autoUpdate: Boolean, allowInsecureRequests: Boolean): Long =
+            SubscriptionQueue.subscribeUrl(url, name.orEmpty(), autoUpdate, allowInsecureRequests)
 
         override fun importUrl(url: String, gid: Long) = SubscriptionQueue.importUrl(url, gid)
 

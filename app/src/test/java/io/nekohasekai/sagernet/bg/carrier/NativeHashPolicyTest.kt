@@ -5,7 +5,7 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class NativeHashPolicyTest {
-    @Test fun workerCeilingFollowsTheResultingHashCountWithoutResettingToNine() {
+    @Test fun refreshUsesQwdttHashCeilingAndCsqttIndependentWorkerLimit() {
         assertEquals(81,NativeHashPolicy.preservedWorkers(108,108,81))
         assertEquals(108,NativeHashPolicy.preservedWorkers(81,81,108))
         assertEquals(126,NativeHashPolicy.preservedWorkers(108,108,126))
@@ -20,7 +20,8 @@ class NativeHashPolicyTest {
             incoming.hashes=listOf("d","e","f");incoming.workers=9
             NativeHashPolicy.preserve(incoming,listOf(old))
             assertEquals(listOf("d","e","f"),incoming.hashes)
-            assertEquals(81,incoming.workers)
+            // CSQTT 2.5 normalizes the saved count independently of hash slots.
+            assertEquals(if(type=="csqtt") 100 else 81,incoming.workers)
         }
     }
     @Test fun subscriptionHashesAndExistingRowSurviveRepeatedRefreshForBothTransports() {
@@ -119,7 +120,7 @@ class NativeHashPolicyTest {
             NativeHashPolicy.preserve(incoming,listOf(old))
             assertEquals("raw",incoming.mode)
             assertEquals(old.turnTcp,incoming.turnTcp)
-            assertEquals(27,incoming.workers)
+            assertEquals(if(type=="csqtt") 20 else 27,incoming.workers)
             assertEquals(listOf("user_hash_123456789"),incoming.hashes)
             assertEquals(NativeHashPolicy.subscriptionIdentity(old),NativeHashPolicy.subscriptionIdentity(incoming))
         }

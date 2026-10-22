@@ -23,9 +23,25 @@ object SubscriptionFetch {
     class Result(@JvmField val body: String, @JvmField val subInfo: SubUserInfo, @JvmField val error: String?, val routing: String = "")
 
     fun fetch(url: String, name: String, identity: RequestIdentity): Result {
+        val encrypted = ProviderLinks.isEncrypted(url)
         Logs.i(">>>>>>>> " + app.getString(R.string.subs_requesting, name))
-        val result = if (url.startsWith("content://", ignoreCase = true)) readContent(url) else request(url, identity)
+        val result = try {
+            val resolved = ProviderLinks.decodeChecked(url)?.data ?: url
+            if (!encrypted && resolved.startsWith("content://", ignoreCase = true)) readContent(resolved)
+            else {
+                require(SubscriptionCrypto.isHttpUrl(resolved))
+                request(resolved, identity)
+            }
+        } catch (_: Exception) {
+            Result("", SubUserInfo(), app.getString(R.string.provider_crypto_import_error))
+        }
         if (result.error != null) {
+            if (encrypted) {
+                // HTTP clients can include the decoded URL in exceptions and providers can echo it in error bodies.
+                val safeError = app.getString(R.string.provider_crypto_fetch_error)
+                Logs.w("<<<<<<<< " + app.getString(R.string.subs_request_error, name, safeError))
+                return Result("", SubUserInfo(), safeError)
+            }
             Logs.w("<<<<<<<< " + app.getString(R.string.subs_request_error, name, result.error + "\n" + result.body))
             return Result("", SubUserInfo(), result.error)
         }
@@ -36,13 +52,18 @@ object SubscriptionFetch {
     private fun request(url: String, identity: RequestIdentity): Result {
         val response = httpGet(
             url,
-            HttpGetOptions(userAgent = identity.userAgent, headers = identity.headers(), maxBytes = MAX_BYTES),
+            HttpGetOptions(userAgent = identity.userAgent, headers = identity.headers(), maxBytes = MAX_BYTES,
+                timeoutSeconds = identity.timeoutSeconds, allowInsecure = identity.allowInsecureRequests),
         )
         if (!response.ok) {
             val body = String(response.data, 0, minOf(response.data.size, MAX_LOGGED_BODY), Charsets.UTF_8)
             return Result(body, SubUserInfo(), response.error)
         }
-        val body = String(response.data, Charsets.UTF_8)
+        val body = try {
+            SubscriptionCrypto.decryptResponse(response.finalUrl.ifBlank { url }, String(response.data, Charsets.UTF_8), response.header("Encrypt-Tag"), url)
+        } catch (_: Exception) {
+            return Result("", SubUserInfo(), app.getString(R.string.provider_crypto_response_error))
+        }
         val routingHeader = response.header("routing")
             .ifBlank { response.header("x-routing") }
             .ifBlank { response.header("happ-routing") }

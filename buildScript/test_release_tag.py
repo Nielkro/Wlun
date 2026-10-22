@@ -1,8 +1,16 @@
 import unittest
-from release_tag import release_build_number
+from release_tag import release_build_number, validate_release_code
 
 
 class ReleaseCodeTest(unittest.TestCase):
+    def test_resuming_the_transition_does_not_allow_other_equal_or_lower_codes(self):
+        previous=dict(versionName="2.4.2", versionCode=69999)
+        validate_release_code(69999,"2.4.2",previous,"v2.4.1")
+        validate_release_code(70999,"2.4.3",previous,"v2.4.2")
+        for code, version, tag in ((68999,"2.4.2","v2.4.1"), (69999,"2.4.2","v2.4.2"), (69999,"2.4.3","v2.4.1")):
+            with self.assertRaises(ValueError):
+                validate_release_code(code,version,previous,tag)
+
     def test_prereleases_and_stable_increase(self):
         versions = ["1.4.2-beta.1", "1.4.2-beta.2", "1.4.2-beta.10", "1.4.2-rc.1", "1.4.2"]
         codes = [release_build_number(v) for v in versions]

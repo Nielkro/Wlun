@@ -166,6 +166,7 @@ class MainActivity : ThemedActivity(),
 
         if (savedInstanceState == null) intent?.let(::handleImportIntent)
         SubscriptionReportDialog.observe(this)
+        SubscriptionStartup.run(this)
 
         refreshNavMenu(DataStore.apiDashboardEnabled)
 

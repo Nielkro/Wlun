@@ -89,6 +89,9 @@ object MobileSettingsStyle {
             if(category) {
                 view.minimumHeight=0
                 view.setPadding(view.paddingLeft,(4*density).toInt(),view.paddingRight,(2*density).toInt())
+            } else {
+                view.minimumHeight=(48*density).toInt()
+                view.setPaddingRelative((12*density).toInt(),(8*density).toInt(),(12*density).toInt(),(8*density).toInt())
             }
             val oldCopy=view.findViewWithTag<View>("socks-copy")
             (oldCopy?.parent as? android.view.ViewGroup)?.removeView(oldCopy)
@@ -111,7 +114,8 @@ object MobileSettingsStyle {
             }
             view.background=android.graphics.drawable.GradientDrawable().apply {
                 setColor(if(category || warning) background else surface)
-                cornerRadius=16*density
+                cornerRadius=5*density
+                if(!category && !warning) setStroke(1,MobilePalette.outline)
             }
             if(!category && !warning) MobileFeedback.apply(view)
             styledBackgrounds[view] = view.background
@@ -121,10 +125,11 @@ object MobileSettingsStyle {
             }
             view.findViewById<TextView>(android.R.id.title)?.apply {
                 setTextColor(if(category) accent else textColor)
-                textSize=if(category) 16f else 16f
+                textSize=16f
                 setTypeface(null,if(category) Typeface.BOLD else Typeface.NORMAL)
+                isSingleLine=false;maxLines=Int.MAX_VALUE;ellipsize=null
             }
-            view.findViewById<TextView>(android.R.id.summary)?.setTextColor(muted)
+            view.findViewById<TextView>(android.R.id.summary)?.apply { setTextColor(muted);textSize=13f }
             if(preference?.key == "sharingAddresses") view.findViewById<TextView>(android.R.id.summary)?.apply {
                 minLines=2; maxLines=2; ellipsize=android.text.TextUtils.TruncateAt.END
             } else if(oldKey == "sharingAddresses") view.findViewById<TextView>(android.R.id.summary)?.apply {

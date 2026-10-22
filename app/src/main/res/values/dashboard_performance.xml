@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dashboard_server_page">Servers %1$d–%2$d of %3$d</string>
+    <string name="dashboard_previous_servers">Previous</string>
+    <string name="dashboard_next_servers">Next</string>
+</resources>

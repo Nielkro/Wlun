@@ -71,6 +71,8 @@ dependencies {
 
     implementation("com.google.android.material:material:1.8.0")
     implementation("com.google.code.gson:gson:2.9.0")
+    // Lightweight AEAD API keeps Happ crypt5 compatible with Android 7–8 as well.
+    implementation("org.bouncycastle:bcprov-jdk15to18:1.86")
 
     implementation("com.github.jenly1314:zxing-lite:2.1.1")
     // 0.24.x is built with Kotlin 2.2 (unreadable for the Kotlin 2.0 compiler/KSP) and 0.24.5+ needs compileSdk 36;

@@ -8,6 +8,7 @@ import androidx.core.widget.addTextChangedListener
 import androidx.preference.EditTextPreference
 import com.google.android.material.textfield.TextInputLayout
 import app.qthrone.mobile.R
+import app.qthrone.mobile.group.ProviderLinks
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.readableMessage
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -37,6 +38,11 @@ constructor(
                 }
 
                 try {
+                    if (ProviderLinks.isProviderLink(link.toString())) {
+                        // Decryption is validated on IO during import/refresh; typing here only classifies the link.
+                        linkLayout.isErrorEnabled = false
+                        return
+                    }
                     if (Uri.parse(link.toString()).scheme == "content") {
                         linkLayout.isErrorEnabled = false
                         return

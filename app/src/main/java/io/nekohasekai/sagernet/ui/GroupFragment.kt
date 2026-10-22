@@ -115,7 +115,7 @@ class GroupFragment : ToolbarFragment(R.layout.layout_group), Toolbar.OnMenuItem
 
     override fun onMenuItemClick(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_new_group -> startActivity(Intent(requireContext(), GroupSettingsActivity::class.java))
+            R.id.action_new_group -> startActivity(Intent(requireContext(), SubscriptionEditorActivity::class.java))
 
             // dialog_manage_groups: every subscription, skip_auto_update included
             R.id.action_update_all -> requireContext().confirmAction(
@@ -126,7 +126,7 @@ class GroupFragment : ToolbarFragment(R.layout.layout_group), Toolbar.OnMenuItem
     }
 
     private fun edit(group: ProxyGroup) {
-        startActivity(Intent(requireContext(), GroupSettingsActivity::class.java).apply {
+        startActivity(Intent(requireContext(), SubscriptionEditorActivity::class.java).apply {
             putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, group.id)
         })
     }
@@ -308,6 +308,13 @@ class GroupFragment : ToolbarFragment(R.layout.layout_group), Toolbar.OnMenuItem
             binding.options.setOnClickListener { anchor ->
                 val popup = PopupMenu(requireContext(), anchor)
                 popup.menuInflater.inflate(R.menu.group_action_menu, popup.menu)
+                popup.menu.add(getString(R.string.qmobile_edit)).setOnMenuItemClickListener { edit(group);true }
+                if(group.isSubscription) popup.menu.add(getString(R.string.settings)).setOnMenuItemClickListener {
+                    startActivity(Intent(requireContext(),GroupSettingsActivity::class.java)
+                        .putExtra(GroupSettingsActivity.EXTRA_GROUP_ID,group.id)
+                        .putExtra(GroupSettingsActivity.EXTRA_SETTINGS,true))
+                    true
+                }
                 val menu = popup.menu
                 val index = groupAdapter.rows.indexOfFirst { it.group.id == group.id }
                 menu.findItem(R.id.action_share_subscription).isVisible = group.isSubscription

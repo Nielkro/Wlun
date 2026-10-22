@@ -4,7 +4,6 @@ import android.net.Uri
 import android.os.RemoteCallbackList
 import app.qthrone.mobile.R
 import app.qthrone.mobile.aidl.ISubscriptionCallback
-import app.qthrone.mobile.bg.CoreForeground
 import app.qthrone.mobile.bg.test.TestEngine
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
@@ -30,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 /**
  * The :bg subscription job queue behind ICoreService (GroupUpdater, GroupUpdater.cpp:321-446): jobs run one at a
  * time in FIFO order; a group is queued at most once; a batch refuses to start while the previous one runs.
- * Jobs requested over AIDL keep CoreService in the foreground and report their failures through [callbacks].
+ * Jobs requested over AIDL report their failures through [callbacks].
  */
 object SubscriptionQueue {
 
@@ -47,7 +46,6 @@ object SubscriptionQueue {
     /** The directory of [importFile] payloads, under the app's cache directory. */
     const val IMPORT_DIR = "import"
 
-    private const val FOREGROUND_REASON = "subscriptions"
 
     val callbacks = RemoteCallbackList<ISubscriptionCallback>()
 
@@ -63,7 +61,6 @@ object SubscriptionQueue {
     }
 
     private class Job(val gid: Long, val batch: Boolean, val foreground: Boolean, val run: suspend () -> Unit) {
-        var holdsForeground = false
     }
 
     // Guards the queue and the state events: a callback registered meanwhile never sees them out of order.
@@ -169,18 +166,20 @@ object SubscriptionQueue {
      * host when blank) that skips automatic updates unless [autoUpdate]; its first refresh is queued without the
      * change window. Returns the group id, -1 on failure.
      */
-    fun subscribeUrl(url: String, name: String, autoUpdate: Boolean): Long {
-        val wrapped = ProviderLinks.subscription(url)
+    fun subscribeUrl(url: String, name: String, autoUpdate: Boolean, allowInsecureRequests: Boolean = false): Long {
+        val wrapped = try { ProviderLinks.decodeChecked(url) } catch (_: Exception) { return -1L }
         val content = wrapped?.data ?: url.trim()
-        if (content.isEmpty()) return -1L
+        if (!SubscriptionCrypto.isHttpUrl(content) && (wrapped != null || !content.startsWith("content://", true))) return -1L
         val group = try {
             runBlocking {
                 GroupRepo.add(
                     ProxyGroup(
-                        name = name.trim().ifEmpty { runCatching { Uri.parse(content).host }.getOrNull().orEmpty() },
-                        url = content,
+                        name = name.trim().ifEmpty { wrapped?.name.orEmpty().ifEmpty { runCatching { Uri.parse(content).host }.getOrNull().orEmpty() } },
+                        // Retain the original encrypted wire format for sharing and backup, never its decoded URL.
+                        url = if (wrapped?.encrypted == true) url.trim() else content,
                         skipAutoUpdate = !autoUpdate,
-                        subOptions = SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty()),
+                        subOptions = SubscriptionOptions(routingProvider = wrapped?.provider.orEmpty(),
+                            allowInsecureRequests = allowInsecureRequests),
                     )
                 )
             }
@@ -301,13 +300,10 @@ object SubscriptionQueue {
     private fun enqueueLocked(job: Job) {
         queue.addLast(job)
         outstanding.update { it + 1 }
-        // The VPN already keeps :bg alive and owns the normal connection notification.
-        // Do not create a second progress notification for subscription refreshes then.
-        job.holdsForeground = job.foreground && !DataStore.serviceState.connected
-        if (job.holdsForeground) CoreForeground.acquire(FOREGROUND_REASON)
         if (job.gid >= 0) stateLocked(job.gid, STATE_QUEUED)
         if (draining) return
         draining = true
+        if(job.foreground) SubscriptionScheduler.holdQueue()
         scope.launch { drain() }
     }
 
@@ -339,7 +335,6 @@ object SubscriptionQueue {
                     }
                     if (job.batch) pendingBatch--
                 }
-                if (job.holdsForeground) CoreForeground.release(FOREGROUND_REASON)
                 outstanding.update { it - 1 }
             }
         }

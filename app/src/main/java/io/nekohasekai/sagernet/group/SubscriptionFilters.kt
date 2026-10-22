@@ -4,6 +4,7 @@ import app.qthrone.mobile.R
 import app.qthrone.mobile.bg.ProfileValidator
 import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.GroupRepo
+import app.qthrone.mobile.database.ServerSortRule
 import app.qthrone.mobile.database.GroupSort
 import app.qthrone.mobile.database.GroupSortAction
 import app.qthrone.mobile.database.GroupSortMethod
@@ -103,7 +104,8 @@ internal object SubscriptionFilters {
                 if (outcome.kept.isNotEmpty()) report.append('\n').append(app.getString(R.string.subs_running_kept))
             }
         }
-        if (options.sortByLatency && !GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_LATENCY))) {
+        if (options.effectiveSortRule == ServerSortRule.PING &&
+            !GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_LATENCY))) {
             Logs.i(app.getString(R.string.subs_sort_skipped, group.name))
         }
         return Outcome(deleted, report.toString())

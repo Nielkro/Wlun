@@ -40,5 +40,121 @@
     "carriers/dnstun/tunnel.go": "14934adea51d82e3a7dc8f6bdc6a8e6d111580320a449b30eae8d00df30cd50b",
     "carriers/masterdns/main.go": "abdcf31f1b0e075bea21ecd49b547707c699cca607d45b42ee1284019153b9ff",
     "carriers/s3bypass/main.go": "57955f59a8d240cde2d63eeafaa1458b4c8f4f3ce1361a8fed627cf207fb1e49"
+  },
+  "secure_socks": {
+    "build_commit": "f2f72870a98f7852e5d32161cf780e309b74f332",
+    "core_commit": "93e4873c56c2285f647d0146a0df9c088f122910",
+    "wdtt_commit": "f706ccd373685bbde20cae33b2b7f400e8335ecc",
+    "csqtt_commit": "2066156119a5afe7d63e104aefdc8e0849999d03",
+    "inputs": {
+      "scripts/build_secure_carriers.sh": "aa7dd63a6f4e5413feacc855562b4cbe1574e70ac5f36144b8e08c94db9c7d30",
+      "scripts/prepare_android_captcha.py": "b64ad3952201540d1dd24e314365c3d169d46be148e76f960c6050e6676eb674",
+      "scripts/prepare_mobile_carrier_socks.py": "23573edad45bc8bd875ab31998fe06c33b5077cd8fc07ec5048f770256c08b36",
+      "scripts/prepare_private_csqtt.py": "475a90ed087356041821b1dfe7e827806909874762e1ac07fb0440f5e45425d2",
+      "scripts/prepare_csqtt_rebirth.py": "7a9cc30d1cef83e81efc285ed53026aff41de14b9b9943089dec5b51771bfa4d",
+      "scripts/prepare_csqtt_rebirth_bridge.py": "b5e54d9b49ba2d111dd77467d91c28ff012fe261303e24b3ad232e9a410e7336",
+      "core-patches/carrier-socks/qwdtt/mobile_csqtt_ipc_linux.go": "3c5e4a71a6860f83629b2a86e66bce4612cadb2b40c7b2b3d798b039c68bce4c",
+      "core-patches/carrier-socks/qwdtt/mobile_csqtt_ipc_linux_test.go": "01fe064afab5de8f2bcd88f5c25871714099f4ad564f1d5d17d9f6b26af5f470",
+      "core-patches/carrier-socks/qwdtt/mobile_csqtt_ipc_other.go": "e146d0bbddced21a41ad10b6ff047a4379a452449b69703077a81082bad77a57",
+      "core-patches/carrier-socks/qwdtt/mobile_csqtt_rebirth_test.go": "094c9d0ef4e4b2df3833095e88a241a320cef109f0f7324a5c5b84e65e33aa53",
+      "core-patches/carrier-socks/qwdtt/mobile_source_port_test.go": "87c3c2b7e8b8674c658e8be9360cb87a304c6a940b9afde69eaad71c18a52ce8",
+      "core-patches/carrier-socks/wdttplus/mobile_source_port_test.go": "727d2ef5ee67f0591848cdf79f26cb097d7059b7c42ddf09649c42953b7825c6"
+    },
+    "archives": [
+      {
+        "abi": "arm64-v8a",
+        "name": "qthrone-secure-socks-f2f72870-arm64-v8a.tar.gz",
+        "sha256": "44167c29f14b16468c489abb3bc26f6284efa9ba02eb91367e39503cc54badec",
+        "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nWDTT-Plus f706ccd373685bbde20cae33b2b7f400e8335ecc\nCSQTT 2066156119a5afe7d63e104aefdc8e0849999d03\nAndroid ABI arm64-v8a\nLocal IPC hardening f2f72870a98f7852e5d32161cf780e309b74f332\n",
+        "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-secure-socks-f2f72870-arm64-v8a.tar.gz"
+      },
+      {
+        "abi": "armeabi-v7a",
+        "name": "qthrone-secure-socks-f2f72870-armeabi-v7a.tar.gz",
+        "sha256": "f19572cc00280d53f5e6d099b90343fddb2ce675fa6f3b88a6f9a1facc1bfd50",
+        "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nWDTT-Plus f706ccd373685bbde20cae33b2b7f400e8335ecc\nCSQTT 2066156119a5afe7d63e104aefdc8e0849999d03\nAndroid ABI armeabi-v7a\nLocal IPC hardening f2f72870a98f7852e5d32161cf780e309b74f332\n",
+        "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-secure-socks-f2f72870-armeabi-v7a.tar.gz"
+      },
+      {
+        "abi": "x86_64",
+        "name": "qthrone-secure-socks-f2f72870-x86_64.tar.gz",
+        "sha256": "7fbfd8f2a8fdb037e94a4fe569ea4d5ded18c0ea2a51d01d9dffc0f5a7e86d34",
+        "sources": "qThrone 93e4873c56c2285f647d0146a0df9c088f122910\nWDTT-Plus f706ccd373685bbde20cae33b2b7f400e8335ecc\nCSQTT 2066156119a5afe7d63e104aefdc8e0849999d03\nAndroid ABI x86_64\nLocal IPC hardening f2f72870a98f7852e5d32161cf780e309b74f332\n",
+        "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-secure-socks-f2f72870-x86_64.tar.gz"
+      }
+    ]
+  },
+  "sstp": {
+    "build_commit": "9409f474ec032e97c9fc3c90d03f15f1fada0b1d",
+    "inputs": {
+      "carriers/sstp/LICENSE": "3baa1b9ee594939e30c64a5c353b37cacac35cd693982370951f68f6d55156db",
+      "carriers/sstp/bridge.go": "dc0cd6e2457f5ce94c2adccdb4a48b5e1ce3e905adcb98342943cebf2d9b4e3d",
+      "carriers/sstp/dns.go": "0d8f9ec551147e05981c17d6b8c4d8a5262e6962c7800332efa7f79e1bfceb8a",
+      "carriers/sstp/go.mod": "4b5ca17967bc541c796659687327785b654f0b4c21305f9dd7d556f4d14ddeef",
+      "carriers/sstp/go.sum": "fe9c0c253fef4ee77c25930c867fd30485e898a7bb110a9d4c2024ca9f6e428c",
+      "carriers/sstp/internal/cryptoutil/aead.go": "513a7901beefa2eae2623350418fa92de5ee2c8bc9575250deeeef7bad49586a",
+      "carriers/sstp/internal/cryptoutil/aead_test.go": "c303ac71322d1edb4830aea4e03561d4c8e869649ac50d31c948c1ea1b7f5d7f",
+      "carriers/sstp/internal/cryptoutil/bench_test.go": "eced415b2a4c4bd1d47f1547f31ab927f1cde05640059cac78b74bcaf85bb9b7",
+      "carriers/sstp/internal/cryptoutil/cipher.go": "2ca86b106f119a644c8c545452b8e52bccda220dac5739fc5b9c374c1cc5b0bc",
+      "carriers/sstp/internal/cryptoutil/cryptoutil_test.go": "658b4ab685c38d75b1d8666cf345bc0a385879d573ce6101f4c9b4aab61e85d1",
+      "carriers/sstp/internal/cryptoutil/dh.go": "86bdc6dacb0cbb6c2b6ad0ac6ddc520584d514ac9daf449a0087ba00aa625bc2",
+      "carriers/sstp/internal/cryptoutil/espcrypt.go": "bf8012bc8b3422be4556f1143c4c03172157a82f66a3a691d4dd25f6aa999efe",
+      "carriers/sstp/internal/cryptoutil/modp.go": "6989a8d5a95f061ed18c62b327fd59c9efb806fb76db6b1ec290c1b4ac7368dc",
+      "carriers/sstp/internal/cryptoutil/prf.go": "a275ba18d34c38af6cc93dd9e42ef35f75a9ac5dfac4ec91e171611ce576f9f7",
+      "carriers/sstp/internal/cryptoutil/secret.go": "fa5ef749964333cbe9afa92e6f8fcbe9e71f15b0ab1f421f69025db0456e5ba4",
+      "carriers/sstp/internal/debuglog/debuglog.go": "4c0022f01287e111d49e94639931f1b26442fd9240de9c53ee1c123924a2c411",
+      "carriers/sstp/internal/mschap/mppe.go": "8630662f3a86335276c03d27828eb0f9d73519de25874b09b78e2b1b5e6978f2",
+      "carriers/sstp/internal/mschap/mschap.go": "f05bd980812a8dd99c3db231e9ed0badec4f1d5490af7500769a0d118868f609",
+      "carriers/sstp/internal/mschap/mschap_test.go": "8310bcb6bb23ed0b5625f5c6a3052fe8cf3de063880793b4aa21989e426a6982",
+      "carriers/sstp/internal/ppp/chap.go": "6b30605c1ec76216ad3434644bdfe37971899abdda53408fe5ec31c46e437c17",
+      "carriers/sstp/internal/ppp/cp.go": "4e826e8b674d583c3760e0aa4188b8bec8d1a46b243387e8c26d2d1557487393",
+      "carriers/sstp/internal/ppp/frame.go": "66e5473d76b57dbb4806e5ed1bb2b282f5e12eaae3bcb916f3e7cd2862ba6856",
+      "carriers/sstp/internal/ppp/fuzz_test.go": "14eb6a699bae86b7581c447fe60107f541e16fbc46ff55971fd81da365665fde",
+      "carriers/sstp/internal/ppp/ipv6cp.go": "3895a00212b84171c421c95314069ecb16444746c04a661c002bebdd04aed49b",
+      "carriers/sstp/internal/ppp/ipv6cp_test.go": "bc12f910389e0186c9181d51efae3094ab83649cfe9252ce608e2be335f58fb4",
+      "carriers/sstp/internal/ppp/noauth_test.go": "e5f730a447e5e8329e367e84f36f74ce1872f809c9d49243595739ee662f6fd0",
+      "carriers/sstp/internal/ppp/restart.go": "53bbe5b5b88d9b87a3376e3a9e3195a0d2206ac57f68ff3780d6d491ba9fb82d",
+      "carriers/sstp/internal/ppp/server.go": "c4420a817d60c510607c119ebb45d7de304a6ea87d5cc781252d18c07ae90dec",
+      "carriers/sstp/internal/ppp/server_test.go": "f45badd9bc1da2d6048dab351a657497f0e31a21a8ef80f46429c722b2aad958",
+      "carriers/sstp/internal/ppp/session.go": "4747b430712d68c51224d119481dad4610b5f24e2f84f93fec26bba2903a11d0",
+      "carriers/sstp/internal/ppp/session_test.go": "2f26cc7c9c02aeeaa2e970374d593cdc58d625223c603f0653f3b78797f6977b",
+      "carriers/sstp/internal/sstp/control.go": "6714d2fb6540c1dbf27555e319f85fed8900da04bb3804fc32c51f3a74f3e616",
+      "carriers/sstp/internal/sstp/crypto.go": "0b0647176cc3dc93837401d555f01b87c36682152f5cd0bae538ebb1177e8ead",
+      "carriers/sstp/internal/sstp/wire/datapath_test.go": "b32077a4ff4e576bb22f7d7253d7b7480694db59a42f93af10faa0456009c77b",
+      "carriers/sstp/internal/sstp/wire/fuzz_test.go": "3e13a7aadcd3c4f25d11e7da17104074721823467ff226e9cb78240f7b299165",
+      "carriers/sstp/internal/sstp/wire/wire.go": "a5c71c87bc88927e38817c91a6c0a8e9562bb4528b94089e1c5a3445145aa210",
+      "carriers/sstp/internal/sstp/wire/wire_test.go": "3066098af510e8b3574c18837e7ac5a7e9790d8b7c23942f8e3440c4d8c2b93b",
+      "carriers/sstp/internal/vlog/texthandler.go": "60738787ebf2025258d87a2eb37ade96f3ee44d880f43a8a713a4a7899d7ef84",
+      "carriers/sstp/internal/vlog/vlog.go": "2d94f256fc0ebe498edf30f4cd1c578d9b3daba8fa49cfc797d3417e6b9ef633",
+      "carriers/sstp/internal/vlog/vlog_test.go": "1a5793127f184b89e9f4df81f5482e0c2746571f491272cf5b0848a90a189987",
+      "carriers/sstp/main.go": "75bd96c806cec92ee3a90b6b5965ada70bd49392f3085d709af485158fcc9130",
+      "carriers/sstp/socks5.go": "7b9d970fbb54f75b88446ef1b9b4c36d09a25e06fc0f55d36431cf135a32c56a",
+      "carriers/sstp/socks5_test.go": "6b2d97b4c1f8638d2a78cc542705901d318ab1f5aa12ba5407ad4d79ac33a578",
+      "carriers/sstp/stack.go": "a199bdb851987e2d79aa0bd142276a81f7089c7b19a09e2845bfab753b7f349b",
+      "carriers/sstp/tunnel/dialconn_test.go": "8d163590fc324797c098250af3e6a38dab4d333f3885aa3e464b04ee7be7e14f",
+      "carriers/sstp/tunnel/proxy.go": "9093a5ee90722284458f561ba3ed467a1a2124a76764b360ece40f4779ca6fcc",
+      "carriers/sstp/tunnel/tunnel.go": "8f4e665c664f0237943b8201a54a56ff36b50f642d04a525e48e0c302a1fe74f",
+      "scripts/build_sstp.sh": "4afe936ee783e25d4fda8ac7a466541f1ce03f079950e1038fbb7bddbbdedbb8"
+    },
+    "archives": [
+      {
+        "abi": "arm64-v8a",
+        "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-sstp-9409f474-arm64-v8a.tar.gz",
+        "sha256": "74d270dfe3e42b5eff33709d55015a270bebec99191608e7e89ab1274a3fbf0d",
+        "sources": "qThroneMobile SSTP 9409f474ec032e97c9fc3c90d03f15f1fada0b1d\nAndroid ABI arm64-v8a\n"
+      },
+      {
+        "abi": "armeabi-v7a",
+        "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-sstp-9409f474-armeabi-v7a.tar.gz",
+        "sha256": "f86ab19e26b086f1ab790c70e823008222a1bb96c9072f39e4ed0cae22103386",
+        "sources": "qThroneMobile SSTP 9409f474ec032e97c9fc3c90d03f15f1fada0b1d\nAndroid ABI armeabi-v7a\n"
+      },
+      {
+        "abi": "x86_64",
+        "url": "https://github.com/ttrroyy/qThroneMobile/releases/download/v1.0.0/qthrone-sstp-9409f474-x86_64.tar.gz",
+        "sha256": "b956fadf88b0e0445e8a2c1731709ddb42a001c3ec78b894ebf5d8ee7a5c71fb",
+        "sources": "qThroneMobile SSTP 9409f474ec032e97c9fc3c90d03f15f1fada0b1d\nAndroid ABI x86_64\n"
+      }
+    ]
   }
 }

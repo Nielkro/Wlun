@@ -450,7 +450,7 @@ class ConfigurationFragment : ToolbarFragment(R.layout.layout_group_list),
 
     /** A tab's long press: the group editor, as the groups screen opens it. */
     private fun editGroup(group: ProxyGroup) {
-        startActivity(Intent(requireContext(), GroupSettingsActivity::class.java).apply {
+        startActivity(Intent(requireContext(), SubscriptionEditorActivity::class.java).apply {
             putExtra(GroupSettingsActivity.EXTRA_GROUP_ID, group.id)
         })
     }

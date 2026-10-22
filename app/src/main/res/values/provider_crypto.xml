@@ -1,0 +1,8 @@
+<resources>
+    <string name="provider_crypto_import_error">Cannot decrypt subscription. Its format is unsupported or the link is damaged.</string>
+    <string name="provider_crypto_response_error">Cannot decrypt subscription response. The encryption key is unknown or authentication failed. Existing servers were preserved.</string>
+    <string name="provider_crypto_fetch_error">Unable to load the encrypted subscription. Check the network and the subscription link. Existing servers were preserved.</string>
+    <string name="provider_crypto_subscription">Encrypted subscription</string>
+    <string name="provider_crypto_summary">Happ crypt–crypt5 and Incy crypt1 are decoded on this device. Sharing preserves the encrypted link.</string>
+    <string name="provider_crypto_hidden">•••• (%1$s %2$s)</string>
+</resources>

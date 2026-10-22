@@ -55,7 +55,7 @@ class VkRelayActivity : ThemedActivity() {
                 lastRetry = loginAttempt
                 if(loginAttempt >= 2) {
                     MobileAlertDialogBuilder(this).setTitle("Вход VK")
-                        .setMessage("VK отклонил все три варианта входа qWDTT. Попробуйте привязать аккаунт позже.")
+                        .setMessage("VK отклонил все три варианта входа. Попробуйте привязать аккаунт позже.")
                         .setPositiveButton(android.R.string.ok,null).show()
                     return
                 }
@@ -112,7 +112,7 @@ class VkRelayActivity : ThemedActivity() {
                             completedLogin=true
                             CookieManager.getInstance().flush()
                             val sessionCookies=cookies()
-                            val userAgent=WebSettings.getDefaultUserAgent(this@VkRelayActivity)
+                            val userAgent=view.settings.userAgentString
                             lifecycleScope.launch {
                                 val result=withContext(Dispatchers.IO) { runCatching { VkRelayAccount.linkSession(sessionCookies,userAgent) } }
                                 if(result.isSuccess) { Toast.makeText(this@VkRelayActivity,"Аккаунт VK привязан",Toast.LENGTH_SHORT).show();finish() }

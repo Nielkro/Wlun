@@ -56,6 +56,7 @@ object VkRelayAccount {
         val cookies=read().optJSONObject("cookies") ?: return emptyMap()
         return cookies.keys().asSequence().associateWith { cookies.optString(it) }
     }
+    fun sessionUserAgent() = read().optString("userAgent")
     @Synchronized fun linkSession(cookies: Map<String,String>, userAgent: String) {
         require(cookies.values.any { value -> value.split(';').any { it.trim().startsWith("remixsid=") && it.substringAfter('=').isNotBlank() } })
         val previous=read()
@@ -71,7 +72,7 @@ object VkRelayAccount {
     data class UiInfo(val linked: Boolean,val needsRelink: Boolean,val displayName: String)
     fun uiInfo(): UiInfo {
         val session=read()
-        return UiInfo(linked(),needsRelink(),session.optString("name").ifBlank { "Аккаунт VK для qWDTT" })
+        return UiInfo(linked(),needsRelink(),session.optString("name").ifBlank { "Аккаунт VK для VK-реле" })
     }
     fun refreshIdentity() {
         val session = read()
@@ -136,7 +137,8 @@ object VkRelayAccount {
         val state = java.util.UUID.randomUUID().toString()
         val http = client.newBuilder().followRedirects(false).followSslRedirects(false).build()
         var url = authorizeUrl(state)
-        repeat(12) {
+        // qWDTT avoids non-local returns from inline loops here because of ART verifier failures.
+        for(step in 0 until 12) {
             val uri = java.net.URI(url)
             if(!VkRelayOAuth.trustedHttps(uri)) return null
             val request = Request.Builder().url(url)
@@ -161,6 +163,20 @@ object VkRelayAccount {
         }
         return null
     }
+    fun tokenForCalls(): String = synchronized(hashCreationLock) {
+        val session=read()
+        check(session.optString("authClient")=="qwdtt-account-turn") { "Перепривяжите аккаунт VK" }
+        tokenForCalls(session).also { check(it.isNotBlank()) { "Откройте привязку VK для подтверждения входа" } }
+    }
+    private fun tokenForCalls(session: JSONObject): String = VkRelayOAuth.obtainToken(
+        session.optString("token"),session.optLong("expires"),System.currentTimeMillis(),
+        { refreshToken(session) }, { VkTokenRequest.obtain()?.let { (token,expires) ->
+            session.put("token",token).put("expires",if(expires>0) System.currentTimeMillis()+expires*1000 else Long.MAX_VALUE)
+            writeCurrent(session)
+            token
+        } }
+    ).orEmpty()
+
     fun hashes(count: Int): List<String> {
       synchronized(hashCreationLock) {
         require(count in 1..6)
@@ -168,16 +184,12 @@ object VkRelayAccount {
         check(session.optString("authClient") == "qwdtt-account-turn") { "Перепривяжите аккаунт VK: способ авторизации обновлён" }
         val cached = session.optJSONArray("hashes")
         if(cached != null && cached.length() >= count) return (0 until count).map { cached.getString(it) }
-        val token = if(session.optLong("expires") > System.currentTimeMillis()+60_000) session.optString("token")
-            else refreshToken(session) ?: VkTokenRequest.obtain()?.let { (token,expires) ->
-                session.put("token",token).put("expires",if(expires>0) System.currentTimeMillis()+expires*1000 else Long.MAX_VALUE)
-                writeCurrent(session)
-                token
-            }.orEmpty()
+        var token = tokenForCalls(session)
         check(token.isNotBlank()) { "Откройте привязку VK для подтверждения входа" }
         check(session.optLong("retryAfter") <= System.currentTimeMillis()) { "VK ограничил запросы. Повторите позже или используйте ручные хеши" }
         val hashes = mutableListOf<String>()
         if(cached != null) for(i in 0 until cached.length()) hashes.add(cached.getString(i))
+        var refreshedToken=false
         while(hashes.size < count) {
             if(hashes.isNotEmpty()) Thread.sleep(2000)
             val request = VkRelayRequests.startCall(token)
@@ -191,6 +203,12 @@ object VkRelayAccount {
                 if(code in listOf(4,5,27,28)) session.put("expires",0L)
                 if(code in listOf(6,9,14,29)) session.put("retryAfter",System.currentTimeMillis()+60*60*1000L)
                 writeCurrent(session)
+                if(code in listOf(4,5,27,28) && !refreshedToken) {
+                    refreshedToken=true
+                    token=tokenForCalls(session)
+                    check(token.isNotBlank()) { "Откройте привязку VK для подтверждения входа" }
+                    continue
+                }
                 error("Не удалось создать звонок VK: код ${vkError.optInt("error_code")}")
             }
             val call = json.optJSONObject("response") ?: error("VK не вернул ссылку звонка")

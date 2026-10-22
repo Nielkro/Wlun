@@ -81,7 +81,7 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
         dialog=sheet
         val body=LinearLayout(host).apply { orientation=LinearLayout.VERTICAL;setBackgroundColor(MobilePalette.surface) }
         val header=LinearLayout(host).apply { gravity=android.view.Gravity.CENTER_VERTICAL }
-        header.addView(TextView(host).apply { text=if(turn || oauthState!=null) "VK · qWDTT" else "VK · Captcha";textSize=19f;setTextColor(MobilePalette.text);setPadding(24,20,24,20) },LinearLayout.LayoutParams(0,-2,1f))
+        header.addView(TextView(host).apply { text=if(turn || oauthState!=null) "VK · Авторизация" else "VK · Captcha";textSize=19f;setTextColor(MobilePalette.text);setPadding(24,20,24,20) },LinearLayout.LayoutParams(0,-2,1f))
         header.addView(android.widget.ImageButton(host).apply {
             setImageResource(app.qthrone.mobile.R.drawable.ic_navigation_close)
             imageTintList=android.content.res.ColorStateList.valueOf(MobilePalette.accent(host))
@@ -112,7 +112,9 @@ class MobileCaptchaController(private val host: FragmentActivity): AutoCloseable
             webChromeClient=android.webkit.WebChromeClient()
             android.webkit.CookieManager.getInstance().setAcceptThirdPartyCookies(this,true)
             if(turn || oauthState!=null) {
-                settings.userAgentString=app.qthrone.mobile.bg.carrier.VkRelayLogin.userAgent(android.webkit.WebSettings.getDefaultUserAgent(host),0)
+                settings.userAgentString=app.qthrone.mobile.bg.carrier.VkRelayAccount.sessionUserAgent().ifBlank {
+                    app.qthrone.mobile.bg.carrier.VkRelayLogin.userAgent(android.webkit.WebSettings.getDefaultUserAgent(host),0)
+                }
             }
             val hook=if(turn) VkTurnScripts.INTERCEPTOR else CaptchaAutoScripts.intercept
             if(!turn && oauthState==null && androidx.webkit.WebViewFeature.isFeatureSupported(androidx.webkit.WebViewFeature.WEB_MESSAGE_LISTENER))

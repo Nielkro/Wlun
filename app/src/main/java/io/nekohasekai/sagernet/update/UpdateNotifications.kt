@@ -12,7 +12,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import app.qthrone.mobile.R
 
-/** The update channel: "available" (daily check), download progress, install prompt and failures. */
+/** The update channel: download progress, install prompt and failures (legacy release alerts are cancelled). */
 @SuppressLint("MissingPermission")
 object UpdateNotifications {
 

@@ -4,6 +4,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.AtomicFile
 import app.qthrone.mobile.ktx.app
+import app.qthrone.mobile.outbound.link.Hosts
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -20,13 +21,20 @@ class DeployServer(val json: JSONObject) {
     operator fun set(key: String,value: String) { json.put(key,value) }
     fun isEmptyDraft(): Boolean {
         val defaults=create(kind).json
-        val generated=setOf("id","deviceId","adminToken")
+        val generated=setOf("id","deviceId","adminToken","secretPath")
         val keys=(json.keys().asSequence().toSet()+defaults.keys().asSequence().toSet())-generated
         return keys.all { json.optString(it)==defaults.optString(it) }
     }
-    fun port(key: String) = get(key).toInt().also { require(it in 1..65535) }
+    fun port(key: String): Int {
+        val value=if(kind=="csqtt" && get("manualPorts")!="true") when(key) {
+            "sshPort" -> "22";"peerPort" -> "46000";"webPort" -> "46002";else -> get(key)
+        } else get(key)
+        return value.toInt().also { require(it in 1..65535) }
+    }
     fun recordInstallation(config: String) { set("installed","true");set("config",config) }
     fun recordUninstall() { set("installed","false");set("config","") }
+    fun panelUrl(): String = "https://"+Hosts.displayAddress(get("host").ifBlank { "IP" },
+        if(get("manualPorts")=="true") port("webPort") else 46002)+get("secretPath").takeIf { it.isNotBlank() }?.let { "/$it" }.orEmpty()
     fun editSignature(): String = json.keys().asSequence()
         .filterNot { json.optString(it).isEmpty() || it in setOf("config","installed","hostKey","adminPin") || (it in setOf("manualPorts","docker") && json.optString(it)!="true") }.sorted()
         .joinToString(";") { key -> val value=json.optString(key);"${key.length}:$key${value.length}:$value" }
@@ -51,7 +59,11 @@ class DeployServer(val json: JSONObject) {
         if(kind == "wdttplus") {
             require(get("password").length in 8..256) { "Главный пароль: от 8 до 256 символов" }
             require(get("dns").isBlank() || get("dns").matches(Regex("[0-9a-fA-F:.,]{1,255}"))) { "DNS: адреса через запятую" }
-        } else if(kind == "csqtt") require(get("webUser").matches(Regex("[A-Za-z0-9]+")) && get("webPassword").matches(Regex("[A-Za-z0-9]+"))) { "Логин и пароль панели: латиница и цифры" }
+        } else if(kind == "csqtt") {
+            require(get("password").matches(Regex("[A-Za-z0-9]{16}"))) { "Пароль туннеля: ровно 16 латинских букв и цифр" }
+            require(get("webUser").matches(Regex("[A-Za-z0-9]+")) && get("webPassword").matches(Regex("[A-Za-z0-9]+"))) { "Логин и пароль панели: латиница и цифры" }
+            require(get("secretPath").matches(Regex("[A-Za-z0-9_-]{16,128}"))) { "Создайте секретный путь панели" }
+        }
         else {
             require(get("adminId").all(Char::isDigit))
             for(key in listOf("dns1","dns2")) require(get(key).split('.').let { it.size == 4 && it.all { part -> part.toIntOrNull()?.let { it in 0..255 } == true } }) { "DNS должен быть IPv4-адресом" }
@@ -64,6 +76,7 @@ class DeployServer(val json: JSONObject) {
             set("wgPort","56001");set("directPort","56002");set("rawPort","56003");set("adminPort","56002");set("webPort","46002")
             set("dns1","1.1.1.1");set("dns2","1.0.0.1");set("deviceId",java.util.UUID.randomUUID().toString())
             set("adminToken",java.util.UUID.randomUUID().toString()+java.util.UUID.randomUUID().toString())
+            if(kind == "csqtt") set("secretPath",java.util.UUID.randomUUID().toString())
         }
     }
 }

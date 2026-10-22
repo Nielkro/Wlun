@@ -25,7 +25,7 @@ object VkRelayPreferences {
                 key="vkRelayAccount"; title="Привязать аккаунт VK"; setIcon(R.drawable.ic_mobile_vk); isSelectable=false
             })
             group.addPreference(Preference(fragment.requireContext()).apply {
-                key="vkRelayDefaultHashes"; title="Хеши по умолчанию для новых профилей qWDTT и CSQTT"
+                key="vkRelayDefaultHashes"; title="Хеши новых профилей qWDTT, CSQTT и WDTT Plus"
                 summary="Загрузка…"; isSingleLineTitle=false; setIcon(R.drawable.ic_mobile_hash); isSelectable=false
             })
             group.addPreference(Preference(fragment.requireContext()).apply {
@@ -79,7 +79,7 @@ object VkRelayPreferences {
                 }
                 if(info.needsRelink) {
                     title = "Подтвердить привязку VK"
-                    summary = "${info.displayName}\nПерейти на авторизацию qWDTT"
+                    summary = "${info.displayName}\nПодтвердить вход в VK"
                     setOnPreferenceClickListener {
                         fragment.startActivity(Intent(context,VkRelayActivity::class.java).putExtra("login",true)); true
                     }
@@ -92,7 +92,7 @@ object VkRelayPreferences {
         val hashesPreference = SimpleMenuPreference(context).apply {
             key = "vkRelayDefaultHashes"
             optionEnabled = { index -> index != 1 || (info.linked && !info.needsRelink) }
-            title = "Хеши по умолчанию для новых профилей qWDTT и CSQTT"
+            title = "Хеши новых профилей qWDTT, CSQTT и WDTT Plus"
             setIcon(R.drawable.ic_mobile_hash)
             isSingleLineTitle = false; isPersistent = false
             entries = arrayOf("Вручную","Авто"); entryValues = arrayOf("manual","auto")

@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory app:title="@string/grp_settings_subscription">
-        <EditTextPreference
-            app:icon="@drawable/ic_baseline_http_24"
-            app:key="user_agent2"
-            app:title="@string/grp_settings_user_agent" />
+    <PreferenceCategory app:title="@string/sub_settings_update">
         <SwitchPreference
             app:icon="@drawable/ic_baseline_update_24"
             app:key="subAutoUpdateEnabled"
@@ -14,6 +10,23 @@
             app:key="subAutoUpdateInterval"
             app:persistent="false"
             app:title="@string/grp_sub_auto_update_interval" />
+        <SwitchPreference app:key="sub_notify_update" app:title="@string/sub_settings_notify"
+            app:summary="@string/sub_settings_notify_summary" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/sub_settings_startup">
+        <SwitchPreference app:key="sub_update_on_open" app:title="@string/sub_settings_update_open"
+            app:summary="@string/sub_settings_startup_summary" />
+        <SwitchPreference app:key="sub_ping_on_open" app:title="@string/sub_settings_ping_open" />
+        <SwitchPreference app:key="sub_connect_on_open" app:title="@string/sub_settings_connect_open" />
+        <moe.matsuri.nb4a.ui.SimpleMenuPreference app:key="sub_connect_target"
+            app:dependency="sub_connect_on_open" app:title="@string/sub_settings_connect_target"
+            app:entries="@array/sub_settings_connect_targets" app:entryValues="@array/sub_settings_connect_values"
+            app:defaultValue="last" app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/sub_settings_request">
+        <EditTextPreference app:key="sub_request_timeout_seconds" app:title="@string/sub_settings_timeout" />
+        <EditTextPreference app:icon="@drawable/ic_baseline_http_24"
+            app:key="user_agent2" app:title="@string/grp_settings_user_agent" />
         <SwitchPreference
             app:icon="@drawable/baseline_delete_sweep_24"
             app:key="sub_clear"
@@ -31,6 +44,8 @@
             app:dialogMessage="@string/grp_sub_custom_hwid_params_tip"
             app:key="sub_custom_hwid_params"
             app:title="@string/grp_sub_custom_hwid_params" />
+    </PreferenceCategory>
+    <PreferenceCategory app:title="@string/grp_settings_subscription">
         <SwitchPreference
             app:key="allow_stopping_active_profile"
             app:summary="@string/grp_allow_stopping_active_profile_tip"

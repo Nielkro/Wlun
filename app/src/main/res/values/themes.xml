@@ -199,6 +199,36 @@
     <!-- Section notes (category summaries) wrap instead of being cut to one line -->
     <style name="PreferenceThemeOverlay.SagerNet" parent="PreferenceThemeOverlay">
         <item name="preferenceCategoryStyle">@style/Preference.Category.SagerNet</item>
+        <item name="preferenceStyle">@style/Preference.Mobile</item>
+        <item name="dialogPreferenceStyle">@style/Preference.DialogPreference.Mobile</item>
+        <item name="editTextPreferenceStyle">@style/Preference.DialogPreference.EditTextPreference.Mobile</item>
+        <item name="dropdownPreferenceStyle">@style/Preference.DropDown.Mobile</item>
+        <item name="switchPreferenceStyle">@style/Preference.SwitchPreference.Mobile</item>
+        <item name="switchPreferenceCompatStyle">@style/Preference.SwitchPreferenceCompat.Mobile</item>
+        <item name="checkBoxPreferenceStyle">@style/Preference.CheckBoxPreference.Mobile</item>
+    </style>
+
+    <!-- A fixed icon column also applies to preferences added after the screen loads. -->
+    <style name="Preference.Mobile" parent="Preference.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
+    </style>
+    <style name="Preference.DialogPreference.Mobile" parent="Preference.DialogPreference.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
+    </style>
+    <style name="Preference.DialogPreference.EditTextPreference.Mobile" parent="Preference.DialogPreference.EditTextPreference.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
+    </style>
+    <style name="Preference.DropDown.Mobile" parent="Preference.DropDown.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
+    </style>
+    <style name="Preference.SwitchPreference.Mobile" parent="Preference.SwitchPreference.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
+    </style>
+    <style name="Preference.SwitchPreferenceCompat.Mobile" parent="Preference.SwitchPreferenceCompat.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
+    </style>
+    <style name="Preference.CheckBoxPreference.Mobile" parent="Preference.CheckBoxPreference.Material">
+        <item name="android:layout">@layout/mobile_preference</item>
     </style>
 
     <style name="Preference.Category.SagerNet" parent="Preference.Category.Material">
@@ -222,10 +252,11 @@
         <item name="cardBackgroundColor">?attr/colorSurface</item>
     </style>
 
-    <!-- ElevatedCard: shadow + tonal surface, no stroke. -->
+    <!-- Elevated cards keep the same hairline outline as the other tiles. -->
     <style name="Widget.SagerNet.CardView.Elevated">
         <item name="cardElevation">@dimen/card_elevation</item>
-        <item name="strokeWidth">0dp</item>
+        <item name="strokeWidth">@dimen/card_stroke_width</item>
+        <item name="strokeColor">@color/card_stroke</item>
         <item name="cardBackgroundColor">?attr/cardElevatedSurfaceColor</item>
     </style>
 
@@ -243,6 +274,8 @@
         <item name="cornerSize">@dimen/input_corner_radius</item>
     </style>
     <style name="Widget.SagerNet.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/mobile_input_outline</item>
+        <item name="hintTextColor">?attr/colorAccent</item>
         <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.SagerNet.Input</item>
     </style>
 

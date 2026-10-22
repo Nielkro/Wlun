@@ -10,6 +10,9 @@ class RequestIdentity(
     @JvmField val userAgent: String,
     @JvmField val sendHwid: Boolean,
     @JvmField val device: DeviceDetails,
+    @JvmField val timeoutSeconds: Int = 30,
+    @JvmField val sendHwidInCookie: Boolean = false,
+    @JvmField val allowInsecureRequests: Boolean = false,
 ) {
 
     /** identityHeaders (GroupUpdater.cpp:59-70). */
@@ -23,6 +26,11 @@ class RequestIdentity(
         add("x-device-os", device.os)
         add("x-ver-os", device.osVersion)
         add("x-device-model", device.model)
+        if (sendHwidInCookie && usableHeaderValue(device.hwid)) {
+            // Cookie values cannot contain separators even when valid as a normal HTTP header.
+            val encoded = java.net.URLEncoder.encode(device.hwid, "UTF-8").replace("+", "%20")
+            add("Cookie", "hwid=$encoded")
+        }
         return headers
     }
 
@@ -67,7 +75,7 @@ class RequestIdentity(
             var userAgent = if (DataStore.userAgent2.isBlank()) "Happ/3.0 " + app.qthrone.mobile.ktx.USER_AGENT else appUserAgent()
             var sendHwid = DataStore.subSendHwid
             var device = applyCustomHwidParams(DeviceDetails.get(), DataStore.subCustomHwidParams)
-            if (group == null) return RequestIdentity(userAgent, sendHwid, device)
+            if (group == null) return RequestIdentity(userAgent, sendHwid, device, DataStore.subRequestTimeoutSeconds)
 
             val options = group.subOptions
             if (usableHeaderValue(options.userAgent)) userAgent = options.userAgent
@@ -76,7 +84,9 @@ class RequestIdentity(
             if (usableHeaderValue(options.hwidOs)) device = device.copy(os = options.hwidOs)
             if (usableHeaderValue(options.hwidOsVersion)) device = device.copy(osVersion = options.hwidOsVersion)
             if (usableHeaderValue(options.hwidModel)) device = device.copy(model = options.hwidModel)
-            return RequestIdentity(userAgent, sendHwid, device)
+            return RequestIdentity(userAgent, sendHwid, device,
+                options.requestTimeoutSeconds.takeIf { it in 5..300 } ?: DataStore.subRequestTimeoutSeconds,
+                options.sendHwidInCookie, options.allowInsecureRequests)
         }
     }
 }

@@ -72,6 +72,20 @@ class WdttPlusExitTest {
         assertEquals(12L, access.traffic("all"))
         assertEquals("p1", access.title)
     }
+
+    @Test fun warpCheckAndRestartReachTheServerThroughThePinnedSession() {
+        // A closed local port: the call must fail on connecting, not before it.
+        val port = java.net.ServerSocket(0).use { it.localPort }
+        val server = DeployServer.create("wdttplus").apply {
+            set("host", "127.0.0.1"); set("sshPort", port.toString()); set("user", "root")
+            set("auth", "password"); set("sshPassword", "x"); set("hostKey", "SHA256:pinned")
+        }
+        val target = OutboundSshTarget(WdttPlusAdmin(server), server)
+        for (restart in listOf(true, false)) {
+            val error = runCatching { kotlinx.coroutines.runBlocking { checkFreeWarp(target, restart) } }.exceptionOrNull()
+            assertTrue("restart=$restart: $error", error is com.jcraft.jsch.JSchException)
+        }
+    }
 }
 
 class QwdttSubscriptionsTest {

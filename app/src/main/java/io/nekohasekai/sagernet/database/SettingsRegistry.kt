@@ -191,7 +191,8 @@ object SettingsRegistry {
 
     // ------------------------------------------------------------------------------------------------ dns
 
-    @JvmField val REMOTE_DNS = string("remote_dns", "https://8.8.8.8/dns-query")
+    // Missing rows adopt this default on upgrade; an explicitly saved resolver always wins.
+    @JvmField val REMOTE_DNS = string("remote_dns", app.qthrone.mobile.outbound.config.DnsDefaults.REMOTE)
     @JvmField val REMOTE_DNS_DISABLE_IPV6 = bool("remote_dns_disable_ipv6", false)
     @JvmField val DIRECT_DNS = string("direct_dns", "localhost")
     @JvmField val DIRECT_DNS_DISABLE_IPV6 = bool("direct_dns_disable_ipv6", false)
@@ -273,6 +274,12 @@ object SettingsRegistry {
     @JvmField val SUB_CLEAR = bool("sub_clear", false)
     @JvmField val SUB_SHOW_CHANGE_POPUP = bool("sub_show_change_popup", true)
     @JvmField val SUB_SEND_HWID = bool("sub_send_hwid", true)
+    @JvmField val SUB_REQUEST_TIMEOUT = int("sub_request_timeout_seconds", 30) { it in 5..300 }
+    @JvmField val SUB_UPDATE_ON_OPEN = bool("sub_update_on_open", false)
+    @JvmField val SUB_PING_ON_OPEN = bool("sub_ping_on_open", false)
+    @JvmField val SUB_CONNECT_ON_OPEN = bool("sub_connect_on_open", false)
+    @JvmField val SUB_CONNECT_TARGET = oneOf("sub_connect_target", "last", listOf("last", "selected"))
+    @JvmField val SUB_NOTIFY_UPDATE = bool("sub_notify_update", false)
     /** `key=value` pairs separated by commas. */
     @JvmField val SUB_CUSTOM_HWID_PARAMS = string("sub_custom_hwid_params", "")
     @JvmField val ALLOW_STOPPING_ACTIVE_PROFILE = bool("allow_stopping_active_profile", false)

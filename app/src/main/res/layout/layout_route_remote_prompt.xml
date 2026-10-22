@@ -27,6 +27,14 @@
             android:checked="true"
             android:text="@string/route_remote_auto_update" />
 
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/allow_insecure_requests"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:checked="false"
+            android:visibility="gone"
+            android:text="@string/sub_settings_insecure_requests" />
+
     </LinearLayout>
 
 </androidx.core.widget.NestedScrollView>

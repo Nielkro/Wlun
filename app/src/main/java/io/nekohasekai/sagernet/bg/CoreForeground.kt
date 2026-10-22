@@ -14,7 +14,7 @@ import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 
 /**
- * Reference-counted foreground promotion of [CoreService] (type dataSync) while test sessions or subscription jobs
+ * Reference-counted foreground promotion of [CoreService] (type dataSync) while test sessions
  * run: the first holder starts the service (so it outlives its clients) and makes it foreground, the last one demotes
  * and stops it. Holders may post their own notification; the newest one with content is shown. When the system refuses
  * the promotion (background start on 31+, the dataSync budget on 35+) the notification is posted as a plain one.
@@ -23,7 +23,6 @@ object CoreForeground {
 
     const val CHANNEL = "connection-test"
     const val NOTIFICATION_ID = 0x7E57
-    const val REASON_SUBSCRIPTIONS = "subscriptions"
 
     private val lock = Any()
     private var service: Service? = null
@@ -141,12 +140,7 @@ object CoreForeground {
         return contents[reason] ?: NotificationCompat.Builder(app, CHANNEL)
             .setSmallIcon(R.drawable.ic_throne_tile)
             .setContentTitle(app.getString(R.string.app_name))
-            .setContentText(
-                app.getString(
-                    if (reason == REASON_SUBSCRIPTIONS) R.string.test_engine_fg_subscriptions
-                    else R.string.test_engine_fg_busy
-                )
-            )
+            .setContentText(app.getString(R.string.test_engine_fg_busy))
             .setProgress(0, 0, true)
             .setOngoing(true)
             .setSilent(true)

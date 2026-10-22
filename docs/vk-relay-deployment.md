@@ -1,6 +1,6 @@
 # VK relay deployment contract for mobile and future desktop port
 
-The Settings root opens VK relay between subscriptions and appearance. Account binding and default hash source are shared. qWDTT and CSQTT each have a server list, add button, and server editor. Desktop is not modified by this change.
+The Settings root opens VK relay between subscriptions and appearance. Account binding and default hash source are shared by qWDTT, CSQTT and WDTT Plus. Each has a server list, add button, and server editor. Desktop is not modified by this change.
 
 ## Reference sources
 
@@ -23,7 +23,7 @@ The Settings root opens VK relay between subscriptions and appearance. Account b
 
 The server editor uses paired host/login and DNS fields, a password/key selector, a separate compact secrets dialog, and an always-present collapsible console. Starting an operation scrolls the editor to the console once. The terminal follows new logs while at the bottom; manual scrolling up pauses following until the user returns to the bottom. Both installers' progress records are parsed from WDTT_PROGRESS/CSQTT_PROGRESS fractional stages. Completion requires the same markers/pin/exit checks and shows a toast. An importable qwdtt://config or csqtt://connect link is persisted per VPS and displayed in a compact collapsible card below the console, with the copy icon outside its darker text field. Legacy JSON configurations are converted for display. Successful remote uninstall clears the stored configuration; failure or cancellation keeps it.
 
-The qWDTT legacy-server guard is preserved: reject /etc/wireguard or wg0 without wdtt0 in the official server asset. Runtime scripts/binaries remain the pinned official assets described above. Login now mirrors upstream mobile-login/mobile-home/desktop-login fallback, including desktop UA, language headers, third-party cookies and Unknown method error detection. TLS verification remains enabled. Auto hashes are scoped to qWDTT; CSQTT's distinct ok_join_link and call_id/forceFinish lifecycle is not substituted with the qWDTT generator. Stored manual hash fields remain intact.
+The qWDTT legacy-server guard is preserved: reject /etc/wireguard or wg0 without wdtt0 in the official server asset. Runtime scripts/binaries remain the pinned official assets described above. Login mirrors upstream mobile-login/mobile-home/desktop-login fallback, including desktop UA, language headers, third-party cookies and Unknown method error detection. TLS verification remains enabled. Auto hashes for qWDTT, CSQTT and WDTT Plus use calls created by the shared qWDTT account binding, one call per 27 workers. CSQTT and WDTT Plus join these calls with their native anonymous authorization; their own account-login flows are not used. Account calls live only in the encrypted account cache and launch-only profile copies. Stored manual hash fields remain intact when Auto is selected or VK is unlinked.
 
 Server records and SSH secrets: Android Keystore AES-GCM in noBackupFilesDir; not included in .thrbackup or subscription/profile exports. Host and key modifications require renewed trust. Operation state survives activity recreation in process, with bounded logs, last result and configuration. UI shows known stages; installer stage is indeterminate, not an invented completion percentage.
 

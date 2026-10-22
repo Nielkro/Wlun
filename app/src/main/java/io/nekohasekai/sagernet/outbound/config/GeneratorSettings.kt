@@ -75,7 +75,7 @@ data class GeneratorSettings(
 
     // ---- dns (SettingsRepo.h:179-197, :296)
     /** remote_dns (desktop address syntax, see DnsServers.buildDnsObj). */
-    val remoteDns: String = "https://8.8.8.8/dns-query",
+    val remoteDns: String = DnsDefaults.REMOTE,
     /** remote_dns_disable_ipv6. */
     val remoteDnsDisableIpv6: Boolean = false,
     /** direct_dns. */

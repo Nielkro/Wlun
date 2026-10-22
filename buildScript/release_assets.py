@@ -19,6 +19,28 @@ from pathlib import Path
 
 ABIS = ["arm64-v8a", "armeabi-v7a", "x86_64"]
 ROOT = Path(__file__).resolve().parent.parent
+MANIFEST_START = "<!-- qthrone-update\n"
+MANIFEST_END = "\n-->"
+
+
+def embedded_manifest(body):
+    start = body.find(MANIFEST_START)
+    if start < 0:
+        return None
+    if body.find(MANIFEST_START, start + len(MANIFEST_START)) >= 0:
+        raise ValueError("Duplicate update metadata")
+    content = start + len(MANIFEST_START)
+    end = body.find(MANIFEST_END, content)
+    if end < content or end - content > 256 * 1024:
+        raise ValueError("Invalid update metadata")
+    return json.loads(body[content:end])
+
+
+def release_notes(notes, manifest):
+    if MANIFEST_START in notes:
+        raise ValueError("Release notes already contain update metadata")
+    payload = json.dumps(manifest, separators=(",", ":")).replace("-->", "--\\u003e")
+    return notes.rstrip() + "\n\n" + MANIFEST_START + payload + MANIFEST_END + "\n"
 
 
 def fail(message):

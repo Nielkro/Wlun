@@ -77,25 +77,23 @@ class DeployListFragment : Fragment() {
         // A saved server opens on its actions, as in the original apps; a new one goes to the editor.
         if (id != null) { startActivity(Intent(requireContext(), ServerActivity::class.java).putExtra("server", id)); return }
         startActivity(Intent(requireContext(), DeployActivity::class.java).putExtra("kind", kind)
-            .putExtra("directEditor", true)
-            .addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION),
-            android.app.ActivityOptions.makeCustomAnimation(requireContext(),0,0).toBundle())
+            .putExtra("directEditor", true))
     }
 
     private fun tile(title: String, subtitle: String?, icon: Int, server: DeployServer? = null, click: () -> Unit) {
-        fun background() = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(20).toFloat() }
+        fun background() = GradientDrawable().apply { setColor(MobilePalette.surface); cornerRadius = dp(5).toFloat(); setStroke(1,MobilePalette.outline) }
         val tile = LinearLayout(requireContext()).apply {
-            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(18), dp(16), dp(18), dp(16))
-            minimumHeight = dp(64); this.background = background()
+            gravity = Gravity.CENTER_VERTICAL; setPadding(dp(12), dp(8), dp(12), dp(8))
+            minimumHeight = dp(48); this.background = background()
             isFocusable = true; setOnClickListener { click() }; MobileFeedback.apply(this)
         }
         tile.addView(ImageView(requireContext()).apply {
             setImageResource(icon); imageTintList = ColorStateList.valueOf(MobilePalette.accent(context))
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(20) })
+        }, LinearLayout.LayoutParams(dp(26), dp(26)).apply { marginEnd = dp(12) })
         tile.addView(LinearLayout(requireContext()).apply {
             orientation = LinearLayout.VERTICAL
-            addView(TextView(context).apply { text = title; textSize = 16f; setTextColor(MobilePalette.text) })
+            addView(TextView(context).apply { text = title; textSize = 16f; setTypeface(null,android.graphics.Typeface.BOLD); setTextColor(MobilePalette.text) })
             if (subtitle != null) addView(TextView(context).apply {
                 text = subtitle; textSize = 14f; setTextColor(MobilePalette.muted); setPadding(0, dp(3), 0, 0)
             })

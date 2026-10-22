@@ -1,0 +1,57 @@
+name: Secure local SOCKS transports
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  server-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ttrroyy/csqtt-rebirth
+          ref: 2066156119a5afe7d63e104aefdc8e0849999d03
+      - name: Install server test prerequisites
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends pkg-config libssl-dev
+      - name: Test original CSQTT server and migrations
+        run: |
+          rustup toolchain install 1.97.1 --profile minimal
+          cargo +1.97.1 test --locked --manifest-path rust-server/Cargo.toml
+  clients:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version: '1.27.0'
+          cache: false
+      - uses: actions/cache@v6
+        with:
+          path: ~/go/pkg/mod
+          key: secure-carrier-modules-${{ runner.os }}-${{ hashFiles('scripts/build_secure_carriers.sh') }}
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: secure-csqtt-cargo-${{ runner.os }}-${{ matrix.abi }}-${{ hashFiles('scripts/prepare_private_csqtt.py') }}
+      - name: Install Rust build prerequisites
+        run: sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends pkg-config cmake ninja-build perl
+      - name: Install NDK
+        shell: bash
+        run: |
+          echo y | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install 'ndk;28.2.13676358'
+          echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/28.2.13676358" >> "$GITHUB_ENV"
+      - name: Verify UDP isolation and build native clients
+        run: bash scripts/build_secure_carriers.sh '${{ matrix.abi }}'
+      - uses: actions/upload-artifact@v7
+        with:
+          name: secure-socks-${{ matrix.abi }}
+          path: qthrone-secure-socks-*.tar.gz
+          if-no-files-found: error

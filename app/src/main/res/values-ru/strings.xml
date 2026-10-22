@@ -318,6 +318,7 @@
     <string name="action_direct">Прямое</string>
     <string name="action_masque">MASQUE</string>
     <string name="action_openconnect">OpenConnect</string>
+    <string name="action_sstp">SSTP</string>
     <string name="action_openvpn">OpenVPN</string>
     <string name="action_trusttunnel">TrustTunnel</string>
     <string name="action_vless">VLESS</string>

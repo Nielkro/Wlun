@@ -1,0 +1,8 @@
+<resources>
+    <string name="provider_crypto_import_error">Не удалось расшифровать подписку. Формат не поддерживается или ссылка повреждена.</string>
+    <string name="provider_crypto_response_error">Не удалось расшифровать ответ подписки: неизвестный ключ или ошибка проверки подлинности. Существующие серверы сохранены.</string>
+    <string name="provider_crypto_fetch_error">Не удалось загрузить зашифрованную подписку. Проверьте сеть и ссылку подписки. Существующие серверы сохранены.</string>
+    <string name="provider_crypto_subscription">Зашифрованная подписка</string>
+    <string name="provider_crypto_summary">Happ crypt–crypt5 и Incy crypt1 расшифровываются на устройстве. При передаче сохраняется зашифрованная ссылка.</string>
+    <string name="provider_crypto_hidden">•••• (%1$s %2$s)</string>
+</resources>

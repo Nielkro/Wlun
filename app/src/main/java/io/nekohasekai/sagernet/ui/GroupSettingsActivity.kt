@@ -13,6 +13,8 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.ViewCompat
+import androidx.core.view.doOnPreDraw
+import androidx.core.content.res.use
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.EditTextPreference
 import androidx.preference.Preference
@@ -28,12 +30,16 @@ import app.qthrone.mobile.database.ProfileManager
 import app.qthrone.mobile.database.ProxyGroup
 import app.qthrone.mobile.database.SendHwid
 import app.qthrone.mobile.database.SubscriptionOptions
+import app.qthrone.mobile.database.ServerSortRule
+import app.qthrone.mobile.database.GroupSort
+import app.qthrone.mobile.database.GroupSortAction
+import app.qthrone.mobile.database.GroupSortMethod
 import app.qthrone.mobile.database.preference.OnPreferenceDataStoreChangeListener
 import app.qthrone.mobile.group.DeviceDetails
 import app.qthrone.mobile.group.RequestIdentity
 import app.qthrone.mobile.group.SubscriptionNameFilter
+import app.qthrone.mobile.group.ProviderLinks
 import app.qthrone.mobile.ktx.FixedLinearLayoutManager
-import app.qthrone.mobile.ktx.confirmAction
 import app.qthrone.mobile.ui.settings.DefaultSummaryProvider
 import app.qthrone.mobile.widget.ListListener
 import kotlinx.coroutines.Dispatchers
@@ -42,14 +48,14 @@ import kotlinx.coroutines.withContext
 import moe.matsuri.nb4a.ui.SimpleMenuPreference
 
 /**
- * Edit Group (dialog_edit_group + dialog_edit_group_advanced): Common, Subscription and the collapsed Advanced
- * subscription options. The type is chosen only while creating; a new group is saved without being updated.
- * Fields live in the profile cache store while editing.
+ * Subscription identity/options editor and a separate settings screen share the same cached document.
+ * Hidden fields stay intact when either screen saves; creating a group does not start a refresh.
  */
-class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
+open class GroupSettingsActivity : ServerScreenActivity(R.layout.layout_config_settings), OnPreferenceDataStoreChangeListener {
 
     companion object {
         const val EXTRA_GROUP_ID = "id"
+        const val EXTRA_SETTINGS = "settings"
 
         /** Ignored: a group created here is never updated right away (DialogEditGroup). */
         const val EXTRA_FROM_CLIPBOARD = "fromClipboard"
@@ -61,7 +67,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         const val TYPE_BASIC = 0
         const val TYPE_SUBSCRIPTION = 1
 
-        private const val STATE_ADVANCED = "advancedExpanded"
         private const val AUTO_SELECTOR = "autoselector"
 
         private const val KEY_FRONT = "groupFrontProxyId"
@@ -70,8 +75,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         private const val KEY_SUBSCRIPTION = "groupSubscription"
         private const val KEY_SKIP_AUTO_UPDATE = "groupSkipAutoUpdate"
         private const val KEY_SHOW_INFO_CARD = "groupSubShowInfoCard"
-        private const val KEY_ADVANCED_TOGGLE = "groupAdvancedToggle"
-        private val ADVANCED_CATEGORIES = listOf("groupAdvancedRequest", "groupAdvancedUpdate", "groupAdvancedAfterUpdate")
         private const val KEY_USER_AGENT = "groupSubUserAgent"
         private const val KEY_SEND_HWID = "groupSubSendHwid"
         private const val KEY_HWID = "groupSubHwid"
@@ -84,8 +87,13 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         private const val KEY_REMOVE_INVALID = "groupSubRemoveInvalid"
         private const val KEY_URL_TEST = "groupSubUrlTest"
         private const val KEY_REMOVE_UNAVAILABLE = "groupSubRemoveUnavailable"
-        private const val KEY_SORT_BY_LATENCY = "groupSubSortByLatency"
-        private const val KEY_AUTO_SORT_PING = "groupAutoSortByPing"
+        private const val KEY_SORT_RULE = "groupServerSortRule"
+        private const val KEY_TIMEOUT = "groupSubRequestTimeout"
+        private const val KEY_HWID_COOKIE = "groupSubHwidCookie"
+        private const val KEY_INSECURE_REQUESTS = "groupSubInsecureRequests"
+        private const val KEY_IGNORE_FILTERS = "groupSubIgnoreNameFilters"
+        private const val KEY_ALLOW_COLLAPSE = "groupSubAllowCollapse"
+        private const val KEY_HIDE_SERVER_SETTINGS = "groupSubHideServerSettings"
         private const val KEY_FILTER = "groupFilter"
         private const val KEY_NAME_INCLUDE = "groupSubNameInclude"
         private const val KEY_NAME_EXCLUDE = "groupSubNameExclude"
@@ -95,11 +103,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         )
 
         private val HWID_KEYS = listOf(KEY_HWID, KEY_HWID_OS, KEY_HWID_OS_VERSION, KEY_HWID_MODEL)
-        private val OPTION_TEXT_KEYS = listOf(KEY_USER_AGENT) + HWID_KEYS
-        private val OPTION_BOOL_KEYS = listOf(
-            KEY_KEEP_WORKING, KEY_REMOVE_DUPLICATES, KEY_REMOVE_INSECURE, KEY_REMOVE_INVALID, KEY_URL_TEST,
-            KEY_REMOVE_UNAVAILABLE, KEY_SORT_BY_LATENCY,
-        )
     }
 
     object PasswordSummaryProvider : Preference.SummaryProvider<EditTextPreference> {
@@ -118,8 +121,21 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     private var editingId = 0L
     private var loaded = false
-    private var advancedExpanded = false
-    private var groupCount = 0
+    private var originalSignature = ""
+    private var editorSheet: View? = null
+    private var editorHandle: View? = null
+    private var editorBehavior: com.google.android.material.bottomsheet.BottomSheetBehavior<android.widget.LinearLayout>? = null
+
+    override fun dispatchTouchEvent(event: android.view.MotionEvent): Boolean {
+        if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
+            val bounds = android.graphics.Rect()
+            editorBehavior?.isDraggable = editorHandle?.getGlobalVisibleRect(bounds) == true &&
+                bounds.contains(event.rawX.toInt(), event.rawY.toInt())
+        }
+        return super.dispatchTouchEvent(event)
+    }
+    private val settingsMode get() = intent.getBooleanExtra(EXTRA_SETTINGS, false)
+    override val isDialog get() = !settingsMode
 
     /** ResolveIdentity(nullptr), resolved while loading: the Advanced placeholders and the "Keep Default" state. */
     private var defaultUserAgent = ""
@@ -141,32 +157,47 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!settingsMode) createEditorSheet()
+        if (!settingsMode) findViewById<View>(R.id.appbar).apply {
+            // This toolbar is inside the sheet, below the status bar.
+            ViewCompat.setOnApplyWindowInsetsListener(this, null)
+            setPadding(0, 0, 0, 0)
+            layoutParams = layoutParams.apply { height = (56 * resources.displayMetrics.density).toInt() }
+            setBackgroundColor(MobilePalette.background)
+        }
         setSupportActionBar(findViewById(R.id.toolbar))
+        findViewById<androidx.appcompat.widget.Toolbar>(R.id.toolbar).apply {
+            setSubtitleTextColor(MobilePalette.muted)
+            if (!settingsMode) {
+                setBackgroundColor(MobilePalette.background)
+                setPadding(0,0,0,0)
+                contentInsetStartWithNavigation = 0
+            }
+        }
         supportActionBar?.apply {
-            setTitle(R.string.grp_edit_group)
-            setDisplayHomeAsUpEnabled(true)
-            setHomeAsUpIndicator(R.drawable.ic_navigation_close)
+            setTitle(if (settingsMode) R.string.settings else R.string.grp_edit_group)
+            setDisplayHomeAsUpEnabled(settingsMode)
+            if (settingsMode) setHomeAsUpIndicator(R.drawable.ic_navigation_close)
         }
         editingId = intent.getLongExtra(EXTRA_GROUP_ID, 0L)
-        advancedExpanded = savedInstanceState?.getBoolean(STATE_ADVANCED) ?: false
         onBackPressedDispatcher.addCallback(this) { close() }
 
         val fresh = savedInstanceState == null
         val link = intent.getStringExtra(EXTRA_GROUP_SUBSCRIPTION_LINK)
         lifecycleScope.launch {
             val found = withContext(Dispatchers.IO) {
-                val group = if (editingId > 0) GroupRepo.get(editingId) ?: return@withContext false else ProxyGroup()
+                val group = if (editingId > 0) GroupRepo.get(editingId) ?: return@withContext null else ProxyGroup()
                 if (editingId > 0) resetDanglingProxies(group)
                 if (fresh) {
                     writeToCache(group)
+                    originalSignature = editSignature()
                     val prefilled = editingId == 0L && !link.isNullOrBlank()
                     if (prefilled) {
                         DataStore.groupType = TYPE_SUBSCRIPTION
                         DataStore.subscriptionLink = link!!.trim()
                     }
                     DataStore.dirty = prefilled
-                }
-                groupCount = GroupRepo.ids().size
+                } else originalSignature = savedInstanceState?.getString("originalSignature") ?: editSignature()
                 val identity = RequestIdentity.resolve(null)
                 defaultUserAgent = identity.userAgent
                 defaultDevice = identity.device
@@ -175,24 +206,34 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                     val id = proxyId(key)
                     if (id > 0) proxyLabel(id)?.let { proxyLabels[id] = it }
                 }
-                true
+                group
             }
-            if (!found) {
+            if (found == null) {
                 finish()
                 return@launch
             }
             loaded = true
+            if (settingsMode) supportActionBar?.subtitle = found.displayName()
             invalidateOptionsMenu()
             supportFragmentManager.beginTransaction()
                 .replace(R.id.settings, GroupPreferenceFragment())
                 .commitNowAllowingStateLoss()
+            editorSheet?.doOnPreDraw { sheet ->
+                sheet.visibility = View.VISIBLE
+                if (fresh) {
+                    val enter = obtainStyledAttributes(
+                        com.google.android.material.R.style.Animation_MaterialComponents_BottomSheetDialog,
+                        intArrayOf(android.R.attr.windowEnterAnimation)).use { it.getResourceId(0,0) }
+                    sheet.startAnimation(android.view.animation.AnimationUtils.loadAnimation(this@GroupSettingsActivity,enter))
+                }
+            }
             DataStore.profileCacheStore.registerChangeListener(this@GroupSettingsActivity)
         }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putBoolean(STATE_ADVANCED, advancedExpanded)
+        outState.putString("originalSignature", originalSignature)
     }
 
     override fun onDestroy() {
@@ -202,8 +243,8 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
 
     override fun onPreferenceDataStoreChanged(store: PreferenceDataStore, key: String) {
         if (key == Key.PROFILE_DIRTY) return
-        DataStore.dirty = true
-        runOnUiThread { fragment?.refreshState() }
+        DataStore.dirty = editSignature() != originalSignature
+        runOnUiThread { fragment?.refreshState(); invalidateOptionsMenu() }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -212,8 +253,8 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        // A new group's delete discards it; the last group cannot be removed.
-        menu.findItem(R.id.action_delete)?.isVisible = loaded && (editingId == 0L || groupCount > 1)
+        menu.findItem(R.id.action_delete)?.isVisible = false
+        menu.findItem(R.id.action_apply)?.isVisible = loaded && DataStore.dirty
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -224,10 +265,6 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
                 return true
             }
 
-            R.id.action_delete -> {
-                if (editingId == 0L) finish() else confirmRemove()
-                return true
-            }
         }
         return super.onOptionsItemSelected(item)
     }
@@ -250,14 +287,67 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             .show()
     }
 
-    private fun confirmRemove() {
-        val name = ProxyGroup(name = DataStore.groupName.trim()).displayName()
-        confirmAction(getString(R.string.confirm_remove_group), name, R.string.delete) {
-            lifecycleScope.launch {
-                withContext(Dispatchers.IO) { GroupRepo.delete(editingId) }
-                finish()
+    @Suppress("DEPRECATION")
+    private fun createEditorSheet() {
+        val content=findViewById<android.view.ViewGroup>(android.R.id.content)
+        val form=content.getChildAt(0) as android.widget.LinearLayout
+        editorSheet=form
+        form.visibility=View.INVISIBLE
+        content.removeView(form)
+        val density=resources.displayMetrics.density
+        form.setPadding(0,(12*density).toInt(),0,0)
+        val coordinator=object: androidx.coordinatorlayout.widget.CoordinatorLayout(this) {
+            override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+                form.layoutParams.height=(View.MeasureSpec.getSize(heightMeasureSpec)*.88f).toInt()
+                super.onMeasure(widthMeasureSpec,heightMeasureSpec)
             }
         }
+        coordinator.setOnClickListener { close() }
+        form.isClickable=true
+        form.background=android.graphics.drawable.GradientDrawable().apply {
+            setColor(MobilePalette.background);cornerRadius=24*density
+        }
+        form.clipToOutline=true
+        form.findViewById<View>(R.id.settings).layoutParams=android.widget.LinearLayout.LayoutParams(-1,0,1f)
+        val handle=android.widget.FrameLayout(this).apply {
+            minimumHeight=(48*density).toInt()
+            contentDescription=getString(android.R.string.cancel)
+            isFocusable=true
+            setOnClickListener { close() }
+            addView(View(this@GroupSettingsActivity).apply {
+            background=android.graphics.drawable.GradientDrawable().apply { setColor(MobilePalette.muted);cornerRadius=2*density }
+            },android.widget.FrameLayout.LayoutParams((40*density).toInt(),(4*density).toInt(),android.view.Gravity.CENTER))
+        }
+        editorHandle=handle
+        form.addView(handle,0,android.widget.LinearLayout.LayoutParams(-1,(48*density).toInt()))
+        val behavior=com.google.android.material.bottomsheet.BottomSheetBehavior<android.widget.LinearLayout>().apply {
+            isDraggable=false
+            isHideable=true;skipCollapsed=true;state=com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+            addBottomSheetCallback(object: com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback() {
+                override fun onSlide(bottomSheet: View, slideOffset: Float) {}
+                override fun onStateChanged(bottomSheet: View, newState: Int) {
+                    if(newState==com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_HIDDEN) {
+                        close()
+                        state=com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+                    }
+                }
+            })
+        }
+        editorBehavior=behavior
+        coordinator.addView(form,androidx.coordinatorlayout.widget.CoordinatorLayout.LayoutParams(-1,-1).apply {
+            // The behavior supplies the bottom offset; bottom gravity would apply it twice.
+            gravity=android.view.Gravity.TOP;this.behavior=behavior
+        })
+        setContentView(coordinator)
+        window.setBackgroundDrawableResource(android.R.color.transparent)
+        window.setLayout(-1,-1)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        window.attributes=window.attributes.apply { dimAmount=.55f }
+        window.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        window.setWindowAnimations(com.google.android.material.R.style.Animation_MaterialComponents_BottomSheetDialog)
+        // Animate the panel after its fields load; Android may replace an activity's window animation.
+        if (android.os.Build.VERSION.SDK_INT >= 34) overrideActivityTransition(OVERRIDE_TRANSITION_OPEN,0,0)
+        else overridePendingTransition(0,0)
     }
 
     // ------------------------------------------------------------------------------------------------ load / save
@@ -299,8 +389,13 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         store.putBoolean(KEY_REMOVE_INVALID, options.removeInvalid)
         store.putBoolean(KEY_URL_TEST, options.urlTest)
         store.putBoolean(KEY_REMOVE_UNAVAILABLE, options.removeUnavailable)
-        store.putBoolean(KEY_SORT_BY_LATENCY, options.sortByLatency)
-        store.putBoolean(KEY_AUTO_SORT_PING, options.autoSortByPing)
+        store.putString(KEY_SORT_RULE, options.effectiveSortRule.value.toString())
+        store.putString(KEY_TIMEOUT, options.requestTimeoutSeconds.toString())
+        store.putBoolean(KEY_HWID_COOKIE, options.sendHwidInCookie)
+        store.putBoolean(KEY_INSECURE_REQUESTS, options.allowInsecureRequests)
+        store.putBoolean(KEY_IGNORE_FILTERS, options.ignoreNameFilters)
+        store.putBoolean(KEY_ALLOW_COLLAPSE, options.allowCollapse)
+        store.putBoolean(KEY_HIDE_SERVER_SETTINGS, options.hideServerSettings)
         store.putString(KEY_NAME_INCLUDE, options.nameInclude)
         store.putString(KEY_NAME_EXCLUDE, options.nameExclude)
     }
@@ -323,18 +418,32 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             removeInvalid = flag(KEY_REMOVE_INVALID),
             urlTest = flag(KEY_URL_TEST),
             removeUnavailable = flag(KEY_REMOVE_UNAVAILABLE),
-            sortByLatency = flag(KEY_SORT_BY_LATENCY),
-            autoSortByPing = flag(KEY_AUTO_SORT_PING),
+            serverSortRule = ServerSortRule.of(text(KEY_SORT_RULE).toIntOrNull() ?: 0),
+            requestTimeoutSeconds = text(KEY_TIMEOUT).toIntOrNull()?.takeIf { it in 5..300 } ?: 0,
+            sendHwidInCookie = flag(KEY_HWID_COOKIE),
+            allowInsecureRequests = flag(KEY_INSECURE_REQUESTS),
+            ignoreNameFilters = flag(KEY_IGNORE_FILTERS),
+            allowCollapse = store.getBoolean(KEY_ALLOW_COLLAPSE, true),
+            hideServerSettings = flag(KEY_HIDE_SERVER_SETTINGS),
             nameInclude = text(KEY_NAME_INCLUDE),
             nameExclude = text(KEY_NAME_EXCLUDE),
             showInfoCard = store.getBoolean(KEY_SHOW_INFO_CARD, true),
         )
     }
 
+    private fun editSignature(): String = app.qthrone.mobile.outbound.json.jsonObjectOf(
+        "name" to DataStore.groupName.trim(), "type" to DataStore.groupType,
+        "url" to DataStore.subscriptionLink.trim(), "front" to proxyId(KEY_FRONT), "landing" to proxyId(KEY_LANDING),
+        "clear" to DataStore.profileCacheStore.getBoolean(KEY_AUTO_CLEAR, false),
+        "skip" to DataStore.profileCacheStore.getBoolean(KEY_SKIP_AUTO_UPDATE, false),
+        "options" to optionsFromCache().toJson(),
+    ).toCompact()
+
     /** A subscription's name filters must compile, like the auto selector's name filter (edit_autoselector onEnd). */
     private fun nameFilterError(): String? {
         if (DataStore.groupType != TYPE_SUBSCRIPTION) return null
         val store = DataStore.profileCacheStore
+        if (store.getBoolean(KEY_IGNORE_FILTERS, false)) return null
         for ((key, title) in NAME_FILTERS) {
             val error = SubscriptionNameFilter.error(store.getString(key).orEmpty().trim()) ?: continue
             return getString(R.string.grp_filter_bad_regex, getString(title), error)
@@ -361,7 +470,7 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
         val result = withContext(Dispatchers.IO) {
             val group = if (editingId > 0) GroupRepo.get(editingId) ?: return@withContext SaveResult.GONE else ProxyGroup()
             val url = DataStore.subscriptionLink.trim()
-            if (editingId > 0 && group.isSubscription && url.isEmpty()) return@withContext SaveResult.URL_REQUIRED
+            if (DataStore.groupType==TYPE_SUBSCRIPTION && url.isEmpty()) return@withContext SaveResult.URL_REQUIRED
             val store = DataStore.profileCacheStore
             group.name = DataStore.groupName.trim()
             group.autoClearUnavailable = store.getBoolean(KEY_AUTO_CLEAR, false)
@@ -378,6 +487,11 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             group.frontProxyId = proxyId(KEY_FRONT)
             group.landingProxyId = proxyId(KEY_LANDING)
             if (editingId > 0) GroupRepo.save(group) else GroupRepo.add(group)
+            if (editingId > 0) when (group.subOptions.effectiveSortRule) {
+                ServerSortRule.PING -> GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_LATENCY))
+                ServerSortRule.NAME -> GroupSort.sortProfiles(group.id, GroupSortAction(GroupSortMethod.BY_NAME))
+                ServerSortRule.NONE -> Unit
+            }
             SaveResult.OK
         }
         when (result) {
@@ -442,6 +556,23 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             setupProxyMenu(KEY_LANDING)
 
             findPreference<EditTextPreference>(KEY_USER_AGENT)!!.placeholder(host.defaultUserAgent)
+            findPreference<EditTextPreference>(KEY_TIMEOUT)!!.apply {
+                summaryProvider = Preference.SummaryProvider<EditTextPreference> {
+                    val seconds = it.text?.toIntOrNull() ?: 0
+                    if (seconds == 0) getString(R.string.sub_settings_timeout_inherit, DataStore.subRequestTimeoutSeconds)
+                    else getString(R.string.sub_settings_timeout_summary, seconds)
+                }
+                setOnBindEditTextListener { it.inputType = InputType.TYPE_CLASS_NUMBER; it.setSingleLine() }
+                setOnPreferenceChangeListener { _, value ->
+                    val seconds = value?.toString()?.trim()?.toIntOrNull()
+                    val valid = seconds != null && (seconds == 0 || seconds in 5..300)
+                    if (!valid) Toast.makeText(requireContext(), R.string.sub_settings_timeout_override_error, Toast.LENGTH_SHORT).show()
+                    valid
+                }
+            }
+            findPreference<SimpleMenuPreference>(KEY_SORT_RULE)!!.summaryProvider = Preference.SummaryProvider<SimpleMenuPreference> {
+                it.entry ?: ""
+            }
             val device = host.defaultDevice
             findPreference<EditTextPreference>(KEY_HWID)!!.placeholder(device.hwid)
             findPreference<EditTextPreference>(KEY_HWID_OS)!!.placeholder(device.os)
@@ -460,17 +591,15 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             nameFilter(KEY_NAME_INCLUDE, R.string.grp_filter_include_empty)
             nameFilter(KEY_NAME_EXCLUDE, R.string.grp_filter_exclude_empty)
 
-            findPreference<Preference>(KEY_ADVANCED_TOGGLE)!!.setOnPreferenceClickListener {
-                host.advancedExpanded = !host.advancedExpanded
-                refreshState()
-                true
-            }
             refreshState()
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
             super.onViewCreated(view, savedInstanceState)
+            MobileSettingsStyle.apply(this, view)
             listView.layoutManager = FixedLinearLayoutManager(listView)
+            // The list scrolls itself; only the handle may move the editor sheet.
+            if (!host.settingsMode) listView.isNestedScrollingEnabled = false
             ViewCompat.setOnApplyWindowInsetsListener(listView, ListListener)
         }
 
@@ -534,23 +663,39 @@ class GroupSettingsActivity : ThemedActivity(R.layout.layout_config_settings), O
             if (preferenceScreen == null) return
             val store = DataStore.profileCacheStore
             val subscription = DataStore.groupType == TYPE_SUBSCRIPTION
-            findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.isVisible = subscription
-            findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription
-            val expanded = subscription && host.advancedExpanded
-            for (key in ADVANCED_CATEGORIES) findPreference<PreferenceCategory>(key)?.isVisible = expanded
+            val editing = !host.settingsMode
+            val settings = host.settingsMode || !subscription
+            findPreference<Preference>(Key.GROUP_NAME)?.isVisible = editing
+            findPreference<Preference>(Key.GROUP_TYPE)?.isVisible = editing && host.editingId == 0L
+            findPreference<Preference>(Key.SUBSCRIPTION_LINK)?.isVisible = subscription && editing
+            findPreference<PreferenceCategory>("groupEditOptions")?.isVisible = subscription && editing
+            findPreference<PreferenceCategory>("groupCommon")?.apply {
+                isVisible = editing
+                setTitle(if(subscription) R.string.group_title_url else R.string.grp_common)
+            }
+            for (key in listOf(KEY_AUTO_CLEAR, KEY_SORT_RULE, KEY_FRONT, KEY_LANDING))
+                findPreference<Preference>(key)?.isVisible = settings
+            for (key in listOf(KEY_SKIP_AUTO_UPDATE, KEY_SHOW_INFO_CARD, KEY_KEEP_WORKING, KEY_REMOVE_DUPLICATES,
+                KEY_REMOVE_INSECURE, KEY_REMOVE_INVALID, KEY_URL_TEST, KEY_REMOVE_UNAVAILABLE))
+                findPreference<Preference>(key)?.isVisible = subscription && settings
+            findPreference<PreferenceCategory>(KEY_SUBSCRIPTION)?.apply {
+                isVisible = settings
+                setTitle(if(subscription) R.string.grp_update else R.string.settings)
+            }
+            findPreference<PreferenceCategory>(KEY_FILTER)?.isVisible = subscription && settings
+            findPreference<PreferenceCategory>("groupPresentation")?.isVisible = subscription && settings
+            findPreference<androidx.preference.SwitchPreference>("groupEncryptedSubscription")?.isChecked = ProviderLinks.isEncrypted(DataStore.subscriptionLink)
+            val http = DataStore.subscriptionLink.trim().let { it.startsWith("https://", true) || it.startsWith("http://", true) || ProviderLinks.isProviderLink(it) }
+            for(key in listOf(KEY_TIMEOUT, KEY_USER_AGENT, KEY_SEND_HWID)+HWID_KEYS)
+                findPreference<Preference>(key)?.isVisible = subscription && settings && http
 
             val mode = host.sendHwidMode()
             val sent = mode == SendHwid.ON || (mode == SendHwid.KEEP_DEFAULT && host.globalSendHwid)
             for (key in HWID_KEYS) findPreference<Preference>(key)?.isEnabled = sent
+            findPreference<Preference>(KEY_HWID_COOKIE)?.isEnabled = sent
+            val filtersEnabled = !store.getBoolean(KEY_IGNORE_FILTERS, false)
+            for ((key, _) in NAME_FILTERS) findPreference<Preference>(key)?.isEnabled = filtersEnabled
 
-            val set = OPTION_TEXT_KEYS.count { !store.getString(it).isNullOrBlank() } +
-                OPTION_BOOL_KEYS.count { store.getBoolean(it, false) } +
-                (if (mode != SendHwid.KEEP_DEFAULT) 1 else 0)
-            findPreference<Preference>(KEY_ADVANCED_TOGGLE)?.apply {
-                title = if (set > 0) getString(R.string.grp_advanced_count, set) else getString(R.string.grp_advanced)
-                summary = getString(if (host.advancedExpanded) R.string.grp_advanced_hide else R.string.grp_advanced_show)
-                setIcon(if (host.advancedExpanded) R.drawable.ic_baseline_expand_less_24 else R.drawable.ic_baseline_expand_more_24)
-            }
         }
     }
 }

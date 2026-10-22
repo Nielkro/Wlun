@@ -59,6 +59,15 @@ enum class SendHwid(val value: Int) {
     }
 }
 
+/** Persistent rule; legacy ping toggles are read as PING until the group is saved. */
+enum class ServerSortRule(val value: Int) {
+    NONE(0), PING(1), NAME(2);
+
+    companion object {
+        fun of(value: Int): ServerSortRule = entries.firstOrNull { it.value == value } ?: NONE
+    }
+}
+
 /**
  * The per-group subscription options (`SubscriptionOptions`, Group.h:43-63) stored in `groups.sub_options_json`.
  * Empty strings inherit the global subscription settings; `removeUnavailable` and `sortByLatency` only take effect
@@ -80,6 +89,14 @@ data class SubscriptionOptions(
     var removeUnavailable: Boolean = false,
     var sortByLatency: Boolean = false,
     var autoSortByPing: Boolean = false,
+    var serverSortRule: ServerSortRule = ServerSortRule.NONE,
+    /** Zero inherits the global HTTP request timeout. */
+    var requestTimeoutSeconds: Int = 0,
+    var sendHwidInCookie: Boolean = false,
+    var allowInsecureRequests: Boolean = false,
+    var ignoreNameFilters: Boolean = false,
+    var allowCollapse: Boolean = true,
+    var hideServerSettings: Boolean = false,
     /** Android-only (#53): name filters applied on every update; desktop's codec drops these keys. */
     var nameInclude: String = "",
     var nameExclude: String = "",
@@ -92,6 +109,10 @@ data class SubscriptionOptions(
     var providerIgnoreImport: Boolean = false,
     var providerRoutingManual: Boolean = false,
 ) : Parcelable {
+
+    val effectiveSortRule: ServerSortRule
+        get() = if (serverSortRule != ServerSortRule.NONE) serverSortRule
+        else if (autoSortByPing || sortByLatency) ServerSortRule.PING else ServerSortRule.NONE
 
     fun toJson(): JsonObject {
         val json = JsonObject()
@@ -109,6 +130,13 @@ data class SubscriptionOptions(
         if (removeUnavailable) json["remove_unavailable"] = true
         if (sortByLatency) json["sort_by_latency"] = true
         if (autoSortByPing) json["auto_sort_by_ping"] = true
+        if (serverSortRule != ServerSortRule.NONE) json["server_sort_rule"] = serverSortRule.value
+        if (requestTimeoutSeconds in 5..300) json["request_timeout_seconds"] = requestTimeoutSeconds
+        if (sendHwidInCookie) json["send_hwid_in_cookie"] = true
+        if (allowInsecureRequests) json["allow_insecure_requests"] = true
+        if (ignoreNameFilters) json["ignore_name_filters"] = true
+        if (!allowCollapse) json["allow_collapse"] = false
+        if (hideServerSettings) json["hide_server_settings"] = true
         if (nameInclude.isNotEmpty()) json["name_include"] = nameInclude
         if (nameExclude.isNotEmpty()) json["name_exclude"] = nameExclude
         if (!showInfoCard) json["show_info_card"] = false
@@ -147,6 +175,13 @@ data class SubscriptionOptions(
                 removeUnavailable = json.bool("remove_unavailable"),
                 sortByLatency = json.bool("sort_by_latency"),
                 autoSortByPing = json.bool("auto_sort_by_ping"),
+                serverSortRule = ServerSortRule.of(json.int("server_sort_rule")),
+                requestTimeoutSeconds = json.int("request_timeout_seconds").takeIf { it in 5..300 } ?: 0,
+                sendHwidInCookie = json.bool("send_hwid_in_cookie"),
+                allowInsecureRequests = json.bool("allow_insecure_requests"),
+                ignoreNameFilters = json.bool("ignore_name_filters"),
+                allowCollapse = !json.isBool("allow_collapse") || json.bool("allow_collapse"),
+                hideServerSettings = json.bool("hide_server_settings"),
                 nameInclude = json.string("name_include"),
                 nameExclude = json.string("name_exclude"),
                 showInfoCard = !json.isBool("show_info_card") || json.bool("show_info_card"),
