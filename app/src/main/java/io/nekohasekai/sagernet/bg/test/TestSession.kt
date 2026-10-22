@@ -16,6 +16,7 @@ import app.qthrone.mobile.database.GroupSortMethod
 import app.qthrone.mobile.database.ProfileManager
 import app.qthrone.mobile.database.ProxyEntity
 import app.qthrone.mobile.database.SagerDatabase
+import app.qthrone.mobile.database.SettingsRegistry
 import app.qthrone.mobile.ktx.Logs
 import app.qthrone.mobile.ktx.app
 import app.qthrone.mobile.ktx.readableMessage
@@ -49,7 +50,7 @@ internal class TestSession(
         val speedTimeoutMs: Int = spec.speedTimeoutMs.takeIf { it > 0 } ?: DataStore.speedTestTimeoutMs
         val simpleDlUrl: String = spec.simpleDlUrl.ifBlank { DataStore.simpleDlUrl }
         val creditTraffic: Boolean = !DataStore.disableTrafficStats
-        val keepAlive: Boolean = spec.keepAlive || (DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE)
+        val keepAlive: Boolean = spec.keepAlive || (DataStore.urlTestMode == SettingsRegistry.URL_TEST_MODE_KEEPALIVE)
     }
 
     val interactive = client != null

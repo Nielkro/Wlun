@@ -2,8 +2,10 @@ package app.qthrone.mobile.bg.proto
 
 import app.qthrone.mobile.bg.CoreRuntime
 import app.qthrone.mobile.bg.test.TestTags
+import app.qthrone.mobile.database.DataStore
 import app.qthrone.mobile.database.ProfileManager
 import app.qthrone.mobile.database.ProxyEntity
+import app.qthrone.mobile.database.SettingsRegistry
 import app.qthrone.mobile.ktx.completeWith
 import app.qthrone.mobile.outbound.types.Chain
 import app.qthrone.core.mobile.Instance
@@ -26,13 +28,13 @@ suspend fun urlTestCurrent(
     url: String,
     timeoutMs: Int,
     vpnExit: Boolean,
-    isKeepAlive: Boolean = (app.qthrone.mobile.database.DataStore.urlTestMode == app.qthrone.mobile.database.SettingsRegistry.URL_TEST_MODE_KEEPALIVE)
+    isKeepAlive: Boolean = (DataStore.urlTestMode == SettingsRegistry.URL_TEST_MODE_KEEPALIVE)
 ): Int {
     val testUrl = if (isKeepAlive && !url.contains("#keepalive")) url + "#keepalive" else url
     val request = TestRequest().apply {
         testCurrent = true
         this.url = testUrl
-        this.timeoutMs = ProbeTimeout.effective(timeoutMs,app.qthrone.mobile.database.DataStore.baseService?.data?.proxy?.config?.carrierPlans?.isNotEmpty()==true)
+        this.timeoutMs = ProbeTimeout.effective(timeoutMs, DataStore.baseService?.data?.proxy?.config?.carrierPlans?.isNotEmpty() == true)
         maxConcurrency = 1
         core.outboundTags.forEach(::addOutboundTag)
         if (vpnExit) addVPNEndpointTag(CoreConfig.TAG_PROXY)
